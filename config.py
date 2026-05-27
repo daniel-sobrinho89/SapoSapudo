@@ -1,0 +1,5 @@
+LARGURA = 1024
+ALTURA = 600
+FPS = 60
+
+TITULO = "Cozy Frog"

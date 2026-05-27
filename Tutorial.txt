@@ -1,0 +1,37 @@
+1 - Gerar assets .png
+    ├── body.png
+    ├── head.png
+    ├── eyes.png
+    ├── mouth.png
+    ├── leaf.png
+    ├── arm_left.png
+    ├── arm_right.png
+    ├── hand_left.png
+    ├── hand_right.png
+    ├── leg_left.png
+    └── leg_right.png
+2 - Executar (pip install pygame cairosvg pillow)
+3 - py -3.12 main.py
+
+
+
+
+---------------------------------------------------------------
+
+
+Gere um arquivo zip, contendo os  assets necessarios para animar 1 bichinho virtual, crie no minimo 27 assets, crie eles pensando que serao animados via python  
+Gere imagens com proporcao 512x512
+Entre os assets gere tambem de contorno dos olhos, de íris  dos olhos, de sombrancelha, mãos
+
+Gere eles pensando que sera exibido em uma tela de 7 polegadas raspberry
+
+Ele precisa ter:
+	pivôs corretos
+	proporção real
+	peças feitas para animação
+	encaixe entre membros
+	escala consistente
+
+Precisa de um personagem estilo:
+	mascote minimalista
+	cute indie game

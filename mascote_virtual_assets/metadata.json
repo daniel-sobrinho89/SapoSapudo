@@ -1,0 +1,66 @@
+{
+  "canvas_size": [
+    512,
+    512
+  ],
+  "recommended_screen": "1024x600 (7-inch Raspberry display)",
+  "style": "minimalist cute indie mascot",
+  "pivot_points": {
+    "head": [
+      256,
+      340
+    ],
+    "arm_left": [
+      240,
+      120
+    ],
+    "arm_right": [
+      270,
+      120
+    ],
+    "leg_left": [
+      240,
+      100
+    ],
+    "leg_right": [
+      270,
+      100
+    ],
+    "leaf": [
+      256,
+      220
+    ]
+  },
+  "animation_notes": [
+    "Use sinusoidal breathing on body/head scale.",
+    "Blink every 3-5 seconds using eyes_open and eyes_closed.",
+    "Arms designed for rotation from top pivot.",
+    "Legs support idle bounce animation.",
+    "All assets exported with transparent backgrounds."
+  ],
+  "assets": [
+    "body",
+    "belly",
+    "head",
+    "eyes_open",
+    "eyes_closed",
+    "eyes_happy",
+    "mouth_smile",
+    "mouth_open",
+    "mouth_surprised",
+    "blush",
+    "arm_left",
+    "arm_right",
+    "hand_left",
+    "hand_right",
+    "leg_left",
+    "leg_right",
+    "foot_left",
+    "foot_right",
+    "leaf",
+    "shadow",
+    "scarf",
+    "sleep_bubble",
+    "sparkle"
+  ]
+}
