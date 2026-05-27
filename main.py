@@ -16,7 +16,7 @@ from render.background_renderer import BackgroundRenderer
 from render.character_renderer import CharacterRenderer
 
 # =========================================
-# INIT
+# INIT TESTE DE SUBIDA
 # =========================================
 
 pygame.init()
