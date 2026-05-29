@@ -116,17 +116,6 @@ class FrascoClimatico:
             self.frasco_tampa.get_width()
         )
 
-        self.altura = 320
-
-        # =====================================
-        # SURFACE FINAL
-        # =====================================
-
-        self.frasco_surface = pygame.Surface(
-            (self.largura, self.altura),
-            pygame.SRCALPHA
-        )
-
         # =====================================
         # POSICIONAMENTO AUTOMÁTICO
         # =====================================
@@ -137,7 +126,7 @@ class FrascoClimatico:
         # VIDRO
         # =====================================
         
-        topo_frasco = 110
+        topo_frasco = int(110 * self.escala / 0.13)
 
         vidro_x = (
             centro_x
@@ -183,6 +172,26 @@ class FrascoClimatico:
         )
 
         # =====================================
+        # CALCULA ALTURA DINAMICAMENTE
+        # =====================================
+
+        altura_base = (
+            base_y
+            + self.frasco_base.get_height()
+        )
+
+        self.altura = int(altura_base + int(50 * self.escala / 0.13))
+
+        # =====================================
+        # SURFACE FINAL
+        # =====================================
+
+        self.frasco_surface = pygame.Surface(
+            (self.largura, self.altura),
+            pygame.SRCALPHA
+        )
+
+        # =====================================
         # BLITS
         # =====================================
 
@@ -205,22 +214,40 @@ class FrascoClimatico:
         # ÁREA INTERNA
         # =====================================
 
+        self.area_interna_offset_x = (
+            vidro_x
+            + int(self.frasco_vidro.get_width() * 0.10)
+        )
+
+        self.area_interna_offset_y = (
+            vidro_y
+            + int(self.frasco_vidro.get_height() * 0.30)
+        )
+
+        self.area_interna_width = int(
+            self.frasco_vidro.get_width() * 0.80
+        )
+
+        self.area_interna_height = int(
+            self.frasco_vidro.get_height() * 0.62
+        )
+
         self.area_interna = pygame.Rect(
-            self.x + int(self.largura * 0.28),
-            self.y + int(self.altura * 0.18),
-            int(self.largura * 0.44),
-            int(self.altura * 0.36)
+            self.x + self.area_interna_offset_x,
+            self.y + self.area_interna_offset_y,
+            self.area_interna_width,
+            self.area_interna_height
         )
 
     # =====================================
     # RENDER
     # =====================================
 
-    def renderizar(self, tela, centro_y=None):
+    def atualizar_posicao(self, centro_y=None):
 
         if centro_y is not None:
 
-            base_offset = 58
+            base_offset = 190
 
             desired_bottom = centro_y + base_offset
 
@@ -228,9 +255,21 @@ class FrascoClimatico:
                 desired_bottom - self.altura
             )
 
-            self.area_interna.y = (
-                self.y + int(self.altura * 0.18)
+            self.area_interna.x = (
+                self.x + self.area_interna_offset_x
             )
+
+            self.area_interna.y = (
+                self.y + self.area_interna_offset_y
+            )
+
+    # =====================================
+    # RENDER
+    # =====================================
+
+    def renderizar(self, tela, centro_y=None):
+
+        self.atualizar_posicao(centro_y)
 
         tela.blit(
             self.frasco_surface,

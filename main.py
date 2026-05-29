@@ -1,4 +1,9 @@
+# =========================================
+# MAIN.PY
+# =========================================
+
 import pygame
+import threading
 
 from config import *
 from constants import *
@@ -15,8 +20,15 @@ from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
 from render.character_renderer import CharacterRenderer
 
+from systems.clima.clima_service import ClimaService
+from systems.clima.sistema_nuvens import SistemaNuvens
+from systems.clima.sistema_nevoa import SistemaNevoa
+
+from render.duende_renderer import DuendeRenderer
+from entities.duende_neblina import DuendeNeblina
+
 # =========================================
-# INIT TESTE DE SUBIDA
+# INIT
 # =========================================
 
 pygame.init()
@@ -49,17 +61,6 @@ background_renderer = BackgroundRenderer(
     ALTURA
 )
 
-character_renderer = CharacterRenderer(
-    tela,
-    assets,
-    transform
-)
-
-respiracao = Respiracao()
-
-animacoes_faciais = AnimacoesFaciais()
-
-animacao_folha = AnimacaoFolha()
 
 ambiente = Ambiente()
 
@@ -73,7 +74,42 @@ particulas = [
     for _ in range(14)
 ]
 
+character_renderer = CharacterRenderer(
+    tela,
+    assets,
+    transform
+)
+
+respiracao = Respiracao()
+animacoes_faciais = AnimacoesFaciais()
+animacao_folha = AnimacaoFolha()
+
+duende = DuendeNeblina()
+
+renderer_duende = DuendeRenderer(
+    tela,
+    assets
+)
+
+# =========================================
+# FRASCO
+# =========================================
+
 frasco_climatico = FrascoClimatico()
+
+# =========================================
+# CLIMA
+# =========================================
+
+clima_service = ClimaService()
+
+sistema_nuvens = SistemaNuvens(
+    frasco_climatico.area_interna
+)
+
+sistema_nevoa = SistemaNevoa(
+    frasco_climatico.area_interna
+)
 
 # =========================================
 # POSITION
@@ -92,19 +128,80 @@ centro_y = (
 
 rodando = True
 
+clima_atualizando = False
+
 while rodando:
 
-    dt = clock.tick(FPS) / 1000.0
+    dt = min(
+        clock.tick(FPS) / 1000.0,
+        0.05
+    )
 
-    # UPDATE
-
-    ambiente.atualizar(dt)
+    # =====================================
+    # EVENTOS
+    # =====================================
 
     for evento in pygame.event.get():
 
         if evento.type == pygame.QUIT:
 
             rodando = False
+
+    # =====================================
+    # CLIMA
+    # =====================================
+
+    if (
+        clima_service.precisa_atualizar()
+        and not clima_atualizando
+    ):
+
+        clima_atualizando = True
+
+        def atualizar_clima():
+
+            global clima_atualizando
+
+            try:
+                clima_service.atualizar()
+            finally:
+                clima_atualizando = False
+
+        threading.Thread(
+            target=atualizar_clima,
+            daemon=True
+        ).start()
+
+    clima_service.atualizar_visual(dt)
+
+    # =====================================
+    # UPDATE
+    # =====================================
+
+    ambiente.atualizar(dt)
+
+    frasco_climatico.atualizar_posicao(centro_y)
+
+    sistema_nuvens.atualizar_area_interna(
+        frasco_climatico.area_interna
+    )
+
+    sistema_nevoa.atualizar_area(
+        frasco_climatico.area_interna
+    )
+
+    sistema_nuvens.atualizar(
+        dt,
+        clima_service.cloudiness_visual,
+        clima_service.future_cloudiness_1h,
+        clima_service.future_cloudiness_2h,
+        clima_service.future_cloudiness_3h
+    )
+
+    sistema_nevoa.atualizar(
+        dt,
+        clima_service.cloudiness_visual
+    )
 
     respiracao.atualizar(
         dt,
@@ -119,6 +216,33 @@ while rodando:
         ambiente
     )
 
+    # =====================================
+    # PONTOS DE INTERESSE
+    # =====================================
+
+    sapo_x = centro_x
+    sapo_y = centro_y
+
+    pote_x = centro_x - 260
+    pote_y = centro_y + 40
+
+    # =====================================
+    # DUENDE
+    # =====================================
+
+    duende.atualizar(
+        dt,
+        sapo_x,
+        sapo_y,
+        pote_x,
+        pote_y,
+        clima_service
+    )
+
+    # =====================================
+    # PARTÍCULAS
+    # =====================================
+
     for particula in particulas:
 
         particula.atualizar(
@@ -131,15 +255,28 @@ while rodando:
 
     background_renderer.desenhar()
 
-    # FRASCO (ancorar verticalmente ao personagem)
-    frasco_climatico.renderizar(tela, centro_y)
+    # NUVENS NO CÉU
+    sistema_nuvens.renderizar(
+        tela
+    )
+
+    # NÉVOA INTERNA
+    sistema_nevoa.renderizar(
+        tela
+    )
+
+    # FRASCO
+    frasco_climatico.renderizar(
+        tela,
+        centro_y
+    )
 
     # PARTÍCULAS
     for particula in particulas:
 
         particula.desenhar(tela)
 
-    # PERSONAGEM
+    # SAPO
     character_renderer.renderizar(
         centro_x,
         centro_y,
@@ -150,6 +287,9 @@ while rodando:
         animacao_folha,
         ambiente
     )
+
+    # DUENDE
+    renderer_duende.renderizar(duende)
 
     pygame.display.flip()
 
