@@ -160,15 +160,15 @@ class FrascoClimatico:
         # =====================================
 
         tampa_x = (
-            centro_x
-            - self.frasco_tampa.get_width() // 2
-            + self.offset_tampa_x
+            vidro_x
+            + self.frasco_vidro.get_width()
+            - 136
         )
 
         tampa_y = (
-            vidro_y
-            - int(self.frasco_tampa.get_height() * 0.53)
-            + self.offset_tampa_y
+            base_y
+            + self.frasco_base.get_height()
+            - int(self.frasco_tampa.get_height() * 0.75)
         )
 
         # =====================================
@@ -239,6 +239,13 @@ class FrascoClimatico:
             self.area_interna_height
         )
 
+        self.area_particulas = pygame.Rect(
+            self.x + 45,
+            self.y + 90,
+            self.largura - 130,
+            self.frasco_surface.get_height() - 180
+        )
+
     # =====================================
     # RENDER
     # =====================================
@@ -261,6 +268,14 @@ class FrascoClimatico:
 
             self.area_interna.y = (
                 self.y + self.area_interna_offset_y
+            )
+
+            self.area_particulas.x = (
+                self.x + 40
+            )
+
+            self.area_particulas.y = (
+                self.y + 40
             )
 
     # =====================================

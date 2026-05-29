@@ -14,6 +14,19 @@ class BackgroundRenderer:
         self.tela = tela
 
         # =====================================
+        # BACKGROUND MANHÃ
+        # =====================================
+
+        background_manha = pygame.image.load(
+            "assets/background_manha.png"
+        ).convert()
+
+        self.background_manha = pygame.transform.smoothscale(
+            background_manha,
+            (largura, altura)
+        )
+
+        # =====================================
         # BACKGROUND DIA
         # =====================================
 
@@ -23,6 +36,19 @@ class BackgroundRenderer:
 
         self.background_day = pygame.transform.smoothscale(
             background_day,
+            (largura, altura)
+        )
+
+        # =====================================
+        # BACKGROUND FINAL TARDE
+        # =====================================
+
+        background_final_tarde = pygame.image.load(
+            "assets/background_final_tarde.png"
+        ).convert()
+
+        self.background_final_tarde = pygame.transform.smoothscale(
+            background_final_tarde ,
             (largura, altura)
         )
 
@@ -44,6 +70,22 @@ class BackgroundRenderer:
         hora_atual = datetime.now().hour
 
         # =====================================
+        # MANHÃ
+        # =====================================
+
+        if 6 <= hora_atual < 12:
+
+            return self.background_manha
+
+        # =====================================
+        # FINAL TARDE
+        # =====================================
+
+        if 15 <= hora_atual < 18:
+
+            return self.background_final_tarde
+
+        # =====================================
         # NOITE
         # =====================================
 
@@ -56,6 +98,15 @@ class BackgroundRenderer:
         # =====================================
 
         return self.background_day
+
+    def eh_dia(self):
+
+        hora_atual = datetime.now().hour
+
+        return not (
+            hora_atual >= 19
+            or hora_atual < 6
+        )
 
     def desenhar(self):
 

@@ -28,9 +28,14 @@ class DuendeNeblina:
 
         self.descendo_para_dormir = False
 
+        self.indo_para_frasco = False
+
+        self.x_entrada_frasco = 0
+        self.y_entrada_frasco = 0
+
         self.y_voo = self.y
 
-        self.y_sono = 340
+        self.y_sono = 510
 
         self.velocidade_descida = 40
 
@@ -75,7 +80,7 @@ class DuendeNeblina:
         # ESCALA
         # =================================
 
-        self.escala = 0.18
+        self.escala = 0.10
 
         # =================================
         # PRIMEIRO DESTINO
@@ -110,7 +115,8 @@ class DuendeNeblina:
         sapo_y,
         pote_x,
         pote_y,
-        clima_service
+        clima_service,
+        frasco_rect
     ):
 
         self.tempo += dt
@@ -127,10 +133,23 @@ class DuendeNeblina:
             not self.animacoes.dormindo
             and
             not self.descendo_para_dormir
+            and
+            not self.indo_para_frasco
         ):
-            self.descendo_para_dormir = True
+
+            self.x_entrada_frasco = (
+                frasco_rect.centerx
+            )
+
+            self.y_entrada_frasco = (
+                frasco_rect.top - 30
+            )
+
+            self.indo_para_frasco = True
 
         if clima_service.clima_disponivel:
+
+            self.indo_para_frasco = False
 
             self.descendo_para_dormir = False
 
@@ -141,6 +160,15 @@ class DuendeNeblina:
             self.animacoes.dormindo
         )
 
+        if self.animacoes.dormindo:
+
+            self.y = self.y_sono
+
+            self.velocidade_x = 0
+            self.velocidade_y = 0
+
+            return
+
         self.ia.atualizar(
             dt,
             self,
@@ -149,6 +177,56 @@ class DuendeNeblina:
             pote_x,
             pote_y
         )
+
+        # =================================
+        # INDO PARA O FRASCO
+        # =================================
+
+        if self.indo_para_frasco:
+
+            dx = (
+                self.x_entrada_frasco
+                - self.x
+            )
+
+            dy = (
+                self.y_entrada_frasco
+                - self.y
+            )
+
+            distancia = math.hypot(
+                dx,
+                dy
+            )
+
+            velocidade_base = 30
+
+            velocidade_aproximacao = min(
+                50,
+                velocidade_base + distancia * 0.15
+            )
+
+            if distancia > 5:
+
+                self.x += (
+                    dx / distancia
+                ) * velocidade_aproximacao * dt
+
+                self.y += (
+                    dy / distancia
+                ) * velocidade_aproximacao * dt
+
+                self.batimento_asas = math.sin(
+                    self.tempo * 10
+                )
+
+            else:
+
+                self.indo_para_frasco = False
+
+                self.descendo_para_dormir = True
+
+            return
 
         # =================================
         # DESCENDO PARA DORMIR

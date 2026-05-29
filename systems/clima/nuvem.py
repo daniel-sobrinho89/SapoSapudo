@@ -18,7 +18,13 @@ class Nuvem:
     SPEED_MIN = 5
     SPEED_MAX = 12
 
-    def __init__(self, area, intensidade=1):
+    def __init__(
+        self,
+        area,
+        intensidade=1,
+        wind_direction=0,
+        wind_speed=0
+    ):
 
         # =====================================
         # LOAD SPRITES
@@ -63,6 +69,8 @@ class Nuvem:
         self.area = area
 
         self.intensidade = intensidade
+        self.wind_direction = wind_direction
+        self.wind_speed = wind_speed
 
         # =====================================
         # ESCALA
@@ -98,26 +106,49 @@ class Nuvem:
             (largura, altura)
         ).convert_alpha()
 
+        direcao_destino = (
+            wind_direction + 180
+        ) % 360
+
+        vento_vai_para_direita = (
+            0 <= direcao_destino < 180
+        )
+
         self.start_side = (
             "left"
-            if random.random() > 0.5
+            if vento_vai_para_direita
             else "right"
         )
 
-        if self.start_side == "left":
-            self.vx = random.uniform(
+        fator_vento = max(
+            0.5,
+            min(
+                3.0,
+                wind_speed / 10
+            )
+        )
+
+        velocidade_base = (
+            random.uniform(
                 Nuvem.SPEED_MIN,
                 Nuvem.SPEED_MAX
             )
+            * fator_vento
+        )
+
+        if self.start_side == "left":
+
+            self.vx = velocidade_base
+
             self.x = random.uniform(
                 self.area.left - self.width,
                 self.area.left + self.area.width * 0.25
             )
+
         else:
-            self.vx = -random.uniform(
-                Nuvem.SPEED_MIN,
-                Nuvem.SPEED_MAX
-            )
+
+            self.vx = -velocidade_base
+
             self.x = random.uniform(
                 self.area.right + self.width,
                 self.area.right - self.area.width * 0.25
@@ -137,11 +168,9 @@ class Nuvem:
         self.behavior = random.choices(
             [
                 "straight",
-                "pingpong_disappear",
-                "back_and_forth_then_die",
                 "vanish_midway"
             ],
-            weights=[4, 3, 2, 2],
+            weights=[8, 2],
             k=1
         )[0]
 
@@ -238,7 +267,11 @@ class Nuvem:
     # RENDER
     # ==========================================
 
-    def renderizar(self, tela):
+    def renderizar(
+        self,
+        tela,
+        eh_dia=False
+    ):
 
         largura = int(
             self.sprite_original.get_width()
@@ -256,8 +289,19 @@ class Nuvem:
 
         sprite = self.sprite
 
+        alpha_final = self.alpha
+
+        if eh_dia:
+
+            alpha_final *= 2.2
+
+        alpha_final = min(
+            255,
+            int(alpha_final)
+        )
+
         sprite.set_alpha(
-            int(self.alpha)
+            alpha_final
         )
 
         rect = sprite.get_rect(

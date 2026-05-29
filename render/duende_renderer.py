@@ -189,17 +189,13 @@ class DuendeRenderer:
             )
         )
 
-        head_scale = escala * 0.82 * (
-            1.0 + (
-                intensidade * 0.004
-            )
+        head_scale = escala * 0.90 * (
+            1.0 + intensidade * 0.004
         )
 
         eye_scale = escala * (
-            0.34
-            + (
-                intensidade * 0.004
-            )
+            0.20 +
+            intensidade * 0.004
         )
 
         wing_scale_sup = (escala * 0.80) * (
@@ -340,19 +336,19 @@ class DuendeRenderer:
         # INFERIORES
 
         asa_inf_dir_x = (
-            body_x - (90 * escala)
+            body_x - (140 * escala)
         )
 
         asa_inf_esq_x = (
-            body_x + (78 * escala)
+            body_x + (118 * escala)
         )
 
         asa_inf_dir_y = (
-            body_y - (140 * escala)
+            body_y - (150 * escala)
         )
 
         asa_inf_esq_y = (
-            body_y - (120 * escala)
+            body_y - (130 * escala)
         )
 
         # =================================
@@ -403,46 +399,57 @@ class DuendeRenderer:
 
         transicao_luz = (
             math.sin(
-                duende.respiracao.tempo * 0.7
+                duende.respiracao.tempo * 1.9
             ) + 1
         ) / 2
 
-        transicao_luz = transicao_luz ** 4
+        transicao_luz = transicao_luz ** 2
 
         # =================================
         # BODY
         # =================================
 
-        alpha_normal = int(
-            255 * (1 - transicao_luz)
-        )
+        if duende.animacoes.dormindo:
 
-        alpha_aceso = int(
-            255 * transicao_luz
-        )
+            self.draw(
+                self.body,
+                body_x,
+                body_y,
+                body_scale,
+                alpha=255
+            )
 
-        self.draw(
-            self.body,
-            body_x,
-            body_y,
-            body_scale,
-            alpha=alpha_normal
-        )
+        else:
 
-        self.draw(
-            self.body_aceso,
-            body_x,
-            body_y,
-            body_scale,
-            alpha=alpha_aceso
-        )
+            alpha_normal = int(
+                255 * (1 - transicao_luz * 0.8)
+            )
+
+            alpha_aceso = int(
+                255 * transicao_luz
+            )
+
+            self.draw(
+                self.body,
+                body_x,
+                body_y,
+                body_scale,
+                alpha=alpha_normal
+            )
+
+            self.draw(
+                self.body_aceso,
+                body_x,
+                body_y,
+                body_scale,
+                alpha=alpha_aceso
+            )
 
         # =================================
         # DORMINDO
         # =================================
-
         if duende.animacoes.dormindo:
-
+                
             self.draw(
                 self.asa_sup_esq_fechada,
                 asa_sup_esq_x,

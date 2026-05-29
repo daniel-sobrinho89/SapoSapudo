@@ -22,10 +22,10 @@ from render.character_renderer import CharacterRenderer
 
 from systems.clima.clima_service import ClimaService
 from systems.clima.sistema_nuvens import SistemaNuvens
-from systems.clima.sistema_nevoa import SistemaNevoa
 
 from render.duende_renderer import DuendeRenderer
 from entities.duende_neblina import DuendeNeblina
+from systems.audio_manager import AudioManager
 
 # =========================================
 # INIT
@@ -64,16 +64,6 @@ background_renderer = BackgroundRenderer(
 
 ambiente = Ambiente()
 
-particulas = [
-
-    ParticulaPoeira(
-        LARGURA,
-        ALTURA
-    )
-
-    for _ in range(14)
-]
-
 character_renderer = CharacterRenderer(
     tela,
     assets,
@@ -97,6 +87,13 @@ renderer_duende = DuendeRenderer(
 
 frasco_climatico = FrascoClimatico()
 
+particulas = [
+    ParticulaPoeira(
+        frasco_climatico.area_particulas
+    )
+    for _ in range(14)
+]
+
 # =========================================
 # CLIMA
 # =========================================
@@ -104,10 +101,6 @@ frasco_climatico = FrascoClimatico()
 clima_service = ClimaService()
 
 sistema_nuvens = SistemaNuvens(
-    frasco_climatico.area_interna
-)
-
-sistema_nevoa = SistemaNevoa(
     frasco_climatico.area_interna
 )
 
@@ -120,6 +113,17 @@ centro_x = LARGURA // 2
 centro_y = (
     ALTURA // 2
     + CENTRO_OFFSET_Y
+)
+
+# =========================================
+#   AUDIO
+# =========================================
+
+audio = AudioManager()
+
+audio.tocar_musica(
+    "assets/musica/vila_duendes.mp3",
+    volume=0.25
 )
 
 # =========================================
@@ -186,21 +190,14 @@ while rodando:
         frasco_climatico.area_interna
     )
 
-    sistema_nevoa.atualizar_area(
-        frasco_climatico.area_interna
-    )
-
     sistema_nuvens.atualizar(
         dt,
         clima_service.cloudiness_visual,
         clima_service.future_cloudiness_1h,
         clima_service.future_cloudiness_2h,
-        clima_service.future_cloudiness_3h
-    )
-
-    sistema_nevoa.atualizar(
-        dt,
-        clima_service.cloudiness_visual
+        clima_service.future_cloudiness_3h,
+        clima_service.wind_direction,
+        clima_service.wind_speed
     )
 
     respiracao.atualizar(
@@ -236,7 +233,8 @@ while rodando:
         sapo_y,
         pote_x,
         pote_y,
-        clima_service
+        clima_service,
+        frasco_climatico.area_interna
     )
 
     # =====================================
@@ -257,12 +255,8 @@ while rodando:
 
     # NUVENS NO CÉU
     sistema_nuvens.renderizar(
-        tela
-    )
-
-    # NÉVOA INTERNA
-    sistema_nevoa.renderizar(
-        tela
+        tela,
+        background_renderer.eh_dia()
     )
 
     # FRASCO

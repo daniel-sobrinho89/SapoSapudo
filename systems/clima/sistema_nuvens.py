@@ -14,6 +14,8 @@ class SistemaNuvens:
         self.atualizar_area_interna(area_interna)
 
         self.intensidade = 0
+        self.wind_direction = 0
+        self.wind_speed = 0
 
         # atualiza nuvens apenas 20 vezes por segundo
         self.timer_update = 0
@@ -92,7 +94,9 @@ class SistemaNuvens:
         cloudiness,
         future_1h,
         future_2h,
-        future_3h
+        future_3h,
+        wind_direction,
+        wind_speed
     ):
 
         self.intensidade = self.calcular_intensidade(
@@ -111,6 +115,9 @@ class SistemaNuvens:
             self.intensidade / 100
         )
 
+        self.wind_direction = wind_direction
+        self.wind_speed = wind_speed
+
         # cria nuvens
         while len(self.nuvens) < alvo:
 
@@ -118,7 +125,9 @@ class SistemaNuvens:
 
                 Nuvem(
                     self.area_interna,
-                    intensidade=escala
+                    intensidade=escala,
+                    wind_direction=self.wind_direction,
+                    wind_speed=self.wind_speed
                 )
             )
 
@@ -141,8 +150,15 @@ class SistemaNuvens:
     # RENDER
     # ==========================================
 
-    def renderizar(self, tela):
+    def renderizar(
+        self,
+        tela,
+        eh_dia=False
+    ):
 
         for nuvem in self.nuvens:
 
-            nuvem.renderizar(tela)
+            nuvem.renderizar(
+                tela,
+                eh_dia
+            )

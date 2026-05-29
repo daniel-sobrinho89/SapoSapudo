@@ -6,25 +6,23 @@ class ParticulaPoeira:
 
     def __init__(
         self,
-        largura,
-        altura
+        area_particulas
     ):
-
-        self.largura = largura
-        self.altura = altura
+        
+        self.area_particulas = area_particulas
 
         self.resetar()
 
     def resetar(self):
 
         self.x = random.randint(
-            0,
-            self.largura
+            self.area_particulas.left,
+            self.area_particulas.right
         )
 
         self.y = random.randint(
-            0,
-            self.altura
+            self.area_particulas.top,
+            self.area_particulas.bottom
         )
 
         self.vel_x = random.uniform(
@@ -53,15 +51,13 @@ class ParticulaPoeira:
 
         self.y += self.vel_y
 
-        if self.y < -10:
+        if self.y < self.area_particulas.top:
 
-            self.y = (
-                self.altura + 10
-            )
+            self.y = self.area_particulas.bottom
 
             self.x = random.randint(
-                0,
-                self.largura
+                self.area_particulas.left,
+                self.area_particulas.right
             )
 
     def desenhar(

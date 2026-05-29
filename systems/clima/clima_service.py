@@ -28,6 +28,10 @@ class ClimaService:
         self.ultima_hora_atualizada = -1
         self.clima_disponivel = False
 
+        # VENTO
+        self.wind_direction = 0
+        self.wind_speed = 0
+
     # ==========================================
     # PRECISA ATUALIZAR?
     # ==========================================
@@ -71,7 +75,7 @@ class ClimaService:
                 "https://api.open-meteo.com/v1/forecast"
                 f"?latitude={self.latitude}"
                 f"&longitude={self.longitude}"
-                "&hourly=cloud_cover"
+                "&hourly=cloud_cover,wind_direction_10m,wind_speed_10m"
                 "&forecast_days=2"
                 "&timezone=auto"
             )
@@ -85,6 +89,8 @@ class ClimaService:
 
             horas = data["hourly"]["time"]
             nuvens = data["hourly"]["cloud_cover"]
+            direcoes = data["hourly"]["wind_direction_10m"]
+            velocidades = data["hourly"]["wind_speed_10m"]
 
             agora = datetime.now()
 
@@ -106,6 +112,8 @@ class ClimaService:
 
             # clima atual
             self.cloudiness = nuvens[indice_atual]
+            self.wind_direction = direcoes[indice_atual]
+            self.wind_speed = velocidades[indice_atual]
 
             # previsões
             self.future_cloudiness_1h = nuvens[
