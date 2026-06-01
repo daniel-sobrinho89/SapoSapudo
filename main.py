@@ -8,8 +8,7 @@ import threading
 from config import *
 from constants import *
 
-from systems.respiracao import Respiracao
-from systems.animacoes_faciais import AnimacoesFaciais
+from entities.sapo import Sapo
 from systems.animacao_folha import AnimacaoFolha
 from systems.ambiente import Ambiente
 from systems.particulas.poeira import ParticulaPoeira
@@ -18,7 +17,7 @@ from systems.clima.frasco import FrascoClimatico
 from render.asset_manager import AssetManager
 from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
-from render.character_renderer import CharacterRenderer
+from render.sapo_renderer import SapoRenderer
 
 from systems.clima.clima_service import ClimaService
 from systems.clima.sistema_nuvens import SistemaNuvens
@@ -26,6 +25,8 @@ from systems.clima.sistema_nuvens import SistemaNuvens
 from render.duende_renderer import DuendeRenderer
 from entities.duende_neblina import DuendeNeblina
 from systems.audio_manager import AudioManager
+from entities.violao import Violao
+from render.violao_renderer import ViolaoRenderer
 
 # =========================================
 # INIT
@@ -64,19 +65,24 @@ background_renderer = BackgroundRenderer(
 
 ambiente = Ambiente()
 
-character_renderer = CharacterRenderer(
+sapo_renderer = SapoRenderer(
     tela,
     assets,
     transform
 )
 
-respiracao = Respiracao()
-animacoes_faciais = AnimacoesFaciais()
 animacao_folha = AnimacaoFolha()
 
 duende = DuendeNeblina()
 
 renderer_duende = DuendeRenderer(
+    tela,
+    assets
+)
+
+violao = Violao()
+
+renderer_violao = ViolaoRenderer(
     tela,
     assets
 )
@@ -91,7 +97,7 @@ particulas = [
     ParticulaPoeira(
         frasco_climatico.area_particulas
     )
-    for _ in range(14)
+    for _ in range(QUANTIDADE_POEIRA)
 ]
 
 # =========================================
@@ -115,22 +121,26 @@ centro_y = (
     + CENTRO_OFFSET_Y
 )
 
+# ENTIDADE SAPO
+sapo = Sapo(centro_x, centro_y)
+
 # =========================================
 #   AUDIO
 # =========================================
 
 audio = AudioManager()
 
-audio.tocar_musica(
-    "assets/musica/vila_duendes.mp3",
-    volume=0.25
-)
+audio.iniciar()
 
 # =========================================
 # LOOP
 # =========================================
 
 rodando = True
+
+drag_duende = False
+
+drag_violao = False
 
 clima_atualizando = False
 
@@ -150,6 +160,145 @@ while rodando:
         if evento.type == pygame.QUIT:
 
             rodando = False
+
+        # =====================================
+        # MOUSE DOWN
+        # =====================================
+
+        if (
+            evento.type == pygame.MOUSEBUTTONDOWN
+            and evento.button == 1
+        ):
+
+            if duende.cabeca_rect.collidepoint(
+                evento.pos
+            ):
+                drag_duende = True
+
+                duende.iniciar_arraste(
+                    *evento.pos
+                )
+
+            if renderer_violao.obter_rect(violao).collidepoint(
+                evento.pos
+            ):
+
+                drag_violao = True
+
+                violao.iniciar_arraste(
+                    *evento.pos
+                )
+
+            if (
+                violao.acoplado
+                and sapo_renderer.corpo_rect.collidepoint(
+                    evento.pos
+                )
+            ):
+                violao.acoplado = False
+
+                sapo.parar_violao()
+
+                drag_violao = True
+
+                audio.alternar()
+                
+                violao.iniciar_arraste(
+                    *evento.pos
+                )
+
+            if (
+                sapo_renderer.olho_esquerdo_rect.collidepoint(
+                    evento.pos
+                )
+            ):
+                
+                sapo.clicar_olho_esquerdo()
+
+            elif (
+                sapo_renderer.olho_direito_rect.collidepoint(
+                    evento.pos
+                )
+            ):
+                sapo.clicar_olho_direito()
+
+        # =====================================
+        # DRAG
+        # =====================================
+
+        if evento.type == pygame.MOUSEMOTION:
+
+            if drag_violao:
+
+                violao.mover_arraste(
+                    *evento.pos
+                )
+
+            if drag_duende:
+
+                duende.mover_arraste(
+                    *evento.pos
+                )
+
+        # =====================================
+        # SOLTOU
+        # =====================================
+
+        if (
+            evento.type == pygame.MOUSEBUTTONUP
+            and evento.button == 1
+        ):
+
+            if drag_violao:
+
+                drag_violao = False
+
+                violao.finalizar_arraste()
+
+                area_sapo = pygame.Rect(
+                    centro_x - 80,
+                    centro_y - 80,
+                    160,
+                    160
+                )
+
+                if (area_sapo.collidepoint(
+                    violao.x,
+                    violao.y) 
+                    and not sapo.animacoes.iniciou_sono_hoje
+                    and not sapo.animacoes.dormindo
+                ):
+
+                    violao.acoplado = True
+
+                    sapo.iniciar_violao()
+
+                    audio.alternar()
+
+                    violao.x = centro_x + 5
+                    violao.y = centro_y + 20
+
+            if drag_duende:
+
+                drag_duende = False
+
+                duende.finalizar_arraste()
+
+                if duende.esta_dentro_do_frasco(
+                    frasco_climatico.area_interna
+                ):
+
+                    duende.animacoes.iniciar_sono()
+
+                    duende.animacoes.iniciar_sono_programado()
+
+                elif duende.animacoes.dormindo:
+
+                    duende.animacoes.iniciar_acordar()
+
+                    duende.animacoes.cancelar_sono_programado()
+
+                    duende.escolher_novo_destino()
 
     # =====================================
     # CLIMA
@@ -200,25 +349,19 @@ while rodando:
         clima_service.wind_speed
     )
 
-    respiracao.atualizar(
+    sapo.atualizar(
         dt,
-        animacoes_faciais.dormindo
-    )
-
-    animacoes_faciais.atualizar(dt)
-
-    animacao_folha.atualizar(
-        dt,
-        respiracao.intensidade,
-        ambiente
+        frasco_climatico.area_interna,
+        ambiente,
+        animacao_folha
     )
 
     # =====================================
     # PONTOS DE INTERESSE
     # =====================================
 
-    sapo_x = centro_x
-    sapo_y = centro_y
+    sapo_x = sapo.x
+    sapo_y = sapo.y
 
     pote_x = centro_x - 260
     pote_y = centro_y + 40
@@ -234,7 +377,8 @@ while rodando:
         pote_x,
         pote_y,
         clima_service,
-        frasco_climatico.area_interna
+        frasco_climatico.area_interna,
+        ambiente
     )
 
     # =====================================
@@ -271,16 +415,23 @@ while rodando:
         particula.desenhar(tela)
 
     # SAPO
-    character_renderer.renderizar(
-        centro_x,
-        centro_y,
+    sapo_renderer.renderizar(
+        sapo.x,
+        sapo.y,
         ESCALA,
         ESCALA_PERSONAGEM,
-        respiracao,
-        animacoes_faciais,
+        sapo.respiracao,
+        sapo.animacoes,
         animacao_folha,
         ambiente
     )
+
+    # VIOLÃO
+    if not violao.acoplado:
+
+        renderer_violao.renderizar(
+            violao
+        )
 
     # DUENDE
     renderer_duende.renderizar(duende)

@@ -27,6 +27,8 @@ ENV/
 .venv
 env.bak/
 venv.bak/
+.venv/
+*.pyc
 
 # IDE
 .vscode/

@@ -1,7 +1,7 @@
 import math
 
 
-class Respiracao:
+class RespiracaoSapo:
 
     def __init__(self):
 

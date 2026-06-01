@@ -81,7 +81,7 @@ class BackgroundRenderer:
         # FINAL TARDE
         # =====================================
 
-        if 15 <= hora_atual < 18:
+        if 15 <= hora_atual < 19:
 
             return self.background_final_tarde
 

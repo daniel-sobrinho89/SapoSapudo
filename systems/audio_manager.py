@@ -1,26 +1,58 @@
 import pygame
 
+from config import (
+    AUDIO_HABILITADO,
+    MUSICA_FUNDO,
+    VOLUME_MUSICA
+)
+
 
 class AudioManager:
 
     def __init__(self):
 
-        pygame.mixer.init()
+        self.habilitado = AUDIO_HABILITADO
 
-    def tocar_musica(
-        self,
-        arquivo,
-        volume=0.3
-    ):
+        if self.habilitado:
+            pygame.mixer.init()
+
+    def iniciar(self):
+
+        if not self.habilitado:
+            return
 
         pygame.mixer.music.load(
-            arquivo
+            MUSICA_FUNDO
         )
 
         pygame.mixer.music.set_volume(
-            volume
+            VOLUME_MUSICA
         )
 
-        pygame.mixer.music.play(
-            -1
-        )  # loop infinito
+        pygame.mixer.music.play(-1)
+
+    def alternar(self):
+
+        if self.habilitado:
+            self.desligar()
+        else:
+            self.ligar()
+
+    def ligar(self):
+
+        if not self.habilitado:
+
+            self.habilitado = True
+
+            pygame.mixer.music.unpause()
+
+            self.iniciar()
+
+    def desligar(self):
+
+        if not self.habilitado:
+            return
+
+        pygame.mixer.music.pause()
+
+        self.habilitado = False

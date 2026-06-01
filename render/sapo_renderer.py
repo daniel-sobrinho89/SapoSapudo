@@ -1,7 +1,7 @@
 import pygame
 
 
-class CharacterRenderer:
+class SapoRenderer:
 
     def __init__(
         self,
@@ -13,6 +13,30 @@ class CharacterRenderer:
         self.tela = tela
         self.assets = assets
         self.transform = transform
+
+        self.olho_esquerdo_rect = pygame.Rect(
+            -1000,
+            -1000,
+            1,
+            1
+        )
+
+        self.olho_direito_rect = pygame.Rect(
+            -1000,
+            -1000,
+            1,
+            1
+        )
+
+        self.corpo_rect = pygame.Rect(
+            -1000,
+            -1000,
+            1,
+            1
+        )
+
+        self.respiracao_violao = 1.0
+        self.frame_violao_anterior = 0
 
         self.carregar_assets()
 
@@ -28,6 +52,22 @@ class CharacterRenderer:
 
         self.body = self.assets.carregar(
             "body.png"
+        )
+
+        self.corpo_violao1 = self.assets.carregar(
+            "sapudo/corpo_violao1.png"
+        )
+
+        self.corpo_violao2 = self.assets.carregar(
+            "sapudo/corpo_violao2.png"
+        )
+
+        self.corpo_violao3 = self.assets.carregar(
+            "sapudo/corpo_violao3.png"
+        )
+
+        self.corpo_violao4 = self.assets.carregar(
+            "sapudo/corpo_violao4.png"
         )
 
         self.head = self.assets.carregar(
@@ -46,65 +86,13 @@ class CharacterRenderer:
             "eye_left_open.png"
         )
 
-        self.eye_left_closed = self.assets.carregar(
-            "eye_left_closed.png"
-        )
-
         self.eye_right_open = self.assets.carregar(
             "eye_right_open.png"
-        )
-
-        self.eye_right_closed = self.assets.carregar(
-            "eye_right_closed.png"
-        )
-
-        # =================================
-        # SOMBRAS
-        # =================================
-
-        self.eye_left_shadow_open = self.assets.carregar(
-            "eye_left_shadow_open.png"
-        )
-
-        self.eye_right_shadow_open = self.assets.carregar(
-            "eye_right_shadow_open.png"
-        )
-
-        self.eye_left_shadow_closed = self.assets.carregar(
-            "eye_left_shadow_closed.png"
-        )
-
-        self.eye_right_shadow_closed = self.assets.carregar(
-            "eye_right_shadow_closed.png"
-        )
-
-        # =================================
-        # BLUSH
-        # =================================
-
-        self.blush_left = self.assets.carregar(
-            "blush_left.png"
-        )
-
-        self.blush_right = self.assets.carregar(
-            "blush_right.png"
-        )
-
-        # =================================
-        # NARIZ
-        # =================================
-
-        self.nose = self.assets.carregar(
-            "nose.png"
         )
 
         # =================================
         # BOCA
         # =================================
-
-        self.mouth_normal = self.assets.carregar(
-            "mouth_smiling.png"
-        )
 
         self.mouth_yawn = self.assets.carregar(
             "mouth_yawn.png"
@@ -226,7 +214,38 @@ class CharacterRenderer:
         # PROPORÇÕES
         # =================================
 
-        body_scale = escalas["body"] * 1.06
+        VIOLAO_BODY_SCALE = 0.50
+        VIOLAO_BODY_OFFSET_Y = 55
+
+        if animacoes_faciais.tocando_violao:
+
+            frame_atual = (
+                animacoes_faciais.frame_violao
+            )
+
+            if (
+                frame_atual == 0
+                and self.frame_violao_anterior != 0
+            ):
+                self.respiracao_violao = (
+                    escalas["body"] / escala
+                )
+
+            self.frame_violao_anterior = frame_atual
+
+            body_scale = (
+                escala
+                * self.respiracao_violao
+                * 1.06
+            )
+
+        else:
+
+            self.frame_violao_anterior = 0
+
+            body_scale = (
+                escalas["body"] * 1.06
+            )
 
         head_scale = escalas["head"] * 0.93
 
@@ -241,7 +260,7 @@ class CharacterRenderer:
         head_y = (
             centro_y
             - (
-                36 * escala_personagem
+                6 * escala_personagem
             )
             + sleep_offset_y
         )
@@ -269,11 +288,50 @@ class CharacterRenderer:
         # BODY
         # =================================
 
+        body = self.body
+
+        if animacoes_faciais.tocando_violao:
+
+            frames = [
+                self.corpo_violao1,
+                self.corpo_violao2,
+                self.corpo_violao3,
+                self.corpo_violao4
+            ]
+
+            body = frames[
+                animacoes_faciais.frame_violao
+            ]
+
+            body_scale *= VIOLAO_BODY_SCALE
+
+            body_y += VIOLAO_BODY_OFFSET_Y
+
         self.draw(
-            self.body,
+            body,
             centro_x,
             body_y,
             body_scale
+        )
+
+        largura_corpo = max(
+            1,
+            int(body.get_width() * body_scale)
+        )
+
+        altura_corpo = max(
+            1,
+            int(body.get_height() * body_scale)
+        )
+
+        margem_x = int(largura_corpo * 0.15)
+        margem_y = int(altura_corpo * 0.10)
+
+        self.corpo_rect = pygame.Rect(
+            centro_x - largura_corpo // 2 + margem_x,
+            body_y - altura_corpo // 2 + margem_y,
+            largura_corpo - margem_x * 2,
+            altura_corpo - margem_y * 2
         )
 
         # =================================
@@ -296,7 +354,7 @@ class CharacterRenderer:
             (
                 head_y
                 + (
-                    37.5 * escala_personagem
+                    24.7 * escala_personagem
                 )
                 + offset_sombra_cabeca
             ),
@@ -354,7 +412,7 @@ class CharacterRenderer:
         folha_y = (
             head_y
             - (
-                44 * escala_personagem
+                37 * escala_personagem
             )
             + offset_folha_y
             + resp_folha_y
@@ -413,19 +471,18 @@ class CharacterRenderer:
             animacoes_faciais.olhos_fechados
         )
 
-        olho_esquerdo = (
-            animacoes_faciais.obter_asset_olho(
-                self.eye_left_open,
-                self.eye_left_closed
-            )
+        olho_esquerdo_fechado = (
+            animacoes_faciais.olhos_fechados
+            or animacoes_faciais.olho_esquerdo_forcado
         )
 
-        olho_direito = (
-            animacoes_faciais.obter_asset_olho(
-                self.eye_right_open,
-                self.eye_right_closed
-            )
+        olho_direito_fechado = (
+            animacoes_faciais.olhos_fechados
+            or animacoes_faciais.olho_direito_forcado
         )
+
+        olho_esquerdo = self.eye_left_open
+        olho_direito = self.eye_right_open
 
         # =================================
         # POSIÇÕES BASE
@@ -433,69 +490,37 @@ class CharacterRenderer:
 
         olho_esquerdo_x = (
             centro_x - (
-                26 * escala_personagem
+                21 * escala_personagem
             )
         )
 
         olho_direito_x = (
             centro_x + (
-                26 * escala_personagem
+                20 * escala_personagem
             )
         )
 
         # =================================
-        # CONFIG OLHOS
+        # CONFIG GERAL
         # =================================
 
-        if not olhos_fechados:
+        alpha_sombra = 140
 
-            offset_y_olhos = (
-                -8 * escala_personagem
+        offset_y_olhos = (
+            -14 * escala_personagem
+        )
+
+        escala_olhos = (
+            escala
+            * 0.30
+            * (
+                1.0
+                + (
+                    0.015
+                    * respiracao.intensidade
+                )
             )
-
-            escala_olhos = (
-                escala * 0.34
-            )
-
-            sombra_esquerda = (
-                self.eye_left_shadow_open
-            )
-
-            sombra_direita = (
-                self.eye_right_shadow_open
-            )
-
-            alpha_sombra = 140
-
-        else:
-
-            offset_y_olhos = (
-                -3 * escala_personagem
-            )
-
-            escala_olhos = (
-                escala * 0.22
-            )
-
-            olho_esquerdo = pygame.transform.rotate(
-                olho_esquerdo,
-                -5
-            )
-
-            olho_direito = pygame.transform.rotate(
-                olho_direito,
-                5
-            )
-
-            sombra_esquerda = (
-                self.eye_left_shadow_closed
-            )
-
-            sombra_direita = (
-                self.eye_right_shadow_closed
-            )
-
-            alpha_sombra = 70
+        )
 
         # =================================
         # POSIÇÃO FINAL OLHOS
@@ -505,174 +530,49 @@ class CharacterRenderer:
             head_y + offset_y_olhos
         )
 
-        # =================================
-        # SOMBRAS
-        # =================================
-
-        if not olhos_fechados:
-            
-            # =================================
-            # SOMBRA ESQUERDA
-            # =================================
-            offset_sombra_esquerda_x = 0
-            offset_sombra_esquerda_y = 9.8
-
-            sombra_esquerda_x = (
-                olho_esquerdo_x
-                + (offset_sombra_esquerda_x * escala_personagem)
-            )
-
-            sombra_esquerda_y = (
-                olhos_y
-                + (offset_sombra_esquerda_y * escala_personagem)
-            )
-
-            sombra_esquerda_scale_x = (
-                escala * 0.150
-            )
-
-            sombra_esquerda_scale_y = (
-                escala * 0.112
-            )
-            
-            # =================================
-            # SOMBRA DIREITA
-            # =================================
-            offset_sombra_direita_x = 1
-            offset_sombra_direita_y = 9
-
-            sombra_direita_x = (
-                olho_direito_x
-                + (offset_sombra_direita_x * escala_personagem)
-            )
-
-            sombra_direita_y = (
-                olhos_y
-                + (offset_sombra_direita_y * escala_personagem)
-            )
-
-            sombra_direita_scale_x = (
-                escala * 0.23
-            )
-
-            sombra_direita_scale_y = (
-                escala * 0.18
-            )
-
-        else:
-
-            sombra_esquerda_x = olho_esquerdo_x
-
-            sombra_direita_x = olho_direito_x
-
-            sombra_esquerda_y = (
-                olhos_y + (
-                    1 * escala_personagem
-                )
-            )
-
-            sombra_direita_y = (
-                olhos_y + (
-                    1 * escala_personagem
-                )
-            )
-
-            sombra_esquerda_scale_x = (
-                escala * 0.13
-            )
-
-            sombra_esquerda_scale_y = (
-                escala * 0.07
-            )
-
-            sombra_direita_scale_x = (
-                escala * 0.13
-            )
-
-            sombra_direita_scale_y = (
-                escala * 0.07
-            )
-
-        # =================================
-        # DRAW SHADOWS
-        # =================================
-
-        self.draw(
-            sombra_esquerda,
-            sombra_esquerda_x,
-            sombra_esquerda_y,
-            sombra_esquerda_scale_x,
-            sombra_esquerda_scale_y,
-            alpha_sombra
+        largura_hitbox = int(
+            30 * escala_personagem
         )
 
-        self.draw(
-            sombra_direita,
-            sombra_direita_x,
-            sombra_direita_y,
-            sombra_direita_scale_x,
-            sombra_direita_scale_y,
-            alpha_sombra
+        altura_hitbox = int(
+            30 * escala_personagem
+        )
+
+        self.olho_esquerdo_rect = pygame.Rect(
+            olho_esquerdo_x - largura_hitbox // 2,
+            olhos_y - altura_hitbox // 2,
+            largura_hitbox,
+            altura_hitbox
+        )
+
+        self.olho_direito_rect = pygame.Rect(
+            olho_direito_x - largura_hitbox // 2,
+            olhos_y - altura_hitbox // 2,
+            largura_hitbox,
+            altura_hitbox
         )
 
         # =================================
         # DRAW EYES
         # =================================
 
-        self.draw(
-            olho_esquerdo,
-            olho_esquerdo_x,
-            olhos_y,
-            escala_olhos
-        )
+        if not olho_esquerdo_fechado:
 
-        self.draw(
-            olho_direito,
-            olho_direito_x,
-            olhos_y,
-            escala_olhos
-        )
+            self.draw(
+                olho_esquerdo,
+                olho_esquerdo_x,
+                olhos_y,
+                escala_olhos
+            )
 
-        # =================================
-        # BLUSH
-        # =================================
+        if not olho_direito_fechado:
 
-        self.draw(
-            self.blush_left,
-            centro_x - (
-                42 * escala_personagem
-            ),
-            head_y + (
-                15 * escala_personagem
-            ),
-            escala * 0.24,
-            alpha=180
-        )
-
-        self.draw(
-            self.blush_right,
-            centro_x + (
-                39 * escala_personagem
-            ),
-            head_y + (
-                15 * escala_personagem
-            ),
-            escala * 0.21,
-            alpha=180
-        )
-
-        # =================================
-        # NOSE
-        # =================================
-
-        self.draw(
-            self.nose,
-            centro_x,
-            head_y + (
-                5 * escala_personagem
-            ),
-            escala * 0.16
-        )
+            self.draw(
+                olho_direito,
+                olho_direito_x,
+                olhos_y,
+                escala_olhos
+            )
 
         # =================================
         # MOUTH
@@ -680,7 +580,6 @@ class CharacterRenderer:
 
         boca = (
             animacoes_faciais.obter_asset_boca(
-                self.mouth_normal,
                 self.mouth_yawn
             )
         )
@@ -688,15 +587,31 @@ class CharacterRenderer:
         if animacoes_faciais.boca_yawn:
 
             escala_boca_x = (
-                escala * 0.28
+                escala
+                * 0.20
+                * (
+                    1.0
+                    + (
+                        0.015
+                        * respiracao.intensidade
+                    )
+                )
             )
 
             escala_boca_y = (
-                escala * 0.24
+                escala
+                * 0.18
+                * (
+                    1.0
+                    + (
+                        0.015
+                        * respiracao.intensidade
+                    )
+                )
             )
 
             offset_y_boca = (
-                25 * escala_personagem
+                8 * escala_personagem
             )
 
         else:
@@ -716,11 +631,12 @@ class CharacterRenderer:
         # =================================
         # DRAW MOUTH
         # =================================
+        if boca:
 
-        self.draw(
-            boca,
-            centro_x,
-            head_y + offset_y_boca,
-            escala_boca_x,
-            escala_boca_y
-        )
+            self.draw(
+                boca,
+                centro_x,
+                head_y + offset_y_boca,
+                escala_boca_x,
+                escala_boca_y
+            )

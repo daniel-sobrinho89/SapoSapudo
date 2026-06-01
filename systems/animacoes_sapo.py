@@ -2,9 +2,21 @@ import random
 from datetime import datetime
 
 
-class AnimacoesFaciais:
+class AnimacoesSapo:
 
     def __init__(self):
+
+        # ====================================
+        # OLHOS INDIVIDUAIS
+        # ====================================
+
+        self.olho_esquerdo_forcado = False
+        self.olho_direito_forcado = False
+
+        self.tempo_olho_esquerdo = 0.0
+        self.tempo_olho_direito = 0.0
+
+        self.duracao_olho_forcado = 1.2
 
         # ====================================
         # ESTADOS
@@ -37,7 +49,7 @@ class AnimacoesFaciais:
 
         self.tempo_piscada = 0.0
 
-        self.duracao_piscada = 0.32
+        self.duracao_piscada = 0.50
 
         # ====================================
         # CONTROLE BOCEJO
@@ -48,6 +60,25 @@ class AnimacoesFaciais:
         self.tempo_bocejo = 0.0
 
         self.duracao_bocejo = 2.8
+
+        # ====================================
+        # CONTROLE VIOLÃO
+        # ====================================
+
+        self.tocando_violao = False
+
+        self.frame_violao = 0
+
+        self.ultimo_frame_violao = 0
+
+        self.tempo_violao = 0.0
+
+        self.direcao_violao = 1
+
+        self.intervalo_violao = random.uniform(
+            0.10,
+            0.22
+        )
 
         # ====================================
         # VISUAIS
@@ -99,6 +130,29 @@ class AnimacoesFaciais:
     def atualizar(self, dt):
 
         agora = datetime.now()
+
+        self.atualizar_violao(dt)
+
+        if self.olho_esquerdo_forcado:
+
+            self.tempo_olho_esquerdo += dt
+
+            if (
+                self.tempo_olho_esquerdo
+                >= self.duracao_olho_forcado
+            ):
+                self.olho_esquerdo_forcado = False
+
+
+        if self.olho_direito_forcado:
+
+            self.tempo_olho_direito += dt
+
+            if (
+                self.tempo_olho_direito
+                >= self.duracao_olho_forcado
+            ):
+                self.olho_direito_forcado = False
 
         # ====================================
         # RESET
@@ -412,6 +466,103 @@ class AnimacoesFaciais:
         self.tempo_espera_piscada = 0.0
 
     # ====================================
+    # VIOLÃO
+    # ====================================
+
+    def iniciar_violao(self):
+
+        self.tocando_violao = True
+
+    def parar_violao(self):
+
+        self.tocando_violao = False
+        self.frame_violao = 0
+        self.ultimo_frame_violao = 0
+
+    def atualizar_violao(
+        self,
+        dt
+    ):
+
+        if not self.tocando_violao:
+            return
+
+        self.tempo_violao += dt
+
+        if self.tempo_violao < self.intervalo_violao:
+            return
+
+        self.tempo_violao = 0
+
+        self.intervalo_violao = random.uniform(
+            0.10,
+            0.22
+        )
+
+        frame = self.frame_violao
+
+        possibilidades = []
+
+        if frame > 0:
+            possibilidades.append(
+                frame - 1
+            )
+
+        if frame < 3:
+            possibilidades.append(
+                frame + 1
+            )
+
+        # pequena chance de segurar o movimento
+
+        if random.random() < 0.20:
+            possibilidades.append(
+                frame
+            )
+
+        # evita ficar tremendo entre
+        # dois frames
+
+        if (
+            len(possibilidades) > 1
+            and self.ultimo_frame_violao in possibilidades
+            and random.random() < 0.60
+        ):
+            possibilidades.remove(
+                self.ultimo_frame_violao
+            )
+
+        self.ultimo_frame_violao = frame
+
+        self.frame_violao = random.choice(
+            possibilidades
+        )
+
+    # ====================================
+    # CLICAR OLHO
+    # ====================================
+
+    def clicar_olho_esquerdo(self):
+
+        if self.dormindo:
+
+            self.olho_esquerdo_forcado = False
+            return
+
+        self.olho_esquerdo_forcado = True
+        self.tempo_olho_esquerdo = 0.0
+
+    def clicar_olho_direito(self):
+
+        if self.dormindo:
+
+            self.olho_direito_forcado = False
+            return
+
+        self.olho_direito_forcado = True
+        self.tempo_olho_direito = 0.0
+
+    # ====================================
     # HELPERS
     # ====================================
 
@@ -429,7 +580,6 @@ class AnimacoesFaciais:
 
     def obter_asset_boca(
         self,
-        boca_normal,
         boca_yawn
     ):
 
@@ -437,4 +587,4 @@ class AnimacoesFaciais:
 
             return boca_yawn
 
-        return boca_normal
+        return None

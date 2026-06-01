@@ -46,23 +46,11 @@ class DuendeRenderer:
         )
 
         # =================================
-        # EYES
+        # FOLHA
         # =================================
 
-        self.olho_esq_aberto = self.assets.carregar(
-            "clima/duende_neblina/olho_esquerdo_aberto.png"
-        )
-
-        self.olho_dir_aberto = self.assets.carregar(
-            "clima/duende_neblina/olho_direito_aberto.png"
-        )
-
-        self.olho_esq_fechado = self.assets.carregar(
-            "clima/duende_neblina/olho_esquerdo_fechado.png"
-        )
-
-        self.olho_dir_fechado = self.assets.carregar(
-            "clima/duende_neblina/olho_direito_fechado.png"
+        self.leaf = self.assets.carregar(
+            "leaf.png"
         )
 
         # =================================
@@ -160,6 +148,45 @@ class DuendeRenderer:
             rect
         )
 
+    def desenhar_olho_fechado(
+        self,
+        x,
+        y,
+        dormindo=False
+    ):
+
+        if dormindo:
+
+            pygame.draw.arc(
+                self.tela,
+                (25, 45, 55),
+                (
+                    int(x - 4),
+                    int(y - 2),
+                    8,
+                    4
+                ),
+                math.pi,
+                math.pi * 2,
+                1
+            )
+
+        else:
+
+            pygame.draw.arc(
+                self.tela,
+                (25, 45, 55),
+                (
+                    int(x - 3),
+                    int(y - 1),
+                    7,
+                    4
+                ),
+                0,
+                math.pi,
+                1
+            )
+
     # =====================================
     # RENDER
     # =====================================
@@ -179,32 +206,50 @@ class DuendeRenderer:
 
         escala = duende.escala
 
+        fator_sono = duende.animacoes.fator_sono_visual
+
+        fator_semente = fator_sono ** 2
+
         # =================================
         # ESCALAS
         # =================================
 
-        body_scale = escala * (
-            1.0 + (
-                intensidade * 0.010
+        body_scale = (
+            escala
+            * (
+                1.0
+                - (0.99 * fator_sono)
             )
         )
 
-        head_scale = escala * 0.90 * (
-            1.0 + intensidade * 0.004
-        )
-
-        eye_scale = escala * (
-            0.20 +
-            intensidade * 0.004
-        )
-
-        wing_scale_sup = (escala * 0.80) * (
-            1.0
-            + (
-                intensidade * 0.015
+        head_scale = (
+            escala
+            * (
+                0.90
+                + (
+                    0.25 * fator_sono
+                )
             )
-            - (
-                fator_asa * 0.08
+            * (
+                1.0
+                + intensidade * 0.004
+            )
+        )
+
+        wing_scale_sup = (
+            (escala * 0.80)
+            * (
+                1.0
+                - (0.98 * fator_sono)
+            )
+            * (
+                1.0
+                + (
+                    intensidade * 0.015
+                )
+                - (
+                    fator_asa * 0.08
+                )
             )
         )
 
@@ -220,7 +265,14 @@ class DuendeRenderer:
         # =================================
 
         body_x = duende.x
-        body_y = duende.y
+
+        body_y = (
+            duende.y
+            - (
+                320 * escala
+                * fator_semente
+            )
+        )
 
         # =================================
         # CABEÇA
@@ -242,23 +294,60 @@ class DuendeRenderer:
         )
 
         head_y = (
-            body_y
+            duende.y
             - (320 * escala)
             + head_float_y
+            + (
+                220
+                * escala
+                * fator_semente
+            )
+        )
+
+        head_width = int(
+            self.head.get_width() * head_scale
+        )
+
+        head_height = int(
+            self.head.get_height() * head_scale
+        )
+
+        duende.atualizar_hitboxes(
+            head_x,
+            head_y,
+            head_width,
+            head_height
+        )
+
+        # =================================
+        # FOLHA
+        # =================================
+
+        rotacao_folha = (
+            duende.animacao_folha.obter_rotacao()
+        )
+
+        offset_folha_x = (
+            duende.animacao_folha.obter_offset_x()
+        )
+
+        offset_folha_y = (
+            duende.animacao_folha.obter_offset_y()
+        )
+
+        resp_folha_x, resp_folha_y = (
+            duende.animacao_folha.obter_offset_respiracao(
+                duende.respiracao.intensidade
+            )
         )
 
         # =================================
         # OLHOS
         # =================================
 
-        eyes_y = (
-            head_y
-            - (15 * escala)
-        )
+        eyes_y = head_y - 4
 
-        eye_offset_x = (
-            100 * escala
-        )
+        eye_offset_x = 7.7
 
         olho_dir_x = (
             head_x
@@ -446,6 +535,29 @@ class DuendeRenderer:
             )
 
         # =================================
+        # FOLHA
+        # =================================
+
+        inclinacao_folha = (
+            rotacao_folha * 0.12
+        )
+
+        folha_x = (
+            head_x
+            + offset_folha_x
+            + resp_folha_x
+            + inclinacao_folha
+            - 2
+        )
+
+        folha_y = (
+            head_y
+            - 34
+            + offset_folha_y
+            + resp_folha_y
+        )
+
+        # =================================
         # DORMINDO
         # =================================
         if duende.animacoes.dormindo:
@@ -476,62 +588,121 @@ class DuendeRenderer:
         )
 
         # =================================
+        # DESENHO DA FOLHA
+        # =================================
+
+        escala_folha = (
+            escala
+            * (
+                0.65
+                + (
+                    0.45 * fator_sono
+                )
+            )
+        )
+
+        folha = pygame.transform.smoothscale(
+            self.leaf,
+            (
+                int(
+                    self.leaf.get_width()
+                    * escala_folha
+                ),
+                int(
+                    self.leaf.get_height()
+                    * escala_folha
+                )
+            )
+        )
+
+        folha = pygame.transform.rotate(
+            folha,
+            rotacao_folha
+        )
+
+        folha_rect = folha.get_rect(
+            center=(
+                folha_x,
+                folha_y
+            )
+        )
+
+        self.tela.blit(
+            folha,
+            folha_rect
+        )
+
+        # =================================
         # EYES
         # =================================
 
-        if (
-            duende.animacoes.piscando
-            or duende.animacoes.dormindo
-        ):
+        raio_olho = 3
 
-            olho_esq = (
-                self.olho_esq_fechado
+        if duende.animacoes.dormindo:
+
+            self.desenhar_olho_fechado(
+                olho_esq_x,
+                eyes_y,
+                dormindo=True
             )
 
-            olho_dir = (
-                self.olho_dir_fechado
+            self.desenhar_olho_fechado(
+                olho_dir_x,
+                eyes_y,
+                dormindo=True
+            )
+
+        elif duende.animacoes.piscando:
+
+            self.desenhar_olho_fechado(
+                olho_esq_x,
+                eyes_y,
+                dormindo=False
+            )
+
+            self.desenhar_olho_fechado(
+                olho_dir_x,
+                eyes_y,
+                dormindo=False
             )
 
         else:
 
-            olho_esq = (
-                self.olho_esq_aberto
+            pygame.draw.ellipse(
+                self.tela,
+                (25, 45, 55),
+                (
+                    olho_esq_x - 4 * escala,
+                    eyes_y - 2 * escala,
+                    8 * escala,
+                    5 * escala
+                )
             )
 
-            olho_dir = (
-                self.olho_dir_aberto
+            pygame.draw.ellipse(
+                self.tela,
+                (25, 45, 55),
+                (
+                    olho_dir_x - 4 * escala,
+                    eyes_y - 2 * escala,
+                    8 * escala,
+                    5 * escala
+                )
             )
-
-        eye_scale_dir = eye_scale
-        eye_scale_esq = eye_scale * 0.93
-
-        self.draw(
-            olho_dir,
-            olho_dir_x,
-            eyes_y,
-            eye_scale_dir
-        )
-
-        self.draw(
-            olho_esq,
-            olho_esq_x,
-            eyes_y,
-            eye_scale_esq
-        )
 
         # =================================
-        # MOUTH
+        # BOCA
         # =================================
 
         mouth_x = head_x
 
         mouth_y = (
             head_y
-            + (110 * head_scale)
+            + (65 * head_scale)
         )
 
         mouth_size = int(
-            12 * escala
+            23 * escala
         )
 
         p1 = (

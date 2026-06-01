@@ -13,6 +13,11 @@ class Nuvem:
 
     # cache global
     sprites = None
+    sprites_flip = None
+
+    cache_escalas = {}
+    cache_alpha = {}
+
 
     OUTSIDE_DISTANCE = 1
     SPEED_MIN = 5
@@ -34,32 +39,48 @@ class Nuvem:
 
             asset_path = Path("assets/clima")
 
+            nuvem_1 = pygame.image.load(
+                asset_path / "nuvem_1.png"
+            ).convert_alpha()
+
+            nuvem_2 = pygame.image.load(
+                asset_path / "nuvem_2.png"
+            ).convert_alpha()
+
             Nuvem.sprites = [
+                nuvem_1,
+                nuvem_2
+            ]
 
-                pygame.image.load(
-                    asset_path / "nuvem_1.png"
-                ).convert_alpha(),
-
-                pygame.image.load(
-                    asset_path / "nuvem_2.png"
-                ).convert_alpha()
+            Nuvem.sprites_flip = [
+                pygame.transform.flip(
+                    nuvem_1,
+                    True,
+                    False
+                ),
+                pygame.transform.flip(
+                    nuvem_2,
+                    True,
+                    False
+                )
             ]
 
         # =====================================
         # SPRITE
         # =====================================
 
-        self.sprite_original = random.choice(
-            Nuvem.sprites
-        )
+        indice = random.randint(0, 1)
 
-        # flip aleatório
         if random.random() > 0.5:
 
-            self.sprite_original = pygame.transform.flip(
-                self.sprite_original,
-                True,
-                False
+            self.sprite_original = (
+                Nuvem.sprites_flip[indice]
+            )
+
+        else:
+
+            self.sprite_original = (
+                Nuvem.sprites[indice]
             )
 
         # =====================================
@@ -78,33 +99,22 @@ class Nuvem:
 
         self.escala = random.uniform(
             0.10,
-            0.32
+            0.28
         ) * max(0.4, intensidade)
 
         # =====================================
         # POSIÇÃO
         # =====================================
 
-        largura = int(
-            self.sprite_original.get_width()
-            * self.escala
+        self.sprite = (
+            self.obter_sprite_escalado(
+                self.sprite_original,
+                self.escala
+            )
         )
 
-        altura = int(
-            self.sprite_original.get_height()
-            * self.escala
-        )
-
-        largura = max(8, largura)
-        altura = max(8, altura)
-
-        self.width = largura
-        self.height = altura
-
-        self.sprite = pygame.transform.smoothscale(
-            self.sprite_original,
-            (largura, altura)
-        ).convert_alpha()
+        self.width = self.sprite.get_width()
+        self.height = self.sprite.get_height()
 
         direcao_destino = (
             wind_direction + 180
@@ -155,8 +165,8 @@ class Nuvem:
             )
 
         self.base_y = random.uniform(
-            self.area.top - 50,
-            self.area.bottom + 13
+            self.area.top + self.height,
+            self.area.bottom - self.height
         )
 
         self.y = self.base_y
@@ -273,22 +283,6 @@ class Nuvem:
         eh_dia=False
     ):
 
-        largura = int(
-            self.sprite_original.get_width()
-            * self.escala
-        )
-
-        altura = int(
-            self.sprite_original.get_height()
-            * self.escala
-        )
-
-        # segurança
-        largura = max(8, largura)
-        altura = max(8, altura)
-
-        sprite = self.sprite
-
         alpha_final = self.alpha
 
         if eh_dia:
@@ -300,7 +294,8 @@ class Nuvem:
             int(alpha_final)
         )
 
-        sprite.set_alpha(
+        sprite = self.obter_sprite_alpha(
+            self.sprite,
             alpha_final
         )
 
@@ -312,3 +307,62 @@ class Nuvem:
             sprite,
             rect
         )
+
+
+    # ==========================================
+    # HELPERS
+    # ==========================================
+
+    @classmethod
+    def obter_sprite_escalado(
+        cls,
+        sprite,
+        escala
+    ):
+        chave = (
+            id(sprite),
+            round(escala, 3)
+        )
+
+        if chave not in cls.cache_escalas:
+
+            largura = max(
+                8,
+                int(sprite.get_width() * escala)
+            )
+
+            altura = max(
+                8,
+                int(sprite.get_height() * escala)
+            )
+
+            cls.cache_escalas[chave] = (
+                pygame.transform.smoothscale(
+                    sprite,
+                    (largura, altura)
+                ).convert_alpha()
+            )
+
+        return cls.cache_escalas[chave]
+
+    @classmethod
+    def obter_sprite_alpha(
+        cls,
+        sprite,
+        alpha
+    ):
+
+        chave = (
+            id(sprite),
+            alpha
+        )
+
+        if chave not in cls.cache_alpha:
+
+            copia = sprite.copy()
+
+            copia.set_alpha(alpha)
+
+            cls.cache_alpha[chave] = copia
+
+        return cls.cache_alpha[chave]
