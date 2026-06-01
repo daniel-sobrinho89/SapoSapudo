@@ -4,12 +4,15 @@
 
 import math
 import random
+import pygame
 
 from systems.ia_duende import IADuende
 from systems.animacoes_duende import AnimacoesDuende
 from systems.respiracao_duende import RespiracaoDuende
 from systems.animacao_folha import AnimacaoFolha
-import pygame
+from utils.drag import iniciar_drag
+from utils.drag import mover_com_offset
+from systems.system_utils import atualizar_sistemas_basicos
 
 class DuendeNeblina:
 
@@ -38,7 +41,20 @@ class DuendeNeblina:
         self.velocidade_descida = 40
 
         self.y_sono_offset = 25
+
+        # =================================
+        # RESGTATE
+        # =================================
         
+        self.resgatando_violao = False
+
+        self.retornando_violao = False
+
+        self.violao_em_maos = False
+
+        self.alvo_violao = None
+
+        self.velocidade_resgate = 350
 
         # =================================
         # DRAG AND DROP
@@ -203,12 +219,11 @@ class DuendeNeblina:
     ):
         self.arrastando = True
 
-        self.offset_drag_x = (
-            self.x - mouse_x
-        )
-
-        self.offset_drag_y = (
-            self.y - mouse_y
+        self.offset_drag_x, self.offset_drag_y = iniciar_drag(
+            self.x,
+            self.y,
+            mouse_x,
+            mouse_y
         )
 
     def mover_arraste(
@@ -219,14 +234,11 @@ class DuendeNeblina:
         if not self.arrastando:
             return
 
-        self.x = (
-            mouse_x
-            + self.offset_drag_x
-        )
-
-        self.y = (
-            mouse_y
-            + self.offset_drag_y
+        self.x, self.y = mover_com_offset(
+            mouse_x,
+            mouse_y,
+            self.offset_drag_x,
+            self.offset_drag_y
         )
 
     def finalizar_arraste(self):
@@ -246,6 +258,143 @@ class DuendeNeblina:
             int(head_height * 0.30)
         )
 
+    # =====================================
+    # RESGATE VIOLÃO
+    # =====================================
+
+    def pode_resgatar_violao(self):
+
+        return (
+            not self.animacoes.dormindo
+            and not self.animacoes.indo_para_frasco
+            and not self.animacoes.descendo_para_dormir
+            and not self.animacoes.acordando
+            and not self.animacoes.ciclo_sono.dormir_por_tempo
+            and not self.arrastando
+        )
+
+    def iniciar_resgate_violao(self, violao):
+
+        self.resgatando_violao = True
+
+        self.retornando_violao = False
+
+        self.violao_em_maos = False
+
+        self.alvo_violao = violao
+
+    def consegue_alcancar_antes_da_queda(self, violao):
+
+        distancia = math.hypot(
+            violao.x - self.x,
+            violao.y - self.y
+        )
+
+        tempo_voo = (
+            distancia
+            / self.velocidade_resgate
+        )
+
+        altura_restante = max(
+            1,
+            violao.chao_y - violao.y
+        )
+
+        gravidade = 900
+
+        tempo_queda = math.sqrt(
+            (2 * altura_restante)
+            / gravidade
+        )
+
+        return tempo_voo < tempo_queda
+
+    def teleportar_para_violao(self, violao):
+
+        self.x = violao.x
+
+        self.y = violao.y - 40
+
+    def atualizar_resgate(self, dt):
+
+        if not self.resgatando_violao:
+            return False
+
+        violao = self.alvo_violao
+
+        if violao is None:
+            return False
+
+        # ===================
+        # INDO BUSCAR
+        # ===================
+
+        if not self.violao_em_maos:
+
+            dx = violao.x - self.x
+            dy = violao.y - self.y
+
+            distancia = math.hypot(dx, dy)
+
+            if distancia < 60:
+
+                self.violao_em_maos = True
+
+                violao.caindo = False
+
+                return True
+
+            self.x += (
+                dx / max(1, distancia)
+            ) * self.velocidade_resgate * dt
+
+            self.y += (
+                dy / max(1, distancia)
+            ) * self.velocidade_resgate * dt
+
+            return True
+
+        # ===================
+        # LEVANDO PARA CASA
+        # ===================
+
+        destino_x = violao.x_inicial
+        destino_y = violao.y_inicial
+
+        dx = destino_x - self.x
+        dy = destino_y - self.y
+
+        distancia = math.hypot(dx, dy)
+
+        violao.x = self.x
+        violao.y = self.y
+
+        if distancia < 15:
+
+            violao.voltar_origem()
+
+            self.resgatando_violao = False
+
+            self.violao_em_maos = False
+
+            self.alvo_violao = None
+
+            return True
+
+        self.x += (
+            dx / max(1, distancia)
+        ) * self.velocidade_resgate * dt
+
+        self.y += (
+            dy / max(1, distancia)
+        ) * self.velocidade_resgate * dt
+
+        return True
+
+    # =====================================
+    # AUXILIARES ATUALIZAÇÃO
+    # =====================================
+
     def _atualizar_sistemas(
         self,
         dt,
@@ -253,24 +402,15 @@ class DuendeNeblina:
         frasco_rect,
         ambiente
     ):
-        self.animacoes.atualizar(dt)
-
-        self.animacoes.atualizar_transicoes(
+        atualizar_sistemas_basicos(
+            self.animacoes,
+            self.respiracao,
+            self.animacao_folha,
             dt,
-            self,
-            clima_service.clima_disponivel,
-            frasco_rect
-        )
-
-        self.respiracao.atualizar(
-            dt,
-            self.animacoes.dormindo
-        )
-
-        self.animacao_folha.atualizar(
-            dt,
-            self.respiracao.intensidade,
-            ambiente
+            ambiente,
+            entity=self,
+            clima_service=clima_service,
+            frasco_rect=frasco_rect
         )
 
     def _atualizar_fator_sono_visual(
@@ -546,6 +686,9 @@ class DuendeNeblina:
     ):
 
         self.tempo += dt
+
+        if self.atualizar_resgate(dt):
+            return
 
         if self.arrastando:
 

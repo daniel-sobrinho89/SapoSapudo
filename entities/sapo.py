@@ -7,7 +7,7 @@ import math
 from systems.animacoes_sapo import AnimacoesSapo
 from systems.respiracao_sapo import RespiracaoSapo
 from systems.ia_sapo import IASapo
-
+from systems.system_utils import atualizar_sistemas_basicos
 
 class Sapo:
 
@@ -45,21 +45,14 @@ class Sapo:
     # ponto central de atualização — coordena os systems relacionados ao sapo
     def atualizar(self, dt, frasco_rect, ambiente, animacao_folha):
 
-        # animações (controle visual: piscadas, bocejos, etc.)
-        self.animacoes.atualizar(dt)
-
-        # respiração depende do estado de sono
-        self.respiracao.atualizar(
+        atualizar_sistemas_basicos(
+            self.animacoes,
+            self.respiracao,
+            animacao_folha,
             dt,
-            self.animacoes.dormindo
+            ambiente,
+            entity=self,
         )
 
-        # folha (micro-movimento) recebe intensidade da respiração
-        animacao_folha.atualizar(
-            dt,
-            self.respiracao.intensidade,
-            ambiente
-        )
-
-        # IA (decisões de alto nível) — atualmente leve e sem efeitos diretos
+        # IA (decisões de alto nível)
         self.ia.obter_acao(dt)

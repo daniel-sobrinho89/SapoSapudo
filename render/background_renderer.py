@@ -67,7 +67,12 @@ class BackgroundRenderer:
 
     def obter_background_atual(self):
 
-        hora_atual = datetime.now().hour
+        agora = datetime.now()
+
+        hora_atual = (
+            agora.hour
+            + (agora.minute / 60)
+        )
 
         # =====================================
         # MANHÃ
@@ -81,7 +86,7 @@ class BackgroundRenderer:
         # FINAL TARDE
         # =====================================
 
-        if 15 <= hora_atual < 19:
+        if 15 <= hora_atual < 18.5:
 
             return self.background_final_tarde
 
@@ -89,7 +94,7 @@ class BackgroundRenderer:
         # NOITE
         # =====================================
 
-        if hora_atual >= 19 or hora_atual < 6:
+        if hora_atual >= 18.5 or hora_atual < 6:
 
             return self.background_night
 

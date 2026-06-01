@@ -262,9 +262,11 @@ while rodando:
                     160
                 )
 
-                if (area_sapo.collidepoint(
-                    violao.x,
-                    violao.y) 
+                if (
+                    area_sapo.collidepoint(
+                        violao.x,
+                        violao.y
+                    )
                     and not sapo.animacoes.iniciou_sono_hoje
                     and not sapo.animacoes.dormindo
                 ):
@@ -277,6 +279,23 @@ while rodando:
 
                     violao.x = centro_x + 5
                     violao.y = centro_y + 20
+
+                else:
+
+                    violao.iniciar_queda()
+
+                    if duende.pode_resgatar_violao():
+
+                        if not duende.consegue_alcancar_antes_da_queda(
+                            violao
+                        ):
+                            duende.teleportar_para_violao(
+                                violao
+                            )
+
+                        duende.iniciar_resgate_violao(
+                            violao
+                        )
 
             if drag_duende:
 
@@ -332,6 +351,8 @@ while rodando:
     # =====================================
 
     ambiente.atualizar(dt)
+
+    violao.atualizar(dt)
 
     frasco_climatico.atualizar_posicao(centro_y)
 
@@ -426,15 +447,15 @@ while rodando:
         ambiente
     )
 
+    # DUENDE
+    renderer_duende.renderizar(duende)
+
     # VIOLÃO
     if not violao.acoplado:
 
         renderer_violao.renderizar(
             violao
         )
-
-    # DUENDE
-    renderer_duende.renderizar(duende)
 
     pygame.display.flip()
 
