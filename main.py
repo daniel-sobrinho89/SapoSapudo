@@ -87,6 +87,8 @@ renderer_violao = ViolaoRenderer(
     assets
 )
 
+duende.violao_monitorado = violao
+
 # =========================================
 # FRASCO
 # =========================================
@@ -179,7 +181,7 @@ while rodando:
                     *evento.pos
                 )
 
-            if renderer_violao.obter_rect(violao).collidepoint(
+            elif renderer_violao.obter_rect(violao).collidepoint(
                 evento.pos
             ):
 
@@ -393,8 +395,7 @@ while rodando:
 
     duende.atualizar(
         dt,
-        sapo_x,
-        sapo_y,
+        sapo,
         pote_x,
         pote_y,
         clima_service,

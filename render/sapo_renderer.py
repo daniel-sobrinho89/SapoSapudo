@@ -193,7 +193,7 @@ class SapoRenderer:
         escala,
         escala_personagem,
         respiracao,
-        animacoes_faciais,
+        animacoes,
         animacao_folha,
         ambiente
     ):
@@ -217,10 +217,10 @@ class SapoRenderer:
         VIOLAO_BODY_SCALE = 0.50
         VIOLAO_BODY_OFFSET_Y = 55
 
-        if animacoes_faciais.tocando_violao:
+        if animacoes.tocando_violao:
 
             frame_atual = (
-                animacoes_faciais.frame_violao
+                animacoes.frame_violao
             )
 
             if (
@@ -254,7 +254,7 @@ class SapoRenderer:
         body_y = centro_y
 
         sleep_offset_y = (
-            animacoes_faciais.sleep_offset_y
+            animacoes.sleep_offset_y
         )
 
         head_y = (
@@ -290,7 +290,7 @@ class SapoRenderer:
 
         body = self.body
 
-        if animacoes_faciais.tocando_violao:
+        if animacoes.tocando_violao:
 
             frames = [
                 self.corpo_violao1,
@@ -300,7 +300,7 @@ class SapoRenderer:
             ]
 
             body = frames[
-                animacoes_faciais.frame_violao
+                animacoes.frame_violao
             ]
 
             body_scale *= VIOLAO_BODY_SCALE
@@ -468,17 +468,17 @@ class SapoRenderer:
         # =================================
 
         olhos_fechados = (
-            animacoes_faciais.olhos_fechados
+            animacoes.olhos_fechados
         )
 
         olho_esquerdo_fechado = (
-            animacoes_faciais.olhos_fechados
-            or animacoes_faciais.olho_esquerdo_forcado
+            animacoes.olhos_fechados
+            or animacoes.olho_esquerdo_forcado
         )
 
         olho_direito_fechado = (
-            animacoes_faciais.olhos_fechados
-            or animacoes_faciais.olho_direito_forcado
+            animacoes.olhos_fechados
+            or animacoes.olho_direito_forcado
         )
 
         olho_esquerdo = self.eye_left_open
@@ -579,12 +579,12 @@ class SapoRenderer:
         # =================================
 
         boca = (
-            animacoes_faciais.obter_asset_boca(
+            animacoes.obter_asset_boca(
                 self.mouth_yawn
             )
         )
 
-        if animacoes_faciais.boca_yawn:
+        if animacoes.boca_yawn:
 
             escala_boca_x = (
                 escala

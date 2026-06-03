@@ -27,6 +27,8 @@ class DuendeNeblina:
 
         self.base_y = self.y
 
+        self.escala_visual = 1.0
+
         # =================================
         # SONO
         # =================================
@@ -55,6 +57,27 @@ class DuendeNeblina:
         self.alvo_violao = None
 
         self.velocidade_resgate = 350
+
+        self.offset_violao_x = 0
+        self.offset_violao_y = 15
+
+        self.resgate_verificado_apos_acordar = False
+        self.violao_monitorado = None
+
+        self.teleportando = False
+
+        self.teleporte_fase = "sumindo"
+
+        self.teleporte_tempo = 0.0
+
+        self.teleporte_duracao = 0.35
+
+        self.teleporte_destino_x = 0
+        self.teleporte_destino_y = 0
+
+        self.teleporte_violao_alvo = None
+
+        self.alpha_visual = 255
 
         # =================================
         # DRAG AND DROP
@@ -98,8 +121,6 @@ class DuendeNeblina:
             0,
             999
         )
-
-        self.batimento_asas = 0.0
 
         self.ia = IADuende()
 
@@ -266,12 +287,119 @@ class DuendeNeblina:
 
         return (
             not self.animacoes.dormindo
-            and not self.animacoes.indo_para_frasco
             and not self.animacoes.descendo_para_dormir
-            and not self.animacoes.acordando
             and not self.animacoes.ciclo_sono.dormir_por_tempo
             and not self.arrastando
+            and not self.resgatando_violao
         )
+
+    def iniciar_teleporte(
+        self,
+        destino_x,
+        destino_y
+    ):
+
+        self.teleportando = True
+
+        self.teleporte_fase = "sumindo"
+
+        self.teleporte_tempo = 0
+
+        self.teleporte_destino_x = destino_x
+
+        self.teleporte_destino_y = destino_y
+
+    def atualizar_teleporte(self, dt):
+
+        if not self.teleportando:
+            return False
+
+        self.teleporte_tempo += dt
+
+        progresso = (
+            self.teleporte_tempo
+            / self.teleporte_duracao
+        )
+
+        # =====================
+        # SUMINDO
+        # =====================
+
+        if self.teleporte_fase == "sumindo":
+
+            self.alpha_visual = int(
+                255 * (1 - progresso)
+            )
+
+            self.escala_visual = (
+                1.0
+                - (progresso * 0.4)
+            )
+
+            if progresso >= 1:
+
+                if (
+                    self.teleporte_violao_alvo
+                    and self.teleporte_violao_alvo.caindo
+                ):
+
+                    violao = self.teleporte_violao_alvo
+
+                    queda_prevista = (
+                        violao.velocidade_queda
+                        * self.teleporte_duracao
+                    )
+
+                    destino_y = min(
+                        violao.chao_y - 90,
+                        violao.y + queda_prevista + 70
+                    )
+
+                    self.x = violao.x
+
+                    self.y = destino_y
+
+                else:
+
+                    self.x = (
+                        self.teleporte_destino_x
+                    )
+
+                    self.y = (
+                        self.teleporte_destino_y
+                    )
+
+                self.teleporte_fase = "aparecendo"
+
+                self.teleporte_tempo = 0
+
+        # =====================
+        # APARECENDO
+        # =====================
+
+        else:
+
+            self.alpha_visual = int(
+                255 * progresso
+            )
+
+            self.escala_visual = (
+                0.6
+                + (progresso * 0.4)
+            )
+
+            if progresso >= 1:
+
+                self.alpha_visual = 255
+
+                self.escala_visual = 1.0
+
+                self.teleportando = False
+
+                self.teleporte_violao_alvo = None
+
+        return True
+
 
     def iniciar_resgate_violao(self, violao):
 
@@ -295,25 +423,50 @@ class DuendeNeblina:
             / self.velocidade_resgate
         )
 
+        gravidade = 900
+
         altura_restante = max(
             1,
             violao.chao_y - violao.y
         )
 
-        gravidade = 900
-
-        tempo_queda = math.sqrt(
-            (2 * altura_restante)
-            / gravidade
+        velocidade_queda = max(
+            0,
+            violao.velocidade_queda
         )
+
+        if velocidade_queda > 0:
+
+            tempo_queda = (
+                altura_restante
+                / velocidade_queda
+            )
+
+        else:
+
+            tempo_queda = math.sqrt(
+                (2 * altura_restante)
+                / gravidade
+            )
+
+        tempo_queda *= 0.75
+
+        if velocidade_queda > 250:
+            tempo_queda *= 0.6
 
         return tempo_voo < tempo_queda
 
-    def teleportar_para_violao(self, violao):
+    def teleportar_para_violao(
+        self,
+        violao
+    ):
 
-        self.x = violao.x
+        self.teleporte_violao_alvo = violao
 
-        self.y = violao.y - 40
+        self.iniciar_teleporte(
+            violao.x,
+            violao.y
+        )
 
     def atualizar_resgate(self, dt):
 
@@ -336,7 +489,7 @@ class DuendeNeblina:
 
             distancia = math.hypot(dx, dy)
 
-            if distancia < 60:
+            if distancia < 80:
 
                 self.violao_em_maos = True
 
@@ -366,9 +519,16 @@ class DuendeNeblina:
 
         distancia = math.hypot(dx, dy)
 
-        violao.x = self.x
-        violao.y = self.y
+        violao.x = (
+            self.x
+            + self.offset_violao_x
+        )
 
+        violao.y = (
+            self.y
+            + self.offset_violao_y
+        )
+        
         if distancia < 15:
 
             violao.voltar_origem()
@@ -390,6 +550,32 @@ class DuendeNeblina:
         ) * self.velocidade_resgate * dt
 
         return True
+
+    def verificar_violao_apos_acordar(self, sapo):
+
+        violao = self.violao_monitorado
+
+        if violao is None:
+            return
+
+        if sapo.animacoes.tocando_violao:
+            return
+
+        tolerancia = 10
+
+        fora_do_lugar = (
+            abs(violao.x - violao.x_inicial)
+            > tolerancia
+            or
+            abs(violao.y - violao.y_inicial)
+            > tolerancia
+        )
+
+        if fora_do_lugar:
+
+            self.iniciar_resgate_violao(
+                violao
+            )
 
     # =====================================
     # AUXILIARES ATUALIZAÇÃO
@@ -415,8 +601,23 @@ class DuendeNeblina:
 
     def _atualizar_fator_sono_visual(
         self,
-        dt
+        dt,
+        sapo
     ):
+        
+        if (
+            not self.animacoes.indo_para_frasco
+            and not self.animacoes.descendo_para_dormir
+            and not self.animacoes.dormindo
+            and not self.esta_dentro_do_frasco(
+                self.area_frasco_atual
+            )
+        ):
+            self.escala_visual = min(
+                1.0,
+                self.escala_visual + dt * 0.6
+            )
+
         if self.animacoes.dormindo:
 
             self.animacoes.fator_sono_visual = min(
@@ -432,6 +633,15 @@ class DuendeNeblina:
                 self.animacoes.fator_sono_visual
                 - (0.50 * dt)
             )
+
+            if (
+                not self.resgate_verificado_apos_acordar
+                and not self.animacoes.dormindo
+                and self.animacoes.fator_sono_visual <= 0.05
+            ):
+                self.resgate_verificado_apos_acordar = True
+
+                self.verificar_violao_apos_acordar(sapo)
 
     def _atualizar_estado_dormindo(
         self,
@@ -450,7 +660,9 @@ class DuendeNeblina:
             clima_service.clima_disponivel,
             frasco_rect
         )
-    
+
+        self.resgate_verificado_apos_acordar = False
+
     def _atualizar_ia(
         self,
         dt,
@@ -558,13 +770,16 @@ class DuendeNeblina:
                 dy / distancia
             ) * velocidade_aproximacao * dt
 
-            self.batimento_asas = math.sin(
-                self.tempo * 10
-            )
-
         else:
 
             self.animacoes.iniciar_descida()
+
+        if distancia < 60:
+
+            self.escala_visual = max(
+                0.90,
+                self.escala_visual - dt * 0.6
+            )
 
         return True
 
@@ -600,9 +815,6 @@ class DuendeNeblina:
         self.velocidade_x *= 0.95
         self.velocidade_y *= 0.95
 
-        self.batimento_asas = math.sin(
-            self.tempo * 8.0
-        )
 
         if self.y >= self.y_sono:
 
@@ -612,8 +824,6 @@ class DuendeNeblina:
 
             self.velocidade_x = 0
             self.velocidade_y = 0
-
-            self.batimento_asas = 0
 
         return True
 
@@ -650,25 +860,6 @@ class DuendeNeblina:
 
         self.y += flutuacao * dt * 8
 
-    def _atualizar_batimento_asas(self):
-
-        velocidade_real = math.hypot(
-            self.velocidade_x,
-            self.velocidade_y
-        )
-
-        intensidade_batida = (
-            7.5
-            + (
-                velocidade_real * 0.05
-            )
-        )
-
-        self.batimento_asas = math.sin(
-            self.tempo
-            * intensidade_batida
-        )
-
     # =====================================
     # UPDATE
     # =====================================
@@ -676,8 +867,7 @@ class DuendeNeblina:
     def atualizar(
         self,
         dt,
-        sapo_x,
-        sapo_y,
+        sapo,
         pote_x,
         pote_y,
         clima_service,
@@ -686,6 +876,11 @@ class DuendeNeblina:
     ):
 
         self.tempo += dt
+
+        if self.atualizar_teleporte(dt):
+            return
+
+        self.area_frasco_atual = frasco_rect
 
         if self.atualizar_resgate(dt):
             return
@@ -704,7 +899,7 @@ class DuendeNeblina:
             ambiente
         )
 
-        self._atualizar_fator_sono_visual(dt)
+        self._atualizar_fator_sono_visual(dt, sapo)
 
         if self.animacoes.dormindo:
 
@@ -718,8 +913,8 @@ class DuendeNeblina:
 
         self._atualizar_ia(
             dt,
-            sapo_x,
-            sapo_y,
+            sapo.x,
+            sapo.y,
             pote_x,
             pote_y
         )
@@ -736,4 +931,19 @@ class DuendeNeblina:
 
         self._atualizar_flutuacao(dt)
 
-        self._atualizar_batimento_asas()
+        if (
+            self.esta_dentro_do_frasco(frasco_rect)
+            and not self.animacoes.indo_para_frasco
+        ):
+
+            self.escala_visual = max(
+                0.20,
+                self.escala_visual - dt * 0.6
+            )
+
+        else:
+
+            self.escala_visual = min(
+                1.0,
+                self.escala_visual + dt * 0.6
+            )
