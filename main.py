@@ -4,12 +4,13 @@
 
 import pygame
 import threading
+import math
 
 from config import *
 from constants import *
 
 from entities.sapo import Sapo
-from systems.animacao_folha import AnimacaoFolha
+from systems.animacoes_folha import AnimacoesFolha
 from systems.ambiente import Ambiente
 from systems.particulas.poeira import ParticulaPoeira
 from systems.clima.frasco import FrascoClimatico
@@ -27,6 +28,8 @@ from entities.duende_neblina import DuendeNeblina
 from systems.audio_manager import AudioManager
 from entities.violao import Violao
 from render.violao_renderer import ViolaoRenderer
+from entities.semente import Semente
+from render.semente_renderer import SementeRenderer
 
 # =========================================
 # INIT
@@ -47,6 +50,18 @@ pygame.display.set_caption(
 )
 
 clock = pygame.time.Clock()
+
+
+# =========================================
+# POSITION
+# =========================================
+
+centro_x = LARGURA // 2
+
+centro_y = (
+    ALTURA // 2
+    + CENTRO_OFFSET_Y
+)
 
 # =========================================
 # SYSTEMS
@@ -71,7 +86,7 @@ sapo_renderer = SapoRenderer(
     transform
 )
 
-animacao_folha = AnimacaoFolha()
+animacoes_folha = AnimacoesFolha()
 
 duende = DuendeNeblina()
 
@@ -89,18 +104,39 @@ renderer_violao = ViolaoRenderer(
 
 duende.violao_monitorado = violao
 
+semente = Semente()
+
+renderer_semente = SementeRenderer(
+    tela,
+    assets
+)
+
 # =========================================
 # FRASCO
 # =========================================
 
 frasco_climatico = FrascoClimatico()
 
+frasco_climatico.atualizar_posicao(centro_y)
+
 particulas = [
     ParticulaPoeira(
-        frasco_climatico.area_particulas
+        frasco_climatico.area_particulas,
+        frasco_climatico.area_pote
     )
     for _ in range(QUANTIDADE_POEIRA)
 ]
+
+# associar área protegida (pote) para que partículas dentro do pote não sofram vento
+for p in particulas:
+    p.area_protegida = frasco_climatico.area_pote
+
+    p.protegido = (
+        p.area_protegida.collidepoint(
+            int(p.x),
+            int(p.y)
+        )
+    )
 
 # =========================================
 # CLIMA
@@ -112,16 +148,6 @@ sistema_nuvens = SistemaNuvens(
     frasco_climatico.area_interna
 )
 
-# =========================================
-# POSITION
-# =========================================
-
-centro_x = LARGURA // 2
-
-centro_y = (
-    ALTURA // 2
-    + CENTRO_OFFSET_Y
-)
 
 # ENTIDADE SAPO
 sapo = Sapo(centro_x, centro_y)
@@ -143,8 +169,6 @@ rodando = True
 drag_duende = False
 
 drag_violao = False
-
-clima_atualizando = False
 
 while rodando:
 
@@ -288,9 +312,13 @@ while rodando:
 
                     if duende.pode_resgatar_violao():
 
+                        # só teleportar se realmente estiver longe o suficiente
+                        distancia_violao = abs(violao.x - duende.x)
+                        MIN_TELEPORT_DIST = 120
+
                         if not duende.consegue_alcancar_antes_da_queda(
                             violao
-                        ):
+                        ) and distancia_violao > MIN_TELEPORT_DIST:
                             duende.teleportar_para_violao(
                                 violao
                             )
@@ -303,7 +331,7 @@ while rodando:
 
                 drag_duende = False
 
-                duende.finalizar_arraste()
+                duende.finalizar_arraste(frasco_climatico.area_interna)
 
                 if duende.esta_dentro_do_frasco(
                     frasco_climatico.area_interna
@@ -325,21 +353,11 @@ while rodando:
     # CLIMA
     # =====================================
 
-    if (
-        clima_service.precisa_atualizar()
-        and not clima_atualizando
-    ):
-
-        clima_atualizando = True
+    if clima_service.precisa_atualizar():
 
         def atualizar_clima():
 
-            global clima_atualizando
-
-            try:
-                clima_service.atualizar()
-            finally:
-                clima_atualizando = False
+            clima_service.atualizar()
 
         threading.Thread(
             target=atualizar_clima,
@@ -348,15 +366,49 @@ while rodando:
 
     clima_service.atualizar_visual(dt)
 
+    # pequena contribuição do vento climático para o ambiente local (com sinal de direção)
+    direcao_rad = math.radians(clima_service.wind_direction + 180)
+    sinal_direcao = math.sin(direcao_rad)
+
+    influencia_clima = (
+        sinal_direcao
+        * clima_service.wind_speed
+        * 0.15
+    )
+
+    if getattr(
+        clima_service,
+        'rajada_ativa',
+        False
+    ):
+        influencia_clima += (
+            sinal_direcao
+            * clima_service.wind_speed
+            * 0.35
+        )
+
+    # aumentar sensibilidade da folha durante rajada para que ela respeite a rajada_vento
+    if getattr(clima_service, 'rajada_ativa', False):
+        animacoes_folha.intensidade_vento = 5.0
+    else:
+        animacoes_folha.intensidade_vento = 1.8
+
     # =====================================
     # UPDATE
     # =====================================
 
-    ambiente.atualizar(dt)
+    # As partículas mantêm a referência a `area_pote` (retângulo do frasco)
+    # O retângulo é atualizado em `frasco_climatico.atualizar_posicao`,
+    # então não precisamos resetar as partículas a cada frame.
+
+    ambiente.atualizar(dt, influencia_clima)
+
+    # aplicar vento ao violão quando estiver caindo (usa clima_service.wind_speed, sem rajada extra)
+    from systems.fisica import sistema_fisica
+    if violao.caindo:
+        sistema_fisica.aplicar_forca_vento(violao, clima_service, dt, sensibilidade=0.6)
 
     violao.atualizar(dt)
-
-    frasco_climatico.atualizar_posicao(centro_y)
 
     sistema_nuvens.atualizar_area_interna(
         frasco_climatico.area_interna
@@ -376,8 +428,15 @@ while rodando:
         dt,
         frasco_climatico.area_interna,
         ambiente,
-        animacao_folha
+        animacoes_folha
     )
+
+    # Aplicar vento climático diretamente às entidades principais
+    from systems.fisica import sistema_fisica
+
+    # semente já recebe clima_service dentro de sua atualização
+    sistema_fisica.aplicar_forca_vento(sapo, clima_service, dt, sensibilidade=0.25)
+
 
     # =====================================
     # PONTOS DE INTERESSE
@@ -403,6 +462,17 @@ while rodando:
         ambiente
     )
 
+    sistema_fisica.aplicar_forca_vento(duende, clima_service, dt, sensibilidade=0.5)
+
+    # =====================================
+    # SEMENTE
+    # =====================================
+
+    semente.atualizar(
+        dt,
+        clima_service
+    )
+
     # =====================================
     # PARTÍCULAS
     # =====================================
@@ -410,7 +480,8 @@ while rodando:
     for particula in particulas:
 
         particula.atualizar(
-            ambiente
+            ambiente,
+            dt
         )
 
     # =====================================
@@ -444,12 +515,17 @@ while rodando:
         ESCALA_PERSONAGEM,
         sapo.respiracao,
         sapo.animacoes,
-        animacao_folha,
+        animacoes_folha,
         ambiente
     )
 
     # DUENDE
     renderer_duende.renderizar(duende)
+
+    # SEMENTE
+    renderer_semente.renderizar(
+        semente
+    )
 
     # VIOLÃO
     if not violao.acoplado:

@@ -8,6 +8,8 @@ import math
 
 from pathlib import Path
 
+from systems.fisica import sistema_fisica
+
 
 class Nuvem:
 
@@ -151,8 +153,8 @@ class Nuvem:
             self.vx = velocidade_base
 
             self.x = random.uniform(
-                self.area.left - self.width,
-                self.area.left + self.area.width * 0.25
+                self.area.left - self.width * 3,
+                self.area.left + self.area.width * 0.10
             )
 
         else:
@@ -160,8 +162,8 @@ class Nuvem:
             self.vx = -velocidade_base
 
             self.x = random.uniform(
-                self.area.right + self.width,
-                self.area.right - self.area.width * 0.25
+                self.area.right - self.area.width * 0.10,
+                self.area.right + self.width * 3
             )
 
         self.base_y = random.uniform(
@@ -217,9 +219,10 @@ class Nuvem:
         # ALPHA
         # =====================================
 
+        # tornar nuvens menos transparentes (mais visíveis)
         self.alpha = random.randint(
-            18,
-            45
+            50,
+            110
         )
 
     # ==========================================
@@ -231,6 +234,10 @@ class Nuvem:
         if self.dying:
             self.alpha = max(0, self.alpha - self.fade_speed * dt)
             return self.alpha > 0
+
+        # aplicar força do vento centralizado apenas se a nuvem estiver fora da área do frasco
+        if not self.area.collidepoint(int(self.x), int(self.y)):
+            sistema_fisica.aplicar_forca_vento(self, None, dt, sensibilidade=self.escala)
 
         self.x += self.vx * dt
 

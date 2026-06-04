@@ -9,7 +9,6 @@ import pygame
 from systems.ia_duende import IADuende
 from systems.animacoes_duende import AnimacoesDuende
 from systems.respiracao_duende import RespiracaoDuende
-from systems.animacao_folha import AnimacaoFolha
 from utils.drag import iniciar_drag
 from utils.drag import mover_com_offset
 from systems.system_utils import atualizar_sistemas_basicos
@@ -127,12 +126,6 @@ class DuendeNeblina:
         self.animacoes = AnimacoesDuende()
 
         self.respiracao = RespiracaoDuende()
-
-        # =================================
-        # FOLHA
-        # =================================
-
-        self.animacao_folha = AnimacaoFolha()
 
         # =================================
         # ESCALA
@@ -262,8 +255,14 @@ class DuendeNeblina:
             self.offset_drag_y
         )
 
-    def finalizar_arraste(self):
+    def finalizar_arraste(self, frasco_rect=None):
         self.arrastando = False
+
+        # se foi solto em frente ao pote (dentro da área), sinaliza para reduzir
+        if frasco_rect is not None and self.esta_dentro_do_frasco(frasco_rect):
+            self.solta_frente_pote = True
+        else:
+            self.solta_frente_pote = False
 
     def atualizar_hitboxes(
         self,
@@ -591,7 +590,6 @@ class DuendeNeblina:
         atualizar_sistemas_basicos(
             self.animacoes,
             self.respiracao,
-            self.animacao_folha,
             dt,
             ambiente,
             entity=self,
@@ -899,6 +897,11 @@ class DuendeNeblina:
             ambiente
         )
 
+        # Se estava dormindo por falta de clima e o clima voltou, iniciar acordar
+        if getattr(self, 'animacoes', None) is not None and self.animacoes.dormindo:
+            if clima_service.clima_disponivel and not self.animacoes.ciclo_sono.dormir_por_tempo:
+                self.animacoes.iniciar_acordar()
+
         self._atualizar_fator_sono_visual(dt, sapo)
 
         if self.animacoes.dormindo:
@@ -933,7 +936,10 @@ class DuendeNeblina:
 
         if (
             self.esta_dentro_do_frasco(frasco_rect)
-            and not self.animacoes.indo_para_frasco
+            and (
+                self.animacoes.descendo_para_dormir
+                or getattr(self, 'solta_frente_pote', False)
+            )
         ):
 
             self.escala_visual = max(

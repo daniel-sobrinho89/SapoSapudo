@@ -7,9 +7,9 @@ e suportam diferenças mínimas entre personagens (usa hasattr quando necessári
 def atualizar_sistemas_basicos(
     animacoes,
     respiracao,
-    animacao_folha,
     dt,
     ambiente,
+    animacao_folha=None,
     entity=None,
     clima_service=None,
     frasco_rect=None
@@ -34,8 +34,9 @@ def atualizar_sistemas_basicos(
     respiracao.atualizar(dt, getattr(animacoes, "dormindo", False))
 
     # animacao de folha (micro-movimento)
-    animacao_folha.atualizar(
-        dt,
-        respiracao.intensidade,
-        ambiente
-    )
+    if animacao_folha is not None:
+        animacao_folha.atualizar(
+            dt,
+            respiracao.intensidade,
+            ambiente
+        )

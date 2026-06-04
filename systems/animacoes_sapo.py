@@ -116,7 +116,7 @@ class AnimacoesSapo:
 
         horario_acordar = (
             7 * 60
-        ) + 32
+        ) + 30
 
         return (
             horario_atual >= horario_dormir

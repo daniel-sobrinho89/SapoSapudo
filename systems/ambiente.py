@@ -9,7 +9,7 @@ class Ambiente:
 
         self.vento = 0
 
-    def atualizar(self, dt):
+    def atualizar(self, dt, influencia_clima=0):
 
         self.tempo += dt
 
@@ -27,4 +27,8 @@ class Ambiente:
             vento_lento
             + micro_vento
             + rajada
+        )
+
+        self.vento += (
+            influencia_clima * 4.0
         )

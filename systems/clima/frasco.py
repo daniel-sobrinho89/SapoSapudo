@@ -240,10 +240,41 @@ class FrascoClimatico:
         )
 
         self.area_particulas = pygame.Rect(
-            self.x + 45,
-            self.y + 90,
+            self.x + 40,
+            self.y - 180,
             self.largura - 130,
             self.frasco_surface.get_height() - 180
+        )
+
+        # =====================================
+        # ÁREA PROTEGIDA DO FRASCO
+        # =====================================
+
+        pote_x = (
+            self.x
+            + vidro_x
+            + int(self.frasco_vidro.get_width() * 0.18)
+        )
+
+        pote_y = (
+            self.y
+            + vidro_y
+            + int(self.frasco_vidro.get_height() * 0.10)
+        )
+
+        pote_w = int(
+            self.frasco_vidro.get_width() * 0.67
+        )
+
+        pote_h = int(
+            self.frasco_vidro.get_height() * 0.55
+        )
+
+        self.area_pote = pygame.Rect(
+            pote_x,
+            pote_y,
+            pote_w,
+            pote_h
         )
 
     # =====================================
@@ -276,6 +307,18 @@ class FrascoClimatico:
 
             self.area_particulas.y = (
                 self.y + 40
+            )
+
+            self.area_pote.x = (
+                self.x
+                + self.area_interna_offset_x
+                + int(self.area_interna.width * 0.10)
+            )
+
+            self.area_pote.y = (
+                self.y
+                + self.area_interna_offset_y
+                - int(self.frasco_vidro.get_height() * 0.07)
             )
 
     # =====================================

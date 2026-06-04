@@ -48,9 +48,9 @@ class Sapo:
         atualizar_sistemas_basicos(
             self.animacoes,
             self.respiracao,
-            animacao_folha,
             dt,
             ambiente,
+            animacao_folha,
             entity=self,
         )
 

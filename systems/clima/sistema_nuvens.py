@@ -107,7 +107,10 @@ class SistemaNuvens:
         )
 
         # quantidade de nuvens
-        alvo = int(self.intensidade / 15)
+        alvo = max(
+            0,
+            int(self.intensidade / 15) - 1
+        )
 
         # escala geral
         escala = max(
@@ -118,18 +121,49 @@ class SistemaNuvens:
         self.wind_direction = wind_direction
         self.wind_speed = wind_speed
 
+        # propagar direção/velocidade do vento para nuvens existentes
+        for nuvem in self.nuvens:
+            nuvem.wind_direction = self.wind_direction
+            nuvem.wind_speed = self.wind_speed
+
         # cria nuvens
         while len(self.nuvens) < alvo:
 
-            self.nuvens.append(
-
-                Nuvem(
-                    self.area_interna,
-                    intensidade=escala,
-                    wind_direction=self.wind_direction,
-                    wind_speed=self.wind_speed
-                )
+            nova_nuvem = Nuvem(
+                self.area_interna,
+                intensidade=escala,
+                wind_direction=self.wind_direction,
+                wind_speed=self.wind_speed
             )
+
+            pode_adicionar = True
+
+            for nuvem in self.nuvens:
+
+                distancia_x = abs(
+                    nova_nuvem.x - nuvem.x
+                )
+
+                distancia_y = abs(
+                    nova_nuvem.y - nuvem.y
+                )
+
+                if (
+                    distancia_x < 250
+                    and distancia_y < 80
+                ):
+                    pode_adicionar = False
+                    break
+
+            if pode_adicionar:
+
+                self.nuvens.append(
+                    nova_nuvem
+                )
+
+            else:
+
+                break
 
         # remove nuvens extras se houver mais do que o alvo
         while len(self.nuvens) > alvo:

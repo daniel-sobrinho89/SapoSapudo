@@ -19,6 +19,7 @@ class Violao:
         self.caindo = False
 
         self.velocidade_queda = 0
+        self.vel_x = 0.0
 
         self.chao_y = 520
 
@@ -60,6 +61,7 @@ class Violao:
         self.no_chao = False
 
         self.velocidade_queda = 0
+        self.vel_x = 0.0
 
     def voltar_origem(self):
 
@@ -77,8 +79,12 @@ class Violao:
         if not self.caindo:
             return
 
+
+        # gravidade
         self.velocidade_queda += 900 * dt
 
+        # atualizar posições horizontais e verticais
+        self.x += self.vel_x * dt
         self.y += (
             self.velocidade_queda * dt
         )
@@ -92,8 +98,13 @@ class Violao:
             self.caindo = False
 
             self.no_chao = True
-
         self.y = min(
             self.y,
             self.chao_y
         )
+
+        # amortecimento horizontal ao pousar
+        if self.no_chao:
+            self.vel_x *= 0.3
+            if abs(self.vel_x) < 2:
+                self.vel_x = 0

@@ -1,7 +1,7 @@
 import math
 
 
-class AnimacaoFolha:
+class AnimacoesFolha:
 
     def __init__(self):
 
@@ -64,6 +64,10 @@ class AnimacaoFolha:
             intensidade_respiracao
             * self.intensidade_respiracao
         )
+
+        # Durante rajadas fortes, priorizar vento sobre respiração
+        if abs(ambiente.vento) > 0.7:
+            respiracao *= 0.4
 
         # =================================
         # ALVO

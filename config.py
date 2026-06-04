@@ -22,4 +22,4 @@ VOLUME_MUSICA = 0.25
 # POEIRA
 # =====================================
 
-QUANTIDADE_POEIRA = 14
+QUANTIDADE_POEIRA = 8
