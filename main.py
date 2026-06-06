@@ -4,6 +4,7 @@
 
 import pygame
 import threading
+import os
 import math
 
 from config import *
@@ -41,15 +42,40 @@ pygame.init()
 # WINDOW
 # =========================================
 
-tela = pygame.display.set_mode(
-    (LARGURA, ALTURA)
+# detectar resolução física do dispositivo
+info = pygame.display.Info()
+LARGURA_REAL = info.current_w
+ALTURA_REAL = info.current_h
+
+# criar janela na resolução real
+screen = pygame.display.set_mode(
+    (LARGURA_REAL, ALTURA_REAL)
 )
 
 pygame.display.set_caption(
     TITULO
 )
 
+# superficie virtual usada por todo o jogo (resolução lógica fixa)
+tela_virtual = pygame.Surface((LARGURA, ALTURA))
+
+# manter a variável `tela` como a superfície virtual para compatibilidade
+tela = tela_virtual
+
 clock = pygame.time.Clock()
+
+from utils.input import (
+    init_scaling,
+    event_pos_virtual,
+    obter_posicao_ponteiro,
+    virtual_to_real
+)
+
+# inicializar escala para helpers de input
+init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
+
+# detectar se estamos rodando no Android (Buildozer)
+IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
 
 
 # =========================================
@@ -183,42 +209,67 @@ while rodando:
 
     for evento in pygame.event.get():
 
+        # converter posição do evento (resolução real -> virtual)
+        pos_virtual = event_pos_virtual(evento)
+
+        # mapear eventos de toque (Android) para tipos compatíveis com mouse
+        mtype = evento.type
+        mbutton = getattr(evento, 'button', None)
+
+        if getattr(pygame, 'FINGERDOWN', None) is not None and evento.type == pygame.FINGERDOWN:
+            mtype = pygame.MOUSEBUTTONDOWN
+            mbutton = 1
+
+        if getattr(pygame, 'FINGERMOTION', None) is not None and evento.type == pygame.FINGERMOTION:
+            mtype = pygame.MOUSEMOTION
+
+        if getattr(pygame, 'FINGERUP', None) is not None and evento.type == pygame.FINGERUP:
+            mtype = pygame.MOUSEBUTTONUP
+            mbutton = 1
+
         if evento.type == pygame.QUIT:
 
             rodando = False
+
+        # Android back button should quit (only on Android)
+        if IS_ANDROID and evento.type == pygame.KEYDOWN:
+            back_keys = [pygame.K_ESCAPE, getattr(pygame, 'K_AC_BACK', None)]
+            if evento.key in back_keys:
+                rodando = False
 
         # =====================================
         # MOUSE DOWN
         # =====================================
 
         if (
-            evento.type == pygame.MOUSEBUTTONDOWN
-            and evento.button == 1
+            mtype == pygame.MOUSEBUTTONDOWN
+            and mbutton == 1
         ):
 
             if duende.cabeca_rect.collidepoint(
-                evento.pos
+                pos_virtual
             ):
                 drag_duende = True
 
                 duende.iniciar_arraste(
-                    *evento.pos
+                    *pos_virtual
                 )
 
+
             elif renderer_violao.obter_rect(violao).collidepoint(
-                evento.pos
+                pos_virtual
             ):
 
                 drag_violao = True
 
                 violao.iniciar_arraste(
-                    *evento.pos
+                    *pos_virtual
                 )
 
             if (
                 violao.acoplado
                 and sapo_renderer.corpo_rect.collidepoint(
-                    evento.pos
+                    pos_virtual
                 )
             ):
                 violao.acoplado = False
@@ -229,26 +280,27 @@ while rodando:
 
                 audio.alternar()
                 
+
                 violao.iniciar_arraste(
-                    *evento.pos
+                    *pos_virtual
                 )
 
         # =====================================
         # DRAG
         # =====================================
 
-        if evento.type == pygame.MOUSEMOTION:
+        if mtype == pygame.MOUSEMOTION:
 
             if drag_violao:
 
                 violao.mover_arraste(
-                    *evento.pos
+                    *pos_virtual
                 )
 
             if drag_duende:
 
                 duende.mover_arraste(
-                    *evento.pos
+                    *pos_virtual
                 )
 
         # =====================================
@@ -256,8 +308,8 @@ while rodando:
         # =====================================
 
         if (
-            evento.type == pygame.MOUSEBUTTONUP
-            and evento.button == 1
+            mtype == pygame.MOUSEBUTTONUP
+            and mbutton == 1
         ):
 
             if drag_violao:
@@ -519,6 +571,9 @@ while rodando:
             violao
         )
 
+    # escalonar a superfície virtual para a resolução real e apresentar
+    scaled = pygame.transform.scale(tela, (LARGURA_REAL, ALTURA_REAL))
+    screen.blit(scaled, (0, 0))
     pygame.display.flip()
 
 pygame.quit()

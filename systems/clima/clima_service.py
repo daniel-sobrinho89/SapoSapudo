@@ -41,12 +41,12 @@ class ClimaService:
         self.rajada_ativa = False
         self.rajada_tempo_restante = 0.0
 
-        self.cache_file = (
-            "data/clima_cache.json"
-        )
+        from utils.paths import BASE_DIR
+
+        self.cache_file = str(BASE_DIR / "data" / "clima_cache.json")
 
         with open(
-            "data/config.json",
+            str(BASE_DIR / "data" / "config.json"),
             "r",
             encoding="utf-8"
         ) as arquivo:
@@ -365,7 +365,7 @@ class ClimaService:
         try:
 
             os.makedirs(
-                "data",
+                str(BASE_DIR / "data"),
                 exist_ok=True
             )
 

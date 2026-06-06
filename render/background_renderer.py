@@ -1,5 +1,6 @@
 import pygame
 from datetime import datetime
+from utils.paths import BASE_DIR
 
 
 class BackgroundRenderer:
@@ -18,7 +19,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_manha = pygame.image.load(
-            "assets/background_manha.png"
+            str(BASE_DIR / "assets" / "background_manha.png")
         ).convert()
 
         self.background_manha = pygame.transform.smoothscale(
@@ -31,7 +32,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_day = pygame.image.load(
-            "assets/background.png"
+            str(BASE_DIR / "assets" / "background.png")
         ).convert()
 
         self.background_day = pygame.transform.smoothscale(
@@ -44,7 +45,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_final_tarde = pygame.image.load(
-            "assets/background_final_tarde.png"
+            str(BASE_DIR / "assets" / "background_final_tarde.png")
         ).convert()
 
         self.background_final_tarde = pygame.transform.smoothscale(
@@ -57,7 +58,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_night = pygame.image.load(
-            "assets/background_night_19h.png"
+            str(BASE_DIR / "assets" / "background_night_19h.png")
         ).convert()
 
         self.background_night = pygame.transform.smoothscale(

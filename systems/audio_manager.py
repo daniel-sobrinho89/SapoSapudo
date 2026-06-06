@@ -5,6 +5,7 @@ from config import (
     MUSICA_FUNDO,
     VOLUME_MUSICA
 )
+from utils.paths import BASE_DIR
 
 
 class AudioManager:
@@ -22,7 +23,7 @@ class AudioManager:
             return
 
         pygame.mixer.music.load(
-            MUSICA_FUNDO
+            str(BASE_DIR / MUSICA_FUNDO)
         )
 
         pygame.mixer.music.set_volume(

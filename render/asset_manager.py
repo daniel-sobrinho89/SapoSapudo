@@ -1,4 +1,5 @@
 import pygame
+from utils.paths import BASE_DIR
 
 
 class AssetManager:
@@ -11,8 +12,9 @@ class AssetManager:
 
         if nome not in self.assets:
 
+            path = BASE_DIR / "assets" / nome
             self.assets[nome] = pygame.image.load(
-                f"assets/{nome}"
+                str(path)
             ).convert_alpha()
 
         return self.assets[nome]

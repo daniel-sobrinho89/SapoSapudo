@@ -34,16 +34,18 @@ class FrascoClimatico:
         # LOAD IMAGENS
         # =====================================
 
+        from utils.paths import BASE_DIR
+
         base_original = pygame.image.load(
-            "assets/clima/frasco/frasco_base.png"
+            str(BASE_DIR / "assets" / "clima" / "frasco" / "frasco_base.png")
         ).convert_alpha()
 
         vidro_original = pygame.image.load(
-            "assets/clima/frasco/frasco_vidro.png"
+            str(BASE_DIR / "assets" / "clima" / "frasco" / "frasco_vidro.png")
         ).convert_alpha()
 
         tampa_original = pygame.image.load(
-            "assets/clima/frasco/frasco_tampa.png"
+            str(BASE_DIR / "assets" / "clima" / "frasco" / "frasco_tampa.png")
         ).convert_alpha()
 
         # =====================================
