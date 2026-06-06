@@ -45,3 +45,5 @@ Thumbs.db
 *.log
 .env
 .env.local
+data/config.json
+data/clima_cache.json

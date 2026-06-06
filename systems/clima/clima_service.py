@@ -150,7 +150,7 @@ class ClimaService:
         try:
 
             url = (
-                "https://api.weatherapi.com1/v1/forecast.json"
+                "https://api.weatherapi.com/v1/forecast.json"
                 f"?key={self.api_key}"
                 f"&q=auto:ip"
                 "&hours=3"

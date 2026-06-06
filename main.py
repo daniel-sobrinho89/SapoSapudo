@@ -278,8 +278,7 @@ while rodando:
                         violao.x,
                         violao.y
                     )
-                    and not sapo.animacoes.iniciou_sono_hoje
-                    and not sapo.animacoes.dormindo
+                    and sapo.pode_receber_violao()
                 ):
 
                     violao.acoplado = True
@@ -407,71 +406,19 @@ while rodando:
         clima_service.wind_speed
     )
 
-    sapo.atualizar(
+    events = sapo.atualizar(
         dt,
-        ambiente
+        ambiente,
+        animacoes_folha,
+        violao
     )
 
-    if sapo.animacoes.guardando_violao:
-
-        destino_x = violao.x_inicial
-
-        frame_atual = (
-            sapo.animacoes.frame_guardar_violao
-        )
-
-        if (
-            frame_atual
-            != sapo.animacoes.ultimo_frame_guardar
-        ):
-            
-            sapo.animacoes.ultimo_frame_guardar = (
-                frame_atual
-            )
-
-            if sapo.x < destino_x:
-
-                sapo.x = min(
-                    destino_x,
-                    sapo.x + 3.5
-                )
-
-                violao.x = sapo.x + 5
-                violao.y = sapo.y + 20
-
-            else:
-
-                sapo.animacoes.guardando_violao = False
-
-                sapo.animacoes.soltando_violao = True
-
-                sapo.animacoes.frame_soltar_violao = 0
-
-                sapo.animacoes.tempo_soltar_violao = 0
-
-                violao.x = violao.x_inicial
-                violao.y = violao.y_inicial
-
-    if sapo.animacoes.iniciou_tocar_violao:
-
+    # eventos retornados por `Sapo.atualizar` que encapsulam flags internas
+    if events.get("start_audio"):
         audio.alternar()
 
-        sapo.animacoes.iniciou_tocar_violao = False
-
-    if sapo.animacoes.parar_audio_violao:
-
+    if events.get("stop_audio"):
         audio.alternar()
-
-        sapo.animacoes.parar_audio_violao = False
-
-    if sapo.animacoes.finalizou_soltar_violao:
-
-        violao.acoplado = False
-
-        violao.x = violao.x_inicial
-        violao.y = violao.y_inicial
-
-        sapo.animacoes.finalizou_soltar_violao = False
 
     # Aplicar vento climático diretamente às entidades principais
     from systems.fisica import sistema_fisica

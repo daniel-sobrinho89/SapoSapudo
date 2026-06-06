@@ -543,7 +543,7 @@ class AnimacoesSapo:
 
         self.tempo_tocando_violao += dt
 
-        if self.tempo_tocando_violao >= 7:  # 900 15 minutos
+        if self.tempo_tocando_violao >= 900:  # 900 15 minutos
             self.iniciar_levantar_violao()
             return
 

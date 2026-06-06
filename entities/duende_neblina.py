@@ -557,7 +557,7 @@ class DuendeNeblina:
         if violao is None:
             return
 
-        if sapo.animacoes.tocando_violao:
+        if sapo.esta_tocando_violao():
             return
 
         tolerancia = 10
