@@ -14,29 +14,12 @@ class SapoRenderer:
         self.assets = assets
         self.transform = transform
 
-        self.olho_esquerdo_rect = pygame.Rect(
-            -1000,
-            -1000,
-            1,
-            1
-        )
-
-        self.olho_direito_rect = pygame.Rect(
-            -1000,
-            -1000,
-            1,
-            1
-        )
-
         self.corpo_rect = pygame.Rect(
             -1000,
             -1000,
             1,
             1
         )
-
-        self.respiracao_violao = 1.0
-        self.frame_violao_anterior = 0
 
         self.carregar_assets()
 
@@ -46,57 +29,83 @@ class SapoRenderer:
 
     def carregar_assets(self):
 
-        self.shadow = self.assets.carregar(
-            "shadow.png"
-        )
+        self.frames_acordar = []
+        for i in range(86):
 
-        self.body = self.assets.carregar(
-            "body.png"
-        )
+            self.frames_acordar.append(
+                self.assets.carregar(
+                    f"sapudo/acordar/sapo_{i:04d}.png"
+                )
+            )
 
-        self.corpo_violao1 = self.assets.carregar(
-            "sapudo/corpo_violao1.png"
-        )
+        self.frames_parado = []
+        for i in range(20):
 
-        self.corpo_violao2 = self.assets.carregar(
-            "sapudo/corpo_violao2.png"
-        )
+            self.frames_parado.append(
+                self.assets.carregar(
+                    f"sapudo/parado/sapo_{i:04d}.png"
+                )
+            )
 
-        self.corpo_violao3 = self.assets.carregar(
-            "sapudo/corpo_violao3.png"
-        )
+        self.frames_dormir = []
+        for i in range(86):
 
-        self.corpo_violao4 = self.assets.carregar(
-            "sapudo/corpo_violao4.png"
-        )
+            self.frames_dormir.append(
+                self.assets.carregar(
+                    f"sapudo/dormir/sapo_{i:04d}.png"
+                )
+            )
 
-        self.head = self.assets.carregar(
-            "head.png"
-        )
+        self.frames_dormindo = []
+        for i in range(2):
 
-        self.leaf = self.assets.carregar(
-            "leaf.png"
-        )
+            self.frames_dormindo.append(
+                self.assets.carregar(
+                    f"sapudo/dormindo/sapo_{i:04d}.png"
+                )
+            )
 
-        # =================================
-        # OLHOS
-        # =================================
+        self.frames_pegar_violao = []
+        for i in range(32):
 
-        self.eye_left_open = self.assets.carregar(
-            "eye_left_open.png"
-        )
+            self.frames_pegar_violao.append(
+                self.assets.carregar(
+                    f"sapudo/pegar_violao/sapo_{i:04d}.png"
+                )
+            )
 
-        self.eye_right_open = self.assets.carregar(
-            "eye_right_open.png"
-        )
+        self.frames_tocar_violao = []
+        for i in range(16):
 
-        # =================================
-        # BOCA
-        # =================================
+            self.frames_tocar_violao.append(
+                self.assets.carregar(
+                    f"sapudo/tocar_violao/sapo_{i:04d}.png"
+                )
+            )
 
-        self.mouth_yawn = self.assets.carregar(
-            "mouth_yawn.png"
-        )
+        self.frames_levantar_violao = []
+        for i in range(47):
+            self.frames_levantar_violao.append(
+                self.assets.carregar(
+                    f"sapudo/levantar_violao/sapo_{i:04d}.png"
+                )
+            )
+
+        self.frames_guardar_violao = []
+        for i in range(32):
+            self.frames_guardar_violao.append(
+                self.assets.carregar(
+                    f"sapudo/guardar_violao/sapo_{i:04d}.png"
+                )
+            )
+
+        self.frames_soltar_violao = []
+        for i in range(55):
+            self.frames_soltar_violao.append(
+                self.assets.carregar(
+                    f"sapudo/soltar_violao/sapo_{i:04d}.png"
+                )
+            )
 
     # =====================================
     # DRAW
@@ -144,43 +153,6 @@ class SapoRenderer:
             rect
         )
 
-    # =====================================
-    # HEAD DEPTH SHADOW
-    # =====================================
-
-    def desenhar_sombra_cabeca(
-        self,
-        x,
-        y,
-        largura,
-        altura,
-        alpha
-    ):
-
-        sombra = pygame.Surface(
-            (largura, altura),
-            pygame.SRCALPHA
-        )
-
-        pygame.draw.ellipse(
-            sombra,
-            (0, 0, 0, alpha),
-            (
-                0,
-                0,
-                largura,
-                altura
-            )
-        )
-
-        rect = sombra.get_rect(
-            center=(x, y)
-        )
-
-        self.tela.blit(
-            sombra,
-            rect
-        )
 
     # =====================================
     # RENDER
@@ -191,452 +163,81 @@ class SapoRenderer:
         centro_x,
         centro_y,
         escala,
-        escala_personagem,
-        respiracao,
-        animacoes,
-        animacao_folha,
-        ambiente
+        animacoes
     ):
 
-        escalas = respiracao.obter_escalas(
-            escala
-        )
+        if animacoes.adormecendo:
 
-        # =================================
-        # OFFSET SOMBRA CABEÇA
-        # =================================
+            frame = self.frames_dormir[
+                animacoes.frame_dormir
+            ]
 
-        offset_sombra_cabeca = (
-            respiracao.obter_offset_sombra_cabeca()
-        )
+        elif animacoes.dormindo:
 
-        # =================================
-        # PROPORÇÕES
-        # =================================
+            frame = self.frames_dormindo[
+                animacoes.frame_dormindo
+            ]
 
-        VIOLAO_BODY_SCALE = 0.50
-        VIOLAO_BODY_OFFSET_Y = 55
+        elif animacoes.pegando_violao:
 
-        if animacoes.tocando_violao:
+            frame = self.frames_pegar_violao[
+                animacoes.frame_pegar_violao
+            ]
 
-            frame_atual = (
+        elif animacoes.tocando_violao:
+
+            frame = self.frames_tocar_violao[
                 animacoes.frame_violao
-            )
+            ]
 
-            if (
-                frame_atual == 0
-                and self.frame_violao_anterior != 0
-            ):
-                self.respiracao_violao = (
-                    escalas["body"] / escala
-                )
+        elif animacoes.acordando:
 
-            self.frame_violao_anterior = frame_atual
+            frame = self.frames_acordar[
+                animacoes.frame_acordar
+            ]
 
-            body_scale = (
-                escala
-                * self.respiracao_violao
-                * 1.06
-            )
+        elif animacoes.levantando_violao:
+
+            frame = self.frames_levantar_violao[
+                animacoes.frame_levantar_violao
+            ]
+
+        elif animacoes.guardando_violao:
+
+            frame = self.frames_guardar_violao[
+                animacoes.frame_guardar_violao
+            ]
+
+        elif animacoes.soltando_violao:
+
+            frame = self.frames_soltar_violao[
+                animacoes.frame_soltar_violao
+            ]
 
         else:
 
-            self.frame_violao_anterior = 0
-
-            body_scale = (
-                escalas["body"] * 1.06
-            )
-
-        head_scale = escalas["head"] * 0.93
-
-        shadow_scale = escalas["shadow"]
-
-        body_y = centro_y
-
-        sleep_offset_y = (
-            animacoes.sleep_offset_y
-        )
-
-        head_y = (
-            centro_y
-            - (
-                6 * escala_personagem
-            )
-            + sleep_offset_y
-        )
-
-        shadow_y = (
-            centro_y
-            + (
-                12 * escala_personagem
-            )
-        )
-
-        # =================================
-        # SHADOW BODY
-        # =================================
-
-        self.draw(
-            self.shadow,
-            centro_x,
-            shadow_y,
-            shadow_scale,
-            alpha=95
-        )
-
-        # =================================
-        # BODY
-        # =================================
-
-        body = self.body
-
-        if animacoes.tocando_violao:
-
-            frames = [
-                self.corpo_violao1,
-                self.corpo_violao2,
-                self.corpo_violao3,
-                self.corpo_violao4
+            frame = self.frames_parado[
+                animacoes.frame_parado
             ]
 
-            body = frames[
-                animacoes.frame_violao
-            ]
-
-            body_scale *= VIOLAO_BODY_SCALE
-
-            body_y += VIOLAO_BODY_OFFSET_Y
-
         self.draw(
-            body,
+            frame,
             centro_x,
-            body_y,
-            body_scale
+            centro_y,
+            escala
         )
 
-        largura_corpo = max(
-            1,
-            int(body.get_width() * body_scale)
+        largura = int(
+            frame.get_width() * escala
         )
 
-        altura_corpo = max(
-            1,
-            int(body.get_height() * body_scale)
+        altura = int(
+            frame.get_height() * escala
         )
-
-        margem_x = int(largura_corpo * 0.15)
-        margem_y = int(altura_corpo * 0.10)
 
         self.corpo_rect = pygame.Rect(
-            centro_x - largura_corpo // 2 + margem_x,
-            body_y - altura_corpo // 2 + margem_y,
-            largura_corpo - margem_x * 2,
-            altura_corpo - margem_y * 2
+            centro_x - largura // 2,
+            centro_y - altura // 2,
+            largura,
+            altura
         )
-
-        # =================================
-        # HEAD
-        # =================================
-
-        self.draw(
-            self.head,
-            centro_x,
-            head_y,
-            head_scale
-        )
-
-        # =================================
-        # HEAD DEPTH SHADOW
-        # =================================
-
-        self.desenhar_sombra_cabeca(
-            centro_x,
-            (
-                head_y
-                + (
-                    24.7 * escala_personagem
-                )
-                + offset_sombra_cabeca
-            ),
-            int(escala * 152),
-            int(escala * 7),
-            28
-        )
-
-        # =================================
-        # FOLHA
-        # =================================
-
-        rotacao_folha = (
-            animacao_folha.obter_rotacao()
-        )
-
-        # =================================
-        # MICRO MOVIMENTO NATURAL
-        # =================================
-
-        offset_folha_x = (
-            animacao_folha.obter_offset_x()
-        )
-
-        offset_folha_y = (
-            animacao_folha.obter_offset_y()
-        )
-
-        # =================================
-        # MOVIMENTO HERDADO
-        # DA RESPIRAÇÃO
-        # =================================
-
-        resp_folha_x, resp_folha_y = (
-            animacao_folha.obter_offset_respiracao(
-                respiracao.intensidade
-            )
-        )
-
-        # =================================
-        # POSIÇÃO BASE
-        # =================================
-
-        inclinacao_folha = (
-            rotacao_folha * 0.12
-        )
-
-        folha_x = (
-            centro_x
-            + offset_folha_x
-            + resp_folha_x
-            + inclinacao_folha
-        )
-
-        folha_y = (
-            head_y
-            - (
-                37 * escala_personagem
-            )
-            + offset_folha_y
-            + resp_folha_y
-            - abs(inclinacao_folha * 0.15)
-        )
-
-        # =================================
-        # ESCALA
-        # =================================
-
-        folha = self.transform.escalar(
-            self.leaf,
-            escala * 0.40
-        )
-
-        # =================================
-        # ROTAÇÃO
-        # =================================
-
-        folha = self.transform.rotacionar(
-            folha,
-            rotacao_folha
-        )
-
-        # =================================
-        # ALPHA
-        # =================================
-
-        folha.set_alpha(235)
-
-        # =================================
-        # RECT
-        # =================================
-
-        folha_rect = folha.get_rect(
-            center=(
-                folha_x,
-                folha_y
-            )
-        )
-
-        # =================================
-        # DRAW
-        # =================================
-
-        self.tela.blit(
-            folha,
-            folha_rect
-        )
-
-        # =================================
-        # ESTADO DOS OLHOS
-        # =================================
-
-        olhos_fechados = (
-            animacoes.olhos_fechados
-        )
-
-        olho_esquerdo_fechado = (
-            animacoes.olhos_fechados
-            or animacoes.olho_esquerdo_forcado
-        )
-
-        olho_direito_fechado = (
-            animacoes.olhos_fechados
-            or animacoes.olho_direito_forcado
-        )
-
-        olho_esquerdo = self.eye_left_open
-        olho_direito = self.eye_right_open
-
-        # =================================
-        # POSIÇÕES BASE
-        # =================================
-
-        olho_esquerdo_x = (
-            centro_x - (
-                21 * escala_personagem
-            )
-        )
-
-        olho_direito_x = (
-            centro_x + (
-                20 * escala_personagem
-            )
-        )
-
-        # =================================
-        # CONFIG GERAL
-        # =================================
-
-        alpha_sombra = 140
-
-        offset_y_olhos = (
-            -14 * escala_personagem
-        )
-
-        escala_olhos = (
-            escala
-            * 0.30
-            * (
-                1.0
-                + (
-                    0.015
-                    * respiracao.intensidade
-                )
-            )
-        )
-
-        # =================================
-        # POSIÇÃO FINAL OLHOS
-        # =================================
-
-        olhos_y = (
-            head_y + offset_y_olhos
-        )
-
-        largura_hitbox = int(
-            30 * escala_personagem
-        )
-
-        altura_hitbox = int(
-            30 * escala_personagem
-        )
-
-        self.olho_esquerdo_rect = pygame.Rect(
-            olho_esquerdo_x - largura_hitbox // 2,
-            olhos_y - altura_hitbox // 2,
-            largura_hitbox,
-            altura_hitbox
-        )
-
-        self.olho_direito_rect = pygame.Rect(
-            olho_direito_x - largura_hitbox // 2,
-            olhos_y - altura_hitbox // 2,
-            largura_hitbox,
-            altura_hitbox
-        )
-
-        # =================================
-        # DRAW EYES
-        # =================================
-
-        if not olho_esquerdo_fechado:
-
-            self.draw(
-                olho_esquerdo,
-                olho_esquerdo_x,
-                olhos_y,
-                escala_olhos
-            )
-
-        if not olho_direito_fechado:
-
-            self.draw(
-                olho_direito,
-                olho_direito_x,
-                olhos_y,
-                escala_olhos
-            )
-
-        # =================================
-        # MOUTH
-        # =================================
-
-        boca = (
-            animacoes.obter_asset_boca(
-                self.mouth_yawn
-            )
-        )
-
-        if animacoes.boca_yawn:
-
-            escala_boca_x = (
-                escala
-                * 0.20
-                * (
-                    1.0
-                    + (
-                        0.015
-                        * respiracao.intensidade
-                    )
-                )
-            )
-
-            escala_boca_y = (
-                escala
-                * 0.18
-                * (
-                    1.0
-                    + (
-                        0.015
-                        * respiracao.intensidade
-                    )
-                )
-            )
-
-            offset_y_boca = (
-                8 * escala_personagem
-            )
-
-        else:
-
-            escala_boca_x = (
-                escala * 0.36
-            )
-
-            escala_boca_y = (
-                escala * 0.36
-            )
-
-            offset_y_boca = (
-                24 * escala_personagem
-            )
-
-        # =================================
-        # DRAW MOUTH
-        # =================================
-        if boca:
-
-            self.draw(
-                boca,
-                centro_x,
-                head_y + offset_y_boca,
-                escala_boca_x,
-                escala_boca_y
-            )

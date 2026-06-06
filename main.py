@@ -233,21 +233,6 @@ while rodando:
                     *evento.pos
                 )
 
-            if (
-                sapo_renderer.olho_esquerdo_rect.collidepoint(
-                    evento.pos
-                )
-            ):
-                
-                sapo.clicar_olho_esquerdo()
-
-            elif (
-                sapo_renderer.olho_direito_rect.collidepoint(
-                    evento.pos
-                )
-            ):
-                sapo.clicar_olho_direito()
-
         # =====================================
         # DRAG
         # =====================================
@@ -300,8 +285,6 @@ while rodando:
                     violao.acoplado = True
 
                     sapo.iniciar_violao()
-
-                    audio.alternar()
 
                     violao.x = centro_x + 5
                     violao.y = centro_y + 20
@@ -426,10 +409,69 @@ while rodando:
 
     sapo.atualizar(
         dt,
-        frasco_climatico.area_interna,
-        ambiente,
-        animacoes_folha
+        ambiente
     )
+
+    if sapo.animacoes.guardando_violao:
+
+        destino_x = violao.x_inicial
+
+        frame_atual = (
+            sapo.animacoes.frame_guardar_violao
+        )
+
+        if (
+            frame_atual
+            != sapo.animacoes.ultimo_frame_guardar
+        ):
+            
+            sapo.animacoes.ultimo_frame_guardar = (
+                frame_atual
+            )
+
+            if sapo.x < destino_x:
+
+                sapo.x = min(
+                    destino_x,
+                    sapo.x + 3.5
+                )
+
+                violao.x = sapo.x + 5
+                violao.y = sapo.y + 20
+
+            else:
+
+                sapo.animacoes.guardando_violao = False
+
+                sapo.animacoes.soltando_violao = True
+
+                sapo.animacoes.frame_soltar_violao = 0
+
+                sapo.animacoes.tempo_soltar_violao = 0
+
+                violao.x = violao.x_inicial
+                violao.y = violao.y_inicial
+
+    if sapo.animacoes.iniciou_tocar_violao:
+
+        audio.alternar()
+
+        sapo.animacoes.iniciou_tocar_violao = False
+
+    if sapo.animacoes.parar_audio_violao:
+
+        audio.alternar()
+
+        sapo.animacoes.parar_audio_violao = False
+
+    if sapo.animacoes.finalizou_soltar_violao:
+
+        violao.acoplado = False
+
+        violao.x = violao.x_inicial
+        violao.y = violao.y_inicial
+
+        sapo.animacoes.finalizou_soltar_violao = False
 
     # Aplicar vento climático diretamente às entidades principais
     from systems.fisica import sistema_fisica
@@ -512,11 +554,7 @@ while rodando:
         sapo.x,
         sapo.y,
         ESCALA,
-        ESCALA_PERSONAGEM,
-        sapo.respiracao,
-        sapo.animacoes,
-        animacoes_folha,
-        ambiente
+        sapo.animacoes
     )
 
     # DUENDE

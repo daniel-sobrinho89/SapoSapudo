@@ -17,6 +17,9 @@ class Sapo:
         self.x = x
         self.y = y
 
+        self.x_inicial = x
+        self.y_inicial = y
+
         # MOVIMENTO (mantido por compatibilidade futura)
         self.velocidade_x = 0.0
         self.velocidade_y = 0.0
@@ -30,12 +33,6 @@ class Sapo:
         self.acoplado_violao = False
 
     # métodos de delegação / API pública
-    def clicar_olho_esquerdo(self):
-        self.animacoes.clicar_olho_esquerdo()
-
-    def clicar_olho_direito(self):
-        self.animacoes.clicar_olho_direito()
-
     def iniciar_violao(self):
         self.animacoes.iniciar_violao()
 
@@ -43,7 +40,7 @@ class Sapo:
         self.animacoes.parar_violao()
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
-    def atualizar(self, dt, frasco_rect, ambiente, animacao_folha):
+    def atualizar(self, dt, ambiente, animacao_folha = None):
 
         atualizar_sistemas_basicos(
             self.animacoes,

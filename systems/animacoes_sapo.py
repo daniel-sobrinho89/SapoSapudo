@@ -7,34 +7,20 @@ class AnimacoesSapo:
     def __init__(self):
 
         # ====================================
-        # OLHOS INDIVIDUAIS
-        # ====================================
-
-        self.olho_esquerdo_forcado = False
-        self.olho_direito_forcado = False
-
-        self.tempo_olho_esquerdo = 0.0
-        self.tempo_olho_direito = 0.0
-
-        self.duracao_olho_forcado = 1.2
-
-        # ====================================
         # ESTADOS
         # ====================================
 
         self.piscando = False
 
-        self.bocejando = False
-
         self.dormindo = False
+
+        self.acordando = False
 
         # ====================================
         # CONTROLE SONO
         # ====================================
 
         self.iniciou_sono_hoje = False
-
-        self.bocejo_pre_sono = False
 
         # ====================================
         # CONTROLE PISCADA
@@ -51,21 +37,45 @@ class AnimacoesSapo:
 
         self.duracao_piscada = 0.50
 
+        self.frame_parado = 0
+
+        self.tempo_parado = 0.0
+
         # ====================================
         # CONTROLE BOCEJO
         # ====================================
 
         self.ultimo_bocejo_minuto = None
 
-        self.tempo_bocejo = 0.0
+        # ====================================
+        # DORMIR (PNG)
+        # ====================================
 
-        self.duracao_bocejo = 2.8
+        self.adormecendo = False
+
+        self.frame_dormir = 0
+
+        self.tempo_dormir = 0.0
+
+        # ====================================
+        # DORMINDO (LOOP)
+        # ====================================
+
+        self.frame_dormindo = 0
+
+        self.tempo_dormindo = 0.0
 
         # ====================================
         # CONTROLE VIOLÃO
         # ====================================
 
+        self.pegando_violao = False
         self.tocando_violao = False
+        self.ultimo_frame_guardar = -1
+        self.parar_audio_violao = False
+
+        self.frame_pegar_violao = 0
+        self.tempo_pegar_violao = 0.0
 
         self.frame_violao = 0
 
@@ -75,18 +85,11 @@ class AnimacoesSapo:
 
         self.direcao_violao = 1
 
-        self.intervalo_violao = random.uniform(
-            0.10,
-            0.22
-        )
+        self.frame_min_violao = 9
+        self.frame_max_violao = 15
 
-        # ====================================
-        # VISUAIS
-        # ====================================
+        self.intervalo_violao = 0.22
 
-        self.olhos_fechados = False
-
-        self.boca_yawn = False
 
         # ====================================
         # SONO VISUAL
@@ -97,6 +100,37 @@ class AnimacoesSapo:
         self.sleep_body_offset_y = 0
 
         self.sleep_transition_delay = 0.0
+
+        # ====================================
+        # ACORDAR (PNG)
+        # ====================================
+
+        self.acordando = False
+
+        self.frame_acordar = 0
+
+        self.tempo_acordar = 0.0
+        
+        self.executou_acordar_hoje = False
+
+        self.iniciou_tocar_violao = False
+
+        self.levantando_violao = False
+        self.guardando_violao = False
+        self.soltando_violao = False
+        self.finalizou_soltar_violao = False
+
+        self.frame_levantar_violao = 0
+        self.frame_guardar_violao = 0
+        self.frame_soltar_violao = 0
+
+        self.tempo_levantar_violao = 0
+        self.tempo_guardar_violao = 0
+        self.tempo_soltar_violao = 0
+
+        self.tempo_tocando_violao = 0
+
+        self.iniciou_guardar_violao = False
 
     # ====================================
     # SONO
@@ -112,11 +146,19 @@ class AnimacoesSapo:
 
         horario_dormir = (
             22 * 60
-        )
+        ) + 00
 
         horario_acordar = (
             7 * 60
         ) + 30
+
+        if horario_dormir < horario_acordar:
+
+            return (
+                horario_dormir
+                <= horario_atual
+                < horario_acordar
+            )
 
         return (
             horario_atual >= horario_dormir
@@ -131,28 +173,81 @@ class AnimacoesSapo:
 
         agora = datetime.now()
 
+        self.atualizar_pegar_violao(dt)
+
         self.atualizar_violao(dt)
 
-        if self.olho_esquerdo_forcado:
+        self.atualizar_levantar_violao(dt)
 
-            self.tempo_olho_esquerdo += dt
+        self.atualizar_guardar_violao(dt)
 
-            if (
-                self.tempo_olho_esquerdo
-                >= self.duracao_olho_forcado
-            ):
-                self.olho_esquerdo_forcado = False
+        self.atualizar_soltar_violao(dt)
+
+        self.tempo_parado += dt
+
+        horario_sono = (
+            self.verificar_horario_sono()
+        )
+
+        if self.tempo_parado >= 0.15:
+
+            self.tempo_parado = 0
+
+            self.frame_parado += 1
+
+            if self.frame_parado >= 20:
+
+                self.frame_parado = 0
+
+        if self.acordando:
+
+            self.tempo_acordar += dt
+
+            if self.tempo_acordar >= 0.06:
+
+                self.tempo_acordar = 0
+
+                self.frame_acordar += 1
+
+                if self.frame_acordar >= 86:
+
+                    self.frame_acordar = 85
+
+                    self.acordando = False
+
+                    self.dormindo = False
 
 
-        if self.olho_direito_forcado:
+            return
 
-            self.tempo_olho_direito += dt
+        if self.adormecendo:
 
-            if (
-                self.tempo_olho_direito
-                >= self.duracao_olho_forcado
-            ):
-                self.olho_direito_forcado = False
+            self.tempo_dormir += dt
+
+            if not horario_sono:
+
+                self.adormecendo = False
+
+                self.iniciar_acordar()
+
+                return
+
+            if self.tempo_dormir >= 0.06:
+
+                self.tempo_dormir = 0
+
+                self.frame_dormir += 1
+
+                if self.frame_dormir >= 86:
+
+                    self.frame_dormir = 85
+
+                    self.adormecendo = False
+
+                    self.dormindo = True
+
+            return
+
 
         # ====================================
         # RESET
@@ -165,9 +260,23 @@ class AnimacoesSapo:
 
             self.iniciou_sono_hoje = False
 
-        horario_sono = (
-            self.verificar_horario_sono()
-        )
+            self.executou_acordar_hoje = False
+
+        if (
+            not horario_sono
+            and (
+                self.dormindo
+                or self.adormecendo
+            )
+            and not self.acordando
+            and not self.executou_acordar_hoje
+        ):
+
+            self.iniciar_acordar()
+
+            self.executou_acordar_hoje = True
+
+            return
 
         # ====================================
         # INICIAR SONO
@@ -176,100 +285,86 @@ class AnimacoesSapo:
         if (
             horario_sono
             and not self.iniciou_sono_hoje
-            and not self.bocejando
             and not self.dormindo
+            and not self.adormecendo
         ):
-
-            self.iniciar_bocejo_pre_sono()
 
             self.iniciou_sono_hoje = True
 
+            self.iniciar_dormir()
+
+            return
+
         # ====================================
-        # BOCEJO
+        # SONO
         # ====================================
 
-        if self.bocejando:
+        if horario_sono:
 
-            self.atualizar_bocejo(dt)
+            self.dormindo = True
+
+            self.piscando = False
+
+            self.tempo_piscada = 0.0
+
+            self.tempo_espera_piscada = 0.0
 
         else:
 
+            self.dormindo = False
+
+            self.sleep_transition_delay = 0
+
             # ====================================
-            # SONO
+            # PISCADA
             # ====================================
 
-            if horario_sono:
+            if self.piscando:
 
-                self.dormindo = True
+                self.atualizar_piscada(dt)
 
-                self.piscando = False
+            # ====================================
+            # HORÁRIO
+            # ====================================
 
-                self.olhos_fechados = True
+            hora = agora.hour
 
-                self.boca_yawn = False
+            minuto = agora.minute
 
-                self.tempo_piscada = 0.0
+            if hora >= 19:
 
-                self.tempo_espera_piscada = 0.0
+                minuto_base = (
+                    minuto // 5
+                ) * 5
 
-            else:
+                pode_bocejar = (
+                    minuto % 5 == 0
+                    and self.ultimo_bocejo_minuto
+                    != minuto_base
+                )
 
-                self.dormindo = False
+                if pode_bocejar:
 
-                self.sleep_transition_delay = 0
-
-                # ====================================
-                # PISCADA
-                # ====================================
-
-                if self.piscando:
-
-                    self.atualizar_piscada(dt)
-
-                # ====================================
-                # HORÁRIO
-                # ====================================
-
-                hora = agora.hour
-
-                minuto = agora.minute
-
-                if hora >= 19:
-
-                    minuto_base = (
-                        minuto // 5
-                    ) * 5
-
-                    pode_bocejar = (
-                        minuto % 5 == 0
-                        and self.ultimo_bocejo_minuto
-                        != minuto_base
+                    self.ultimo_bocejo_minuto = (
+                        minuto_base
                     )
 
-                    if pode_bocejar:
+                    return
 
-                        self.iniciar_bocejo()
+            # ====================================
+            # PISCADA
+            # ====================================
 
-                        self.ultimo_bocejo_minuto = (
-                            minuto_base
-                        )
+            if not self.piscando:
 
-                        return
+                self.tempo_espera_piscada += dt
 
-                # ====================================
-                # PISCADA
-                # ====================================
+                if (
+                    self.tempo_espera_piscada
+                    >= self.intervalo_piscada
+                ):
 
-                if not self.piscando:
-
-                    self.tempo_espera_piscada += dt
-
-                    if (
-                        self.tempo_espera_piscada
-                        >= self.intervalo_piscada
-                    ):
-
-                        self.iniciar_piscada()
+                    self.iniciar_piscada()
 
         # ====================================
         # DELAY SONO
@@ -277,7 +372,17 @@ class AnimacoesSapo:
 
         if self.dormindo:
 
-            self.sleep_transition_delay += dt
+            self.tempo_dormindo += dt
+
+            if self.tempo_dormindo >= 0.5:
+
+                self.tempo_dormindo = 0
+
+                self.frame_dormindo += 1
+
+                if self.frame_dormindo >= 2:
+
+                    self.frame_dormindo = 0
 
         else:
 
@@ -316,6 +421,14 @@ class AnimacoesSapo:
             - self.sleep_body_offset_y
         ) * velocidade
 
+    def iniciar_dormir(self):
+
+        self.adormecendo = True
+
+        self.frame_dormir = 0
+
+        self.tempo_dormir = 0
+
     # ====================================
     # PISCADA
     # ====================================
@@ -323,8 +436,7 @@ class AnimacoesSapo:
     def iniciar_piscada(self):
 
         if (
-            self.bocejando
-            or self.dormindo
+            self.dormindo
         ):
 
             return
@@ -332,8 +444,6 @@ class AnimacoesSapo:
         self.piscando = True
 
         self.tempo_piscada = 0.0
-
-        self.olhos_fechados = True
 
     def atualizar_piscada(self, dt):
 
@@ -346,8 +456,6 @@ class AnimacoesSapo:
 
             self.piscando = False
 
-            self.olhos_fechados = False
-
             self.tempo_espera_piscada = 0.0
 
             self.intervalo_piscada = random.uniform(
@@ -356,135 +464,87 @@ class AnimacoesSapo:
             )
 
     # ====================================
-    # BOCEJO NORMAL
+    # ACORDAR
     # ====================================
 
-    def iniciar_bocejo(self):
+    def iniciar_acordar(self):
 
-        if self.dormindo:
+        self.dormindo = False
 
-            return
+        self.adormecendo = False
 
-        self.piscando = False
+        self.acordando = True
 
-        self.bocejando = True
+        self.frame_acordar = 0
 
-        self.bocejo_pre_sono = False
-
-        self.tempo_bocejo = 0.0
-
-        self.duracao_bocejo = 2.8
-
-    # ====================================
-    # BOCEJO PRÉ SONO
-    # ====================================
-
-    def iniciar_bocejo_pre_sono(self):
-
-        self.piscando = False
-
-        self.bocejando = True
-
-        self.bocejo_pre_sono = True
-
-        self.tempo_bocejo = 0.0
-
-        self.duracao_bocejo = 5.5
-
-    def atualizar_bocejo(self, dt):
-
-        self.tempo_bocejo += dt
-
-        if not self.bocejo_pre_sono:
-
-            if self.tempo_bocejo <= 0.6:
-
-                self.olhos_fechados = True
-
-                self.boca_yawn = False
-
-            elif self.tempo_bocejo <= 2.0:
-
-                self.olhos_fechados = True
-
-                self.boca_yawn = True
-
-            elif self.tempo_bocejo <= self.duracao_bocejo:
-
-                self.olhos_fechados = False
-
-                self.boca_yawn = False
-
-            else:
-
-                self.finalizar_bocejo()
-
-        else:
-
-            if self.tempo_bocejo <= 1.2:
-
-                self.olhos_fechados = True
-
-                self.boca_yawn = False
-
-            elif self.tempo_bocejo <= 4.2:
-
-                self.olhos_fechados = True
-
-                self.boca_yawn = True
-
-            elif self.tempo_bocejo <= self.duracao_bocejo:
-
-                self.olhos_fechados = True
-
-                self.boca_yawn = False
-
-            else:
-
-                self.bocejando = False
-
-                self.boca_yawn = False
-
-                self.olhos_fechados = True
-
-                self.dormindo = True
-
-    # ====================================
-    # FINALIZAR BOCEJO
-    # ====================================
-
-    def finalizar_bocejo(self):
-
-        self.bocejando = False
-
-        self.olhos_fechados = False
-
-        self.boca_yawn = False
-
-        self.tempo_bocejo = 0.0
-
-        self.tempo_espera_piscada = 0.0
+        self.tempo_acordar = 0
 
     # ====================================
     # VIOLÃO
     # ====================================
 
+    def atualizar_pegar_violao(self, dt):
+
+        if not self.pegando_violao:
+            return
+
+        self.tempo_pegar_violao += dt
+
+        if self.tempo_pegar_violao < 0.06:
+            return
+
+        self.tempo_pegar_violao = 0
+
+        self.frame_pegar_violao += 1
+
+        if self.frame_pegar_violao >= 32:
+
+            self.frame_pegar_violao = 31
+
+            self.pegando_violao = False
+            self.tocando_violao = True
+
+            self.frame_violao = 9
+            self.direcao_violao = 1
+
+            self.iniciou_tocar_violao = True
+
     def iniciar_violao(self):
 
-        self.tocando_violao = True
+        if self.tocando_violao or self.pegando_violao:
+            return
+
+        self.iniciou_tocar_violao = False
+
+        self.pegando_violao = True
+        self.tocando_violao = False
+
+        self.frame_pegar_violao = 0
+        self.tempo_pegar_violao = 0
+
+        self.frame_violao = 0
+        self.direcao_violao = 1
 
     def parar_violao(self):
 
+        self.iniciou_tocar_violao = False
+
+        self.pegando_violao = False
         self.tocando_violao = False
+
+        self.frame_pegar_violao = 0
         self.frame_violao = 0
         self.ultimo_frame_violao = 0
 
-    def atualizar_violao(
-        self,
-        dt
-    ):
+    def atualizar_violao(self, dt):
 
         if not self.tocando_violao:
+            return
+
+        self.tempo_tocando_violao += dt
+
+        if self.tempo_tocando_violao >= 7:  # 900 15 minutos
+            self.iniciar_levantar_violao()
             return
 
         self.tempo_violao += dt
@@ -494,97 +554,99 @@ class AnimacoesSapo:
 
         self.tempo_violao = 0
 
-        self.intervalo_violao = random.uniform(
-            0.10,
-            0.22
-        )
+        self.frame_violao += self.direcao_violao
 
-        frame = self.frame_violao
+        if self.frame_violao >= self.frame_max_violao:
 
-        possibilidades = []
+            self.frame_violao = self.frame_max_violao
 
-        if frame > 0:
-            possibilidades.append(
-                frame - 1
-            )
+            self.direcao_violao = -1
 
-        if frame < 3:
-            possibilidades.append(
-                frame + 1
-            )
+        elif self.frame_violao <= self.frame_min_violao:
 
-        # pequena chance de segurar o movimento
+            self.frame_violao = self.frame_min_violao
 
-        if random.random() < 0.20:
-            possibilidades.append(
-                frame
-            )
+            self.direcao_violao = 1
 
-        # evita ficar tremendo entre
-        # dois frames
+    def iniciar_levantar_violao(self):
 
-        if (
-            len(possibilidades) > 1
-            and self.ultimo_frame_violao in possibilidades
-            and random.random() < 0.60
-        ):
-            possibilidades.remove(
-                self.ultimo_frame_violao
-            )
+        self.parar_audio_violao = True
 
-        self.ultimo_frame_violao = frame
+        self.tocando_violao = False
 
-        self.frame_violao = random.choice(
-            possibilidades
-        )
+        self.levantando_violao = True
 
-    # ====================================
-    # CLICAR OLHO
-    # ====================================
+        self.frame_levantar_violao = 0
 
-    def clicar_olho_esquerdo(self):
+        self.tempo_levantar_violao = 0
 
-        if self.dormindo:
+    def atualizar_levantar_violao(self, dt):
 
-            self.olho_esquerdo_forcado = False
+        if not self.levantando_violao:
             return
 
-        self.olho_esquerdo_forcado = True
-        self.tempo_olho_esquerdo = 0.0
+        self.tempo_levantar_violao += dt
 
-    def clicar_olho_direito(self):
-
-        if self.dormindo:
-
-            self.olho_direito_forcado = False
+        if self.tempo_levantar_violao < 0.06:
             return
 
-        self.olho_direito_forcado = True
-        self.tempo_olho_direito = 0.0
+        self.tempo_levantar_violao = 0
 
-    # ====================================
-    # HELPERS
-    # ====================================
+        self.frame_levantar_violao += 1
 
-    def obter_asset_olho(
-        self,
-        olho_aberto,
-        olho_fechado
-    ):
+        if self.frame_levantar_violao >= 47:
 
-        if self.olhos_fechados:
+            self.frame_levantar_violao = 46
 
-            return olho_fechado
+            self.levantando_violao = False
 
-        return olho_aberto
+            self.guardando_violao = True
 
-    def obter_asset_boca(
-        self,
-        boca_yawn
-    ):
+            self.frame_guardar_violao = 18  # 14
 
-        if self.boca_yawn:
+            self.tempo_guardar_violao = 0
 
-            return boca_yawn
+            self.ultimo_frame_guardar = -1
 
-        return None
+            self.iniciou_guardar_violao = True
+
+    def atualizar_guardar_violao(self, dt):
+
+        if not self.guardando_violao:
+            return
+
+        self.tempo_guardar_violao += dt
+
+        if self.tempo_guardar_violao < 0.06:
+            return
+
+        self.tempo_guardar_violao = 0
+
+        self.frame_guardar_violao += 1
+
+        if self.frame_guardar_violao >= 32:
+            self.frame_guardar_violao = 0
+
+    def atualizar_soltar_violao(self, dt):
+
+        if not self.soltando_violao:
+            return
+
+        self.tempo_soltar_violao += dt
+
+        if self.tempo_soltar_violao < 0.06:
+            return
+
+        self.tempo_soltar_violao = 0
+
+        self.frame_soltar_violao += 1
+
+        if self.frame_soltar_violao >= 55:
+
+            self.frame_soltar_violao = 55
+
+            self.soltando_violao = False
+
+            self.finalizou_soltar_violao = True
+
+            self.tempo_tocando_violao = 0
