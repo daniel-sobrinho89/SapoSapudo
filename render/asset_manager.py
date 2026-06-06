@@ -18,3 +18,6 @@ class AssetManager:
             ).convert_alpha()
 
         return self.assets[nome]
+
+
+asset_manager = AssetManager()

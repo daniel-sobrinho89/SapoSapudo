@@ -39,16 +39,15 @@ class Nuvem:
 
         if Nuvem.sprites is None:
 
-            from utils.paths import BASE_DIR
-            asset_path = BASE_DIR / "assets" / "clima"
+            from render.asset_manager import asset_manager
 
-            nuvem_1 = pygame.image.load(
-                str(asset_path / "nuvem_1.png")
-            ).convert_alpha()
+            nuvem_1 = asset_manager.carregar(
+                "clima/nuvem_1.png"
+            )
 
-            nuvem_2 = pygame.image.load(
-                str(asset_path / "nuvem_2.png")
-            ).convert_alpha()
+            nuvem_2 = asset_manager.carregar(
+                "clima/nuvem_2.png"
+            )
 
             Nuvem.sprites = [
                 nuvem_1,
