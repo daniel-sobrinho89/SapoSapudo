@@ -27,11 +27,11 @@ source.include_exts = py,png,jpg,jpeg,wav,ogg,mp3,json
 #source.exclude_exts = spec
 
 # (list) List of directory to exclude (leave empty to not exclude anything)
-source.exclude_dirs = .git,.venv,__pycache__,build,dist
+source.exclude_dirs = .git,.github,.venv,__pycache__,build,dist,bin,.buildozer
 
 # (list) List of exclusions using pattern matching
 # Do not prefix with './'
-source.exclude_patterns = *.pyc,*.pyo,*.tmp
+source.exclude_patterns = *.pyc,*.pyo,*.tmp,.DS_Store,*.log
 
 # (str) Application versioning (method 1)
 version = 0.1
