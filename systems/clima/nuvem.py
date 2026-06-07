@@ -2,7 +2,7 @@
 # nuvem.py
 # ==========================================
 
-import pygame
+import pygame_adapter
 import random
 import math
 
@@ -58,12 +58,12 @@ class Nuvem:
             ]
 
             Nuvem.sprites_flip = [
-                pygame.transform.flip(
+                pygame_adapter.transform.flip(
                     nuvem_1,
                     True,
                     False
                 ),
-                pygame.transform.flip(
+                pygame_adapter.transform.flip(
                     nuvem_2,
                     True,
                     False
@@ -247,7 +247,7 @@ class Nuvem:
 
         # movimento flutuante vertical
         self.y = self.base_y + math.sin(
-            pygame.time.get_ticks() * 0.00035
+            pygame_adapter.time.get_ticks() * 0.00035
             + self.offset
         ) * self.float_amplitude
 
@@ -333,7 +333,7 @@ class Nuvem:
     ):
         chave = (
             id(sprite),
-            round(escala, 3)
+            round(escala, 2)
         )
 
         if chave not in cls.cache_escalas:
@@ -348,11 +348,14 @@ class Nuvem:
                 int(sprite.get_height() * escala)
             )
 
+            if len(cls.cache_escalas) > 200:
+                cls.cache_escalas.clear()
+
             cls.cache_escalas[chave] = (
                 transform.escalar(
                     sprite,
                     (largura, altura)
-                ).convert_alpha()
+                )
             )
 
         return cls.cache_escalas[chave]
@@ -363,7 +366,7 @@ class Nuvem:
         sprite,
         alpha
     ):
-
+        alpha = int(alpha / 10) * 10
         chave = (
             id(sprite),
             alpha
@@ -372,8 +375,10 @@ class Nuvem:
         if chave not in cls.cache_alpha:
 
             copia = sprite.copy()
-
             copia.set_alpha(alpha)
+
+            if len(cls.cache_alpha) > 500:
+                cls.cache_alpha.clear()
 
             cls.cache_alpha[chave] = copia
 

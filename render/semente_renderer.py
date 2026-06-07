@@ -1,6 +1,6 @@
 import math
 
-import pygame
+import pygame_adapter
 
 class SementeRenderer:
 

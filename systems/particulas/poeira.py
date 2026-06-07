@@ -1,6 +1,6 @@
 import math
 
-import pygame
+import pygame_adapter
 import random
 from systems.fisica import sistema_fisica
 
@@ -253,12 +253,12 @@ class ParticulaPoeira:
 
         tamanho = self.raio * 6
 
-        superficie = pygame.Surface(
+        superficie = pygame_adapter.Surface(
             (
                 tamanho,
                 tamanho
             ),
-            pygame.SRCALPHA
+            pygame_adapter.SRCALPHA
         )
 
         centro = tamanho // 2
@@ -267,7 +267,7 @@ class ParticulaPoeira:
         # GLOW EXTERNO
         # =================================
 
-        pygame.draw.circle(
+        pygame_adapter.draw.circle(
             superficie,
             (
                 255,
@@ -286,7 +286,7 @@ class ParticulaPoeira:
         # NÚCLEO
         # =================================
 
-        pygame.draw.circle(
+        pygame_adapter.draw.circle(
             superficie,
             (
                 255,

@@ -1,4 +1,4 @@
-import pygame
+import pygame_adapter
 
 from config import (
     AUDIO_HABILITADO,
@@ -19,13 +19,13 @@ class AudioManager:
         if self.inicializado:
             return
 
-        pygame.mixer.init()
+        pygame_adapter.mixer.init()
 
-        pygame.mixer.music.load(
+        pygame_adapter.mixer.music.load(
             str(BASE_DIR / MUSICA_FUNDO)
         )
 
-        pygame.mixer.music.set_volume(
+        pygame_adapter.mixer.music.set_volume(
             VOLUME_MUSICA
         )
 
@@ -38,7 +38,7 @@ class AudioManager:
         if not self.habilitado:
             return
 
-        pygame.mixer.music.play(-1)
+        pygame_adapter.mixer.music.play(-1)
 
     def alternar(self):
 
@@ -53,7 +53,7 @@ class AudioManager:
 
             self.habilitado = True
 
-            pygame.mixer.music.unpause()
+            pygame_adapter.mixer.music.unpause()
 
             self.iniciar()
 
@@ -62,6 +62,6 @@ class AudioManager:
         if not self.habilitado:
             return
 
-        pygame.mixer.music.pause()
+        pygame_adapter.mixer.music.pause()
 
         self.habilitado = False

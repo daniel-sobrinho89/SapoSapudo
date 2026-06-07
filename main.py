@@ -21,7 +21,7 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.core.window import Window
 
-import pygame
+import pygame_adapter
 import threading
 import math
 
@@ -63,10 +63,10 @@ ALTURA_REAL = int(info_h)
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
 
 # manter a variável `tela` como a superfície virtual para compatibilidade
-tela_virtual = pygame.Surface((LARGURA, ALTURA))
+tela_virtual = pygame_adapter.Surface((LARGURA, ALTURA))
 tela = tela_virtual
 
-clock = pygame.Clock()
+clock = pygame_adapter.Clock()
 
 from utils.input import (
     init_scaling,
@@ -136,14 +136,15 @@ class GameWidget(Widget):
         # drawing setup
         with self.canvas:
             self.texture = Texture.create(
-                size=(
-                    int(Window.width),
-                    int(Window.height)
-                ),
+                size=(LARGURA, ALTURA),
                 colorfmt='rgba'
             )
             self.texture.flip_vertical()
-            self.rect = Rectangle(texture=self.texture, pos=self.pos, size=(LARGURA_REAL, ALTURA_REAL))
+            self.rect = Rectangle(
+                texture=self.texture,
+                pos=(0, 0),
+                size=Window.size
+            )
 
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
@@ -198,7 +199,7 @@ class GameWidget(Widget):
         if self.drag_violao:
             self.drag_violao = False
             self.violao.finalizar_arraste()
-            area_sapo = pygame.Rect(centro_x - 80, centro_y - 80, 160, 160)
+            area_sapo = pygame_adapter.Rect(centro_x - 80, centro_y - 80, 160, 160)
             if area_sapo.collidepoint(self.violao.x, self.violao.y) and self.sapo.pode_receber_violao():
                 self.violao.acoplado = True
                 self.sapo.iniciar_violao()
@@ -290,21 +291,15 @@ class GameWidget(Widget):
             self.renderer_violao.renderizar(self.violao)
 
         # escalonar e apresentar
-        scaled = pygame.transform.scale(
-            tela,
-            (LARGURA_REAL, ALTURA_REAL)
-        )
-
-        pil = scaled.pil_image()
+        img = tela._img
 
         self.texture.blit_buffer(
-            pil.tobytes(),
+            img.tobytes(),
             colorfmt='rgba',
             bufferfmt='ubyte'
         )
 
-        self.rect.texture = self.texture
-
+        self.canvas.ask_update()
 
 class GameApp(App):
     def build(self):
@@ -314,4 +309,4 @@ class GameApp(App):
 if __name__ == '__main__':
     GameApp().run()
 
-pygame.quit()
+pygame_adapter.quit()

@@ -2,7 +2,7 @@
 # sistema_nuvens.py
 # ==========================================
 
-import pygame
+import pygame_adapter
 
 from systems.clima.nuvem import Nuvem
 
@@ -46,7 +46,7 @@ class SistemaNuvens:
     # ==========================================
 
     def atualizar_area_interna(self, area_interna):
-        self.area_interna = pygame.Rect(
+        self.area_interna = pygame_adapter.Rect(
             0,
             0,
             1280,

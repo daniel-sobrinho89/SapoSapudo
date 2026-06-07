@@ -1,4 +1,4 @@
-import pygame
+import pygame_adapter
 
 
 class SapoRenderer:
@@ -14,7 +14,7 @@ class SapoRenderer:
         self.assets = assets
         self.transform = transform
 
-        self.corpo_rect = pygame.Rect(
+        self.corpo_rect = pygame_adapter.Rect(
             -1000,
             -1000,
             1,
@@ -140,7 +140,7 @@ class SapoRenderer:
                 largura,
                 altura
             )
-        ).convert_alpha()
+        )
 
         imagem.set_alpha(alpha)
 
@@ -235,7 +235,7 @@ class SapoRenderer:
             frame.get_height() * escala
         )
 
-        self.corpo_rect = pygame.Rect(
+        self.corpo_rect = pygame_adapter.Rect(
             centro_x - largura // 2,
             centro_y - altura // 2,
             largura,

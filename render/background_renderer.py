@@ -1,4 +1,4 @@
-import pygame
+import pygame_adapter
 from datetime import datetime
 from render.asset_manager import asset_manager
 

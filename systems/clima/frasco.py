@@ -1,4 +1,4 @@
-import pygame
+import pygame_adapter
 
 
 class FrascoClimatico:
@@ -193,9 +193,9 @@ class FrascoClimatico:
         # SURFACE FINAL
         # =====================================
 
-        self.frasco_surface = pygame.Surface(
+        self.frasco_surface = pygame_adapter.Surface(
             (self.largura, self.altura),
-            pygame.SRCALPHA
+            pygame_adapter.SRCALPHA
         )
 
         # =====================================
@@ -239,14 +239,14 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.62
         )
 
-        self.area_interna = pygame.Rect(
+        self.area_interna = pygame_adapter.Rect(
             self.x + self.area_interna_offset_x,
             self.y + self.area_interna_offset_y,
             self.area_interna_width,
             self.area_interna_height
         )
 
-        self.area_particulas = pygame.Rect(
+        self.area_particulas = pygame_adapter.Rect(
             self.x + 40,
             self.y - 180,
             self.largura - 130,
@@ -277,7 +277,7 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.55
         )
 
-        self.area_pote = pygame.Rect(
+        self.area_pote = pygame_adapter.Rect(
             pote_x,
             pote_y,
             pote_w,

@@ -3,7 +3,7 @@
 # =====================================
 
 import math
-import pygame
+import pygame_adapter
 
 
 class DuendeRenderer:
@@ -79,7 +79,7 @@ class DuendeRenderer:
         imagem = self.transform.escalar(
             imagem,
             (largura, altura)
-        ).convert_alpha()
+        )
 
         imagem.set_alpha(alpha)
 
@@ -115,12 +115,12 @@ class DuendeRenderer:
         if chave in self.cache_sombras:
             return self.cache_sombras[chave]
 
-        sombra = pygame.Surface(
+        sombra = pygame_adapter.Surface(
             (140, 60),
-            pygame.SRCALPHA
+            pygame_adapter.SRCALPHA
         )
 
-        pygame.draw.ellipse(
+        pygame_adapter.draw.ellipse(
             sombra,
             (0, 0, 0, 45),
             (0, 0, 140, 60)
@@ -205,20 +205,6 @@ class DuendeRenderer:
 
         shadow_surface = self.obter_sombra(
             escala
-        )
-
-        pygame.draw.ellipse(
-            shadow_surface,
-            (0, 0, 0, 45),
-            (0, 0, 140, 60)
-        )
-
-        shadow_surface = self.transform.escalar(
-            shadow_surface,
-            (
-                int(140 * escala),
-                int(60 * escala)
-            )
         )
 
         self.tela.blit(

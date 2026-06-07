@@ -4,7 +4,7 @@
 
 import math
 import random
-import pygame
+import pygame_adapter
 
 from systems.ia_duende import IADuende
 from systems.animacoes_duende import AnimacoesDuende
@@ -87,8 +87,8 @@ class DuendeNeblina:
         self.offset_drag_x = 0
         self.offset_drag_y = 0
 
-        self.corpo_rect = pygame.Rect(0, 0, 0, 0)
-        self.cabeca_rect = pygame.Rect(0, 0, 0, 0)
+        self.corpo_rect = pygame_adapter.Rect(0, 0, 0, 0)
+        self.cabeca_rect = pygame_adapter.Rect(0, 0, 0, 0)
 
         # =================================
         # MOVIMENTO

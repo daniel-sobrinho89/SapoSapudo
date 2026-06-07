@@ -241,7 +241,7 @@ class transform:
 
         resized = surf._img.resize(
             (w, h),
-            resample=Image.LANCZOS
+            resample=Image.BILINEAR
         )
 
         s = Surface((w, h))
@@ -264,7 +264,7 @@ class transform:
 
         rotated = surf._img.rotate(
             -angle,
-            resample=Image.BICUBIC,
+            resample=Image.BILINEAR,
             expand=True
         )
 

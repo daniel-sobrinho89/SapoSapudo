@@ -1,4 +1,4 @@
-import pygame
+import pygame_adapter
 
 
 class TransformUtils:
@@ -21,7 +21,7 @@ class TransformUtils:
         if key in self.cache_escalas:
             return self.cache_escalas[key]
 
-        escalada = pygame.transform.smoothscale(
+        escalada = pygame_adapter.transform.smoothscale(
             imagem,
             (largura, altura)
         )
@@ -36,7 +36,7 @@ class TransformUtils:
         rotacao
     ):
 
-        rotacao = int(rotacao)
+        rotacao = round(rotacao)
 
         key = (
             id(imagem),
@@ -46,7 +46,7 @@ class TransformUtils:
         if key in self.cache_rotacoes:
             return self.cache_rotacoes[key]
 
-        resultado = pygame.transform.rotate(
+        resultado = pygame_adapter.transform.rotate(
             imagem,
             rotacao
         )
