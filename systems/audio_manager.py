@@ -13,6 +13,11 @@ class AudioManager:
     def __init__(self):
 
         self.habilitado = AUDIO_HABILITADO
+        self.inicializado = False
+
+    def inicializar(self):
+        if self.inicializado:
+            return
 
         pygame.mixer.init()
 
@@ -24,10 +29,11 @@ class AudioManager:
             VOLUME_MUSICA
         )
 
-        if self.habilitado:
-            pygame.mixer.music.play(-1)
+        self.inicializado = True
 
     def iniciar(self):
+
+        self.inicializar()
 
         if not self.habilitado:
             return

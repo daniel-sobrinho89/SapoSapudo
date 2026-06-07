@@ -28,6 +28,7 @@ jobs:
             libtool \
             pkg-config \
             zlib1g-dev \
+            libjpeg-dev \
             libncurses5-dev \
             libncursesw5-dev \
             cmake \

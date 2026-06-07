@@ -2,37 +2,25 @@
 # MAIN.PY
 # =========================================
 
-import threading
 import os
-import math
+os.environ["SDL_AUDIODRIVER"] = "alsa"
+os.environ["AUDIODEV"] = "hw:2,0"
+
+import logging
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle, Color
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
-
-
-from kivy.core.audio import SoundLoader
-from utils.paths import BASE_DIR
-
-print("PRELOAD")
-
-
-from threading import current_thread
-print(current_thread())
-
-AUDIO_TESTE = SoundLoader.load(
-    str(BASE_DIR / "assets" / "musica" / "vila_duendes.ogg")
-)
-
-print("PRELOAD OK")
-
-
-
-import pygame
 from kivy.core.window import Window
 
+import pygame
+import threading
+import math
 
 from config import *
 from constants import *
@@ -109,7 +97,11 @@ class GameWidget(Widget):
         super().__init__(**kwargs)
 
         self.audio = AudioManager()
-        self.audio.iniciar()
+
+        Clock.schedule_once(
+            lambda dt: self.audio.iniciar(),
+            2
+        )
         # initialize game state (mirrors previous top-level init)
         self.assets = AssetManager()
         self.transform = TransformUtils()

@@ -9,16 +9,39 @@ and a minimal mixer.music using Kivy SoundLoader.
 """
 from PIL import Image, ImageOps, ImageDraw
 import time as pytime
-import os
-from kivy.core.audio import SoundLoader
-from kivy.core.window import Window
 
 # mouse compatibility
+
+_window_cache = None
+
+def obter_window():
+    global _window_cache
+
+    if _window_cache is None:
+        from kivy.core.window import Window
+        _window_cache = Window
+
+    return _window_cache
+
+_soundloader_cache = None
+
+def obter_soundloader():
+
+    global _soundloader_cache
+
+    if _soundloader_cache is None:
+        from kivy.core.audio import SoundLoader
+
+        _soundloader_cache = SoundLoader
+
+    return _soundloader_cache
+
 class mouse:
+
     @staticmethod
     def get_pos():
         try:
-            return tuple(map(int, Window.mouse_pos))
+            return tuple(map(int, obter_window().mouse_pos))
         except Exception:
             return (0, 0)
 
@@ -335,8 +358,11 @@ class display:
 
     class InfoObj:
         def __init__(self):
-            self.current_w = int(Window.width)
-            self.current_h = int(Window.height)
+
+            window = obter_window()
+
+            self.current_w = int(window.width)
+            self.current_h = int(window.height)
 
     @staticmethod
     def Info():
@@ -387,13 +413,12 @@ class mixer:
             self._volume = 1.0
 
         def load(self, path):
-
             try:
 
                 if self._sound is not None:
                     return
-                
-                self._sound = SoundLoader.load(path)
+
+                self._sound = obter_soundloader().load(path)
 
             except Exception as ex:
 
@@ -408,7 +433,6 @@ class mixer:
                 self._sound.volume = v
 
         def play(self, loops=0):
-
             if not self._sound:
                 return
             # loops < 0 => infinite
@@ -416,6 +440,7 @@ class mixer:
                 self._sound.loop = loops < 0
             except Exception:
                 pass
+
             self._sound.volume = self._volume
             self._sound.play()
 
