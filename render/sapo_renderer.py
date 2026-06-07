@@ -134,7 +134,7 @@ class SapoRenderer:
             int(imagem.get_height() * escala_y)
         )
 
-        imagem = pygame.transform.smoothscale(
+        imagem = self.transform.escalar(
             imagem,
             (
                 largura,

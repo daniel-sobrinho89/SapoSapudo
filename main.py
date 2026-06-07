@@ -2,10 +2,37 @@
 # MAIN.PY
 # =========================================
 
-import pygame
 import threading
 import os
 import math
+
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.graphics import Rectangle, Color
+from kivy.graphics.texture import Texture
+from kivy.clock import Clock
+
+
+from kivy.core.audio import SoundLoader
+from utils.paths import BASE_DIR
+
+print("PRELOAD")
+
+
+from threading import current_thread
+print(current_thread())
+
+AUDIO_TESTE = SoundLoader.load(
+    str(BASE_DIR / "assets" / "musica" / "vila_duendes.ogg")
+)
+
+print("PRELOAD OK")
+
+
+
+import pygame
+from kivy.core.window import Window
+
 
 from config import *
 from constants import *
@@ -27,6 +54,7 @@ from systems.clima.sistema_nuvens import SistemaNuvens
 from render.duende_renderer import DuendeRenderer
 from entities.duende_neblina import DuendeNeblina
 from systems.audio_manager import AudioManager
+
 from entities.violao import Violao
 from render.violao_renderer import ViolaoRenderer
 from entities.semente import Semente
@@ -36,39 +64,22 @@ from render.semente_renderer import SementeRenderer
 # INIT
 # =========================================
 
-pygame.init()
-
-# =========================================
-# WINDOW
-# =========================================
-
-# detectar resolução física do dispositivo
-info = pygame.display.Info()
-LARGURA_REAL = info.current_w
-ALTURA_REAL = info.current_h
-
-# criar janela na resolução real
-screen = pygame.display.set_mode(
-    (LARGURA_REAL, ALTURA_REAL)
-)
-
-pygame.display.set_caption(
-    TITULO
-)
+# Kivy-based application: window size
+info_w, info_h = Window.width, Window.height
+LARGURA_REAL = int(info_w)
+ALTURA_REAL = int(info_h)
 
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
-tela_virtual = pygame.Surface((LARGURA, ALTURA))
 
 # manter a variável `tela` como a superfície virtual para compatibilidade
+tela_virtual = pygame.Surface((LARGURA, ALTURA))
 tela = tela_virtual
 
-clock = pygame.time.Clock()
+clock = pygame.Clock()
 
 from utils.input import (
     init_scaling,
-    event_pos_virtual,
-    obter_posicao_ponteiro,
-    virtual_to_real
+    real_to_virtual
 )
 
 # inicializar escala para helpers de input
@@ -90,490 +101,222 @@ centro_y = (
 )
 
 # =========================================
-# SYSTEMS
+# Kivy App wrapper
 # =========================================
 
-assets = AssetManager()
-
-transform = TransformUtils()
-
-background_renderer = BackgroundRenderer(
-    tela,
-    LARGURA,
-    ALTURA
-)
-
-
-ambiente = Ambiente()
-
-sapo_renderer = SapoRenderer(
-    tela,
-    assets,
-    transform
-)
-
-animacoes_folha = AnimacoesFolha()
-
-duende = DuendeNeblina()
-
-renderer_duende = DuendeRenderer(
-    tela,
-    assets
-)
-
-violao = Violao()
-
-renderer_violao = ViolaoRenderer(
-    tela,
-    assets
-)
-
-duende.violao_monitorado = violao
-
-semente = Semente()
-
-renderer_semente = SementeRenderer(
-    tela,
-    assets
-)
-
-# =========================================
-# FRASCO
-# =========================================
-
-frasco_climatico = FrascoClimatico()
-
-frasco_climatico.atualizar_posicao(centro_y)
-
-particulas = [
-    ParticulaPoeira(
-        frasco_climatico.area_particulas,
-        frasco_climatico.area_pote
-    )
-    for _ in range(QUANTIDADE_POEIRA)
-]
-
-# associar área protegida (pote) para que partículas dentro do pote não sofram vento
-for p in particulas:
-    p.area_protegida = frasco_climatico.area_pote
-
-    p.protegido = (
-        p.area_protegida.collidepoint(
-            int(p.x),
-            int(p.y)
-        )
-    )
-
-# =========================================
-# CLIMA
-# =========================================
-
-clima_service = ClimaService()
-
-sistema_nuvens = SistemaNuvens(
-    frasco_climatico.area_interna
-)
-
-
-# ENTIDADE SAPO
-sapo = Sapo(centro_x, centro_y)
-
-# =========================================
-#   AUDIO
-# =========================================
-
-audio = AudioManager()
-
-audio.iniciar()
-
-# =========================================
-# LOOP
-# =========================================
-
-rodando = True
-
-drag_duende = False
-
-drag_violao = False
-
-while rodando:
-
-    dt = min(
-        clock.tick(FPS) / 1000.0,
-        0.05
-    )
-
-    # =====================================
-    # EVENTOS
-    # =====================================
-
-    for evento in pygame.event.get():
-
-        # converter posição do evento (resolução real -> virtual)
-        pos_virtual = event_pos_virtual(evento)
-
-        # mapear eventos de toque (Android) para tipos compatíveis com mouse
-        mtype = evento.type
-        mbutton = getattr(evento, 'button', None)
-
-        if getattr(pygame, 'FINGERDOWN', None) is not None and evento.type == pygame.FINGERDOWN:
-            mtype = pygame.MOUSEBUTTONDOWN
-            mbutton = 1
-
-        if getattr(pygame, 'FINGERMOTION', None) is not None and evento.type == pygame.FINGERMOTION:
-            mtype = pygame.MOUSEMOTION
-
-        if getattr(pygame, 'FINGERUP', None) is not None and evento.type == pygame.FINGERUP:
-            mtype = pygame.MOUSEBUTTONUP
-            mbutton = 1
-
-        if evento.type == pygame.QUIT:
-
-            rodando = False
-
-        # Android back button should quit (only on Android)
-        if IS_ANDROID and evento.type == pygame.KEYDOWN:
-            back_keys = [pygame.K_ESCAPE, getattr(pygame, 'K_AC_BACK', None)]
-            if evento.key in back_keys:
-                rodando = False
-
-        # =====================================
-        # MOUSE DOWN
-        # =====================================
-
-        if (
-            mtype == pygame.MOUSEBUTTONDOWN
-            and mbutton == 1
-        ):
-
-            if duende.cabeca_rect.collidepoint(
-                pos_virtual
-            ):
-                drag_duende = True
-
-                duende.iniciar_arraste(
-                    *pos_virtual
-                )
-
-
-            elif renderer_violao.obter_rect(violao).collidepoint(
-                pos_virtual
-            ):
-
-                drag_violao = True
-
-                violao.iniciar_arraste(
-                    *pos_virtual
-                )
-
-            if (
-                violao.acoplado
-                and sapo_renderer.corpo_rect.collidepoint(
-                    pos_virtual
-                )
-            ):
-                violao.acoplado = False
-
-                sapo.parar_violao()
-
-                drag_violao = True
-
-                audio.alternar()
-                
-
-                violao.iniciar_arraste(
-                    *pos_virtual
-                )
-
-        # =====================================
-        # DRAG
-        # =====================================
-
-        if mtype == pygame.MOUSEMOTION:
-
-            if drag_violao:
-
-                violao.mover_arraste(
-                    *pos_virtual
-                )
-
-            if drag_duende:
-
-                duende.mover_arraste(
-                    *pos_virtual
-                )
-
-        # =====================================
-        # SOLTOU
-        # =====================================
-
-        if (
-            mtype == pygame.MOUSEBUTTONUP
-            and mbutton == 1
-        ):
-
-            if drag_violao:
-
-                drag_violao = False
-
-                violao.finalizar_arraste()
-
-                area_sapo = pygame.Rect(
-                    centro_x - 80,
-                    centro_y - 80,
-                    160,
-                    160
-                )
-
-                if (
-                    area_sapo.collidepoint(
-                        violao.x,
-                        violao.y
-                    )
-                    and sapo.pode_receber_violao()
-                ):
-
-                    violao.acoplado = True
-
-                    sapo.iniciar_violao()
-
-                    violao.x = centro_x + 5
-                    violao.y = centro_y + 20
-
-                else:
-
-                    violao.iniciar_queda()
-
-                    if duende.pode_resgatar_violao():
-
-                        # só teleportar se realmente estiver longe o suficiente
-                        distancia_violao = abs(violao.x - duende.x)
-                        MIN_TELEPORT_DIST = 120
-
-                        if not duende.consegue_alcancar_antes_da_queda(
-                            violao
-                        ) and distancia_violao > MIN_TELEPORT_DIST:
-                            duende.teleportar_para_violao(
-                                violao
-                            )
-
-                        duende.iniciar_resgate_violao(
-                            violao
-                        )
-
-            if drag_duende:
-
-                drag_duende = False
-
-                duende.finalizar_arraste(frasco_climatico.area_interna)
-
-                if duende.esta_dentro_do_frasco(
-                    frasco_climatico.area_interna
-                ):
-
-                    duende.animacoes.iniciar_sono()
-
-                    duende.animacoes.iniciar_sono_programado()
-
-                elif duende.animacoes.dormindo:
-
-                    duende.animacoes.iniciar_acordar()
-
-                    duende.animacoes.cancelar_sono_programado()
-
-                    duende.escolher_novo_destino()
-
-    # =====================================
-    # CLIMA
-    # =====================================
-
-    if clima_service.precisa_atualizar():
-
-        def atualizar_clima():
-
-            clima_service.atualizar()
-
-        threading.Thread(
-            target=atualizar_clima,
-            daemon=True
-        ).start()
-
-    clima_service.atualizar_visual(dt)
-
-    # pequena contribuição do vento climático para o ambiente local (com sinal de direção)
-    direcao_rad = math.radians(clima_service.wind_direction + 180)
-    sinal_direcao = math.sin(direcao_rad)
-
-    influencia_clima = (
-        sinal_direcao
-        * clima_service.wind_speed
-        * 0.15
-    )
-
-    if getattr(
-        clima_service,
-        'rajada_ativa',
-        False
-    ):
-        influencia_clima += (
-            sinal_direcao
-            * clima_service.wind_speed
-            * 0.35
+class GameWidget(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.audio = AudioManager()
+        self.audio.iniciar()
+        # initialize game state (mirrors previous top-level init)
+        self.assets = AssetManager()
+        self.transform = TransformUtils()
+        self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform)
+        self.ambiente = Ambiente()
+        self.sapo_renderer = SapoRenderer(tela, self.assets, self.transform)
+        self.animacoes_folha = AnimacoesFolha()
+        self.duende = DuendeNeblina()
+        self.renderer_duende = DuendeRenderer(tela, self.assets, self.transform)
+        self.violao = Violao()
+        self.renderer_violao = ViolaoRenderer(tela, self.assets, self.transform)
+        self.duende.violao_monitorado = self.violao
+        self.semente = Semente()
+        self.renderer_semente = SementeRenderer(tela, self.assets, self.transform)
+        self.frasco_climatico = FrascoClimatico(self.transform)
+        self.frasco_climatico.atualizar_posicao(centro_y)
+        self.particulas = [ParticulaPoeira(self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote) for _ in range(QUANTIDADE_POEIRA)]
+        for p in self.particulas:
+            p.area_protegida = self.frasco_climatico.area_pote
+            p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
+        self.clima_service = ClimaService()
+        self.sistema_nuvens = SistemaNuvens(self.frasco_climatico.area_interna, self.transform)
+        self.sapo = Sapo(centro_x, centro_y)
+
+        # interaction state
+        self.drag_duende = False
+        self.drag_violao = False
+
+        # drawing setup
+        with self.canvas:
+            self.texture = Texture.create(
+                size=(
+                    int(Window.width),
+                    int(Window.height)
+                ),
+                colorfmt='rgba'
+            )
+            self.texture.flip_vertical()
+            self.rect = Rectangle(texture=self.texture, pos=self.pos, size=(LARGURA_REAL, ALTURA_REAL))
+
+        # schedule updates
+        Clock.schedule_interval(self.update, 1.0 / FPS)
+
+    def on_size(self, *args):
+        self.rect.size = (self.width, self.height)
+
+        init_scaling(
+            self.width,
+            self.height,
+            LARGURA,
+            ALTURA
         )
 
-    # aumentar sensibilidade da folha durante rajada para que ela respeite a rajada_vento
-    if getattr(clima_service, 'rajada_ativa', False):
-        animacoes_folha.intensidade_vento = 5.0
-    else:
-        animacoes_folha.intensidade_vento = 1.8
+    def on_pos(self, *args):
+        self.rect.pos = self.pos
 
-    # =====================================
-    # UPDATE
-    # =====================================
+    def on_touch_down(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
 
-    # As partículas mantêm a referência a `area_pote` (retângulo do frasco)
-    # O retângulo é atualizado em `frasco_climatico.atualizar_posicao`,
-    # então não precisamos resetar as partículas a cada frame.
+        if self.duende.corpo_rect.collidepoint(pos_virtual):
+            self.drag_duende = True
+            self.duende.iniciar_arraste(*pos_virtual)
+            return True
 
-    ambiente.atualizar(dt, influencia_clima)
+        elif self.renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
+            self.drag_violao = True
+            self.violao.iniciar_arraste(*pos_virtual)
+            return True
 
-    # aplicar vento ao violão quando estiver caindo (usa clima_service.wind_speed, sem rajada extra)
-    from systems.fisica import sistema_fisica
-    if violao.caindo:
-        sistema_fisica.aplicar_forca_vento(violao, clima_service, dt, sensibilidade=0.6)
+        if (self.violao.acoplado and self.sapo_renderer.corpo_rect.collidepoint(pos_virtual)):
+            self.violao.acoplado = False
+            self.sapo.parar_violao()
+            self.drag_violao = True
+            self.audio.alternar()
+            self.violao.iniciar_arraste(*pos_virtual)
+            return True
 
-    violao.atualizar(dt)
+        return super().on_touch_down(touch)
 
-    sistema_nuvens.atualizar_area_interna(
-        frasco_climatico.area_interna
-    )
+    def on_touch_move(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
 
-    sistema_nuvens.atualizar(
-        dt,
-        clima_service.cloudiness_visual,
-        clima_service.future_cloudiness_1h,
-        clima_service.future_cloudiness_2h,
-        clima_service.future_cloudiness_3h,
-        clima_service.wind_direction,
-        clima_service.wind_speed
-    )
+        if self.drag_violao:
+            self.violao.mover_arraste(*pos_virtual)
+        if self.drag_duende:
+            self.duende.mover_arraste(*pos_virtual)
 
-    events = sapo.atualizar(
-        dt,
-        ambiente,
-        animacoes_folha,
-        violao
-    )
+    def on_touch_up(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
 
-    # eventos retornados por `Sapo.atualizar` que encapsulam flags internas
-    if events.get("start_audio"):
-        audio.alternar()
+        if self.drag_violao:
+            self.drag_violao = False
+            self.violao.finalizar_arraste()
+            area_sapo = pygame.Rect(centro_x - 80, centro_y - 80, 160, 160)
+            if area_sapo.collidepoint(self.violao.x, self.violao.y) and self.sapo.pode_receber_violao():
+                self.violao.acoplado = True
+                self.sapo.iniciar_violao()
+                self.violao.x = centro_x + 5
+                self.violao.y = centro_y + 20
+            else:
+                self.violao.iniciar_queda()
+                if self.duende.pode_resgatar_violao():
+                    distancia_violao = abs(self.violao.x - self.duende.x)
+                    MIN_TELEPORT_DIST = 120
+                    if not self.duende.consegue_alcancar_antes_da_queda(self.violao) and distancia_violao > MIN_TELEPORT_DIST:
+                        self.duende.teleportar_para_violao(self.violao)
+                    self.duende.iniciar_resgate_violao(self.violao)
 
-    if events.get("stop_audio"):
-        audio.alternar()
+        if self.drag_duende:
+            self.drag_duende = False
+            self.duende.finalizar_arraste(self.frasco_climatico.area_interna)
+            if self.duende.esta_dentro_do_frasco(self.frasco_climatico.area_interna):
+                self.duende.animacoes.iniciar_sono()
+                self.duende.animacoes.iniciar_sono_programado()
+            elif self.duende.animacoes.dormindo:
+                self.duende.animacoes.iniciar_acordar()
+                self.duende.animacoes.cancelar_sono_programado()
+                self.duende.escolher_novo_destino()
 
-    # Aplicar vento climático diretamente às entidades principais
-    from systems.fisica import sistema_fisica
+    def update(self, dt):
+        # cap dt
+        dt = min(dt, 0.05)
 
-    # semente já recebe clima_service dentro de sua atualização
-    sistema_fisica.aplicar_forca_vento(sapo, clima_service, dt, sensibilidade=0.25)
+        # clima update
+        if self.clima_service.precisa_atualizar():
+            def atualizar_clima():
+                self.clima_service.atualizar()
+            threading.Thread(target=atualizar_clima, daemon=True).start()
 
+        self.clima_service.atualizar_visual(dt)
 
-    # =====================================
-    # PONTOS DE INTERESSE
-    # =====================================
+        direcao_rad = math.radians(self.clima_service.wind_direction + 180)
+        sinal_direcao = math.sin(direcao_rad)
+        influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
+        if getattr(self.clima_service, 'rajada_ativa', False):
+            influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
 
-    sapo_x = sapo.x
-    sapo_y = sapo.y
+        if getattr(self.clima_service, 'rajada_ativa', False):
+            self.animacoes_folha.intensidade_vento = 5.0
+        else:
+            self.animacoes_folha.intensidade_vento = 1.8
 
-    pote_x = centro_x - 260
-    pote_y = centro_y + 40
+        # updates
+        from systems.fisica import sistema_fisica
+        if self.violao.caindo:
+            sistema_fisica.aplicar_forca_vento(self.violao, self.clima_service, dt, sensibilidade=0.6)
 
-    # =====================================
-    # DUENDE
-    # =====================================
+        self.violao.atualizar(dt)
+        self.sistema_nuvens.atualizar_area_interna(self.frasco_climatico.area_interna)
+        self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
-    duende.atualizar(
-        dt,
-        sapo,
-        pote_x,
-        pote_y,
-        clima_service,
-        frasco_climatico.area_interna,
-        ambiente
-    )
+        events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
 
-    sistema_fisica.aplicar_forca_vento(duende, clima_service, dt, sensibilidade=0.5)
+        if events.get('start_audio'):
+            self.audio.alternar()
+        if events.get('stop_audio'):
+            self.audio.alternar()
 
-    # =====================================
-    # SEMENTE
-    # =====================================
+        sistema_fisica.aplicar_forca_vento(self.sapo, self.clima_service, dt, sensibilidade=0.25)
 
-    semente.atualizar(
-        dt,
-        clima_service
-    )
+        sapo_x = self.sapo.x
+        sapo_y = self.sapo.y
+        pote_x = centro_x - 260
+        pote_y = centro_y + 40
 
-    # =====================================
-    # PARTÍCULAS
-    # =====================================
+        self.duende.atualizar(dt, self.sapo, pote_x, pote_y, self.clima_service, self.frasco_climatico.area_interna, self.ambiente)
+        sistema_fisica.aplicar_forca_vento(self.duende, self.clima_service, dt, sensibilidade=0.5)
+        self.semente.atualizar(dt, self.clima_service)
 
-    for particula in particulas:
+        for particula in self.particulas:
+            particula.atualizar(self.ambiente, dt)
 
-        particula.atualizar(
-            ambiente,
-            dt
+        # render
+        self.background_renderer.desenhar()
+        self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
+        self.frasco_climatico.renderizar(tela, centro_y)
+        for particula in self.particulas:
+            particula.desenhar(tela)
+        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
+        self.renderer_duende.renderizar(self.duende)
+        self.renderer_semente.renderizar(self.semente)
+        if not self.violao.acoplado:
+            self.renderer_violao.renderizar(self.violao)
+
+        # escalonar e apresentar
+        scaled = pygame.transform.scale(
+            tela,
+            (LARGURA_REAL, ALTURA_REAL)
         )
 
-    # =====================================
-    # RENDER
-    # =====================================
+        pil = scaled.pil_image()
 
-    background_renderer.desenhar()
-
-    # NUVENS NO CÉU
-    sistema_nuvens.renderizar(
-        tela,
-        background_renderer.eh_dia()
-    )
-
-    # FRASCO
-    frasco_climatico.renderizar(
-        tela,
-        centro_y
-    )
-
-    # PARTÍCULAS
-    for particula in particulas:
-
-        particula.desenhar(tela)
-
-    # SAPO
-    sapo_renderer.renderizar(
-        sapo.x,
-        sapo.y,
-        ESCALA,
-        sapo.animacoes
-    )
-
-    # DUENDE
-    renderer_duende.renderizar(duende)
-
-    # SEMENTE
-    renderer_semente.renderizar(
-        semente
-    )
-
-    # VIOLÃO
-    if not violao.acoplado:
-
-        renderer_violao.renderizar(
-            violao
+        self.texture.blit_buffer(
+            pil.tobytes(),
+            colorfmt='rgba',
+            bufferfmt='ubyte'
         )
 
-    # escalonar a superfície virtual para a resolução real e apresentar
-    scaled = pygame.transform.scale(tela, (LARGURA_REAL, ALTURA_REAL))
-    screen.blit(scaled, (0, 0))
-    pygame.display.flip()
+        self.rect.texture = self.texture
+
+
+class GameApp(App):
+    def build(self):
+        return GameWidget()
+
+
+if __name__ == '__main__':
+    GameApp().run()
 
 pygame.quit()

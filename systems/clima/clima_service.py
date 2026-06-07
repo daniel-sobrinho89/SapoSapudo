@@ -9,6 +9,7 @@ import requests
 import random
 from datetime import datetime, timedelta
 from time import sleep
+from utils.paths import BASE_DIR
 
 class ClimaService:
 
@@ -41,8 +42,6 @@ class ClimaService:
         self.rajada_ativa = False
         self.rajada_tempo_restante = 0.0
 
-        from utils.paths import BASE_DIR
-
         self.cache_file = str(BASE_DIR / "data" / "clima_cache.json")
 
         with open(
@@ -71,6 +70,8 @@ class ClimaService:
         ]
 
         self.carregar_cache()
+
+        self.cloudiness_visual = self.cloudiness
 
     # ==========================================
     # PRECISA ATUALIZAR?
@@ -139,7 +140,6 @@ class ClimaService:
     # ==========================================
     # BUSCAR CLIMA
     # ==========================================
-
     def consultar_weatherapi(self):
 
         if self.atualizando:
@@ -152,8 +152,8 @@ class ClimaService:
             url = (
                 "https://api.weatherapi.com/v1/forecast.json"
                 f"?key={self.api_key}"
-                f"&q=auto:ip"
-                "&hours=3"
+                "&q=auto:ip"
+                "&days=2"
             )
 
             response = requests.get(
@@ -171,9 +171,9 @@ class ClimaService:
                     data["error"]["message"]
                 )
 
-            horas = (
-                data["forecast"]["forecastday"][0]["hour"]
-            )
+            # ==========================================
+            # CLIMA ATUAL
+            # ==========================================
 
             self.cloudiness = (
                 data["current"]["cloud"]
@@ -187,19 +187,47 @@ class ClimaService:
                 data["current"]["wind_degree"]
             )
 
-            agora = datetime.now().hour
+            self.is_day = (
+                data["current"]["is_day"]
+            )
+
+            self.condition_code = (
+                data["current"]["condition"]["code"]
+            )
+
+            self.condition_text = (
+                data["current"]["condition"]["text"]
+            )
+
+            # ==========================================
+            # PREVISÃO HORÁRIA
+            # ==========================================
+
+            horas = (
+                data["forecast"]["forecastday"][0]["hour"]
+                + data["forecast"]["forecastday"][1]["hour"]
+            )
+
+            hora_local = datetime.strptime(
+                data["location"]["localtime"],
+                "%Y-%m-%d %H:%M"
+            ).hour
 
             self.future_cloudiness_1h = horas[
-                min(agora + 1, 23)
+                hora_local + 1
             ]["cloud"]
 
             self.future_cloudiness_2h = horas[
-                min(agora + 2, 23)
+                hora_local + 2
             ]["cloud"]
 
             self.future_cloudiness_3h = horas[
-                min(agora + 3, 23)
+                hora_local + 3
             ]["cloud"]
+
+            # ==========================================
+            # LOCALIZAÇÃO
+            # ==========================================
 
             self.latitude = (
                 data["location"]["lat"]
@@ -209,7 +237,11 @@ class ClimaService:
                 data["location"]["lon"]
             )
 
-            self.ultima_hora_atualizada = agora
+            # ==========================================
+            # CONTROLE
+            # ==========================================
+
+            self.ultima_hora_atualizada = datetime.now().hour
 
             self.salvar_cache()
 
@@ -221,12 +253,18 @@ class ClimaService:
 
             self.clima_disponivel = True
 
+            # ==========================================
+            # LOG
+            # ==========================================
+
             print(
                 "[CLIMA]",
                 "Atual:", self.cloudiness,
                 "| +1h:", self.future_cloudiness_1h,
                 "| +2h:", self.future_cloudiness_2h,
-                "| +3h:", self.future_cloudiness_3h
+                "| +3h:", self.future_cloudiness_3h,
+                "| vento:", self.wind_speed,
+                "| direção:", self.wind_direction,
             )
 
         finally:
@@ -349,6 +387,21 @@ class ClimaService:
                 self.cloudiness
             )
 
+            self.is_day = data.get(
+                "is_day",
+                1
+            )
+
+            self.condition_code = data.get(
+                "condition_code",
+                1000
+            )
+
+            self.condition_text = data.get(
+                "condition_text",
+                "Clear"
+            )
+
             print(
                 "[CLIMA] Cache carregado."
             )
@@ -382,7 +435,10 @@ class ClimaService:
                         "wind_direction": self.wind_direction,
                         "future_cloudiness_1h": self.future_cloudiness_1h,
                         "future_cloudiness_2h": self.future_cloudiness_2h,
-                        "future_cloudiness_3h": self.future_cloudiness_3h
+                        "future_cloudiness_3h": self.future_cloudiness_3h,
+                        "is_day": self.is_day,
+                        "condition_code": self.condition_code,
+                        "condition_text": self.condition_text
                     },
                     arquivo,
                     indent=4

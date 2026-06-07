@@ -12,7 +12,7 @@ TITULO = "Sapo Sapudo"
 AUDIO_HABILITADO = False
 
 MUSICA_FUNDO = (
-    "assets/musica/vila_duendes.mp3"
+    "assets/musica/vila_duendes.ogg"
 )
 
 VOLUME_MUSICA = 0.25

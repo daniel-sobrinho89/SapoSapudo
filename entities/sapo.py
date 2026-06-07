@@ -68,10 +68,8 @@ class Sapo:
         events = {}
 
         if violao is not None:
-            # encapsula comportamento que antes estava em main.py
             a = self.animacoes
 
-            # mover o sapo para guardar o violao quando apropriado
             if getattr(a, "guardando_violao", False):
 
                 destino_x = getattr(violao, "x_inicial", None)

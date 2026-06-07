@@ -3,8 +3,13 @@ import pygame
 
 class FrascoClimatico:
 
-    def __init__(self):
+    def __init__(
+        self,
+        transform
+    ):
 
+        self.transform = transform
+        
         # =====================================
         # POSIÇÃO GLOBAL DO FRASCO
         # =====================================
@@ -76,7 +81,7 @@ class FrascoClimatico:
         # BASE
         # =====================================
 
-        self.frasco_base = pygame.transform.smoothscale(
+        self.frasco_base = self.transform.escalar(
             base_crop,
             (
                 int(base_crop.get_width() * escala_base),
@@ -88,7 +93,7 @@ class FrascoClimatico:
         # VIDRO
         # =====================================
 
-        self.frasco_vidro = pygame.transform.smoothscale(
+        self.frasco_vidro = self.transform.escalar(
             vidro_crop,
             (
                 int(vidro_crop.get_width() * escala_vidro),
@@ -100,7 +105,7 @@ class FrascoClimatico:
         # TAMPA
         # =====================================
 
-        self.frasco_tampa = pygame.transform.smoothscale(
+        self.frasco_tampa = self.transform.escalar(
             tampa_crop,
             (
                 int(tampa_crop.get_width() * escala_tampa),

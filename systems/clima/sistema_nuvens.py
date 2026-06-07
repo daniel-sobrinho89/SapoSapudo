@@ -9,13 +9,18 @@ from systems.clima.nuvem import Nuvem
 
 class SistemaNuvens:
 
-    def __init__(self, area_interna):
+    def __init__(
+        self, 
+        area_interna,
+        transform
+    ):
 
         self.atualizar_area_interna(area_interna)
 
         self.intensidade = 0
         self.wind_direction = 0
         self.wind_speed = 0
+        self.transform = transform
 
         # atualiza nuvens apenas 20 vezes por segundo
         self.timer_update = 0
@@ -29,6 +34,7 @@ class SistemaNuvens:
 
             Nuvem(
                 self.area_interna,
+                self.transform,
                 intensidade=1
             )
 
@@ -131,6 +137,7 @@ class SistemaNuvens:
 
             nova_nuvem = Nuvem(
                 self.area_interna,
+                self.transform,
                 intensidade=escala,
                 wind_direction=self.wind_direction,
                 wind_speed=self.wind_speed

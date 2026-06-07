@@ -19,7 +19,13 @@ def real_to_virtual(pos):
     try:
         rx, ry = pos
         if LARGURA_REAL and ALTURA_REAL:
-            return (int(rx * LARGURA / LARGURA_REAL), int(ry * ALTURA / ALTURA_REAL))
+            vx = int(rx * LARGURA / LARGURA_REAL)
+
+            vy = ALTURA - int(
+                ry * ALTURA / ALTURA_REAL
+            )
+
+            return (vx, vy)
     except Exception:
         pass
     return pos

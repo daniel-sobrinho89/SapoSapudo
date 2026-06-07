@@ -28,11 +28,14 @@ class Nuvem:
     def __init__(
         self,
         area,
+        transform,
         intensidade=1,
         wind_direction=0,
         wind_speed=0
     ):
 
+        self.transform = transform
+        
         # =====================================
         # LOAD SPRITES
         # =====================================
@@ -111,7 +114,8 @@ class Nuvem:
         self.sprite = (
             self.obter_sprite_escalado(
                 self.sprite_original,
-                self.escala
+                self.escala,
+                self.transform
             )
         )
 
@@ -324,7 +328,8 @@ class Nuvem:
     def obter_sprite_escalado(
         cls,
         sprite,
-        escala
+        escala,
+        transform
     ):
         chave = (
             id(sprite),
@@ -344,7 +349,7 @@ class Nuvem:
             )
 
             cls.cache_escalas[chave] = (
-                pygame.transform.smoothscale(
+                transform.escalar(
                     sprite,
                     (largura, altura)
                 ).convert_alpha()

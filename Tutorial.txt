@@ -1,158 +1,25 @@
-[CLIMA] Falha ao consultar API: HTTPSConnectionPool(host='api.open-meteo.com', port=443): Read timed out. (read timeout=5)
-[CLIMA] Falha ao consultar API: Expecting value: line 1 column 1 (char 0)
-[CLIMA] Falha ao consultar API: Expecting value: line 1 column 1 (char 0)
-[CLIMA] Falha ao consultar API: HTTPSConnectionPool(host='api.open-meteo.com', port=443): Read timed out. (read timeout=5)
-
-
-
+source .venv/bin/activate
 
 ---------------------
-O braço esquerdo permanece segurando o braço do violão. (braço esquerdo é o que aparece a direita da imagem)
 
-O braço direito deve estar segurando uma palhetada para baixo, Braço direito  20 graus acima da posição central. (braço direito é o que aparece a esquerda da imagem)
+cd ~/Projetos/SapoSapudo
+
+find . \
+  -path "./.git" -prune -o \
+  -path "./.venv" -prune -o \
+  -path "./.buildozer" -prune -o \
+  -path "./assets" -prune -o \
+  -print | zip -@ ../SapoSapudo.zip
+
+
+
+
+
+23 sequência correta
 
 
 -------------------------
+spritesheet.png
 
-Gere uma imagem apenas do corpo do sapo tocando violão, com uma palheta no centro da mão, apenas o corpo sem a cabeça "Siga rigorosamente o documento SAPO_SAPUDO_MASTER_STYLE_v1.0 em anexo. Nenhuma característica visual pode ser alterada. Apenas mude a pose, expressão ou ação solicitada."
 
-
-"Siga rigorosamente o documento SAPO_SAPUDO_MASTER_STYLE_v1.0 em anexo. Nenhuma característica visual pode ser alterada. Apenas mude a pose, expressão ou ação solicitada."
-----------------
-
-# CRIAR SAPO_SAPUDO_MASTER_STYLE_v1.0
-
-Sua tarefa é atuar como Diretor de Arte Sênior especializado em personagens para animação, jogos e geração de imagens por IA.
-
-Analise cuidadosamente a imagem de referência enviada e produza um documento chamado:
-
-SAPO_SAPUDO_MASTER_STYLE_v1.0
-
-O documento deve servir como a fonte oficial de verdade para futuras gerações do personagem.
-
-IMPORTANTE:
-
-* O documento deve ter no máximo 1 página.
-* Seja extremamente objetivo.
-* Evite textos longos.
-* Use listas curtas.
-* Priorize informações que ajudem outras IAs a reproduzir o personagem com fidelidade.
-* Ignore detalhes irrelevantes.
-* Foque apenas no que realmente define a identidade visual.
-
-O documento deve conter obrigatoriamente:
-
-## IDENTIDADE
-
-Descreva:
-
-* personalidade visual
-* sensação transmitida
-* arquétipo do personagem
-* formato geral da silhueta
-
-## PROPORÇÕES
-
-Descreva:
-
-* proporção cabeça/corpo
-* largura do corpo
-* formato dos membros
-* tamanho relativo dos olhos
-
-Utilize proporções percentuais quando possível.
-
-## PALETA DE CORES
-
-Liste apenas as cores principais:
-
-* pele
-* barriga
-* manchas
-* olhos
-* brilhos
-* bochechas
-
-Para cada cor forneça:
-
-* nome descritivo
-* código HEX aproximado
-
-## SOMBREAMENTO
-
-Defina:
-
-* intensidade
-* suavidade
-* tipo de iluminação
-* contraste
-
-## BRILHO E MATERIAL
-
-Defina:
-
-* aparência da pele
-* nível de brilho
-* translucidez
-* sensação de textura
-
-## OLHOS
-
-Descreva:
-
-* formato
-* estrutura
-* reflexos
-* emoção transmitida
-
-## MÃOS E PÉS
-
-Defina:
-
-* quantidade exata de dedos
-* formato dos dedos
-* proporções
-
-## CONTORNOS
-
-Defina:
-
-* espessura
-* cor
-* intensidade
-
-## REGRAS OBRIGATÓRIAS
-
-Liste tudo que nunca pode mudar.
-
-Exemplos:
-
-* quantidade de dedos
-* formato dos olhos
-* proporções
-* tipo de iluminação
-* estilo de pintura
-
-## REGRAS PROIBIDAS
-
-Liste tudo que nunca deve ser gerado.
-
-Exemplos:
-
-* olhos pequenos
-* sombras duras
-* preto puro
-* expressões agressivas
-* cores saturadas
-
-## RESUMO DE REPRODUÇÃO
-
-Finalize com um bloco chamado:
-
-DNA VISUAL RESUMIDO
-
-Limite de 100 palavras.
-
-Esse resumo deve permitir que qualquer IA recrie o personagem com o máximo de fidelidade possível.
-
-O resultado final deve ser compacto, técnico e otimizado para servir como guia permanente de geração de imagens.
+android.archs = arm64-v8a, armeabi-v7a

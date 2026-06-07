@@ -14,13 +14,7 @@ class AudioManager:
 
         self.habilitado = AUDIO_HABILITADO
 
-        if self.habilitado:
-            pygame.mixer.init()
-
-    def iniciar(self):
-
-        if not self.habilitado:
-            return
+        pygame.mixer.init()
 
         pygame.mixer.music.load(
             str(BASE_DIR / MUSICA_FUNDO)
@@ -29,6 +23,14 @@ class AudioManager:
         pygame.mixer.music.set_volume(
             VOLUME_MUSICA
         )
+
+        if self.habilitado:
+            pygame.mixer.music.play(-1)
+
+    def iniciar(self):
+
+        if not self.habilitado:
+            return
 
         pygame.mixer.music.play(-1)
 

@@ -42,7 +42,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,pygame==2.5.2,requests
+requirements = python3,kivy==2.2.0,requests,Pillow
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -330,7 +330,7 @@ android.allow_backup = True
 #
 
 # (str) python-for-android URL to use for checkout
-p4a.url = https://github.com/kivy/python-for-android.git
+#p4a.url = https://github.com/kivy/python-for-android.git
 
 # (str) python-for-android fork to use in case if p4a.url is not specified, defaults to upstream (kivy)
 #p4a.fork = kivy
@@ -339,7 +339,7 @@ p4a.url = https://github.com/kivy/python-for-android.git
 #p4a.branch = 2024.01.21
 
 # (str) python-for-android specific commit to use, defaults to HEAD, must be within p4a.branch
-p4a.commit = 957a3e5f8c270f7aa648ba185e5a68c1077a798d
+#p4a.commit = 957a3e5f8c270f7aa648ba185e5a68c1077a798d
 
 # (str) python-for-android git clone directory
 #p4a.source_dir =

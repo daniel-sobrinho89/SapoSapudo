@@ -170,7 +170,6 @@ class AnimacoesSapo:
     # ====================================
 
     def atualizar(self, dt):
-
         agora = datetime.now()
 
         self.atualizar_pegar_violao(dt)

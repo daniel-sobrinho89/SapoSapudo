@@ -9,10 +9,12 @@ class BackgroundRenderer:
         self,
         tela,
         largura,
-        altura
+        altura,
+        transform
     ):
 
         self.tela = tela
+        self.transform = transform
 
         # =====================================
         # BACKGROUND MANHÃ
@@ -22,7 +24,7 @@ class BackgroundRenderer:
             "background_manha.png"
         )
 
-        self.background_manha = pygame.transform.smoothscale(
+        self.background_manha = self.transform.escalar(
             background_manha,
             (largura, altura)
         )
@@ -35,7 +37,7 @@ class BackgroundRenderer:
             "background.png"
         )
 
-        self.background_day = pygame.transform.smoothscale(
+        self.background_day = self.transform.escalar(
             background_day,
             (largura, altura)
         )
@@ -48,7 +50,7 @@ class BackgroundRenderer:
             "background_final_tarde.png"
         )
 
-        self.background_final_tarde = pygame.transform.smoothscale(
+        self.background_final_tarde = self.transform.escalar(
             background_final_tarde ,
             (largura, altura)
         )
@@ -61,7 +63,7 @@ class BackgroundRenderer:
             "background_night_19h.png"
         )
 
-        self.background_night = pygame.transform.smoothscale(
+        self.background_night = self.transform.escalar(
             background_night,
             (largura, altura)
         )

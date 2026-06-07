@@ -8,10 +8,12 @@ class ViolaoRenderer:
     def __init__(
         self,
         tela,
-        assets
+        assets,
+        transform
     ):
 
         self.tela = tela
+        self.transform = transform
 
         original = assets.carregar(
             "sapudo/violao.png"
@@ -27,7 +29,7 @@ class ViolaoRenderer:
             * self.VIOLAO_SCALE
         )
 
-        self.violao = pygame.transform.smoothscale(
+        self.violao = self.transform.escalar(
             original,
             (
                 largura,

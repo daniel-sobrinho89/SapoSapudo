@@ -11,11 +11,14 @@ class DuendeRenderer:
     def __init__(
         self,
         tela,
-        assets
+        assets,
+        transform
     ):
 
         self.tela = tela
         self.assets = assets
+        self.transform = transform
+        self.cache_sombras = {}
 
         self.carregar_assets()
 
@@ -73,7 +76,7 @@ class DuendeRenderer:
             int(imagem.get_height() * escala_y)
         )
 
-        imagem = pygame.transform.smoothscale(
+        imagem = self.transform.escalar(
             imagem,
             (largura, altura)
         ).convert_alpha()
@@ -98,6 +101,42 @@ class DuendeRenderer:
     # =====================================
     # RENDER
     # =====================================
+
+    def obter_sombra(
+        self,
+        escala
+    ):
+
+        chave = round(
+            escala,
+            2
+        )
+
+        if chave in self.cache_sombras:
+            return self.cache_sombras[chave]
+
+        sombra = pygame.Surface(
+            (140, 60),
+            pygame.SRCALPHA
+        )
+
+        pygame.draw.ellipse(
+            sombra,
+            (0, 0, 0, 45),
+            (0, 0, 140, 60)
+        )
+
+        sombra = self.transform.escalar(
+            sombra,
+            (
+                int(140 * escala),
+                int(60 * escala)
+            )
+        )
+
+        self.cache_sombras[chave] = sombra
+
+        return sombra
 
     def renderizar(
         self,
@@ -164,9 +203,8 @@ class DuendeRenderer:
         # SOMBRA
         # =================================
 
-        shadow_surface = pygame.Surface(
-            (140, 60),
-            pygame.SRCALPHA
+        shadow_surface = self.obter_sombra(
+            escala
         )
 
         pygame.draw.ellipse(
@@ -175,7 +213,7 @@ class DuendeRenderer:
             (0, 0, 140, 60)
         )
 
-        shadow_surface = pygame.transform.smoothscale(
+        shadow_surface = self.transform.escalar(
             shadow_surface,
             (
                 int(140 * escala),
