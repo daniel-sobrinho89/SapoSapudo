@@ -3,8 +3,11 @@
 # =========================================
 
 import os
-os.environ["SDL_AUDIODRIVER"] = "alsa"
-os.environ["AUDIODEV"] = "hw:2,0"
+IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
+
+if not IS_ANDROID:
+    os.environ["SDL_AUDIODRIVER"] = "alsa"
+    os.environ["AUDIODEV"] = "hw:2,0"
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
