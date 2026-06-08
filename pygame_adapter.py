@@ -202,7 +202,23 @@ class Surface:
         return self
 
     def set_alpha(self, a):
-        self._alpha = int(a)
+
+        self._alpha = max(
+            0,
+            min(255, int(a))
+        )
+
+        img = self._img.copy()
+        alpha = img.getchannel("A")
+
+        alpha = alpha.point(
+            lambda p: int(
+                p * self._alpha / 255
+            )
+        )
+
+        img.putalpha(alpha)
+        self._img = img
 
     def get_rect(self, **kwargs):
         # support center=(x,y)
@@ -399,7 +415,6 @@ class time:
                     pytime.sleep(sleep)
                     elapsed += sleep
             return int(elapsed * 1000)
-
 
 # mixer (minimal using Kivy SoundLoader)
 class mixer:

@@ -11,11 +11,10 @@ class SistemaNuvens:
 
     def __init__(
         self, 
-        area_interna,
         transform
     ):
 
-        self.atualizar_area_interna(area_interna)
+        self.atualizar_area_interna()
 
         self.intensidade = 0
         self.wind_direction = 0
@@ -44,12 +43,13 @@ class SistemaNuvens:
     # ==========================================
     # ATUALIZAR ÁREA
     # ==========================================
+    def atualizar_area_interna(self):
+        from config import LARGURA
 
-    def atualizar_area_interna(self, area_interna):
         self.area_interna = pygame_adapter.Rect(
             0,
             0,
-            1280,
+            LARGURA,
             320
         )
 
@@ -113,10 +113,10 @@ class SistemaNuvens:
         )
 
         # quantidade de nuvens
-        alvo = max(
-            0,
-            int(self.intensidade / 15) - 1
-        )
+        if self.intensidade <= 5:
+            alvo = 1
+        else:
+            alvo = max(0, int(self.intensidade / 15) - 1)
 
         # escala geral
         escala = max(
@@ -134,13 +134,15 @@ class SistemaNuvens:
 
         # cria nuvens
         while len(self.nuvens) < alvo:
+            ceu_limpo = self.intensidade <= 5
 
             nova_nuvem = Nuvem(
                 self.area_interna,
                 self.transform,
                 intensidade=escala,
                 wind_direction=self.wind_direction,
-                wind_speed=self.wind_speed
+                wind_speed=self.wind_speed,
+                ceu_limpo=ceu_limpo
             )
 
             pode_adicionar = True
@@ -181,7 +183,6 @@ class SistemaNuvens:
         nuvens_ativas = []
 
         for nuvem in self.nuvens:
-
             if nuvem.atualizar(dt):
                 nuvens_ativas.append(nuvem)
 

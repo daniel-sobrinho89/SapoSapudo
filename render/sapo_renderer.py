@@ -39,7 +39,7 @@ class SapoRenderer:
             )
 
         self.frames_parado = []
-        for i in range(20):
+        for i in range(37):
 
             self.frames_parado.append(
                 self.assets.carregar(

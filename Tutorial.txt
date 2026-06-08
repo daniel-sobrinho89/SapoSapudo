@@ -23,3 +23,8 @@ spritesheet.png
 
 
 android.archs = arm64-v8a, armeabi-v7a
+
+--------
+
+gustavo.hbarros.sp@gmail.com
+GHBSghbs

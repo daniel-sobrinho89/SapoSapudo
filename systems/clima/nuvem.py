@@ -5,14 +5,10 @@
 import pygame_adapter
 import random
 import math
-
-from pathlib import Path
-
 from systems.fisica import sistema_fisica
 
 
 class Nuvem:
-
     # cache global
     sprites = None
     sprites_flip = None
@@ -21,7 +17,7 @@ class Nuvem:
     cache_alpha = {}
 
 
-    OUTSIDE_DISTANCE = 1
+    OUTSIDE_DISTANCE = 50
     SPEED_MIN = 5
     SPEED_MAX = 12
 
@@ -31,17 +27,18 @@ class Nuvem:
         transform,
         intensidade=1,
         wind_direction=0,
-        wind_speed=0
+        wind_speed=0,
+        ceu_limpo=False
     ):
-
         self.transform = transform
-        
+        self.tempo = random.uniform(0, 100)
+        self.ceu_limpo = ceu_limpo
+
         # =====================================
         # LOAD SPRITES
         # =====================================
 
         if Nuvem.sprites is None:
-
             from render.asset_manager import asset_manager
 
             nuvem_1 = asset_manager.carregar(
@@ -77,13 +74,10 @@ class Nuvem:
         indice = random.randint(0, 1)
 
         if random.random() > 0.5:
-
             self.sprite_original = (
                 Nuvem.sprites_flip[indice]
             )
-
         else:
-
             self.sprite_original = (
                 Nuvem.sprites[indice]
             )
@@ -93,7 +87,6 @@ class Nuvem:
         # =====================================
 
         self.area = area
-
         self.intensidade = intensidade
         self.wind_direction = wind_direction
         self.wind_speed = wind_speed
@@ -102,10 +95,16 @@ class Nuvem:
         # ESCALA
         # =====================================
 
-        self.escala = random.uniform(
-            0.10,
-            0.28
-        ) * max(0.4, intensidade)
+        if self.ceu_limpo:
+            self.escala = random.uniform(
+                0.12,
+                0.17
+            )
+        else:
+            self.escala = random.uniform(
+                0.12,
+                0.24
+            ) * max(0.4, intensidade)
 
         # =====================================
         # POSIÇÃO
@@ -153,21 +152,16 @@ class Nuvem:
         )
 
         if self.start_side == "left":
-
             self.vx = velocidade_base
-
             self.x = random.uniform(
-                self.area.left - self.width * 3,
-                self.area.left + self.area.width * 0.10
+                -80,
+                -30
             )
-
         else:
-
             self.vx = -velocidade_base
-
             self.x = random.uniform(
-                self.area.right - self.area.width * 0.10,
-                self.area.right + self.width * 3
+                self.area.right + 30,
+                self.area.right + 80
             )
 
         self.base_y = random.uniform(
@@ -224,16 +218,23 @@ class Nuvem:
         # =====================================
 
         # tornar nuvens menos transparentes (mais visíveis)
-        self.alpha = random.randint(
-            50,
-            110
-        )
+        if self.ceu_limpo:
+            self.alpha = random.randint(
+                100,
+                120
+            )
+        else:
+            self.alpha = random.randint(
+                120,
+                180
+            )
 
     # ==========================================
     # UPDATE
     # ==========================================
 
     def atualizar(self, dt):
+        self.tempo += dt
 
         if self.dying:
             self.alpha = max(0, self.alpha - self.fade_speed * dt)
@@ -247,7 +248,7 @@ class Nuvem:
 
         # movimento flutuante vertical
         self.y = self.base_y + math.sin(
-            pygame_adapter.time.get_ticks() * 0.00035
+            self.tempo * 0.35
             + self.offset
         ) * self.float_amplitude
 

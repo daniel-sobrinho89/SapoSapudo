@@ -194,7 +194,7 @@ class AnimacoesSapo:
 
             self.frame_parado += 1
 
-            if self.frame_parado >= 20:
+            if self.frame_parado >= 37:
 
                 self.frame_parado = 0
 

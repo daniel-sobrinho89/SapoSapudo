@@ -126,9 +126,8 @@ class GameWidget(Widget):
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
         self.clima_service = ClimaService()
-        self.sistema_nuvens = SistemaNuvens(self.frasco_climatico.area_interna, self.transform)
+        self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y)
-
         # interaction state
         self.drag_duende = False
         self.drag_violao = False
@@ -163,24 +162,45 @@ class GameWidget(Widget):
         self.rect.pos = self.pos
 
     def on_touch_down(self, touch):
+
         pos_virtual = real_to_virtual(touch.pos)
+
+        # =========================
+        # DUENDE
+        # =========================
 
         if self.duende.corpo_rect.collidepoint(pos_virtual):
             self.drag_duende = True
             self.duende.iniciar_arraste(*pos_virtual)
+
             return True
 
-        elif self.renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
-            self.drag_violao = True
-            self.violao.iniciar_arraste(*pos_virtual)
-            return True
+        # =========================
+        # VIOLÃO ACOPLADO AO SAPO
+        # =========================
 
-        if (self.violao.acoplado and self.sapo_renderer.corpo_rect.collidepoint(pos_virtual)):
-            self.violao.acoplado = False
-            self.sapo.parar_violao()
+        if self.violao.acoplado:
+            distancia = (
+                (pos_virtual[0] - self.sapo.x) ** 2 +
+                (pos_virtual[1] - self.sapo.y) ** 2
+            ) ** 0.5
+
+            if distancia < 120:
+                self.violao.acoplado = False
+                self.sapo.parar_violao()
+                self.drag_violao = True
+                self.audio.alternar()
+                self.violao.iniciar_arraste(*pos_virtual)
+                return True
+
+        # =========================
+        # VIOLÃO NORMAL
+        # =========================
+
+        if self.renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
             self.drag_violao = True
-            self.audio.alternar()
             self.violao.iniciar_arraste(*pos_virtual)
+
             return True
 
         return super().on_touch_down(touch)
@@ -240,6 +260,11 @@ class GameWidget(Widget):
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)
         sinal_direcao = math.sin(direcao_rad)
         influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
+        self.ambiente.atualizar(
+            dt,
+            influencia_clima
+        )
+
         if getattr(self.clima_service, 'rajada_ativa', False):
             influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
 
@@ -254,7 +279,7 @@ class GameWidget(Widget):
             sistema_fisica.aplicar_forca_vento(self.violao, self.clima_service, dt, sensibilidade=0.6)
 
         self.violao.atualizar(dt)
-        self.sistema_nuvens.atualizar_area_interna(self.frasco_climatico.area_interna)
+        self.sistema_nuvens.atualizar_area_interna()
         self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
         events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
@@ -266,8 +291,6 @@ class GameWidget(Widget):
 
         sistema_fisica.aplicar_forca_vento(self.sapo, self.clima_service, dt, sensibilidade=0.25)
 
-        sapo_x = self.sapo.x
-        sapo_y = self.sapo.y
         pote_x = centro_x - 260
         pote_y = centro_y + 40
 
@@ -308,5 +331,3 @@ class GameApp(App):
 
 if __name__ == '__main__':
     GameApp().run()
-
-pygame_adapter.quit()

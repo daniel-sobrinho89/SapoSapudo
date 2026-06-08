@@ -16,13 +16,10 @@ class ParticulaPoeira:
         self.area_protegida = area_protegida
         self.protegido = False
         self.just_exited_timer = 0.0
-
         self.resetar()
 
     def resetar(self):
-
         if self.area_protegida is not None:
-
             self.x = random.randint(
                 self.area_protegida.left + 4,
                 self.area_protegida.right - 20
@@ -48,7 +45,6 @@ class ParticulaPoeira:
             )
 
         else:
-
             self.x = random.randint(
                 self.area_particulas.left,
                 self.area_particulas.right
@@ -71,9 +67,7 @@ class ParticulaPoeira:
         ) * 60.0
 
         self.gravidade = 12.0
-
         self.sustentacao_restante = 0.0
-
         self.no_chao = False
 
         self.limite_chao = (
@@ -88,7 +82,6 @@ class ParticulaPoeira:
         # marca se está protegido inicialmente (ex.: dentro do pote)
         # reset entry_x whenever particle is re-spawned
         self.just_exited_timer = 0.0
-
         self.saiu_do_pote = False
 
         if self.area_protegida is not None:
@@ -103,17 +96,13 @@ class ParticulaPoeira:
         dt
     ):
         self.tempo_vida += dt
-
         current_protegido = False
 
         if self.area_protegida is not None:
-
             if self.saiu_do_pote:
-
                 current_protegido = False
 
             else:
-
                 current_protegido = self.area_protegida.collidepoint(
                     int(self.x),
                     int(self.y)
@@ -130,7 +119,6 @@ class ParticulaPoeira:
 
         # Saindo do frasco: liberar e aplicar pequeno impulso na direção do vento
         if self.protegido and not current_protegido:
-            
             self.saiu_do_pote = True
 
             self.vel_x = (
@@ -145,7 +133,6 @@ class ParticulaPoeira:
         self.protegido = current_protegido
 
         if self.protegido:
-
             centro_pote = (
                 self.area_protegida.centerx
             )
@@ -186,7 +173,6 @@ class ParticulaPoeira:
             )
 
         else:
-
             sistema_fisica.aplicar_gravidade_simples(
                 self,
                 dt,
