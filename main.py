@@ -38,6 +38,8 @@ from render.asset_manager import AssetManager
 from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
 from render.sapo_renderer import SapoRenderer
+from render.tamandua_renderer import TamanduaRenderer
+from render.barraca_renderer import BarracaRenderer
 
 from systems.clima.clima_service import ClimaService
 from systems.clima.sistema_nuvens import SistemaNuvens
@@ -125,6 +127,22 @@ class GameWidget(Widget):
         for p in self.particulas:
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
+        
+        self.tamandua_renderer = TamanduaRenderer(tela, self.transform)
+        self.barraca_renderer = BarracaRenderer(
+            tela,
+            self.transform,
+            LARGURA,
+            ALTURA
+        )
+        x_barraca, y_barraca = (
+            self.barraca_renderer.obter_posicao()
+        )
+        self.tamandua_renderer.definir_posicao(
+            x_barraca + 33,
+            y_barraca - 25
+        )
+
         self.clima_service = ClimaService()
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y)
@@ -325,6 +343,12 @@ class GameWidget(Widget):
 
         # render
         self.background_renderer.desenhar()
+
+        if self.background_renderer.cenario_feira:
+            self.tamandua_renderer.atualizar(dt)
+            self.tamandua_renderer.renderizar()
+            self.barraca_renderer.renderizar()
+
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
         
