@@ -189,7 +189,7 @@ class GameWidget(Widget):
                 self.violao.acoplado = False
                 self.sapo.parar_violao()
                 self.drag_violao = True
-                self.audio.alternar()
+                self.audio.alternar_musica_violao()
                 self.violao.iniciar_arraste(*pos_virtual)
                 return True
 
@@ -284,10 +284,10 @@ class GameWidget(Widget):
 
         events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
 
-        if events.get('start_audio'):
-            self.audio.alternar()
-        if events.get('stop_audio'):
-            self.audio.alternar()
+        if events.get('start_audio_violao'):
+            self.audio.alternar_musica_violao()
+        if events.get('stop_audio_violao'):
+            self.audio.alternar_musica_violao()
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
 

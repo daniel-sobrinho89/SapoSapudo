@@ -14,6 +14,7 @@ class AudioManager:
 
         self.habilitado = AUDIO_HABILITADO
         self.inicializado = False
+        self.musica_atual = None
 
     def inicializar(self):
         if self.inicializado:
@@ -40,12 +41,29 @@ class AudioManager:
 
         pygame_adapter.mixer.music.play(-1)
 
-    def alternar(self):
+    def alternar_musica_violao(self):
 
         if self.habilitado:
             self.desligar()
         else:
-            self.ligar()
+            self.habilitado = True
+            self.voltar_musica_fundo()
+
+    def tocar_musica_fundo(self, arquivo):
+        self.musica_atual = arquivo
+
+        pygame_adapter.mixer.music.load(arquivo)
+        pygame_adapter.mixer.music.play(-1)
+
+    def tocar_musica_temporaria(self, arquivo):
+
+        if self.musica_atual:
+            self.pilha_musicas.append(self.musica_atual)
+
+        self.musica_atual = arquivo
+
+        pygame_adapter.mixer.music.load(arquivo)
+        pygame_adapter.mixer.music.play()
 
     def tocar_passeio_sapudo(self):
         pygame_adapter.mixer.music.load(

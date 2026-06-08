@@ -194,11 +194,11 @@ class Sapo:
 
             # eventos de áudio gerados pelos systems de animação
             if getattr(a, "iniciou_tocar_violao", False):
-                events["start_audio"] = True
+                events["start_audio_violao"] = True
                 a.iniciou_tocar_violao = False
 
             if getattr(a, "parar_audio_violao", False):
-                events["stop_audio"] = True
+                events["stop_audio_violao"] = True
                 a.parar_audio_violao = False
 
             # quando finaliza soltar violao, encapsular ação sobre o violao
