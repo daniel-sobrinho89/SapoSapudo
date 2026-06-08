@@ -47,6 +47,30 @@ class AudioManager:
         else:
             self.ligar()
 
+    def tocar_passeio_sapudo(self):
+        pygame_adapter.mixer.music.load(
+            str(BASE_DIR / "assets/musica/o_passeio_do_sapudo.mp3")
+        )
+
+        pygame_adapter.mixer.music.set_volume(
+            VOLUME_MUSICA
+        )
+
+        pygame_adapter.mixer.music.play()
+
+    def voltar_musica_fundo(self):
+        pygame_adapter.mixer.music.pause()
+        pygame_adapter.mixer.music._sound = None
+        pygame_adapter.mixer.music.load(
+            str(BASE_DIR / MUSICA_FUNDO)
+        )
+
+        pygame_adapter.mixer.music.set_volume(
+            VOLUME_MUSICA
+        )
+
+        pygame_adapter.mixer.music.play(-1)
+
     def ligar(self):
 
         if not self.habilitado:

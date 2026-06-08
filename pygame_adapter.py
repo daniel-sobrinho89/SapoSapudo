@@ -430,8 +430,11 @@ class mixer:
         def load(self, path):
             try:
 
-                if self._sound is not None:
-                    return
+                if self._sound:
+                    try:
+                        self._sound.stop()
+                    except Exception:
+                        pass
 
                 self._sound = obter_soundloader().load(path)
 

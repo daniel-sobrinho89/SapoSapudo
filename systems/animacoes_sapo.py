@@ -154,6 +154,7 @@ class AnimacoesSapo:
 
         # evita disparar várias vezes no mesmo minuto
         self.ultima_execucao_caminhada = None
+        self.iniciou_andar_esquerda = False
 
     # ====================================
     # SONO
@@ -209,13 +210,10 @@ class AnimacoesSapo:
         )
 
         if self.tempo_parado >= 0.15:
-
             self.tempo_parado = 0
-
             self.frame_parado += 1
 
-            if self.frame_parado >= 37:
-
+            if self.frame_parado >= 40:
                 self.frame_parado = 0
 
         if self.acordando:
@@ -671,12 +669,10 @@ class AnimacoesSapo:
             self.tempo_tocando_violao = 0
 
     def iniciar_andar_esquerda(self):
-
         self.andando_esquerda = True
-
         self.frame_andar_esquerda = 0
-
         self.tempo_andar_esquerda = 0
+        self.iniciou_andar_esquerda = True
 
 
     def atualizar_andar_esquerda(self, dt):
@@ -693,8 +689,8 @@ class AnimacoesSapo:
 
         self.frame_andar_esquerda += 1
 
-        if self.frame_andar_esquerda >= 103:
+        if self.frame_andar_esquerda >= 130:
 
-            self.frame_andar_esquerda = 102
+            self.frame_andar_esquerda = 129
 
             self.andando_esquerda = False

@@ -219,12 +219,12 @@ class GameWidget(Widget):
         if self.drag_violao:
             self.drag_violao = False
             self.violao.finalizar_arraste()
-            area_sapo = pygame_adapter.Rect(centro_x - 80, centro_y - 80, 160, 160)
+            area_sapo = pygame_adapter.Rect(self.sapo.x - 80, self.sapo.y - 80, 160, 160)
             if area_sapo.collidepoint(self.violao.x, self.violao.y) and self.sapo.pode_receber_violao():
                 self.violao.acoplado = True
                 self.sapo.iniciar_violao()
-                self.violao.x = centro_x + 5
-                self.violao.y = centro_y + 20
+                self.violao.x = self.sapo.x + 5
+                self.violao.y = self.sapo.y + 20
             else:
                 self.violao.iniciar_queda()
                 if self.duende.pode_resgatar_violao():
@@ -288,6 +288,8 @@ class GameWidget(Widget):
             self.audio.alternar()
         if events.get('stop_audio'):
             self.audio.alternar()
+        if events.get("start_audio_passeio"):
+            self.audio.tocar_passeio_sapudo()
 
         sistema_fisica.aplicar_forca_vento(self.sapo, self.clima_service, dt, sensibilidade=0.25)
 
@@ -304,10 +306,10 @@ class GameWidget(Widget):
         # render
         self.background_renderer.desenhar()
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
+        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
         self.frasco_climatico.renderizar(tela, centro_y)
         for particula in self.particulas:
             particula.desenhar(tela)
-        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
         self.renderer_duende.renderizar(self.duende)
         self.renderer_semente.renderizar(self.semente)
         if not self.violao.acoplado:

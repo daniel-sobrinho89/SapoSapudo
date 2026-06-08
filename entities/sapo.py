@@ -9,6 +9,7 @@ from systems.respiracao_sapo import RespiracaoSapo
 from systems.ia_sapo import IASapo
 from systems.system_utils import atualizar_sistemas_basicos
 from datetime import datetime, timedelta
+from config import *
 
 class Sapo:
 
@@ -146,8 +147,8 @@ class Sapo:
 
             if frame_atual != a._ultimo_frame_andar:
                 a._ultimo_frame_andar = frame_atual
-                self.x = max(
-                    120,
+                self.x = min(
+                    LARGURA - 120,
                     self.x - 2.5
                 )
 
@@ -209,5 +210,9 @@ class Sapo:
                 violao.y = violao.y_inicial
 
                 a.finalizou_soltar_violao = False
+
+        if getattr(a, "iniciou_andar_esquerda", False):
+            events["start_audio_passeio"] = True
+            a.iniciou_andar_esquerda = False
 
         return events

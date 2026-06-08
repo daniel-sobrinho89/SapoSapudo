@@ -1,11 +1,11 @@
 {
     "cloudiness": 0,
-    "wind_speed": 4.0,
-    "wind_direction": 118,
-    "future_cloudiness_1h": 0,
+    "wind_speed": 7.2,
+    "wind_direction": 316,
+    "future_cloudiness_1h": 2,
     "future_cloudiness_2h": 0,
-    "future_cloudiness_3h": 7,
-    "is_day": 0,
-    "condition_code": 1036,
-    "condition_text": "Clear"
+    "future_cloudiness_3h": 0,
+    "is_day": 1,
+    "condition_code": 1000,
+    "condition_text": "Sunny"
 }
