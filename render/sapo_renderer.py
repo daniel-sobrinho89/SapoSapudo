@@ -107,6 +107,14 @@ class SapoRenderer:
                 )
             )
 
+        self.frames_andar_esquerda = []
+        for i in range(103):
+            self.frames_andar_esquerda.append(
+                self.assets.carregar(
+                    f"sapudo/andar_esquerda/sapo_{i:04d}.png"
+                )
+            )
+
     # =====================================
     # DRAW
     # =====================================
@@ -185,25 +193,26 @@ class SapoRenderer:
             ]
 
         elif animacoes.tocando_violao:
-
             frame = self.frames_tocar_violao[
                 animacoes.frame_violao
             ]
 
         elif animacoes.acordando:
-
             frame = self.frames_acordar[
                 animacoes.frame_acordar
             ]
 
         elif animacoes.levantando_violao:
-
             frame = self.frames_levantar_violao[
                 animacoes.frame_levantar_violao
             ]
+            
+        elif animacoes.andando_esquerda:
+            frame = self.frames_andar_esquerda[
+                animacoes.frame_andar_esquerda
+            ]
 
         elif animacoes.guardando_violao:
-
             frame = self.frames_guardar_violao[
                 animacoes.frame_guardar_violao
             ]

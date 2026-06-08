@@ -8,6 +8,7 @@ from systems.animacoes_sapo import AnimacoesSapo
 from systems.respiracao_sapo import RespiracaoSapo
 from systems.ia_sapo import IASapo
 from systems.system_utils import atualizar_sistemas_basicos
+from datetime import datetime, timedelta
 
 class Sapo:
 
@@ -47,8 +48,22 @@ class Sapo:
         )
 
     def esta_tocando_violao(self):
-
         return bool(getattr(self.animacoes, "tocando_violao", False))
+
+    def pode_caminhar_esquerda(self):
+        a = self.animacoes
+
+        return (
+            not a.andando_esquerda
+            and not a.tocando_violao
+            and not a.pegando_violao
+            and not a.levantando_violao
+            and not a.guardando_violao
+            and not a.soltando_violao
+            and not a.dormindo
+            and not a.adormecendo
+            and not a.acordando
+        )
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
     def atualizar(self, dt, ambiente, animacao_folha = None, violao=None):
@@ -66,10 +81,77 @@ class Sapo:
         self.ia.obter_acao(dt)
 
         events = {}
+        a = self.animacoes
+
+        # =====================================
+        # AGENDAMENTO CAMINHADA
+        # =====================================
+        agora = datetime.now()
+        horario_atual = (
+            agora.hour,
+            agora.minute
+        )
+        executar_caminhada = False
+
+        # retry pendente
+        if a.proxima_tentativa_caminhada:
+            if (
+                agora >= a.proxima_tentativa_caminhada
+            ):
+                executar_caminhada = True
+
+        # horários normais
+        else:
+            for hora, minuto in a.horarios_caminhada:
+                if horario_atual == (hora, minuto):
+                    chave = (
+                        agora.year,
+                        agora.month,
+                        agora.day,
+                        hora,
+                        minuto
+                    )
+
+                    if (
+                        a.ultima_execucao_caminhada
+                        != chave
+                    ):
+                        a.ultima_execucao_caminhada = chave
+                        executar_caminhada = True
+                        break
+
+        if executar_caminhada:
+            margem_borda = 120
+            longe_da_borda = (
+                self.x > margem_borda
+            )
+
+            if (
+                longe_da_borda
+                and self.pode_caminhar_esquerda()
+            ):
+                a.proxima_tentativa_caminhada = None
+                a.iniciar_andar_esquerda()
+
+            else:
+                a.proxima_tentativa_caminhada = (
+                    agora + timedelta(minutes=15)
+                )
+
+        if getattr(a, "andando_esquerda", False):
+            frame_atual = a.frame_andar_esquerda
+
+            if not hasattr(a, "_ultimo_frame_andar"):
+                a._ultimo_frame_andar = -1
+
+            if frame_atual != a._ultimo_frame_andar:
+                a._ultimo_frame_andar = frame_atual
+                self.x = max(
+                    120,
+                    self.x - 2.5
+                )
 
         if violao is not None:
-            a = self.animacoes
-
             if getattr(a, "guardando_violao", False):
 
                 destino_x = getattr(violao, "x_inicial", None)

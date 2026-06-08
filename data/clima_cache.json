@@ -4,7 +4,7 @@
     "wind_direction": 118,
     "future_cloudiness_1h": 0,
     "future_cloudiness_2h": 0,
-    "future_cloudiness_3h": 0,
+    "future_cloudiness_3h": 7,
     "is_day": 0,
     "condition_code": 1036,
     "condition_text": "Clear"

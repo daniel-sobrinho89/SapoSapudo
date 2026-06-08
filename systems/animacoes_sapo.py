@@ -132,6 +132,29 @@ class AnimacoesSapo:
 
         self.iniciou_guardar_violao = False
 
+        # ====================================
+        # CAMINHADA ESQUERDA
+        # ====================================
+
+        self.andando_esquerda = False
+
+        self.frame_andar_esquerda = 0
+
+        self.tempo_andar_esquerda = 0.0
+
+        # horários planejados
+        self.horarios_caminhada = [
+            (8, 0),
+            (14, 0),
+            (18, 0)
+        ]
+
+        # retry quando não puder caminhar
+        self.proxima_tentativa_caminhada = None
+
+        # evita disparar várias vezes no mesmo minuto
+        self.ultima_execucao_caminhada = None
+
     # ====================================
     # SONO
     # ====================================
@@ -173,14 +196,11 @@ class AnimacoesSapo:
         agora = datetime.now()
 
         self.atualizar_pegar_violao(dt)
-
         self.atualizar_violao(dt)
-
         self.atualizar_levantar_violao(dt)
-
         self.atualizar_guardar_violao(dt)
-
         self.atualizar_soltar_violao(dt)
+        self.atualizar_andar_esquerda(dt)
 
         self.tempo_parado += dt
 
@@ -649,3 +669,32 @@ class AnimacoesSapo:
             self.finalizou_soltar_violao = True
 
             self.tempo_tocando_violao = 0
+
+    def iniciar_andar_esquerda(self):
+
+        self.andando_esquerda = True
+
+        self.frame_andar_esquerda = 0
+
+        self.tempo_andar_esquerda = 0
+
+
+    def atualizar_andar_esquerda(self, dt):
+
+        if not self.andando_esquerda:
+            return
+
+        self.tempo_andar_esquerda += dt
+
+        if self.tempo_andar_esquerda < 0.06:
+            return
+
+        self.tempo_andar_esquerda = 0
+
+        self.frame_andar_esquerda += 1
+
+        if self.frame_andar_esquerda >= 103:
+
+            self.frame_andar_esquerda = 102
+
+            self.andando_esquerda = False
