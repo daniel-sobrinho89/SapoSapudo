@@ -128,9 +128,11 @@ class GameWidget(Widget):
         self.clima_service = ClimaService()
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y)
+        self.sapo.background_renderer = (self.background_renderer)
         # interaction state
         self.drag_duende = False
         self.drag_violao = False
+        self.cenario_feira_anterior = False
 
         # drawing setup
         with self.canvas:
@@ -284,6 +286,22 @@ class GameWidget(Widget):
 
         events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
 
+        if (
+            not self.cenario_feira_anterior
+            and self.background_renderer.cenario_feira
+        ):
+            self.sistema_nuvens.limpar()
+
+        if (
+            self.cenario_feira_anterior
+            and not self.background_renderer.cenario_feira
+        ):
+            self.sistema_nuvens.limpar()
+
+        self.cenario_feira_anterior = (
+            self.background_renderer.cenario_feira
+        )
+
         if events.get('start_audio_violao'):
             self.audio.alternar_musica_violao()
         if events.get('stop_audio_violao'):
@@ -296,22 +314,27 @@ class GameWidget(Widget):
         pote_x = centro_x - 260
         pote_y = centro_y + 40
 
-        self.duende.atualizar(dt, self.sapo, pote_x, pote_y, self.clima_service, self.frasco_climatico.area_interna, self.ambiente)
-        sistema_fisica.aplicar_forca_vento(self.duende, self.clima_service, dt, sensibilidade=0.5)
-        self.semente.atualizar(dt, self.clima_service)
+        if not self.background_renderer.cenario_feira:
+            self.duende.atualizar(dt, self.sapo, pote_x, pote_y, self.clima_service, self.frasco_climatico.area_interna, self.ambiente)
+            sistema_fisica.aplicar_forca_vento(self.duende, self.clima_service, dt, sensibilidade=0.5)
 
-        for particula in self.particulas:
-            particula.atualizar(self.ambiente, dt)
+            self.semente.atualizar(dt, self.clima_service)
+
+            for particula in self.particulas:
+                particula.atualizar(self.ambiente, dt)
 
         # render
         self.background_renderer.desenhar()
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
-        self.frasco_climatico.renderizar(tela, centro_y)
-        for particula in self.particulas:
-            particula.desenhar(tela)
-        self.renderer_duende.renderizar(self.duende)
-        self.renderer_semente.renderizar(self.semente)
+        
+        if not self.background_renderer.cenario_feira:
+            self.frasco_climatico.renderizar(tela, centro_y)
+            for particula in self.particulas:
+                particula.desenhar(tela)
+            self.renderer_duende.renderizar(self.duende)
+            self.renderer_semente.renderizar(self.semente)
+        
         if not self.violao.acoplado:
             self.renderer_violao.renderizar(self.violao)
 

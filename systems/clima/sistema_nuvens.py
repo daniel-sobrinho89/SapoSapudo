@@ -191,6 +191,8 @@ class SistemaNuvens:
     # ==========================================
     # RENDER
     # ==========================================
+    def limpar(self):
+        self.nuvens.clear()
 
     def renderizar(
         self,

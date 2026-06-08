@@ -68,8 +68,65 @@ class BackgroundRenderer:
             (largura, altura)
         )
 
-    def obter_background_atual(self):
+        # =====================================
+        # FEIRA MANHÃ
+        # =====================================
 
+        background_feira_manha = asset_manager.carregar(
+            "background_feira_manha.png"
+        )
+
+        self.background_feira_manha = self.transform.escalar(
+            background_feira_manha,
+            (largura, altura)
+        )
+
+        # =====================================
+        # FEIRA DIA
+        # =====================================
+
+        background_feira = asset_manager.carregar(
+            "background_feira.png"
+        )
+
+        self.background_feira = self.transform.escalar(
+            background_feira,
+            (largura, altura)
+        )
+
+        # =====================================
+        # FEIRA FINAL TARDE
+        # =====================================
+
+        background_feira_final_tarde = asset_manager.carregar(
+            "background_feira_final_tarde.png"
+        )
+
+        self.background_feira_final_tarde = self.transform.escalar(
+            background_feira_final_tarde,
+            (largura, altura)
+        )
+
+        # =====================================
+        # FEIRA NOITE
+        # =====================================
+
+        background_feira_night = asset_manager.carregar(
+            "background_feira_night_19h.png"
+        )
+
+        self.background_feira_night = self.transform.escalar(
+            background_feira_night,
+            (largura, altura)
+        )
+
+        self.cenario_feira = False
+
+
+    def obter_background_atual(self):
+        if self.cenario_feira:
+            return self.obter_background_feira()
+        
         agora = datetime.now()
 
         hora_atual = (
@@ -106,6 +163,26 @@ class BackgroundRenderer:
         # =====================================
 
         return self.background_day
+
+    def obter_background_feira(self):
+
+        agora = datetime.now()
+
+        hora_atual = (
+            agora.hour
+            + (agora.minute / 60)
+        )
+
+        if 6 <= hora_atual < 12:
+            return self.background_feira_manha
+
+        if 15 <= hora_atual < 18.5:
+            return self.background_feira_final_tarde
+
+        if hora_atual >= 18.5 or hora_atual < 6:
+            return self.background_feira_night
+
+        return self.background_feira
 
     def eh_dia(self):
 

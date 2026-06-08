@@ -33,6 +33,9 @@ class Sapo:
 
         # FLAGS mínimas
         self.acoplado_violao = False
+        self.background_renderer = None
+        self.indo_para_feira = False
+        self.retornando_da_feira = False
 
     # métodos de delegação / API pública
     def iniciar_violao(self):
@@ -122,18 +125,10 @@ class Sapo:
                         break
 
         if executar_caminhada:
-            margem_borda = 120
-            longe_da_borda = (
-                self.x > margem_borda
-            )
-
-            if (
-                longe_da_borda
-                and self.pode_caminhar_esquerda()
-            ):
+            if self.pode_caminhar_esquerda():
                 a.proxima_tentativa_caminhada = None
+                a._ultimo_frame_andar = -1
                 a.iniciar_andar_esquerda()
-
             else:
                 a.proxima_tentativa_caminhada = (
                     agora + timedelta(minutes=15)
@@ -147,10 +142,29 @@ class Sapo:
 
             if frame_atual != a._ultimo_frame_andar:
                 a._ultimo_frame_andar = frame_atual
-                self.x = min(
-                    LARGURA - 120,
-                    self.x - 2.5
-                )
+                self.x -= 2.5
+
+            # saiu pela esquerda
+            if (
+                not self.indo_para_feira
+                and not self.background_renderer.cenario_feira
+                and self.x < 0
+            ):
+                self.background_renderer.cenario_feira = True
+                self.indo_para_feira = True
+                # reaparece do lado direito
+                self.x = LARGURA + 100
+
+            if self.indo_para_feira:
+                destino = (
+                    LARGURA // 2
+                ) + 180
+
+                if self.x <= destino:
+                    self.x = destino
+                    self.indo_para_feira = False
+                    a.andando_esquerda = False
+                    a._ultimo_frame_andar = -1
 
         if violao is not None:
             if getattr(a, "guardando_violao", False):

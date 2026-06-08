@@ -686,11 +686,7 @@ class AnimacoesSapo:
             return
 
         self.tempo_andar_esquerda = 0
-
         self.frame_andar_esquerda += 1
 
-        if self.frame_andar_esquerda >= 130:
-
-            self.frame_andar_esquerda = 129
-
-            self.andando_esquerda = False
+        if self.frame_andar_esquerda >= 113:
+            self.frame_andar_esquerda = 0

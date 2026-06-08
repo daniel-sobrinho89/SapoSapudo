@@ -108,7 +108,7 @@ class SapoRenderer:
             )
 
         self.frames_andar_esquerda = []
-        for i in range(130):
+        for i in range(113):
             self.frames_andar_esquerda.append(
                 self.assets.carregar(
                     f"sapudo/andar_esquerda/sapo_{i:04d}.png"
