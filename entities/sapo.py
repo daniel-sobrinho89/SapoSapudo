@@ -142,7 +142,7 @@ class Sapo:
 
             if frame_atual != a._ultimo_frame_andar:
                 a._ultimo_frame_andar = frame_atual
-                self.x -= 2.5
+                self.x -= 3.3
 
             # saiu pela esquerda
             if (

@@ -30,47 +30,47 @@ class SapoRenderer:
     def carregar_assets(self):
 
         self.frames_acordar = []
-        for i in range(86):
+        for i in range(60):
 
             self.frames_acordar.append(
                 self.assets.carregar(
-                    f"sapudo/acordar/sapo_{i:04d}.png"
+                    f"sapudo/acordar/sapudo_{i:04d}.webp"
                 )
             )
 
         self.frames_parado = []
-        for i in range(40):
+        for i in range(60):
 
             self.frames_parado.append(
                 self.assets.carregar(
-                    f"sapudo/parado/sapo_{i:04d}.png"
+                    f"sapudo/parado/sapudo_{i:04d}.webp"
                 )
             )
 
         self.frames_dormir = []
-        for i in range(86):
+        for i in range(60):
 
             self.frames_dormir.append(
                 self.assets.carregar(
-                    f"sapudo/dormir/sapo_{i:04d}.png"
+                    f"sapudo/dormir/sapudo_{i:04d}.webp"
                 )
             )
 
         self.frames_dormindo = []
-        for i in range(2):
+        for i in range(9):
 
             self.frames_dormindo.append(
                 self.assets.carregar(
-                    f"sapudo/dormindo/sapo_{i:04d}.png"
+                    f"sapudo/dormindo/sapudo_{i:04d}.webp"
                 )
             )
 
         self.frames_pegar_violao = []
-        for i in range(32):
+        for i in range(15):
 
             self.frames_pegar_violao.append(
                 self.assets.carregar(
-                    f"sapudo/pegar_violao/sapo_{i:04d}.png"
+                    f"sapudo/pegar_violao/sapudo_{i:04d}.webp"
                 )
             )
 
@@ -84,10 +84,10 @@ class SapoRenderer:
             )
 
         self.frames_levantar_violao = []
-        for i in range(47):
+        for i in range(15):
             self.frames_levantar_violao.append(
                 self.assets.carregar(
-                    f"sapudo/levantar_violao/sapo_{i:04d}.png"
+                    f"sapudo/levantar_violao/sapudo_{i:04d}.webp"
                 )
             )
 
@@ -108,10 +108,10 @@ class SapoRenderer:
             )
 
         self.frames_andar_esquerda = []
-        for i in range(113):
+        for i in range(10):
             self.frames_andar_esquerda.append(
                 self.assets.carregar(
-                    f"sapudo/andar_esquerda/sapo_{i:04d}.png"
+                    f"sapudo/andar_esquerda/sapudo_{i:04d}.webp"
                 )
             )
 

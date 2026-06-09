@@ -5,11 +5,9 @@ from utils.paths import BASE_DIR
 class AssetManager:
 
     def __init__(self):
-
         self.assets = {}
 
     def carregar(self, nome):
-
         if nome not in self.assets:
 
             path = BASE_DIR / "assets" / nome
@@ -18,6 +16,9 @@ class AssetManager:
             ).convert_alpha()
 
         return self.assets[nome]
+
+    def limpar(self):
+        self.assets.clear()
 
 
 asset_manager = AssetManager()

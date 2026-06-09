@@ -213,22 +213,22 @@ class AnimacoesSapo:
             self.tempo_parado = 0
             self.frame_parado += 1
 
-            if self.frame_parado >= 40:
+            if self.frame_parado >= 60:
                 self.frame_parado = 0
 
         if self.acordando:
 
             self.tempo_acordar += dt
 
-            if self.tempo_acordar >= 0.06:
+            if self.tempo_acordar >= 0.15:
 
                 self.tempo_acordar = 0
 
                 self.frame_acordar += 1
 
-                if self.frame_acordar >= 86:
+                if self.frame_acordar >= 60:
 
-                    self.frame_acordar = 85
+                    self.frame_acordar = 59
 
                     self.acordando = False
 
@@ -249,15 +249,15 @@ class AnimacoesSapo:
 
                 return
 
-            if self.tempo_dormir >= 0.06:
+            if self.tempo_dormir >= 0.15:
 
                 self.tempo_dormir = 0
 
                 self.frame_dormir += 1
 
-                if self.frame_dormir >= 86:
+                if self.frame_dormir >= 60:
 
-                    self.frame_dormir = 85
+                    self.frame_dormir = 59
 
                     self.adormecendo = False
 
@@ -397,7 +397,7 @@ class AnimacoesSapo:
 
                 self.frame_dormindo += 1
 
-                if self.frame_dormindo >= 2:
+                if self.frame_dormindo >= 9:
 
                     self.frame_dormindo = 0
 
@@ -507,16 +507,16 @@ class AnimacoesSapo:
 
         self.tempo_pegar_violao += dt
 
-        if self.tempo_pegar_violao < 0.06:
+        if self.tempo_pegar_violao < 0.16:
             return
 
         self.tempo_pegar_violao = 0
 
         self.frame_pegar_violao += 1
 
-        if self.frame_pegar_violao >= 32:
+        if self.frame_pegar_violao >= 15:
 
-            self.frame_pegar_violao = 31
+            self.frame_pegar_violao = 14
 
             self.pegando_violao = False
             self.tocando_violao = True
@@ -604,16 +604,16 @@ class AnimacoesSapo:
 
         self.tempo_levantar_violao += dt
 
-        if self.tempo_levantar_violao < 0.06:
+        if self.tempo_levantar_violao < 0.14:
             return
 
         self.tempo_levantar_violao = 0
 
         self.frame_levantar_violao += 1
 
-        if self.frame_levantar_violao >= 47:
+        if self.frame_levantar_violao >= 15:
 
-            self.frame_levantar_violao = 46
+            self.frame_levantar_violao = 14
 
             self.levantando_violao = False
 
@@ -682,11 +682,11 @@ class AnimacoesSapo:
 
         self.tempo_andar_esquerda += dt
 
-        if self.tempo_andar_esquerda < 0.06:
+        if self.tempo_andar_esquerda < 0.07:
             return
 
         self.tempo_andar_esquerda = 0
         self.frame_andar_esquerda += 1
 
-        if self.frame_andar_esquerda >= 113:
+        if self.frame_andar_esquerda >= 10:
             self.frame_andar_esquerda = 0

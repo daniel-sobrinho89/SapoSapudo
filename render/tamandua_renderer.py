@@ -10,10 +10,9 @@ class TamanduaRenderer:
 
         self.frames = []
 
-        for i in range(150):
-
+        for i in range(60):
             nome = (
-                f"tamandudo/parado/tamanduo_{i:04d}.png"
+                f"tamandudo/parado/tamanduo_{i:04d}.webp"
             )
 
             frame = asset_manager.carregar(nome)
@@ -44,7 +43,7 @@ class TamanduaRenderer:
 
         self.tempo += dt
 
-        if self.tempo >= 0.03:
+        if self.tempo >= 0.12:
             self.tempo = 0
 
             self.frame_atual = (

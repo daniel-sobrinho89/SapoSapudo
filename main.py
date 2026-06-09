@@ -34,7 +34,7 @@ from systems.ambiente import Ambiente
 from systems.particulas.poeira import ParticulaPoeira
 from systems.clima.frasco import FrascoClimatico
 
-from render.asset_manager import AssetManager
+from render.asset_manager import asset_manager
 from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
 from render.sapo_renderer import SapoRenderer
@@ -98,6 +98,14 @@ centro_y = (
 # =========================================
 
 class GameWidget(Widget):
+    @property
+    def tem_duende(self):
+        return self.duende is not None
+
+    @property
+    def tem_feira(self):
+        return self.tamandua_renderer is not None
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -108,19 +116,17 @@ class GameWidget(Widget):
             2
         )
         # initialize game state (mirrors previous top-level init)
-        self.assets = AssetManager()
         self.transform = TransformUtils()
         self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform)
         self.ambiente = Ambiente()
-        self.sapo_renderer = SapoRenderer(tela, self.assets, self.transform)
+        self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
         self.animacoes_folha = AnimacoesFolha()
-        self.duende = DuendeNeblina()
-        self.renderer_duende = DuendeRenderer(tela, self.assets, self.transform)
+        self.duende = None
+        self.renderer_duende = None
         self.violao = Violao()
-        self.renderer_violao = ViolaoRenderer(tela, self.assets, self.transform)
-        self.duende.violao_monitorado = self.violao
-        self.semente = Semente()
-        self.renderer_semente = SementeRenderer(tela, self.assets, self.transform)
+        self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
+        self.semente = None
+        self.renderer_semente = None
         self.frasco_climatico = FrascoClimatico(self.transform)
         self.frasco_climatico.atualizar_posicao(centro_y)
         self.particulas = [ParticulaPoeira(self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote) for _ in range(QUANTIDADE_POEIRA)]
@@ -128,20 +134,13 @@ class GameWidget(Widget):
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
         
-        self.tamandua_renderer = TamanduaRenderer(tela, self.transform)
-        self.barraca_renderer = BarracaRenderer(
-            tela,
-            self.transform,
-            LARGURA,
-            ALTURA
-        )
-        x_barraca, y_barraca = (
-            self.barraca_renderer.obter_posicao()
-        )
-        self.tamandua_renderer.definir_posicao(
-            x_barraca + 33,
-            y_barraca - 25
-        )
+        self.tamandua_renderer = None
+        self.barraca_renderer = None
+
+        if self.background_renderer.cenario_feira:
+            self.carregar_cenario_feira()
+        else:
+            self.carregar_cenario_principal()
 
         self.clima_service = ClimaService()
         self.sistema_nuvens = SistemaNuvens(self.transform)
@@ -168,6 +167,60 @@ class GameWidget(Widget):
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
 
+    def carregar_cenario_feira(self):
+
+        self.tamandua_renderer = TamanduaRenderer(
+            tela,
+            self.transform
+        )
+
+        self.barraca_renderer = BarracaRenderer(
+            tela,
+            self.transform,
+            LARGURA,
+            ALTURA
+        )
+
+        x_barraca, y_barraca = (
+            self.barraca_renderer.obter_posicao()
+        )
+
+        self.tamandua_renderer.definir_posicao(
+            x_barraca + 33,
+            y_barraca - 25
+        )
+
+    def descarregar_cenario_feira(self):
+
+        self.tamandua_renderer = None
+        self.barraca_renderer = None
+
+    def carregar_cenario_principal(self):
+
+        self.duende = DuendeNeblina()
+        self.renderer_duende = DuendeRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
+        self.duende.violao_monitorado = self.violao
+
+        self.semente = Semente()
+
+        self.renderer_semente = SementeRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
+
+    def descarregar_cenario_principal(self):
+
+        self.duende = None
+        self.renderer_duende = None
+
+        self.semente = None
+        self.renderer_semente = None
+
     def on_size(self, *args):
         self.rect.size = (self.width, self.height)
 
@@ -189,7 +242,10 @@ class GameWidget(Widget):
         # DUENDE
         # =========================
 
-        if self.duende.corpo_rect.collidepoint(pos_virtual):
+        if (
+            self.tem_duende
+            and self.duende.corpo_rect.collidepoint(pos_virtual)
+        ):
             self.drag_duende = True
             self.duende.iniciar_arraste(*pos_virtual)
 
@@ -230,7 +286,10 @@ class GameWidget(Widget):
 
         if self.drag_violao:
             self.violao.mover_arraste(*pos_virtual)
-        if self.drag_duende:
+        if (
+            self.drag_duende
+            and self.tem_duende
+        ):
             self.duende.mover_arraste(*pos_virtual)
 
     def on_touch_up(self, touch):
@@ -247,14 +306,20 @@ class GameWidget(Widget):
                 self.violao.y = self.sapo.y + 20
             else:
                 self.violao.iniciar_queda()
-                if self.duende.pode_resgatar_violao():
+                if (
+                    self.tem_duende
+                    and self.duende.pode_resgatar_violao()
+                ):
                     distancia_violao = abs(self.violao.x - self.duende.x)
                     MIN_TELEPORT_DIST = 120
                     if not self.duende.consegue_alcancar_antes_da_queda(self.violao) and distancia_violao > MIN_TELEPORT_DIST:
                         self.duende.teleportar_para_violao(self.violao)
                     self.duende.iniciar_resgate_violao(self.violao)
 
-        if self.drag_duende:
+        if (
+            self.drag_duende
+            and self.tem_duende
+        ):
             self.drag_duende = False
             self.duende.finalizar_arraste(self.frasco_climatico.area_interna)
             if self.duende.esta_dentro_do_frasco(self.frasco_climatico.area_interna):
@@ -309,12 +374,24 @@ class GameWidget(Widget):
             and self.background_renderer.cenario_feira
         ):
             self.sistema_nuvens.limpar()
+            self.descarregar_cenario_principal()
+
+            import gc
+            gc.collect()
+
+            self.carregar_cenario_feira()
 
         if (
             self.cenario_feira_anterior
             and not self.background_renderer.cenario_feira
         ):
             self.sistema_nuvens.limpar()
+            self.descarregar_cenario_feira()
+
+            import gc
+            gc.collect()
+
+            self.carregar_cenario_principal()
 
         self.cenario_feira_anterior = (
             self.background_renderer.cenario_feira
