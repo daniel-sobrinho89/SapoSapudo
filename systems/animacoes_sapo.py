@@ -85,8 +85,8 @@ class AnimacoesSapo:
 
         self.direcao_violao = 1
 
-        self.frame_min_violao = 9
-        self.frame_max_violao = 15
+        self.frame_min_violao = 0
+        self.frame_max_violao = 9
 
         self.intervalo_violao = 0.22
 
@@ -269,7 +269,6 @@ class AnimacoesSapo:
         # ====================================
         # RESET
         # ====================================
-
         if (
             agora.hour == 8
             and agora.minute == 0
@@ -317,49 +316,30 @@ class AnimacoesSapo:
         # ====================================
 
         if horario_sono:
-
             self.dormindo = True
-
             self.piscando = False
-
             self.tempo_piscada = 0.0
-
             self.tempo_espera_piscada = 0.0
 
         else:
-
             self.dormindo = False
-
             self.sleep_transition_delay = 0
-
-            # ====================================
-            # PISCADA
-            # ====================================
-
-            if self.piscando:
-
-                self.atualizar_piscada(dt)
 
             # ====================================
             # HORÁRIO
             # ====================================
-
             hora = agora.hour
-
             minuto = agora.minute
 
             if hora >= 19:
-
                 minuto_base = (
                     minuto // 5
                 ) * 5
-
                 pode_bocejar = (
                     minuto % 5 == 0
                     and self.ultimo_bocejo_minuto
                     != minuto_base
                 )
-
                 if pode_bocejar:
 
                     self.ultimo_bocejo_minuto = (
@@ -368,20 +348,6 @@ class AnimacoesSapo:
 
                     return
 
-            # ====================================
-            # PISCADA
-            # ====================================
-
-            if not self.piscando:
-
-                self.tempo_espera_piscada += dt
-
-                if (
-                    self.tempo_espera_piscada
-                    >= self.intervalo_piscada
-                ):
-
-                    self.iniciar_piscada()
 
         # ====================================
         # DELAY SONO
@@ -410,7 +376,6 @@ class AnimacoesSapo:
         # ====================================
 
         target_head_offset = 0
-
         target_body_offset = 0
 
         if (
@@ -425,7 +390,6 @@ class AnimacoesSapo:
         # ====================================
         # INTERPOLAÇÃO
         # ====================================
-
         velocidade = dt * 2.0
 
         self.sleep_offset_y += (
@@ -445,40 +409,6 @@ class AnimacoesSapo:
         self.frame_dormir = 0
 
         self.tempo_dormir = 0
-
-    # ====================================
-    # PISCADA
-    # ====================================
-
-    def iniciar_piscada(self):
-
-        if (
-            self.dormindo
-        ):
-
-            return
-
-        self.piscando = True
-
-        self.tempo_piscada = 0.0
-
-    def atualizar_piscada(self, dt):
-
-        self.tempo_piscada += dt
-
-        if (
-            self.tempo_piscada
-            >= self.duracao_piscada
-        ):
-
-            self.piscando = False
-
-            self.tempo_espera_piscada = 0.0
-
-            self.intervalo_piscada = random.uniform(
-                3.5,
-                6.0
-            )
 
     # ====================================
     # ACORDAR
@@ -521,7 +451,7 @@ class AnimacoesSapo:
             self.pegando_violao = False
             self.tocando_violao = True
 
-            self.frame_violao = 9
+            self.frame_violao = 0
             self.direcao_violao = 1
 
             self.iniciou_tocar_violao = True
@@ -570,19 +500,14 @@ class AnimacoesSapo:
             return
 
         self.tempo_violao = 0
-
         self.frame_violao += self.direcao_violao
 
         if self.frame_violao >= self.frame_max_violao:
-
             self.frame_violao = self.frame_max_violao
-
             self.direcao_violao = -1
 
         elif self.frame_violao <= self.frame_min_violao:
-
             self.frame_violao = self.frame_min_violao
-
             self.direcao_violao = 1
 
     def iniciar_levantar_violao(self):
@@ -619,7 +544,7 @@ class AnimacoesSapo:
 
             self.guardando_violao = True
 
-            self.frame_guardar_violao = 18  # 14
+            self.frame_guardar_violao = 0
 
             self.tempo_guardar_violao = 0
 
@@ -641,7 +566,7 @@ class AnimacoesSapo:
 
         self.frame_guardar_violao += 1
 
-        if self.frame_guardar_violao >= 32:
+        if self.frame_guardar_violao >= 9:
             self.frame_guardar_violao = 0
 
     def atualizar_soltar_violao(self, dt):

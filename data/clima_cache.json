@@ -1,11 +1,11 @@
 {
     "cloudiness": 0,
-    "wind_speed": 6.5,
-    "wind_direction": 301,
-    "future_cloudiness_1h": 15,
-    "future_cloudiness_2h": 23,
-    "future_cloudiness_3h": 23,
+    "wind_speed": 5.8,
+    "wind_direction": 311,
+    "future_cloudiness_1h": 23,
+    "future_cloudiness_2h": 20,
+    "future_cloudiness_3h": 15,
     "is_day": 0,
-    "condition_code": 1000,
-    "condition_text": "Clear"
+    "condition_code": 1036,
+    "condition_text": "Smoky haze"
 }

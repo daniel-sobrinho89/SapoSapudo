@@ -428,7 +428,7 @@ class GameWidget(Widget):
 
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
-        
+
         if not self.background_renderer.cenario_feira:
             self.frasco_climatico.renderizar(tela, centro_y)
             for particula in self.particulas:

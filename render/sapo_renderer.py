@@ -75,11 +75,11 @@ class SapoRenderer:
             )
 
         self.frames_tocar_violao = []
-        for i in range(16):
+        for i in range(10):
 
             self.frames_tocar_violao.append(
                 self.assets.carregar(
-                    f"sapudo/tocar_violao/sapo_{i:04d}.png"
+                    f"sapudo/tocar_violao/sapudo_{i:04d}.webp"
                 )
             )
 
@@ -92,10 +92,10 @@ class SapoRenderer:
             )
 
         self.frames_guardar_violao = []
-        for i in range(32):
+        for i in range(9):
             self.frames_guardar_violao.append(
                 self.assets.carregar(
-                    f"sapudo/guardar_violao/sapo_{i:04d}.png"
+                    f"sapudo/guardar_violao/sapudo_{i:04d}.webp"
                 )
             )
 
@@ -173,7 +173,6 @@ class SapoRenderer:
         escala,
         animacoes
     ):
-
         if animacoes.adormecendo:
 
             frame = self.frames_dormir[
