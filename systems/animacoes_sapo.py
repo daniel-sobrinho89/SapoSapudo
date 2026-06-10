@@ -559,7 +559,7 @@ class AnimacoesSapo:
 
         self.tempo_guardar_violao += dt
 
-        if self.tempo_guardar_violao < 0.06:
+        if self.tempo_guardar_violao < 0.14:
             return
 
         self.tempo_guardar_violao = 0
@@ -576,16 +576,16 @@ class AnimacoesSapo:
 
         self.tempo_soltar_violao += dt
 
-        if self.tempo_soltar_violao < 0.06:
+        if self.tempo_soltar_violao < 0.14:
             return
 
         self.tempo_soltar_violao = 0
 
         self.frame_soltar_violao += 1
 
-        if self.frame_soltar_violao >= 55:
+        if self.frame_soltar_violao >= 9:
 
-            self.frame_soltar_violao = 55
+            self.frame_soltar_violao = 8
 
             self.soltando_violao = False
 

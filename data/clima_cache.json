@@ -1,11 +1,11 @@
 {
     "cloudiness": 0,
-    "wind_speed": 5.8,
-    "wind_direction": 311,
-    "future_cloudiness_1h": 23,
-    "future_cloudiness_2h": 20,
-    "future_cloudiness_3h": 15,
-    "is_day": 0,
-    "condition_code": 1036,
-    "condition_text": "Smoky haze"
+    "wind_speed": 9.4,
+    "wind_direction": 201,
+    "future_cloudiness_1h": 50,
+    "future_cloudiness_2h": 76,
+    "future_cloudiness_3h": 73,
+    "is_day": 1,
+    "condition_code": 1009,
+    "condition_text": "Overcast"
 }

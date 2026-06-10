@@ -97,13 +97,13 @@ class Nuvem:
 
         if self.ceu_limpo:
             self.escala = random.uniform(
-                0.12,
-                0.17
+                0.30,
+                0.40
             )
         else:
             self.escala = random.uniform(
-                0.12,
-                0.24
+                0.45,
+                0.55
             ) * max(0.4, intensidade)
 
         # =====================================
@@ -220,13 +220,13 @@ class Nuvem:
         # tornar nuvens menos transparentes (mais visíveis)
         if self.ceu_limpo:
             self.alpha = random.randint(
-                100,
-                120
+                60,
+                80
             )
         else:
             self.alpha = random.randint(
-                120,
-                180
+                80,
+                100
             )
 
     # ==========================================

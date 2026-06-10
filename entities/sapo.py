@@ -168,38 +168,29 @@ class Sapo:
 
         if violao is not None:
             if getattr(a, "guardando_violao", False):
-
-                destino_x = getattr(violao, "x_inicial", None)
-
+                destino_x = getattr(violao, "x_inicial", None) - 65
                 frame_atual = (
                     a.frame_guardar_violao
                 )
 
                 if frame_atual != a.ultimo_frame_guardar:
-
                     a.ultimo_frame_guardar = (
                         frame_atual
                     )
 
                     if self.x < destino_x:
-
                         self.x = min(
                             destino_x,
                             self.x + 3.5
                         )
-
                         # manter o violão acompanhado ao corpo do sapo
                         violao.x = self.x + 5
                         violao.y = self.y + 20
 
                     else:
-
                         a.guardando_violao = False
-
                         a.soltando_violao = True
-
                         a.frame_soltar_violao = 0
-
                         a.tempo_soltar_violao = 0
 
                         # restaurar posição do violao quando terminado

@@ -100,10 +100,10 @@ class SapoRenderer:
             )
 
         self.frames_soltar_violao = []
-        for i in range(55):
+        for i in range(9):
             self.frames_soltar_violao.append(
                 self.assets.carregar(
-                    f"sapudo/soltar_violao/sapo_{i:04d}.png"
+                    f"sapudo/soltar_violao/sapudo_{i:04d}.webp"
                 )
             )
 

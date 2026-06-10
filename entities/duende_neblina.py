@@ -127,7 +127,7 @@ class DuendeNeblina:
         # ESCALA
         # =================================
 
-        self.escala = 0.09
+        self.escala = 0.40
 
         # =================================
         # TRANSFORMAÇÃO SONO
