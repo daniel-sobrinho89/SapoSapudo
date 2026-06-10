@@ -1,9 +1,3 @@
-from PIL import features
-
-print(
-    "WEBP SUPPORTED:",
-    features.check("webp")
-)
 # =========================================
 # MAIN.PY
 # =========================================

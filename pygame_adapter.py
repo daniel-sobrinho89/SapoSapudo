@@ -244,18 +244,18 @@ class image:
             raise RuntimeError(
                 f"Falha ao carregar textura: {path}"
             )
-        print("[CORETEXTURE OK]")
+
         largura, altura = core.texture.size
         pixels = core.texture.pixels
-        print("[pixels OK]")
+
         img = Image.frombytes(
             "RGBA",
             (largura, altura),
             pixels
         )
-        print("[IMAGE OK]")
+
         s = Surface(img.size)
-        print("[Surface OK]")
+
         s._img = img
 
         return s
