@@ -8,6 +8,7 @@ transform (scale/rotate), image.load, display.set_mode/Info, time.Clock,
 and a minimal mixer.music using Kivy SoundLoader.
 """
 from PIL import Image, ImageOps, ImageDraw
+from kivy.core.image import Image as CoreImage
 import time as pytime
 
 # mouse compatibility
@@ -237,9 +238,26 @@ class Surface:
 class image:
     @staticmethod
     def load(path):
-        img = Image.open(path).convert('RGBA')
+        core = CoreImage(path)
+
+        if core.texture is None:
+            raise RuntimeError(
+                f"Falha ao carregar textura: {path}"
+            )
+        print("[CORETEXTURE OK]")
+        largura, altura = core.texture.size
+        pixels = core.texture.pixels
+        print("[pixels OK]")
+        img = Image.frombytes(
+            "RGBA",
+            (largura, altura),
+            pixels
+        )
+        print("[IMAGE OK]")
         s = Surface(img.size)
-        s._img = img.copy()
+        print("[Surface OK]")
+        s._img = img
+
         return s
 
 
