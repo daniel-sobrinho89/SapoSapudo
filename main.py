@@ -33,6 +33,7 @@ from systems.animacoes_folha import AnimacoesFolha
 from systems.ambiente import Ambiente
 from systems.particulas.poeira import ParticulaPoeira
 from systems.clima.frasco import FrascoClimatico
+from systems.clima.evento_livro import EventoLivro
 
 from render.asset_manager import asset_manager
 from render.transform_utils import TransformUtils
@@ -130,6 +131,8 @@ class GameWidget(Widget):
         self.frasco_climatico = FrascoClimatico(self.transform)
         self.frasco_climatico.atualizar_posicao(centro_y)
         self.particulas = [ParticulaPoeira(self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote) for _ in range(QUANTIDADE_POEIRA)]
+        self.evento_livro = EventoLivro(asset_manager, self.transform)        
+        self.evento_livro.particulas = self.particulas
         for p in self.particulas:
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
@@ -237,6 +240,34 @@ class GameWidget(Widget):
     def on_touch_down(self, touch):
 
         pos_virtual = real_to_virtual(touch.pos)
+
+        # =========================
+        # LIVRO
+        # =========================
+        if self.evento_livro.livro_aberto_visivel:
+            self.evento_livro.fechar_livro_aberto()
+            return True
+
+        if self.evento_livro.livro_visivel:
+            if (
+                self.evento_livro.rect_livro
+                and self.evento_livro.rect_livro.collidepoint(pos_virtual)
+            ):
+                self.evento_livro.ocultar_livro_por_clique()
+                return True
+
+        # =========================
+        # POEIRA
+        # =========================
+        if not self.evento_livro.livro_visivel:
+            for particula in self.particulas:
+                if (
+                    particula.ativa
+                    and particula.obter_rect().collidepoint(pos_virtual)
+                ):
+                    particula.ativa = False
+                    self.evento_livro.registrar_clique_poeira()
+                    return True
 
         # =========================
         # DUENDE
@@ -364,6 +395,8 @@ class GameWidget(Widget):
             sistema_fisica.aplicar_forca_vento(self.violao, self.clima_service, dt, sensibilidade=0.6)
 
         self.violao.atualizar(dt)
+        self.frasco_climatico.atualizar(dt)
+        self.evento_livro.atualizar(dt)
         self.sistema_nuvens.atualizar_area_interna()
         self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
@@ -431,11 +464,22 @@ class GameWidget(Widget):
 
         if not self.background_renderer.cenario_feira:
             self.frasco_climatico.renderizar(tela, centro_y)
-            for particula in self.particulas:
-                particula.desenhar(tela)
+
+            if not self.evento_livro.livro_visivel:
+                for particula in self.particulas:
+                    particula.desenhar(tela)
+                    
+                self.frasco_climatico.desenhar_nevoa(
+                    tela,
+                    self.evento_livro.nevoa
+                )
+
             self.renderer_duende.renderizar(self.duende)
             self.renderer_semente.renderizar(self.semente)
-        
+
+            self.evento_livro.renderizar(tela, self.frasco_climatico)
+            self.evento_livro.renderizar_livro_aberto(tela)
+
         if not self.violao.acoplado:
             self.renderer_violao.renderizar(self.violao)
 

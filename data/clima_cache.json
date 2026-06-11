@@ -1,11 +1,11 @@
 {
-    "cloudiness": 0,
-    "wind_speed": 9.4,
-    "wind_direction": 201,
-    "future_cloudiness_1h": 50,
-    "future_cloudiness_2h": 76,
-    "future_cloudiness_3h": 73,
-    "is_day": 1,
-    "condition_code": 1009,
-    "condition_text": "Overcast"
+    "cloudiness": 100,
+    "wind_speed": 8.6,
+    "wind_direction": 120,
+    "future_cloudiness_1h": 75,
+    "future_cloudiness_2h": 100,
+    "future_cloudiness_3h": 100,
+    "is_day": 0,
+    "condition_code": 1183,
+    "condition_text": "Light rain"
 }

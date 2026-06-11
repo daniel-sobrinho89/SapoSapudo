@@ -30,6 +30,33 @@ class TransformUtils:
 
         return escalada
 
+    def escalar_nuvem(
+        self,
+        imagem,
+        tamanho
+    ):
+
+        largura, altura = tamanho
+
+        key = (
+            "nuvem",
+            id(imagem),
+            largura,
+            altura
+        )
+
+        if key in self.cache_escalas:
+            return self.cache_escalas[key]
+
+        escalada = pygame_adapter.transform.scale(
+            imagem,
+            (largura, altura)
+        ).convert_alpha()
+
+        self.cache_escalas[key] = escalada
+
+        return escalada
+
     def rotacionar(
         self,
         imagem,

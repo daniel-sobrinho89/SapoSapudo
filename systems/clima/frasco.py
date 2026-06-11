@@ -1,3 +1,6 @@
+import math
+import random
+
 import pygame_adapter
 
 
@@ -42,15 +45,15 @@ class FrascoClimatico:
         from render.asset_manager import asset_manager
 
         base_original = asset_manager.carregar(
-            "clima/frasco/frasco_base.png"
+            "clima/frasco/frasco_base.webp"
         )
 
         vidro_original = asset_manager.carregar(
-            "clima/frasco/frasco_vidro.png"
+            "clima/frasco/frasco_vidro.webp"
         )
 
         tampa_original = asset_manager.carregar(
-            "clima/frasco/frasco_tampa.png"
+            "clima/frasco/frasco_tampa.webp"
         )
 
         # =====================================
@@ -68,6 +71,20 @@ class FrascoClimatico:
         tampa_crop = tampa_original.subsurface(
             tampa_original.get_bounding_rect()
         ).copy()
+
+        # =====================================
+        # NEVOA
+        # =====================================
+        self.tempo_nevoa = 0.0
+        self.nevoa_bolhas = []
+        for _ in range(40):
+            self.nevoa_bolhas.append({
+                "x": random.random(),
+                "y": random.random(),
+                "raio": random.randint(15, 40),
+                "fase": random.uniform(0, 6.28),
+                "velocidade": random.uniform(0.3, 1.2)
+            })
 
         # =====================================
         # ESCALAS DAS PEÇAS
@@ -284,6 +301,12 @@ class FrascoClimatico:
             pote_h
         )
 
+    def atualizar(
+        self,
+        dt
+    ):
+        self.tempo_nevoa += dt
+
     # =====================================
     # RENDER
     # =====================================
@@ -333,10 +356,131 @@ class FrascoClimatico:
     # =====================================
 
     def renderizar(self, tela, centro_y=None):
-
         self.atualizar_posicao(centro_y)
-
         tela.blit(
             self.frasco_surface,
             (self.x, self.y)
         )
+
+    def desenhar_nevoa(
+        self,
+        tela,
+        intensidade
+    ):
+        tempo = self.tempo_nevoa
+
+        if intensidade <= 0:
+            return
+
+        quantidade = len(self.nevoa_bolhas)
+
+        alpha_base = int(
+            (intensidade / 7.0)
+            * 120
+        )
+
+        for bolha in self.nevoa_bolhas[:quantidade]:
+            raio = bolha["raio"]
+
+            x = int(
+                self.area_pote.centerx
+                +
+                (bolha["x"] - 0.5)
+                * self.area_pote.width
+                * 0.8
+                +
+                math.cos(
+                    tempo * bolha["velocidade"] * 0.6
+                    + bolha["fase"]
+                ) * 8
+            )
+
+            y = int(
+                self.area_pote.centery
+                +
+                (bolha["y"] - 0.5)
+                * self.area_pote.height
+                * 0.8
+                +
+                math.sin(
+                    tempo * bolha["velocidade"]
+                    + bolha["fase"]
+                ) * 12
+            )
+
+            x = max(
+                self.area_pote.left + raio,
+                min(
+                    x,
+                    self.area_pote.right - raio
+                )
+            )
+
+            y = max(
+                self.area_pote.top + raio,
+                min(
+                    y,
+                    self.area_pote.bottom - raio
+                )
+            )
+
+            superficie = pygame_adapter.Surface(
+                (
+                    raio * 2,
+                    raio * 2
+                ),
+                pygame_adapter.SRCALPHA
+            )
+
+            pygame_adapter.draw.circle(
+                superficie,
+                (
+                    220,
+                    235,
+                    255,
+                    int(alpha_base * 0.15)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                raio
+            )
+
+            pygame_adapter.draw.circle(
+                superficie,
+                (
+                    220,
+                    235,
+                    255,
+                    int(alpha_base * 0.40)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                int(raio * 0.70)
+            )
+
+            pygame_adapter.draw.circle(
+                superficie,
+                (
+                    235,
+                    245,
+                    255,
+                    int(alpha_base * 0.80)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                int(raio * 0.35)
+            )
+
+            tela.blit(
+                superficie,
+                (
+                    x - raio,
+                    y - raio
+                )
+            )

@@ -16,6 +16,7 @@ class ParticulaPoeira:
         self.area_protegida = area_protegida
         self.protegido = False
         self.just_exited_timer = 0.0
+        self.ativa = True
         self.resetar()
 
     def resetar(self):
@@ -74,7 +75,7 @@ class ParticulaPoeira:
             self.area_particulas.bottom
         ) 
 
-        self.raio = random.randint(2, 3)
+        self.raio = random.randint(4, 5)
 
         # tornar partículas um pouco menos transparentes
         self.alpha = random.randint(100, 200)
@@ -89,12 +90,14 @@ class ParticulaPoeira:
         else:
             self.protegido = False
 
-
     def atualizar(
         self,
         ambiente,
         dt
     ):
+        if not self.ativa:
+            return
+        
         self.tempo_vida += dt
         current_protegido = False
 
@@ -236,6 +239,8 @@ class ParticulaPoeira:
         self,
         tela
     ):
+        if not self.ativa:
+            return
 
         tamanho = self.raio * 6
 
@@ -293,4 +298,15 @@ class ParticulaPoeira:
                 self.x,
                 self.y
             )
+        )
+
+    def obter_rect(self):
+
+        tamanho = self.raio * 6
+
+        return pygame_adapter.Rect(
+            self.x,
+            self.y,
+            tamanho,
+            tamanho
         )

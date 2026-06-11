@@ -97,13 +97,13 @@ class Nuvem:
 
         if self.ceu_limpo:
             self.escala = random.uniform(
-                0.30,
-                0.40
+                0.40,
+                0.50
             )
         else:
             self.escala = random.uniform(
-                0.45,
-                0.55
+                0.55,
+                0.65
             ) * max(0.4, intensidade)
 
         # =====================================
@@ -324,7 +324,6 @@ class Nuvem:
     # ==========================================
     # HELPERS
     # ==========================================
-
     @classmethod
     def obter_sprite_escalado(
         cls,
@@ -332,31 +331,42 @@ class Nuvem:
         escala,
         transform
     ):
+
+        largura = max(
+            8,
+            round(sprite.get_width() * escala)
+        )
+
+        altura = max(
+            8,
+            round(sprite.get_height() * escala)
+        )
+
         chave = (
             id(sprite),
-            round(escala, 2)
+            largura,
+            altura
         )
 
         if chave not in cls.cache_escalas:
 
-            largura = max(
-                8,
-                int(sprite.get_width() * escala)
-            )
-
-            altura = max(
-                8,
-                int(sprite.get_height() * escala)
-            )
-
             if len(cls.cache_escalas) > 200:
                 cls.cache_escalas.clear()
 
-            cls.cache_escalas[chave] = (
-                transform.escalar(
-                    sprite,
-                    (largura, altura)
+            sprite_escalado = transform.escalar_nuvem(
+                sprite,
+                (
+                    largura,
+                    altura
                 )
+            )
+
+            sprite_escalado = (
+                sprite_escalado.convert_alpha()
+            )
+
+            cls.cache_escalas[chave] = (
+                sprite_escalado
             )
 
         return cls.cache_escalas[chave]

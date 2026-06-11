@@ -85,8 +85,8 @@ class SementeRenderer:
         semente
     ):
 
-        escala_corpo = 0.08
-        escala_olho = 0.035
+        escala_corpo = 0.32
+        escala_olho = 0.13
 
         corpo = (
             self.corpo_sorrindo

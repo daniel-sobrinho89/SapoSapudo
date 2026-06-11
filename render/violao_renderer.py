@@ -1,9 +1,6 @@
-import pygame_adapter
-
-
 class ViolaoRenderer:
 
-    VIOLAO_SCALE = 0.10
+    VIOLAO_SCALE = 0.15
 
     def __init__(
         self,
@@ -16,7 +13,7 @@ class ViolaoRenderer:
         self.transform = transform
 
         original = assets.carregar(
-            "sapudo/violao.png"
+            "sapudo/violao.webp"
         )
 
         largura = int(
