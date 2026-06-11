@@ -199,6 +199,14 @@ class ClimaService:
                 data["current"]["condition"]["text"]
             )
 
+            self.temperature = (
+                data["current"]["temp_c"]
+            )
+
+            self.humidity = (
+                data["current"]["humidity"]
+            )
+
             # ==========================================
             # PREVISÃO HORÁRIA
             # ==========================================
@@ -265,6 +273,8 @@ class ClimaService:
                 "| +3h:", self.future_cloudiness_3h,
                 "| vento:", self.wind_speed,
                 "| direção:", self.wind_direction,
+                "| Temperatura:", self.temperature,
+                "| Umidade:", self.humidity
             )
 
         finally:
@@ -372,6 +382,16 @@ class ClimaService:
                 0
             )
 
+            self.temperature = data.get(
+                "temperature",
+                0
+            )
+
+            self.humidity = data.get(
+                "humidity",
+                0
+            )
+
             self.future_cloudiness_1h = data.get(
                 "future_cloudiness_1h",
                 self.cloudiness
@@ -438,7 +458,9 @@ class ClimaService:
                         "future_cloudiness_3h": self.future_cloudiness_3h,
                         "is_day": self.is_day,
                         "condition_code": self.condition_code,
-                        "condition_text": self.condition_text
+                        "condition_text": self.condition_text,
+                        "temperature": self.temperature,
+                        "humidity": self.humidity
                     },
                     arquivo,
                     indent=4

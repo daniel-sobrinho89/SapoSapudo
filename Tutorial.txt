@@ -32,3 +32,10 @@ android.archs = arm64-v8a, armeabi-v7a
 
 gustavo.hbarros.sp@gmail.com
 GHBSghbs
+
+-----------------
+adb logcat -c
+
+
+cd /home/sapo-sapudo/Projetos
+adb logcat > log.txt

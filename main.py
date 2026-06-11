@@ -118,7 +118,6 @@ class GameWidget(Widget):
         )
         # initialize game state (mirrors previous top-level init)
         self.transform = TransformUtils()
-        self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform)
         self.ambiente = Ambiente()
         self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
         self.animacoes_folha = AnimacoesFolha()
@@ -137,15 +136,18 @@ class GameWidget(Widget):
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
         
+
+        self.clima_service = ClimaService()
+
+        self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform, self.clima_service)
+
         self.tamandua_renderer = None
         self.barraca_renderer = None
-
         if self.background_renderer.cenario_feira:
             self.carregar_cenario_feira()
         else:
             self.carregar_cenario_principal()
 
-        self.clima_service = ClimaService()
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y)
         self.sapo.background_renderer = (self.background_renderer)
@@ -478,7 +480,7 @@ class GameWidget(Widget):
             self.renderer_semente.renderizar(self.semente)
 
             self.evento_livro.renderizar(tela, self.frasco_climatico)
-            self.evento_livro.renderizar_livro_aberto(tela)
+            self.evento_livro.renderizar_livro_aberto(tela, self.clima_service)
 
         if not self.violao.acoplado:
             self.renderer_violao.renderizar(self.violao)

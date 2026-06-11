@@ -4,7 +4,7 @@
 
 import math
 import random
-from time import sleep
+from systems.clima.livro_climatico import LivroClimatico
 import pygame_adapter
 
 class EventoLivro:
@@ -25,6 +25,8 @@ class EventoLivro:
         self.rect_livro = None
         self.acumulador_retorno = 0.0
         self.livro_aberto_visivel = False
+        self.livro_climatico = LivroClimatico()
+        self.pagina_atual = None
 
         self.livro_fechado = assets.carregar(
             "clima/livro_fechado.webp"
@@ -33,8 +35,8 @@ class EventoLivro:
         self.livro_fechado = transform.escalar(
             self.livro_fechado,
             (
-                int(self.livro_fechado.get_width() * 0.20),
-                int(self.livro_fechado.get_height() * 0.20)
+                int(self.livro_fechado.get_width() * 0.25),
+                int(self.livro_fechado.get_height() * 0.25)
             )
         )
 
@@ -45,10 +47,12 @@ class EventoLivro:
         self.livro_aberto = transform.escalar(
             self.livro_aberto,
             (
-                int(self.livro_aberto.get_width() * 1.00),
+                int(self.livro_aberto.get_width() * 1.10),
                 int(self.livro_aberto.get_height() * 0.80)
             )
         )
+
+        self.texto_livro = TextoLivro()
 
 
     def registrar_clique_poeira(self):
@@ -97,8 +101,9 @@ class EventoLivro:
 
     def ocultar_livro_por_clique(self):
         self.livro_visivel = False
-        self.rect_livro = None
         self.livro_aberto_visivel = True
+        self.pagina_atual = None
+        self.rect_livro = None
         self.nevoa = 0
         self.acumulador_retorno = 0.0
         self.tempo_sem_clique = 0
@@ -147,6 +152,7 @@ class EventoLivro:
 
     def fechar_livro_aberto(self):
         self.livro_aberto_visivel = False
+        self.pagina_atual = None
         self.nevoa = 0
         self.acumulador_retorno = 0.0
         self.tempo_sem_clique = 0
@@ -157,7 +163,8 @@ class EventoLivro:
 
     def renderizar_livro_aberto(
         self,
-        tela
+        tela, 
+        clima_service
     ):
         if not self.livro_aberto_visivel:
             return
@@ -185,6 +192,85 @@ class EventoLivro:
                 y
             )
         )
+
+        if self.pagina_atual is None:
+            self.pagina_atual = (
+                self.livro_climatico.gerar_pagina(
+                    clima_service
+                )
+            )
+
+        pagina = self.pagina_atual
+
+        # ==========================
+        # PÁGINA ESQUERDA
+        # ==========================
+
+        pagina_esquerda = (
+            pagina["pagina_esquerda"]
+        )
+
+        texto_x = x + 240
+        texto_y = y + 80
+
+        self.texto_livro.desenhar(
+            tela,
+            pagina_esquerda["titulo"],
+            texto_x,
+            texto_y,
+            titulo=True
+        )
+
+        texto_x_esquerda = x + 180
+        texto_y = y + 150
+
+        for linha in pagina_esquerda["linhas"]:
+            partes = self.texto_livro.quebrar_texto(linha, 40)
+            for parte in partes:
+                self.texto_livro.desenhar(
+                    tela,
+                    parte,
+                    texto_x_esquerda,
+                    texto_y
+                )
+                texto_y += 24
+
+            texto_y += 8
+
+        # ==========================
+        # PÁGINA DIREITA
+        # ==========================
+
+        pagina_direita = (
+            pagina["pagina_direita"]
+        )
+
+        texto_x = x + 650
+        texto_y = y + 80
+
+        self.texto_livro.desenhar(
+            tela,
+            pagina_direita["titulo"],
+            texto_x,
+            texto_y,
+            titulo=True
+        )
+
+        texto_x_direita = x + 600
+        texto_y = y + 150
+
+        for linha in pagina_direita["linhas"]:
+            partes = self.texto_livro.quebrar_texto(linha, 40)
+            for parte in partes:
+                self.texto_livro.desenhar(
+                    tela,
+                    parte,
+                    texto_x_direita,
+                    texto_y
+                )
+                texto_y += 24
+
+            texto_y += 8
 
         self.rect_livro_aberto = pygame_adapter.Rect(
             x,
@@ -236,4 +322,59 @@ class EventoLivro:
             y_final,
             largura,
             altura
+        )
+
+from PIL import ImageFont
+from PIL import ImageDraw
+import textwrap
+
+class TextoLivro:
+
+    def __init__(self):
+
+        self.fonte_titulo = ImageFont.truetype(
+            "assets/fonts/CormorantGaramond-Bold.ttf",
+            35
+        )
+
+        self.fonte_texto = ImageFont.truetype(
+            "assets/fonts/CormorantGaramond-Regular.ttf",
+            20
+        )
+
+    def quebrar_texto(
+        self,
+        texto,
+        largura=24
+    ):
+
+        return textwrap.wrap(
+            texto,
+            width=largura
+        )
+
+    def desenhar(
+        self,
+        surface,
+        texto,
+        x,
+        y,
+        titulo=False
+    ):
+
+        draw = ImageDraw.Draw(
+            surface._img
+        )
+
+        fonte = (
+            self.fonte_titulo
+            if titulo
+            else self.fonte_texto
+        )
+
+        draw.text(
+            (x, y),
+            texto,
+            fill=(70, 50, 30, 255),
+            font=fonte
         )

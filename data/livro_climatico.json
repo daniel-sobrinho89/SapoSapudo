@@ -1,0 +1,116 @@
+{
+  "chuva": [
+    {
+      "titulo": "Água a Caminho",
+      "linhas": [
+        "Nuvens pesadas se reúnem no horizonte.",
+        "",
+        "Há grande chance de que a água visite os campos antes do cair da noite.",
+        "",
+        "Os ventos vindos do {direcao} carregam o perfume das tempestades."
+      ]
+    },
+    {
+      "titulo": "Nuvens se Aproximam",
+      "linhas": [
+        "O céu guarda água em silêncio.",
+        "",
+        "As primeiras sombras da chuva já caminham sobre a paisagem.",
+        "",
+        "Do {direcao} chegam correntes que empurram as nuvens adiante."
+      ]
+    }
+  ],
+
+  "sol": [
+    {
+      "titulo": "O Sol Passeia Livre",
+      "linhas": [
+        "O Sol passeia livre pelos céus hoje.",
+        "",
+        "Seu calor tocará a terra com gentileza.",
+        "",
+        "Os ventos do {direcao} atravessam os campos sem perturbar a luz."
+      ]
+    },
+    {
+      "titulo": "Dia de Céu Aberto",
+      "linhas": [
+        "Poucas nuvens ousarão desafiar o brilho do dia.",
+        "",
+        "As sombras permanecerão curtas e tranquilas.",
+        "",
+        "O vento vindo do {direcao} espalhará o aroma das flores."
+      ]
+    }
+  ],
+
+  "umidade": [
+    {
+      "titulo": "Orvalho Abundante",
+      "linhas": [
+        "As folhas despertarão cobertas de gotas.",
+        "",
+        "Os musgos beberão com fartura durante a manhã.",
+        "",
+        "Os ventos do {direcao} ajudam a conservar a umidade sobre a terra."
+      ]
+    },
+    {
+      "titulo": "Terra Úmida",
+      "linhas": [
+        "O solo permanece generoso com a água recebida.",
+        "",
+        "A relva conservará o frescor por muitas horas.",
+        "",
+        "Do {direcao} sopra um ar carregado de umidade."
+      ]
+    }
+  ],
+
+  "vento": [
+    {
+      "titulo": "O Ar Está Inquieto",
+      "linhas": [
+        "As copas das árvores conversarão durante toda a tarde.",
+        "",
+        "Folhas secas cruzarão caminhos que normalmente ignorariam.",
+        "",
+        "O vento sopra do {direcao} com energia renovada."
+      ]
+    },
+    {
+      "titulo": "As Árvores Conversam",
+      "linhas": [
+        "O ar percorre os campos com passos rápidos.",
+        "",
+        "Galhos e folhas responderão ao seu chamado.",
+        "",
+        "Do {direcao} chegam correntes persistentes."
+      ]
+    }
+  ],
+
+  "frio": [
+    {
+      "titulo": "A Lua Emprestará Sua Calma",
+      "linhas": [
+        "As temperaturas cairão durante a madrugada.",
+        "",
+        "Os viajantes prudentes buscarão abrigo antes da noite.",
+        "",
+        "Os ventos do {direcao} trarão um frio discreto, porém constante."
+      ]
+    },
+    {
+      "titulo": "Madrugada Serena",
+      "linhas": [
+        "O silêncio da noite será acompanhado por ar gelado.",
+        "",
+        "As primeiras horas do amanhecer pedirão agasalhos.",
+        "",
+        "Do {direcao} chegam correntes frias e pacientes."
+      ]
+    }
+  ]
+}

@@ -10,18 +10,20 @@ class BackgroundRenderer:
         tela,
         largura,
         altura,
-        transform
+        transform,
+        clima_service
     ):
 
         self.tela = tela
         self.transform = transform
+        self.clima_service = clima_service
 
         # =====================================
         # BACKGROUND MANHÃ
         # =====================================
 
         background_manha = asset_manager.carregar(
-            "background_manha.png"
+            "background_manha.webp"
         )
 
         self.background_manha = self.transform.escalar(
@@ -34,7 +36,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_day = asset_manager.carregar(
-            "background.png"
+            "background.webp"
         )
 
         self.background_day = self.transform.escalar(
@@ -47,7 +49,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_final_tarde = asset_manager.carregar(
-            "background_final_tarde.png"
+            "background_final_tarde.webp"
         )
 
         self.background_final_tarde = self.transform.escalar(
@@ -60,7 +62,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_night = asset_manager.carregar(
-            "background_night_19h.png"
+            "background_night_19h.webp"
         )
 
         self.background_night = self.transform.escalar(
@@ -73,7 +75,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_feira_manha = asset_manager.carregar(
-            "background_feira_manha.png"
+            "background_feira_manha.webp"
         )
 
         self.background_feira_manha = self.transform.escalar(
@@ -86,7 +88,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_feira = asset_manager.carregar(
-            "background_feira.png"
+            "background_feira.webp"
         )
 
         self.background_feira = self.transform.escalar(
@@ -99,7 +101,7 @@ class BackgroundRenderer:
         # =====================================
 
         background_feira_final_tarde = asset_manager.carregar(
-            "background_feira_final_tarde.png"
+            "background_feira_final_tarde.webp"
         )
 
         self.background_feira_final_tarde = self.transform.escalar(
@@ -112,11 +114,33 @@ class BackgroundRenderer:
         # =====================================
 
         background_feira_night = asset_manager.carregar(
-            "background_feira_night_19h.png"
+            "background_feira_night_19h.webp"
         )
 
         self.background_feira_night = self.transform.escalar(
             background_feira_night,
+            (largura, altura)
+        )
+
+        # =====================================
+        # CHUVA
+        # =====================================
+
+        background_chuva = asset_manager.carregar(
+            "background_chuva.webp"
+        )
+
+        self.background_chuva = self.transform.escalar(
+            background_chuva,
+            (largura, altura)
+        )
+
+        background_feira_chuva = asset_manager.carregar(
+            "background_feira_chuva.webp"
+        )
+
+        self.background_feira_chuva = self.transform.escalar(
+            background_feira_chuva,
             (largura, altura)
         )
 
@@ -127,8 +151,10 @@ class BackgroundRenderer:
         if self.cenario_feira:
             return self.obter_background_feira()
         
-        agora = datetime.now()
+        if self.esta_chovendo():
+            return self.background_chuva
 
+        agora = datetime.now()
         hora_atual = (
             agora.hour
             + (agora.minute / 60)
@@ -139,7 +165,6 @@ class BackgroundRenderer:
         # =====================================
 
         if 6 <= hora_atual < 12:
-
             return self.background_manha
 
         # =====================================
@@ -147,7 +172,6 @@ class BackgroundRenderer:
         # =====================================
 
         if 15 <= hora_atual < 18.5:
-
             return self.background_final_tarde
 
         # =====================================
@@ -155,7 +179,6 @@ class BackgroundRenderer:
         # =====================================
 
         if hora_atual >= 18.5 or hora_atual < 6:
-
             return self.background_night
 
         # =====================================
@@ -165,6 +188,8 @@ class BackgroundRenderer:
         return self.background_day
 
     def obter_background_feira(self):
+        if self.esta_chovendo():
+            return self.background_feira_chuva
 
         agora = datetime.now()
 
@@ -191,6 +216,14 @@ class BackgroundRenderer:
         return not (
             hora_atual >= 19
             or hora_atual < 6
+        )
+
+    def esta_chovendo(self):
+        if not self.clima_service:
+            return False
+
+        return (
+            self.clima_service.cloudiness >= 70
         )
 
     def desenhar(self):
