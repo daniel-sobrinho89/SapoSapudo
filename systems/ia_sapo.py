@@ -4,11 +4,35 @@ import random
 class IASapo:
 
     def __init__(self):
+        self.ultimo_pensamento = None
 
         self.cooldown = random.uniform(
             30,
             60
         )
+
+    def escolher_pensamento(
+        self,
+        opcoes
+    ):
+
+        if (
+            len(opcoes) > 1
+            and self.ultimo_pensamento in opcoes
+        ):
+            opcoes = [
+                opcao
+                for opcao in opcoes
+                if opcao != self.ultimo_pensamento
+            ]
+
+        pensamento = random.choice(
+            opcoes
+        )
+
+        self.ultimo_pensamento = pensamento
+
+        return pensamento
 
     def obter_acao(
         self,
@@ -35,7 +59,9 @@ class IASapo:
             )
 
             if random.random() < 0.40:
-                return "existencial"
+                return self.escolher_pensamento([
+                    "existencial"
+                ])
 
             return None
 
@@ -46,6 +72,17 @@ class IASapo:
             return None
 
         if a.andando_esquerda:
+
+            self.cooldown = random.uniform(
+                180,
+                360
+            )
+
+            if random.random() < 0.15:
+                return self.escolher_pensamento([
+                    "aleatorio"
+                ])
+
             return None
 
         # =================================
@@ -54,13 +91,12 @@ class IASapo:
 
         if a.tocando_violao:
 
-            # pensa mais frequentemente
             self.cooldown = random.uniform(
                 60,
                 120
             )
 
-            return random.choice([
+            return self.escolher_pensamento([
                 "violao",
                 "violao",
                 "violao",
@@ -80,8 +116,10 @@ class IASapo:
         # EXISTENCIAIS RAROS
         # =================================
 
-        if random.random() < 0.02:
-            return "existencial"
+        if random.random() < 0.08:
+            return self.escolher_pensamento([
+                "existencial"
+            ])
 
         # =================================
         # CLIMA
@@ -143,20 +181,22 @@ class IASapo:
                 )
 
             if opcoes:
-                return random.choice(
+                return self.escolher_pensamento(
                     opcoes
                 )
 
             if clima.is_day:
 
-                return random.choice([
+                return self.escolher_pensamento([
                     "sol",
                     "aleatorio"
                 ])
 
-            return random.choice([
+            return self.escolher_pensamento([
                 "noite",
                 "aleatorio"
             ])
 
-        return "aleatorio"
+        return self.escolher_pensamento([
+            "aleatorio"
+        ])

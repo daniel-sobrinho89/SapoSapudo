@@ -1,66 +1,110 @@
 {
   "chuva": [
-    "As nuvens parecem pesadas hoje.",
-    "A água está preparando uma visita.",
-    "O céu está guardando algo."
+    "A chuva sempre sabe onde me encontrar.",
+    "Cada gota parece carregar uma história esquecida.",
+    "O céu está derramando pensamentos de novo.",
+    "As poças são espelhos que não ficam parados.",
+    "Quando chove, até os caminhos parecem respirar."
   ],
+
   "vento_forte": [
-    "O vento está com pressa.",
-    "Algo distante está chamando o ar.",
-    "As folhas estão cochichando.",
-    "O vento parece estar atrasado para algum lugar.",
-    "As folhas estão conversando alto hoje."
+    "O vento passou correndo. Deve ter lembrado de alguma coisa.",
+    "As árvores estão tentando acompanhar a conversa do vento.",
+    "Hoje o ar parece inquieto.",
+    "Se eu fosse uma folha, já estaria em outra aventura.",
+    "O vento conhece lugares que eu nunca vi."
   ],
+
   "sol": [
-    "Hoje o mundo parece acordado.",
-    "A luz encontrou os campos.",
-    "As sombras estão menores."
+    "O sol está espalhando ouro pelos campos outra vez.",
+    "Até as pedras parecem sorrir quando a luz chega.",
+    "Hoje o mundo decidiu brilhar um pouco mais.",
+    "As sombras estão tirando férias.",
+    "Dias assim fazem o horizonte parecer mais perto."
   ],
+
   "noite": [
-    "As estrelas estão observando.",
-    "A noite fala baixo.",
-    "Tudo parece mais distante agora."
+    "A noite sempre deixa espaço para perguntas.",
+    "As estrelas parecem lanternas de viajantes distantes.",
+    "Alguma coisa no escuro sempre continua acordada.",
+    "A lua nunca fala muito, mas sempre aparece.",
+    "O mundo fica mais silencioso e mais profundo ao mesmo tempo."
   ],
+
   "violao": [
-    "Talvez uma música combine com este momento.",
-    "Os acordes gostam do vento.",
-    "Hoje o silêncio parece musical."
+    "Talvez exista uma música escondida neste vento.",
+    "Algumas canções aparecem antes das notas.",
+    "O silêncio também sabe cantar.",
+    "Hoje o violão parece estar esperando alguém.",
+    "Nem toda música precisa de palavras."
   ],
+
   "aleatorio": [
-    "Será que os sapos sonham?",
-    "As pedras também envelhecem.",
-    "As nuvens voltam para casa?"
+    "Será que as nuvens escolhem para onde vão?",
+    "As pedras parecem saber segredos antigos.",
+    "Algumas perguntas são mais bonitas sem resposta.",
+    "Talvez o horizonte seja apenas um convite.",
+    "Existem caminhos que só aparecem para quem anda."
   ],
+
   "nublado": [
-    "As nuvens estão ocupando muito espaço.",
-    "O céu parece estar pensando."
+    "As nuvens estão ocupadas desenhando o céu.",
+    "Hoje o céu parece estar pensando em voz alta.",
+    "As cores ficaram mais suaves.",
+    "Tem dias em que o mundo prefere cochichar.",
+    "As nuvens chegaram antes das respostas."
   ],
+
   "calor": [
-    "Hoje até as pedras parecem cansadas.",
-    "O sol está trabalhando demais."
+    "Até o vento parece procurar sombra.",
+    "O sol está contando histórias longas hoje.",
+    "As pedras estão guardando calor para mais tarde.",
+    "O dia inteiro parece iluminado por dentro.",
+    "Nem os grilos estão com pressa."
   ],
+
   "frio": [
-    "O ar está caminhando devagar.",
-    "Hoje a sombra parece gelada."
+    "O ar está tão fresco que parece recém-criado.",
+    "Hoje a manhã veio usando cobertor.",
+    "Até os sons caminham mais devagar.",
+    "O frio deixa o mundo mais atento.",
+    "As sombras parecem feitas de água gelada."
   ],
+
   "umidade": [
-    "O ar está guardando água nos bolsos.",
-    "Tudo parece um pouco mais pesado."
+    "O ar está carregando pequenos pedaços de chuva.",
+    "Hoje tudo parece beber água do céu.",
+    "As plantas parecem mais acordadas.",
+    "Existe um cheiro de terra esperando acontecer.",
+    "O mundo está respirando devagar."
   ],
+
   "chuva_chegando": [
-    "As nuvens estão trazendo visitas.",
-    "A água parece estar a caminho."
+    "As nuvens estão reunindo coragem.",
+    "Consigo sentir a chuva antes dela chegar.",
+    "O céu está enchendo os bolsos de água.",
+    "Os campos parecem estar esperando uma visita.",
+    "A tempestade ainda é só uma promessa."
   ],
+
   "abrindo_tempo": [
-    "As nuvens estão voltando para casa.",
-    "O céu parece mais leve agora."
+    "As nuvens estão deixando o palco.",
+    "A luz encontrou uma fresta.",
+    "O céu parece ter resolvido alguma coisa.",
+    "O horizonte voltou a aparecer.",
+    "Depois da chuva, tudo parece recém-descoberto."
   ],
+
   "existencial": [
-    "Para onde vai o vento quando ele para?",
-    "As nuvens também sentem saudade?",
-    "Será que os sapos sonham com chuva?",
-    "O céu muda porque quer ou porque precisa?",
-    "As estrelas observam ou apenas brilham?",
-    "Será que a lua também espera alguma coisa?"
+    "Se o vento não pode ser visto, como sabemos que ele existe?",
+    "Será que as estrelas sentem saudade do dia?",
+    "Quem ensinou os rios a encontrarem o mar?",
+    "As nuvens sabem que estão mudando de forma?",
+    "Por que algumas perguntas voltam mesmo depois da resposta?",
+    "Será que a lua já se cansou de ser observada?",
+    "Quando uma trilha desaparece, ela deixa de existir?",
+    "Os sonhos visitam os sapos ou os sapos visitam os sonhos?",
+    "Será que o céu termina ou apenas continua?",
+    "Algumas coisas crescem em silêncio. As ideias também?"
   ]
 }
