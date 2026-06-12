@@ -8,6 +8,7 @@ transform (scale/rotate), image.load, display.set_mode/Info, time.Clock,
 and a minimal mixer.music using Kivy SoundLoader.
 """
 from PIL import Image, ImageOps, ImageDraw
+from io import BytesIO
 from kivy.core.image import Image as CoreImage
 import time as pytime
 
@@ -255,10 +256,27 @@ class image:
         )
 
         s = Surface(img.size)
-
         s._img = img
 
         return s
+    
+    @staticmethod
+    def load_raw(path):
+        with open(path, "rb") as f:
+            return f.read()
+        
+    @staticmethod
+    def from_raw(raw_data):
+        img = Image.open(
+            BytesIO(raw_data)
+        )
+        img.load()
+        surface = Surface(img.size)
+        surface._img = img.convert(
+            "RGBA"
+        )
+
+        return surface
 
 
 # transform functions

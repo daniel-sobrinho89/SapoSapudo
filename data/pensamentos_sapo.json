@@ -1,0 +1,66 @@
+{
+  "chuva": [
+    "As nuvens parecem pesadas hoje.",
+    "A água está preparando uma visita.",
+    "O céu está guardando algo."
+  ],
+  "vento_forte": [
+    "O vento está com pressa.",
+    "Algo distante está chamando o ar.",
+    "As folhas estão cochichando.",
+    "O vento parece estar atrasado para algum lugar.",
+    "As folhas estão conversando alto hoje."
+  ],
+  "sol": [
+    "Hoje o mundo parece acordado.",
+    "A luz encontrou os campos.",
+    "As sombras estão menores."
+  ],
+  "noite": [
+    "As estrelas estão observando.",
+    "A noite fala baixo.",
+    "Tudo parece mais distante agora."
+  ],
+  "violao": [
+    "Talvez uma música combine com este momento.",
+    "Os acordes gostam do vento.",
+    "Hoje o silêncio parece musical."
+  ],
+  "aleatorio": [
+    "Será que os sapos sonham?",
+    "As pedras também envelhecem.",
+    "As nuvens voltam para casa?"
+  ],
+  "nublado": [
+    "As nuvens estão ocupando muito espaço.",
+    "O céu parece estar pensando."
+  ],
+  "calor": [
+    "Hoje até as pedras parecem cansadas.",
+    "O sol está trabalhando demais."
+  ],
+  "frio": [
+    "O ar está caminhando devagar.",
+    "Hoje a sombra parece gelada."
+  ],
+  "umidade": [
+    "O ar está guardando água nos bolsos.",
+    "Tudo parece um pouco mais pesado."
+  ],
+  "chuva_chegando": [
+    "As nuvens estão trazendo visitas.",
+    "A água parece estar a caminho."
+  ],
+  "abrindo_tempo": [
+    "As nuvens estão voltando para casa.",
+    "O céu parece mais leve agora."
+  ],
+  "existencial": [
+    "Para onde vai o vento quando ele para?",
+    "As nuvens também sentem saudade?",
+    "Será que os sapos sonham com chuva?",
+    "O céu muda porque quer ou porque precisa?",
+    "As estrelas observam ou apenas brilham?",
+    "Será que a lua também espera alguma coisa?"
+  ]
+}

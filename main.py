@@ -38,12 +38,13 @@ from systems.clima.evento_livro import EventoLivro
 from render.asset_manager import asset_manager
 from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
-from render.sapo_renderer import SapoRenderer
+from render.sapo_renderer import SapoRenderer, PensamentoSapoRenderer
 from render.tamandua_renderer import TamanduaRenderer
 from render.barraca_renderer import BarracaRenderer
 
 from systems.clima.clima_service import ClimaService
 from systems.clima.sistema_nuvens import SistemaNuvens
+from systems.clima.nuvem import Nuvem
 
 from render.duende_renderer import DuendeRenderer
 from entities.duende_neblina import DuendeNeblina
@@ -120,6 +121,7 @@ class GameWidget(Widget):
         self.transform = TransformUtils()
         self.ambiente = Ambiente()
         self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
+        self.pensamento_renderer = PensamentoSapoRenderer()
         self.animacoes_folha = AnimacoesFolha()
         self.duende = None
         self.renderer_duende = None
@@ -149,7 +151,7 @@ class GameWidget(Widget):
             self.carregar_cenario_principal()
 
         self.sistema_nuvens = SistemaNuvens(self.transform)
-        self.sapo = Sapo(centro_x, centro_y)
+        self.sapo = Sapo(centro_x, centro_y, self.clima_service)
         self.sapo.background_renderer = (self.background_renderer)
         # interaction state
         self.drag_duende = False
@@ -400,6 +402,8 @@ class GameWidget(Widget):
         self.frasco_climatico.atualizar(dt)
         self.evento_livro.atualizar(dt)
         self.sistema_nuvens.atualizar_area_interna()
+
+        Nuvem.finalizar_carregamento()
         self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
         events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
@@ -463,6 +467,7 @@ class GameWidget(Widget):
 
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
+        self.pensamento_renderer.renderizar(tela, self.sapo)
 
         if not self.background_renderer.cenario_feira:
             self.frasco_climatico.renderizar(tela, centro_y)

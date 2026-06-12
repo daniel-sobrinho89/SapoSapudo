@@ -6,6 +6,7 @@ import math
 
 from systems.animacoes_sapo import AnimacoesSapo
 from systems.respiracao_sapo import RespiracaoSapo
+from systems.pensamentos_sapo import PensamentosSapo
 from systems.ia_sapo import IASapo
 from systems.system_utils import atualizar_sistemas_basicos
 from datetime import datetime, timedelta
@@ -13,7 +14,12 @@ from config import *
 
 class Sapo:
 
-    def __init__(self, x, y):
+    def __init__(
+            self, 
+            x, 
+            y,
+            clima_service
+        ):
 
         # POSIÇÃO CENTRAL (coordenadas usadas pelo renderer)
         self.x = x
@@ -30,12 +36,14 @@ class Sapo:
         self.animacoes = AnimacoesSapo()
         self.respiracao = RespiracaoSapo()
         self.ia = IASapo()
+        self.pensamentos = PensamentosSapo()
 
         # FLAGS mínimas
         self.acoplado_violao = False
         self.background_renderer = None
         self.indo_para_feira = False
         self.retornando_da_feira = False
+        self.clima = clima_service
 
     # métodos de delegação / API pública
     def iniciar_violao(self):
@@ -81,11 +89,18 @@ class Sapo:
             entity=self,
         )
 
-        # IA (decisões de alto nível)
-        self.ia.obter_acao(dt)
-
         events = {}
         a = self.animacoes
+
+        acao = self.ia.obter_acao(
+            dt,
+            self
+        )
+
+        if acao:
+            self.pensamentos.executar(acao)
+
+        self.pensamentos.atualizar(dt)
 
         # =====================================
         # AGENDAMENTO CAMINHADA

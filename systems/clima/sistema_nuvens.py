@@ -20,25 +20,13 @@ class SistemaNuvens:
         self.wind_direction = 0
         self.wind_speed = 0
         self.transform = transform
-
-        # atualiza nuvens apenas 20 vezes por segundo
-        self.timer_update = 0
-        self.intervalo_update = 1 / 20
+        Nuvem.iniciar_carregamento()
 
         # nuvens ativas
         self.nuvens = []
 
         # pool pré-criado
-        self.pool_nuvens = [
-
-            Nuvem(
-                self.area_interna,
-                self.transform,
-                intensidade=1
-            )
-
-            for _ in range(12)
-        ]
+        self.pool_nuvens = []
 
     # ==========================================
     # ATUALIZAR ÁREA
@@ -104,6 +92,8 @@ class SistemaNuvens:
         wind_direction,
         wind_speed
     ):
+        if not Nuvem.carregado:
+            return
 
         self.intensidade = self.calcular_intensidade(
             cloudiness,
@@ -114,9 +104,9 @@ class SistemaNuvens:
 
         # quantidade de nuvens
         if self.intensidade <= 5:
-            alvo = 1
+            alvo = 2
         else:
-            alvo = max(0, int(self.intensidade / 15) - 1)
+            alvo = max(1, round(self.intensidade / 16))
 
         # escala geral
         escala = max(
@@ -158,8 +148,8 @@ class SistemaNuvens:
                 )
 
                 if (
-                    distancia_x < 250
-                    and distancia_y < 80
+                    distancia_x < 380
+                    and distancia_y < 120
                 ):
                     pode_adicionar = False
                     break
@@ -199,9 +189,10 @@ class SistemaNuvens:
         tela,
         eh_dia=False
     ):
-
+        if not Nuvem.carregado:
+            return
+        
         for nuvem in self.nuvens:
-
             nuvem.renderizar(
                 tela,
                 eh_dia

@@ -14,7 +14,7 @@ class BarracaRenderer:
         self.tela = tela
 
         imagem = asset_manager.carregar(
-            "tamandudo/barraca.png"
+            "tamandudo/barraca.webp"
         )
 
         self.imagem = transform.escalar(
