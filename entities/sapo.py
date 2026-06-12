@@ -37,6 +37,9 @@ class Sapo:
         self.respiracao = RespiracaoSapo()
         self.ia = IASapo()
         self.pensamentos = PensamentosSapo()
+        self.controle_esquerda = False
+        self.andando_manual = False
+        self.andar_iniciado_por_controle = False
 
         # FLAGS mínimas
         self.acoplado_violao = False
@@ -62,12 +65,29 @@ class Sapo:
     def esta_tocando_violao(self):
         return bool(getattr(self.animacoes, "tocando_violao", False))
 
+    def iniciar_controle_esquerda(self):
+        if not self.pode_caminhar_esquerda():
+            return
+        
+        self.andando_manual = True
+        self.controle_esquerda = True
+        self.andar_iniciado_por_controle = True
+
+        if not self.animacoes.andando_esquerda:
+            self.animacoes.iniciar_andar_esquerda()
+
+    def parar_controle_esquerda(self):
+        self.andando_manual = False
+        self.controle_esquerda = False
+        self.animacoes.andando_esquerda = False
+        self.animacoes.frame_andar_esquerda = 0
+        self.animacoes.tempo_andar_esquerda = 0
+
     def pode_caminhar_esquerda(self):
         a = self.animacoes
 
         return (
-            not a.andando_esquerda
-            and not a.tocando_violao
+            not a.tocando_violao
             and not a.pegando_violao
             and not a.levantando_violao
             and not a.guardando_violao
@@ -112,6 +132,14 @@ class Sapo:
         )
         executar_caminhada = False
 
+        if self.controle_esquerda and not self.indo_para_feira:
+            self.x -= 4
+            if (
+                self.background_renderer.cenario_feira
+                and self.x <= 0
+            ):
+                self.x = 0
+
         # retry pendente
         if a.proxima_tentativa_caminhada:
             if (
@@ -140,6 +168,7 @@ class Sapo:
                         break
 
         if executar_caminhada:
+            self.andar_iniciado_por_controle = False
             if self.pode_caminhar_esquerda():
                 a.proxima_tentativa_caminhada = None
                 a._ultimo_frame_andar = -1
@@ -161,9 +190,9 @@ class Sapo:
 
             # saiu pela esquerda
             if (
-                not self.indo_para_feira
+                self.x < 0
+                and not self.indo_para_feira
                 and not self.background_renderer.cenario_feira
-                and self.x < 0
             ):
                 self.background_renderer.cenario_feira = True
                 self.indo_para_feira = True
@@ -178,6 +207,8 @@ class Sapo:
                 if self.x <= destino:
                     self.x = destino
                     self.indo_para_feira = False
+                    self.controle_esquerda = False
+                    self.andando_manual = False
                     a.andando_esquerda = False
                     a._ultimo_frame_andar = -1
 
@@ -232,7 +263,10 @@ class Sapo:
                 a.finalizou_soltar_violao = False
 
         if getattr(a, "iniciou_andar_esquerda", False):
-            events["start_audio_passeio"] = True
+
+            if not self.andar_iniciado_por_controle:
+                events["start_audio_passeio"] = True
+
             a.iniciou_andar_esquerda = False
 
         return events

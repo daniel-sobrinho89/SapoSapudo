@@ -54,6 +54,7 @@ from entities.violao import Violao
 from render.violao_renderer import ViolaoRenderer
 from entities.semente import Semente
 from render.semente_renderer import SementeRenderer
+from render.controle_renderer import ControleRenderer
 
 # =========================================
 # INIT
@@ -117,6 +118,14 @@ class GameWidget(Widget):
             lambda dt: self.audio.iniciar(),
             2
         )
+
+        self.tecla_esquerda_pressionada = False
+
+        Window.bind(
+            on_key_down=self.on_key_down,
+            on_key_up=self.on_key_up
+        )
+
         # initialize game state (mirrors previous top-level init)
         self.transform = TransformUtils()
         self.ambiente = Ambiente()
@@ -142,6 +151,11 @@ class GameWidget(Widget):
         self.clima_service = ClimaService()
 
         self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform, self.clima_service)
+        self.controle_renderer = ControleRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
 
         self.tamandua_renderer = None
         self.barraca_renderer = None
@@ -242,8 +256,16 @@ class GameWidget(Widget):
         self.rect.pos = self.pos
 
     def on_touch_down(self, touch):
-
         pos_virtual = real_to_virtual(touch.pos)
+
+        if (
+            IS_ANDROID
+            and self.controle_renderer.rect.collidepoint(
+                pos_virtual
+            )
+        ):
+            self.sapo.iniciar_controle_esquerda()
+            return True
 
         # =========================
         # LIVRO
@@ -330,6 +352,8 @@ class GameWidget(Widget):
     def on_touch_up(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
+        self.sapo.parar_controle_esquerda()
+
         if self.drag_violao:
             self.drag_violao = False
             self.violao.finalizar_arraste()
@@ -364,6 +388,33 @@ class GameWidget(Widget):
                 self.duende.animacoes.iniciar_acordar()
                 self.duende.animacoes.cancelar_sono_programado()
                 self.duende.escolher_novo_destino()
+
+    def on_key_down(
+        self,
+        window,
+        key,
+        scancode,
+        codepoint,
+        modifiers
+    ):
+        # seta esquerda
+        if key == 276:
+            self.tecla_esquerda_pressionada = True
+            self.sapo.iniciar_controle_esquerda()
+
+        return True
+
+    def on_key_up(
+        self,
+        window,
+        key,
+        scancode
+    ):
+        if key == 276:
+            self.tecla_esquerda_pressionada = False
+            self.sapo.parar_controle_esquerda()
+
+        return True
 
     def update(self, dt):
         # cap dt
@@ -492,6 +543,9 @@ class GameWidget(Widget):
 
         # escalonar e apresentar
         img = tela._img
+
+        if IS_ANDROID:
+            self.controle_renderer.renderizar()
 
         self.texture.blit_buffer(
             img.tobytes(),
