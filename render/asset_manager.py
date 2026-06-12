@@ -19,9 +19,9 @@ class AssetManager:
 
     def carregar_raw(self, nome):
         path = BASE_DIR / "assets" / nome
-        return pygame_adapter.image.load_raw(
-            str(path)
-        )
+
+        with open(path, "rb") as f:
+            return f.read()
 
     def limpar(self):
         self.assets.clear()

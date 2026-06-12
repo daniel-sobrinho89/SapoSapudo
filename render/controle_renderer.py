@@ -15,12 +15,23 @@ class ControleRenderer:
         self.assets = assets
         self.transform = transform
 
-        self.botao = self.assets.carregar(
+        self.botao_esquerda = self.assets.carregar(
             "ui/seta_esquerda.webp"
         )
 
-        self.rect = pygame_adapter.Rect(
+        self.rect_esquerda = pygame_adapter.Rect(
             20,
+            ALTURA - 160,
+            128,
+            128
+        )
+
+        self.botao_direita = self.assets.carregar(
+            "ui/seta_esquerda.webp"
+        )
+
+        self.rect_direita = pygame_adapter.Rect(
+            170,
             ALTURA - 160,
             128,
             128
@@ -29,9 +40,17 @@ class ControleRenderer:
     def renderizar(self):
 
         self.tela.blit(
-            self.botao,
+            self.botao_esquerda,
             (
-                self.rect.x,
-                self.rect.y
+                self.rect_esquerda.x,
+                self.rect_esquerda.y
+            )
+        )
+
+        self.tela.blit(
+            self.botao_direita,
+            (
+                self.rect_direita.x,
+                self.rect_direita.y
             )
         )

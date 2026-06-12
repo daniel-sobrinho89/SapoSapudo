@@ -137,10 +137,12 @@ class AnimacoesSapo:
         # ====================================
 
         self.andando_esquerda = False
-
         self.frame_andar_esquerda = 0
-
         self.tempo_andar_esquerda = 0.0
+
+        self.andando_direita = False
+        self.frame_andar_direita = 0
+        self.tempo_andar_direita = 0.0
 
         # horários planejados
         self.horarios_caminhada = [
@@ -202,6 +204,7 @@ class AnimacoesSapo:
         self.atualizar_guardar_violao(dt)
         self.atualizar_soltar_violao(dt)
         self.atualizar_andar_esquerda(dt)
+        self.atualizar_andar_direita(dt)
 
         self.tempo_parado += dt
 
@@ -599,6 +602,12 @@ class AnimacoesSapo:
         self.tempo_andar_esquerda = 0
         self.iniciou_andar_esquerda = True
 
+    def iniciar_andar_direita(self):
+        self.andando_direita = True
+        self.frame_andar_direita = 0
+        self.tempo_andar_direita = 0
+        self.iniciou_andar_direita = True
+
 
     def atualizar_andar_esquerda(self, dt):
 
@@ -615,3 +624,20 @@ class AnimacoesSapo:
 
         if self.frame_andar_esquerda >= 10:
             self.frame_andar_esquerda = 0
+
+
+    def atualizar_andar_direita(self, dt):
+
+        if not self.andando_direita:
+            return
+
+        self.tempo_andar_direita += dt
+
+        if self.tempo_andar_direita < 0.07:
+            return
+
+        self.tempo_andar_direita = 0
+        self.frame_andar_direita += 1
+
+        if self.frame_andar_direita >= 9:
+            self.frame_andar_direita = 0

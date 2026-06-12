@@ -38,6 +38,7 @@ class Sapo:
         self.ia = IASapo()
         self.pensamentos = PensamentosSapo()
         self.controle_esquerda = False
+        self.controle_direita = False
         self.andando_manual = False
         self.andar_iniciado_por_controle = False
 
@@ -66,7 +67,7 @@ class Sapo:
         return bool(getattr(self.animacoes, "tocando_violao", False))
 
     def iniciar_controle_esquerda(self):
-        if not self.pode_caminhar_esquerda():
+        if not self.pode_caminhar():
             return
         
         self.andando_manual = True
@@ -83,7 +84,25 @@ class Sapo:
         self.animacoes.frame_andar_esquerda = 0
         self.animacoes.tempo_andar_esquerda = 0
 
-    def pode_caminhar_esquerda(self):
+    def iniciar_controle_direita(self):
+        if not self.pode_caminhar():
+            return
+        
+        self.andando_manual = True
+        self.controle_direita = True
+        self.andar_iniciado_por_controle = True
+
+        if not self.animacoes.andando_direita:
+            self.animacoes.iniciar_andar_direita()
+
+    def parar_controle_direita(self):
+        self.andando_manual = False
+        self.controle_direita = False
+        self.animacoes.andando_direita = False
+        self.animacoes.frame_andar_direita = 0
+        self.animacoes.tempo_andar_direita = 0
+
+    def pode_caminhar(self):
         a = self.animacoes
 
         return (
@@ -140,6 +159,20 @@ class Sapo:
             ):
                 self.x = 0
 
+        if self.controle_direita:
+            self.x += 4
+
+            if self.background_renderer.cenario_feira:
+
+                if self.x > LARGURA:
+                    self.background_renderer.cenario_feira = False
+                    self.x = -100
+
+            else:
+
+                if self.x > LARGURA:
+                    self.x = LARGURA
+
         # retry pendente
         if a.proxima_tentativa_caminhada:
             if (
@@ -169,7 +202,7 @@ class Sapo:
 
         if executar_caminhada:
             self.andar_iniciado_por_controle = False
-            if self.pode_caminhar_esquerda():
+            if self.pode_caminhar():
                 a.proxima_tentativa_caminhada = None
                 a._ultimo_frame_andar = -1
                 a.iniciar_andar_esquerda()

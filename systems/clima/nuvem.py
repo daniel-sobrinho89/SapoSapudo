@@ -15,9 +15,8 @@ class Nuvem:
 
     carregando = False
     carregado = False
-    raw_sprites = None
-    raw_prontos = False
-    sprites_convertidos = 0
+    sprites_carregados = None
+    carregamento_concluido = False
 
     cache_escalas = {}
     cache_alpha = {}
@@ -227,8 +226,8 @@ class Nuvem:
 
                     raw_sprites.append(raw)
 
-                cls.raw_sprites = raw_sprites
-                cls.raw_prontos = True
+                cls.sprites_carregados = raw_sprites
+                cls.carregamento_concluido = True
             finally:
                 cls.carregando = False
 
@@ -240,38 +239,24 @@ class Nuvem:
     # ==========================================
     # UPDATE
     # ==========================================
-
     @classmethod
     def finalizar_carregamento(cls):
 
-        if (
-            not cls.raw_prontos
-            or cls.carregado
-        ):
+        if not cls.carregamento_concluido:
             return
 
-        if cls.sprites is None:
-            cls.sprites = []
+        if cls.carregado:
+            return
 
-        for _ in range(5):  # converte 5 por frame
-            if cls.sprites_convertidos >= len(cls.raw_sprites):
-                cls.raw_sprites = None
-                cls.raw_prontos = False
-                cls.carregado = True
+        sprites = []
 
-                return
-
-            raw = cls.raw_sprites[
-                cls.sprites_convertidos
-            ]
-
-            sprite = pygame_adapter.image.from_raw(
-                raw
+        for raw in cls.sprites_carregados:
+            sprites.append(
+                pygame_adapter.image.from_raw(raw)
             )
-            cls.sprites.append(
-                sprite.convert_alpha()
-            )
-            cls.sprites_convertidos += 1
+
+        cls.sprites = sprites
+        cls.carregado = True
 
     def atualizar(self, dt):
         if not Nuvem.sprites:

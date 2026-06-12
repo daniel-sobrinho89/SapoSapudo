@@ -258,14 +258,14 @@ class GameWidget(Widget):
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        if (
-            IS_ANDROID
-            and self.controle_renderer.rect.collidepoint(
-                pos_virtual
-            )
-        ):
-            self.sapo.iniciar_controle_esquerda()
-            return True
+        if IS_ANDROID:
+            if self.controle_renderer.rect_esquerda.collidepoint(pos_virtual):
+                self.sapo.iniciar_controle_esquerda()
+                return True
+
+            if self.controle_renderer.rect_direita.collidepoint(pos_virtual):
+                self.sapo.iniciar_controle_direita()
+                return True
 
         # =========================
         # LIVRO
@@ -402,6 +402,11 @@ class GameWidget(Widget):
             self.tecla_esquerda_pressionada = True
             self.sapo.iniciar_controle_esquerda()
 
+        # seta direita
+        if key == 275:
+            self.tecla_direita_pressionada = True
+            self.sapo.iniciar_controle_direita()
+
         return True
 
     def on_key_up(
@@ -413,6 +418,10 @@ class GameWidget(Widget):
         if key == 276:
             self.tecla_esquerda_pressionada = False
             self.sapo.parar_controle_esquerda()
+
+        if key == 275:
+            self.tecla_direita_pressionada = False
+            self.sapo.parar_controle_direita()
 
         return True
 

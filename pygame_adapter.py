@@ -266,17 +266,26 @@ class image:
             return f.read()
         
     @staticmethod
-    def from_raw(raw_data):
-        img = Image.open(
-            BytesIO(raw_data)
-        )
-        img.load()
-        surface = Surface(img.size)
-        surface._img = img.convert(
-            "RGBA"
+    def from_raw(raw_data, ext="webp"):
+
+        core = CoreImage(
+            BytesIO(raw_data),
+            ext=ext
         )
 
-        return surface
+        largura, altura = core.texture.size
+        pixels = core.texture.pixels
+
+        img = Image.frombytes(
+            "RGBA",
+            (largura, altura),
+            pixels
+        )
+
+        s = Surface(img.size)
+        s._img = img
+
+        return s
 
 
 # transform functions

@@ -115,6 +115,14 @@ class SapoRenderer:
                 )
             )
 
+        self.frames_andar_direita = []
+        for i in range(9):
+            self.frames_andar_direita.append(
+                self.assets.carregar(
+                    f"sapudo/andar_direita/sapudo_{i:04d}.webp"
+                )
+            )
+
     # =====================================
     # DRAW
     # =====================================
@@ -209,6 +217,11 @@ class SapoRenderer:
         elif animacoes.andando_esquerda:
             frame = self.frames_andar_esquerda[
                 animacoes.frame_andar_esquerda
+            ]
+            
+        elif animacoes.andando_direita:
+            frame = self.frames_andar_direita[
+                animacoes.frame_andar_direita
             ]
 
         elif animacoes.guardando_violao:
