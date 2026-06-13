@@ -258,14 +258,16 @@ class GameWidget(Widget):
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        if IS_ANDROID:
-            if self.controle_renderer.rect_esquerda.collidepoint(pos_virtual):
-                self.sapo.iniciar_controle_esquerda()
-                return True
+        # if IS_ANDROID:
+        if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
+            self.controle_renderer.botao_esquerda_pressionado = True
+            self.sapo.iniciar_controle_esquerda()
+            return True
 
-            if self.controle_renderer.rect_direita.collidepoint(pos_virtual):
-                self.sapo.iniciar_controle_direita()
-                return True
+        if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
+            self.controle_renderer.botao_direita_pressionado = True
+            self.sapo.iniciar_controle_direita()
+            return True
 
         # =========================
         # LIVRO
@@ -349,10 +351,19 @@ class GameWidget(Widget):
         ):
             self.duende.mover_arraste(*pos_virtual)
 
+        if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
+            self.controle_renderer.botao_esquerda_pressionado = False
+
+        if not self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
+            self.controle_renderer.botao_direita_pressionado = False
+
     def on_touch_up(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
+        self.controle_renderer.botao_esquerda_pressionado = False
+        self.controle_renderer.botao_direita_pressionado = False
         self.sapo.parar_controle_esquerda()
+        self.sapo.parar_controle_direita()
 
         if self.drag_violao:
             self.drag_violao = False
@@ -553,8 +564,8 @@ class GameWidget(Widget):
         # escalonar e apresentar
         img = tela._img
 
-        if IS_ANDROID:
-            self.controle_renderer.renderizar()
+        # if IS_ANDROID:
+        self.controle_renderer.renderizar()
 
         self.texture.blit_buffer(
             img.tobytes(),

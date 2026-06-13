@@ -165,8 +165,10 @@ class Sapo:
             if self.background_renderer.cenario_feira:
 
                 if self.x > LARGURA:
+                    excesso = self.x - LARGURA
+
                     self.background_renderer.cenario_feira = False
-                    self.x = -100
+                    self.x = excesso
 
             else:
 

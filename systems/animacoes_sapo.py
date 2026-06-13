@@ -175,7 +175,7 @@ class AnimacoesSapo:
         ) + 00
 
         horario_acordar = (
-            7 * 60
+            7* 60
         ) + 30
 
         if horario_dormir < horario_acordar:

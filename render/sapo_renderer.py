@@ -28,6 +28,14 @@ class SapoRenderer:
     # =====================================
 
     def carregar_assets(self):
+        self.frames_parado = []
+        for i in range(60):
+
+            self.frames_parado.append(
+                self.assets.carregar(
+                    f"sapudo/parado/sapudo_{i:04d}.webp"
+                )
+            )
 
         self.frames_acordar = []
         for i in range(60):
@@ -38,32 +46,8 @@ class SapoRenderer:
                 )
             )
 
-        self.frames_parado = []
-        for i in range(60):
-
-            self.frames_parado.append(
-                self.assets.carregar(
-                    f"sapudo/parado/sapudo_{i:04d}.webp"
-                )
-            )
-
-        self.frames_dormir = []
-        for i in range(60):
-
-            self.frames_dormir.append(
-                self.assets.carregar(
-                    f"sapudo/dormir/sapudo_{i:04d}.webp"
-                )
-            )
-
-        self.frames_dormindo = []
-        for i in range(9):
-
-            self.frames_dormindo.append(
-                self.assets.carregar(
-                    f"sapudo/dormindo/sapudo_{i:04d}.webp"
-                )
-            )
+        self.frames_dormir = self.frames_acordar[::-1]
+        self.frames_dormindo = self.frames_acordar[:9][::-1]
 
         self.frames_pegar_violao = []
         for i in range(15):
@@ -74,20 +58,14 @@ class SapoRenderer:
                 )
             )
 
+        self.frames_levantar_violao = self.frames_pegar_violao[::-1]
+
         self.frames_tocar_violao = []
         for i in range(10):
 
             self.frames_tocar_violao.append(
                 self.assets.carregar(
                     f"sapudo/tocar_violao/sapudo_{i:04d}.webp"
-                )
-            )
-
-        self.frames_levantar_violao = []
-        for i in range(15):
-            self.frames_levantar_violao.append(
-                self.assets.carregar(
-                    f"sapudo/levantar_violao/sapudo_{i:04d}.webp"
                 )
             )
 
@@ -115,13 +93,14 @@ class SapoRenderer:
                 )
             )
 
-        self.frames_andar_direita = []
-        for i in range(9):
-            self.frames_andar_direita.append(
-                self.assets.carregar(
-                    f"sapudo/andar_direita/sapudo_{i:04d}.webp"
-                )
+        self.frames_andar_direita = tuple(
+            pygame_adapter.transform.flip(
+                frame,
+                True,
+                False
             )
+            for frame in self.frames_andar_esquerda
+        )
 
     # =====================================
     # DRAW
