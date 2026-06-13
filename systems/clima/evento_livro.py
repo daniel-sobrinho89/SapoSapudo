@@ -5,7 +5,7 @@
 import math
 import random
 from systems.clima.livro_climatico import LivroClimatico
-import pygame_adapter
+import kivy_adapter
 
 class EventoLivro:
 
@@ -272,7 +272,7 @@ class EventoLivro:
 
             texto_y += 8
 
-        self.rect_livro_aberto = pygame_adapter.Rect(
+        self.rect_livro_aberto = kivy_adapter.Rect(
             x,
             y,
             largura,
@@ -317,7 +317,7 @@ class EventoLivro:
             )
         )
 
-        self.rect_livro = pygame_adapter.Rect(
+        self.rect_livro = kivy_adapter.Rect(
             x_final,
             y_final,
             largura,

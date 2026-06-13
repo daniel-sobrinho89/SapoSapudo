@@ -2,7 +2,7 @@
 # sistema_nuvens.py
 # ==========================================
 
-import pygame_adapter
+import kivy_adapter
 
 from systems.clima.nuvem import Nuvem
 
@@ -34,11 +34,11 @@ class SistemaNuvens:
     def atualizar_area_interna(self):
         from config import LARGURA
 
-        self.area_interna = pygame_adapter.Rect(
+        self.area_interna = kivy_adapter.Rect(
             0,
             0,
             LARGURA,
-            320
+            270
         )
 
     # ==========================================

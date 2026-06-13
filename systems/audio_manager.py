@@ -1,4 +1,4 @@
-import pygame_adapter
+import kivy_adapter
 
 from config import (
     AUDIO_HABILITADO,
@@ -20,13 +20,13 @@ class AudioManager:
         if self.inicializado:
             return
 
-        pygame_adapter.mixer.init()
+        kivy_adapter.mixer.init()
 
-        pygame_adapter.mixer.music.load(
+        kivy_adapter.mixer.music.load(
             str(BASE_DIR / MUSICA_FUNDO)
         )
 
-        pygame_adapter.mixer.music.set_volume(
+        kivy_adapter.mixer.music.set_volume(
             VOLUME_MUSICA
         )
 
@@ -39,7 +39,7 @@ class AudioManager:
         if not self.habilitado:
             return
 
-        pygame_adapter.mixer.music.play(-1)
+        kivy_adapter.mixer.music.play(-1)
 
     def alternar_musica_violao(self):
 
@@ -52,8 +52,8 @@ class AudioManager:
     def tocar_musica_fundo(self, arquivo):
         self.musica_atual = arquivo
 
-        pygame_adapter.mixer.music.load(arquivo)
-        pygame_adapter.mixer.music.play(-1)
+        kivy_adapter.mixer.music.load(arquivo)
+        kivy_adapter.mixer.music.play(-1)
 
     def tocar_musica_temporaria(self, arquivo):
 
@@ -62,32 +62,32 @@ class AudioManager:
 
         self.musica_atual = arquivo
 
-        pygame_adapter.mixer.music.load(arquivo)
-        pygame_adapter.mixer.music.play()
+        kivy_adapter.mixer.music.load(arquivo)
+        kivy_adapter.mixer.music.play()
 
     def tocar_passeio_sapudo(self):
-        pygame_adapter.mixer.music.load(
+        kivy_adapter.mixer.music.load(
             str(BASE_DIR / "assets/musica/o_passeio_do_sapudo.mp3")
         )
 
-        pygame_adapter.mixer.music.set_volume(
+        kivy_adapter.mixer.music.set_volume(
             VOLUME_MUSICA
         )
 
-        pygame_adapter.mixer.music.play()
+        kivy_adapter.mixer.music.play()
 
     def voltar_musica_fundo(self):
-        pygame_adapter.mixer.music.pause()
-        pygame_adapter.mixer.music._sound = None
-        pygame_adapter.mixer.music.load(
+        kivy_adapter.mixer.music.pause()
+        kivy_adapter.mixer.music._sound = None
+        kivy_adapter.mixer.music.load(
             str(BASE_DIR / MUSICA_FUNDO)
         )
 
-        pygame_adapter.mixer.music.set_volume(
+        kivy_adapter.mixer.music.set_volume(
             VOLUME_MUSICA
         )
 
-        pygame_adapter.mixer.music.play(-1)
+        kivy_adapter.mixer.music.play(-1)
 
     def ligar(self):
 
@@ -95,7 +95,7 @@ class AudioManager:
 
             self.habilitado = True
 
-            pygame_adapter.mixer.music.unpause()
+            kivy_adapter.mixer.music.unpause()
 
             self.iniciar()
 
@@ -104,6 +104,6 @@ class AudioManager:
         if not self.habilitado:
             return
 
-        pygame_adapter.mixer.music.pause()
+        kivy_adapter.mixer.music.pause()
 
         self.habilitado = False

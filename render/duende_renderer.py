@@ -3,7 +3,7 @@
 # =====================================
 
 import math
-import pygame_adapter
+import kivy_adapter
 
 
 class DuendeRenderer:

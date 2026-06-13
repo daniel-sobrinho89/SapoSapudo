@@ -1,6 +1,6 @@
 import math
 
-import pygame_adapter
+import kivy_adapter
 import random
 from systems.fisica import sistema_fisica
 
@@ -244,12 +244,12 @@ class ParticulaPoeira:
 
         tamanho = self.raio * 6
 
-        superficie = pygame_adapter.Surface(
+        superficie = kivy_adapter.Surface(
             (
                 tamanho,
                 tamanho
             ),
-            pygame_adapter.SRCALPHA
+            kivy_adapter.SRCALPHA
         )
 
         centro = tamanho // 2
@@ -258,7 +258,7 @@ class ParticulaPoeira:
         # GLOW EXTERNO
         # =================================
 
-        pygame_adapter.draw.circle(
+        kivy_adapter.draw.circle(
             superficie,
             (
                 255,
@@ -277,7 +277,7 @@ class ParticulaPoeira:
         # NÚCLEO
         # =================================
 
-        pygame_adapter.draw.circle(
+        kivy_adapter.draw.circle(
             superficie,
             (
                 255,
@@ -304,7 +304,7 @@ class ParticulaPoeira:
 
         tamanho = self.raio * 6
 
-        return pygame_adapter.Rect(
+        return kivy_adapter.Rect(
             self.x,
             self.y,
             tamanho,

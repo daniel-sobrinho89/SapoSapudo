@@ -6,7 +6,7 @@ import random
 import math
 from systems.fisica import sistema_fisica
 import threading
-import pygame_adapter
+import kivy_adapter
 
 class Nuvem:
     # cache global
@@ -252,7 +252,7 @@ class Nuvem:
 
         for raw in cls.sprites_carregados:
             sprites.append(
-                pygame_adapter.image.from_raw(raw)
+                kivy_adapter.image.from_raw(raw)
             )
 
         cls.sprites = sprites

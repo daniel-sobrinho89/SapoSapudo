@@ -9,6 +9,15 @@ if not IS_ANDROID:
     os.environ["SDL_AUDIODRIVER"] = "alsa"
     os.environ["AUDIODEV"] = "hw:2,0"
 
+if IS_ANDROID:
+    from android.permissions import (
+        request_permissions,
+        Permission
+    )
+    request_permissions([
+        Permission.RECORD_AUDIO
+    ])
+
 import logging
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("PIL").setLevel(logging.WARNING)
@@ -21,7 +30,7 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.core.window import Window
 
-import pygame_adapter
+import kivy_adapter
 import threading
 import math
 
@@ -55,6 +64,8 @@ from render.violao_renderer import ViolaoRenderer
 from entities.semente import Semente
 from render.semente_renderer import SementeRenderer
 from render.controle_renderer import ControleRenderer
+from systems.voz.reconhecedor_android import ReconhecedorAndroid
+from systems.voz.comando_voz import ComandoVoz
 
 # =========================================
 # INIT
@@ -68,10 +79,10 @@ ALTURA_REAL = int(info_h)
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
 
 # manter a variável `tela` como a superfície virtual para compatibilidade
-tela_virtual = pygame_adapter.Surface((LARGURA, ALTURA))
+tela_virtual = kivy_adapter.Surface((LARGURA, ALTURA))
 tela = tela_virtual
 
-clock = pygame_adapter.Clock()
+clock = kivy_adapter.Clock()
 
 from utils.input import (
     init_scaling,
@@ -80,9 +91,6 @@ from utils.input import (
 
 # inicializar escala para helpers de input
 init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
-
-# detectar se estamos rodando no Android (Buildozer)
-IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
 
 
 # =========================================
@@ -120,7 +128,8 @@ class GameWidget(Widget):
         )
 
         self.tecla_esquerda_pressionada = False
-
+        self.tecla_direita_pressionada = False
+        
         Window.bind(
             on_key_down=self.on_key_down,
             on_key_up=self.on_key_up
@@ -171,6 +180,9 @@ class GameWidget(Widget):
         self.drag_duende = False
         self.drag_violao = False
         self.cenario_feira_anterior = False
+        self.reconhecedor_voz =  ReconhecedorAndroid()
+        self.tempo_sem_audio = 0
+
 
         # drawing setup
         with self.canvas:
@@ -257,6 +269,23 @@ class GameWidget(Widget):
 
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
+
+        if (
+            self.controle_renderer.rect_microfone
+            .collidepoint(pos_virtual)
+        ):
+            self.controle_renderer.microfone_ligado = (
+                not self.controle_renderer.microfone_ligado
+            )
+
+            if self.controle_renderer.microfone_ligado:
+                self.reconhecedor_voz.ativo_usuario = True
+                self.reconhecedor_voz.iniciar()
+            else:
+                self.reconhecedor_voz.ativo_usuario = False
+                self.reconhecedor_voz.parar()
+
+            return True
 
         # if IS_ANDROID:
         if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
@@ -368,7 +397,7 @@ class GameWidget(Widget):
         if self.drag_violao:
             self.drag_violao = False
             self.violao.finalizar_arraste()
-            area_sapo = pygame_adapter.Rect(self.sapo.x - 80, self.sapo.y - 80, 160, 160)
+            area_sapo = kivy_adapter.Rect(self.sapo.x - 80, self.sapo.y - 80, 160, 160)
             if area_sapo.collidepoint(self.violao.x, self.violao.y) and self.sapo.pode_receber_violao():
                 self.violao.acoplado = True
                 self.sapo.iniciar_violao()
@@ -447,6 +476,28 @@ class GameWidget(Widget):
             threading.Thread(target=atualizar_clima, daemon=True).start()
 
         self.clima_service.atualizar_visual(dt)
+
+        if self.controle_renderer.microfone_ligado:
+            texto = self.reconhecedor_voz.obter_texto()
+
+            if texto:
+                self.tempo_sem_audio = 0
+
+                if ComandoVoz.eh_comando_feira(texto):
+                    self.sapo.indo_para_feira = True
+                    a = self.sapo.animacoes
+                    self.sapo.andar_iniciado_por_controle = False
+                    if self.sapo.pode_caminhar():
+                        a.proxima_tentativa_caminhada = None
+                        a._ultimo_frame_andar = -1
+                        a.iniciar_andar_esquerda()
+
+            else:
+                self.tempo_sem_audio += dt
+                if self.tempo_sem_audio > 10:
+                    self.controle_renderer.microfone_ligado = False
+                    self.reconhecedor_voz.ativo_usuario = False
+                    self.reconhecedor_voz.parar()
 
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)
         sinal_direcao = math.sin(direcao_rad)
@@ -575,9 +626,17 @@ class GameWidget(Widget):
 
         self.canvas.ask_update()
 
+
 class GameApp(App):
     def build(self):
         return GameWidget()
+    
+    def on_stop(self):
+        if hasattr(
+            self.root,
+            "reconhecedor_voz"
+        ):
+            self.root.reconhecedor_voz.destruir()
 
 
 if __name__ == '__main__':

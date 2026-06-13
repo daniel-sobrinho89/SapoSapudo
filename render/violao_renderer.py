@@ -45,7 +45,7 @@ class ViolaoRenderer:
                 entidade.y
             )
         )
-        # Não atribuir rect à entidade — entidade não deve depender de pygame
+
         self.tela.blit(
             self.violao,
             rect

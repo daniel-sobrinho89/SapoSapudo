@@ -1,5 +1,4 @@
-"""Pequenos helpers para cálculo de arraste (sem depender de pygame).
-
+"""
 Fornece funções mínimas para reduzir duplicação nas entidades.
 """
 

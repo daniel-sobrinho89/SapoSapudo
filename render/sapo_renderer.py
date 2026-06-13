@@ -1,4 +1,4 @@
-import pygame_adapter
+import kivy_adapter
 
 
 class SapoRenderer:
@@ -14,7 +14,7 @@ class SapoRenderer:
         self.assets = assets
         self.transform = transform
 
-        self.corpo_rect = pygame_adapter.Rect(
+        self.corpo_rect = kivy_adapter.Rect(
             -1000,
             -1000,
             1,
@@ -94,7 +94,7 @@ class SapoRenderer:
             )
 
         self.frames_andar_direita = tuple(
-            pygame_adapter.transform.flip(
+            kivy_adapter.transform.flip(
                 frame,
                 True,
                 False
@@ -235,7 +235,7 @@ class SapoRenderer:
             frame.get_height() * escala
         )
 
-        self.corpo_rect = pygame_adapter.Rect(
+        self.corpo_rect = kivy_adapter.Rect(
             centro_x - largura // 2,
             centro_y - altura // 2,
             largura,
@@ -244,7 +244,7 @@ class SapoRenderer:
 
 from PIL import ImageDraw
 from PIL import ImageFont
-import pygame_adapter
+import kivy_adapter
 
 class PensamentoSapoRenderer:
 
@@ -400,12 +400,12 @@ class PensamentoSapoRenderer:
             pensamento.tempo_restante
         )
 
-        surface = pygame_adapter.Surface(
+        surface = kivy_adapter.Surface(
             (
                 largura_caixa,
                 altura_caixa
             ),
-            pygame_adapter.SRCALPHA
+            kivy_adapter.SRCALPHA
         )
 
         draw = ImageDraw.Draw(

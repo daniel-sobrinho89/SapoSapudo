@@ -1,4 +1,4 @@
-import pygame_adapter
+import kivy_adapter
 
 
 class TransformUtils:
@@ -21,7 +21,7 @@ class TransformUtils:
         if key in self.cache_escalas:
             return self.cache_escalas[key]
 
-        escalada = pygame_adapter.transform.smoothscale(
+        escalada = kivy_adapter.transform.smoothscale(
             imagem,
             (largura, altura)
         )
@@ -48,7 +48,7 @@ class TransformUtils:
         if key in self.cache_escalas:
             return self.cache_escalas[key]
 
-        escalada = pygame_adapter.transform.scale(
+        escalada = kivy_adapter.transform.scale(
             imagem,
             (largura, altura)
         ).convert_alpha()
@@ -73,7 +73,7 @@ class TransformUtils:
         if key in self.cache_rotacoes:
             return self.cache_rotacoes[key]
 
-        resultado = pygame_adapter.transform.rotate(
+        resultado = kivy_adapter.transform.rotate(
             imagem,
             rotacao
         )

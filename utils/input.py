@@ -1,4 +1,4 @@
-import pygame_adapter
+import kivy_adapter
 from .paths import BASE_DIR
 
 LARGURA = 1024
@@ -61,15 +61,15 @@ def event_pos_virtual(event):
 
 def obter_posicao_ponteiro():
     # retorna posição do ponteiro já convertida para coordenadas virtuais
-    return real_to_virtual(pygame_adapter.mouse.get_pos())
+    return real_to_virtual(kivy_adapter.mouse.get_pos())
 
 
 def obter_clique_ponteiro(event):
     # para eventos de clique, retorna (button, pos_virtual) ou None
-    if event.type in (pygame_adapter.MOUSEBUTTONDOWN, pygame_adapter.MOUSEBUTTONUP):
+    if event.type in (kivy_adapter.MOUSEBUTTONDOWN, kivy_adapter.MOUSEBUTTONUP):
         return (getattr(event, 'button', None), event_pos_virtual(event))
 
     # mapear eventos de toque para formato similar: button=None, pos_virtual
-    if event.type in (getattr(pygame_adapter, 'FINGERDOWN', None), getattr(pygame_adapter, 'FINGERUP', None)):
+    if event.type in (getattr(kivy_adapter, 'FINGERDOWN', None), getattr(kivy_adapter, 'FINGERUP', None)):
         return (None, event_pos_virtual(event))
     return None

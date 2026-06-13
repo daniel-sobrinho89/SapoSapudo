@@ -42,7 +42,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,requests,Pillow
+requirements = python3,kivy,requests,Pillow,pyjnius
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -103,7 +103,7 @@ fullscreen = 1
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions.html for all the supported syntaxes and properties)
-android.permissions = INTERNET
+android.permissions = INTERNET,RECORD_AUDIO
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host

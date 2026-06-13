@@ -1,8 +1,4 @@
 """
-Compat shim named `pygame` to replace minimal pygame functionality
-using Pillow and Kivy where needed. This allows existing code to keep
-imports like `import pygame` while running under Kivy.
-
 Note: implements a narrow subset used by the project: Surface, Rect,
 transform (scale/rotate), image.load, display.set_mode/Info, time.Clock,
 and a minimal mixer.music using Kivy SoundLoader.

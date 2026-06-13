@@ -1,4 +1,4 @@
-import pygame_adapter
+import kivy_adapter
 from utils.paths import BASE_DIR
 
 
@@ -11,7 +11,7 @@ class AssetManager:
         if nome not in self.assets:
 
             path = BASE_DIR / "assets" / nome
-            self.assets[nome] = pygame_adapter.image.load(
+            self.assets[nome] = kivy_adapter.image.load(
                 str(path)
             ).convert_alpha()
 

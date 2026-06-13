@@ -1,7 +1,7 @@
 import math
 import random
 
-import pygame_adapter
+import kivy_adapter
 
 
 class FrascoClimatico:
@@ -210,9 +210,9 @@ class FrascoClimatico:
         # SURFACE FINAL
         # =====================================
 
-        self.frasco_surface = pygame_adapter.Surface(
+        self.frasco_surface = kivy_adapter.Surface(
             (self.largura, self.altura),
-            pygame_adapter.SRCALPHA
+            kivy_adapter.SRCALPHA
         )
 
         # =====================================
@@ -256,14 +256,14 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.62
         )
 
-        self.area_interna = pygame_adapter.Rect(
+        self.area_interna = kivy_adapter.Rect(
             self.x + self.area_interna_offset_x,
             self.y + self.area_interna_offset_y,
             self.area_interna_width,
             self.area_interna_height
         )
 
-        self.area_particulas = pygame_adapter.Rect(
+        self.area_particulas = kivy_adapter.Rect(
             self.x + 40,
             self.y - 180,
             self.largura - 130,
@@ -294,7 +294,7 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.55
         )
 
-        self.area_pote = pygame_adapter.Rect(
+        self.area_pote = kivy_adapter.Rect(
             pote_x,
             pote_y,
             pote_w,
@@ -424,15 +424,15 @@ class FrascoClimatico:
                 )
             )
 
-            superficie = pygame_adapter.Surface(
+            superficie = kivy_adapter.Surface(
                 (
                     raio * 2,
                     raio * 2
                 ),
-                pygame_adapter.SRCALPHA
+                kivy_adapter.SRCALPHA
             )
 
-            pygame_adapter.draw.circle(
+            kivy_adapter.draw.circle(
                 superficie,
                 (
                     220,
@@ -447,7 +447,7 @@ class FrascoClimatico:
                 raio
             )
 
-            pygame_adapter.draw.circle(
+            kivy_adapter.draw.circle(
                 superficie,
                 (
                     220,
@@ -462,7 +462,7 @@ class FrascoClimatico:
                 int(raio * 0.70)
             )
 
-            pygame_adapter.draw.circle(
+            kivy_adapter.draw.circle(
                 superficie,
                 (
                     235,

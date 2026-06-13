@@ -24,8 +24,6 @@ class Violao:
         self.chao_y = 520
 
         self.no_chao = False
-
-        # Não manter pygame.Rect aqui — hitbox calculada pelo renderer
         self.acoplado = False
 
     def iniciar_arraste(self, mouse_x, mouse_y):
