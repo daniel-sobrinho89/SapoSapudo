@@ -45,11 +45,7 @@ class ReconhecedorAndroid:
             PythonActivity.mActivity
         )
 
-        self.recognizer = (
-            SpeechRecognizer.createSpeechRecognizer(
-                self.activity
-            )
-        )
+        self.recognizer = None
 
         self.listener = (
             SpeechRecognitionListener(
@@ -57,13 +53,14 @@ class ReconhecedorAndroid:
             )
         )
 
-        self.recognizer.setRecognitionListener(
-            self.listener
-        )
-
     def iniciar(self):
 
         if not IS_ANDROID:
+            return
+
+        self.inicializar_recognizer()
+
+        if self.recognizer is None:
             return
 
         if self.ativo:
@@ -97,6 +94,17 @@ class ReconhecedorAndroid:
 
         self.recognizer.startListening(
             intent
+        )
+
+    def inicializar_recognizer(self):
+
+        if self.recognizer is not None:
+            return
+
+        self.activity.runOnUiThread(
+            CriarRecognizerRunnable(
+                self
+            )
         )
 
     def parar(self):
@@ -227,7 +235,9 @@ if IS_ANDROID:
                     print(f"[VOZ] {texto}") #REMOVER
 
                     self.reconhecedor.ativo = False
-                    self.reconhecedor.iniciar()
+
+                    if self.reconhecedor.ativo_usuario:
+                        self.reconhecedor.iniciar()
 
             except Exception:
                 pass
@@ -246,3 +256,37 @@ if IS_ANDROID:
             params
         ):
             pass
+
+if IS_ANDROID:
+    class CriarRecognizerRunnable(
+        PythonJavaClass
+    ):
+
+        __javainterfaces__ = [
+            "java/lang/Runnable"
+        ]
+
+        __javacontext__ = "app"
+
+        def __init__(
+            self,
+            reconhecedor
+        ):
+            super().__init__()
+            self.reconhecedor = reconhecedor
+
+        @java_method("()V")
+        def run(self):
+
+            self.reconhecedor.recognizer = (
+                SpeechRecognizer.createSpeechRecognizer(
+                    self.reconhecedor.activity
+                )
+            )
+
+            self.reconhecedor.recognizer.setRecognitionListener(
+                self.reconhecedor.listener
+            )
+
+            if self.reconhecedor.ativo_usuario:
+                self.reconhecedor.iniciar()
