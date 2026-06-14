@@ -26,9 +26,12 @@ class SpotifyCallback:
 
             activity = PythonActivity.mActivity
             print("[SPOTIFY] Activity:", activity)
+            print("[SPOTIFY] TASK ID:", activity.getTaskId())
 
             intent =  activity.getIntent()
             print("[SPOTIFY] Intent:", intent)
+            print("[SPOTIFY] ACTION:", intent.getAction())
+            print("[SPOTIFY] INTENT:", intent.toString())
 
             if intent is None:
                 print("[SPOTIFY] Intent é None")
