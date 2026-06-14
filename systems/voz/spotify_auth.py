@@ -88,8 +88,6 @@ class SpotifyAuth:
             print("[SPOTIFY] Falha token:", resposta.text)
             return None
 
-        print( "[SPOTIFY] TOKEN RESPONSE:", resposta.text)
-
         return resposta.json()
     
     @classmethod
