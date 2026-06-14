@@ -29,30 +29,49 @@ class SpotifyAndroid:
         pesquisa=None
     ):
         if not IS_ANDROID:
-            print("[SPOTIFY] Não é Android")
-            return False
 
-        if not SpotifyAndroid.instalado():
-            print("[SPOTIFY] Spotify não instalado")
+            print(
+                "[SPOTIFY] Não é Android"
+            )
+
             return False
 
         try:
-            activity = PythonActivity.mActivity
+
+            activity = (
+                PythonActivity.mActivity
+            )
+
+            package_manager = (
+                activity.getPackageManager()
+            )
+
+            print(
+                f"[SPOTIFY] Pesquisa recebida: [{pesquisa}]"
+            )
 
             if (
                 pesquisa
                 and pesquisa.strip()
             ):
-                pesquisa = pesquisa.strip()
-                print(f"[SPOTIFY] Pesquisando: {pesquisa}")
 
                 try:
+
+                    pesquisa = (
+                        pesquisa.strip()
+                    )
+
+                    print(
+                        f"[SPOTIFY] Pesquisando: {pesquisa}"
+                    )
+
                     intent = Intent(
                         Intent.ACTION_VIEW,
                         Uri.parse(
                             f"spotify:search:{quote(pesquisa)}"
                         )
                     )
+
                     intent.addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK
                     )
@@ -61,57 +80,145 @@ class SpotifyAndroid:
                         intent
                     )
 
-                    print("[SPOTIFY] Busca enviada")
+                    print(
+                        "[SPOTIFY] Busca enviada"
+                    )
+
                     return True
 
                 except Exception as ex:
-                    print(f"[SPOTIFY] Falha na busca: {ex}")
+
+                    print(
+                        f"[SPOTIFY] Falha na busca: {ex}"
+                    )
+
                     traceback.print_exc()
 
-            print("[SPOTIFY] Abrindo aplicativo")
+            print(
+                "[SPOTIFY] Tentando abrir pelo pacote"
+            )
 
-            intent = (
-                activity
-                .getPackageManager()
-                .getLaunchIntentForPackage(
-                    "com.spotify.music"
+            try:
+
+                launch_intent = (
+                    package_manager
+                    .getLaunchIntentForPackage(
+                        "com.spotify.music"
+                    )
                 )
+
+                if launch_intent is not None:
+
+                    launch_intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+
+                    activity.startActivity(
+                        launch_intent
+                    )
+
+                    print(
+                        "[SPOTIFY] Aplicativo aberto pelo pacote"
+                    )
+
+                    return True
+
+                print(
+                    "[SPOTIFY] LaunchIntent retornou None"
+                )
+
+            except Exception as ex:
+
+                print(
+                    f"[SPOTIFY] Falha ao abrir pelo pacote: {ex}"
+                )
+
+                traceback.print_exc()
+
+            print(
+                "[SPOTIFY] Tentando URI direta"
             )
 
-            if intent is None:
-                print("[SPOTIFY] LaunchIntent retornou None")
+            try:
 
-                return False
+                intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(
+                        "spotify:"
+                    )
+                )
 
-            intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-            )
+                intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                )
 
-            activity.startActivity(
-                intent
-            )
+                activity.startActivity(
+                    intent
+                )
 
-            print("[SPOTIFY] Aplicativo aberto")
+                print(
+                    "[SPOTIFY] Spotify aberto por URI"
+                )
 
-            return True
+                return True
+
+            except Exception as ex:
+                print(
+                    f"[SPOTIFY] URI direta falhou: {ex}"
+                )
+                traceback.print_exc()
+
+            try:
+
+                termo = ""
+
+                if (
+                    pesquisa
+                    and pesquisa.strip()
+                ):
+                    termo = quote(
+                        pesquisa.strip()
+                    )
+
+                if termo:
+                    url = (f"https://open.spotify.com/search/{termo}")
+                else:
+                    url = ("https://open.spotify.com")
+
+                intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url)
+                )
+
+                intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                )
+
+                activity.startActivity(
+                    intent
+                )
+
+                print(
+                    "[SPOTIFY] Spotify Web aberto"
+                )
+
+                return True
+
+            except Exception as ex:
+
+                print(
+                    f"[SPOTIFY] Spotify Web falhou: {ex}"
+                )
+
+                traceback.print_exc()
+
+            return False
 
         except Exception as ex:
-            print(f"[SPOTIFY] ERRO GERAL: {ex}")
+            print(
+                f"[SPOTIFY] ERRO GERAL: {ex}"
+            )
+
             traceback.print_exc()
 
-            return False
-
-    @staticmethod
-    def instalado():
-        if not IS_ANDROID:
-            return False
-
-        try:
-            activity = PythonActivity.mActivity
-            package_manager = activity.getPackageManager()
-            package_manager.getPackageInfo("com.spotify.music", 0)
-
-            return True
-        except Exception as ex:
-            print(f"[SPOTIFY] Não instalado: {ex}")
             return False

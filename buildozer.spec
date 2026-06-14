@@ -103,7 +103,7 @@ fullscreen = 1
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions.html for all the supported syntaxes and properties)
-android.permissions = INTERNET,RECORD_AUDIO
+android.permissions = INTERNET,RECORD_AUDIO,QUERY_ALL_PACKAGES
 android.manifest_queries = package:com.spotify.music
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
