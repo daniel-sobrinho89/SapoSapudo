@@ -73,9 +73,7 @@ class SpotifyAndroid:
                 "android.content.Intent"
             )
 
-            activity = (
-                PythonActivity.mActivity
-            )
+            activity =  PythonActivity.mActivity
 
             intent = Intent(
                 Intent.ACTION_VIEW,

@@ -10,7 +10,8 @@ class SpotifyTokenStorage:
     def salvar(
         cls,
         access_token,
-        refresh_token
+        refresh_token,
+        code_verifier=None
     ):
 
         with open(
@@ -25,7 +26,10 @@ class SpotifyTokenStorage:
                     access_token,
 
                     "refresh_token":
-                    refresh_token
+                    refresh_token,
+
+                    "code_verifier":
+                    code_verifier
                 },
                 arquivo,
                 ensure_ascii=False,

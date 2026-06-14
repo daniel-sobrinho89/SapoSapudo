@@ -196,16 +196,23 @@ class GameWidget(Widget):
         self.spotify_pendente_timer = 0
         self.spotify_tentativas = 0
 
-        dados_spotify = (
-            SpotifyTokenStorage.carregar()
-        )
+        dados_spotify = SpotifyTokenStorage.carregar()
         if dados_spotify:
+            self.spotify_code_verifier = (
+                dados_spotify.get(
+                    "code_verifier"
+                )
+            )
+
             self.spotify_token = (
                 dados_spotify.get(
                     "access_token"
                 )
             )
-            print("[SPOTIFY] TOKEN RECEBIDO:", self.spotify_token[:20])
+
+            if self.spotify_token:
+                print("[SPOTIFY] TOKEN RECEBIDO:", self.spotify_token[:20])
+
             self.spotify_refresh_token = (
                 dados_spotify.get(
                     "refresh_token"
@@ -227,7 +234,8 @@ class GameWidget(Widget):
                     )
                     SpotifyTokenStorage.salvar(
                         self.spotify_token,
-                        self.spotify_refresh_token
+                        self.spotify_refresh_token,
+                        self.spotify_code_verifier
                     )
                     print(
                         "[SPOTIFY] Token renovado"
@@ -262,19 +270,21 @@ class GameWidget(Widget):
         self.reconhecedor_voz = ReconhecedorAndroid()
 
     def iniciar_login_spotify(self):
-        self.spotify_code_verifier = (
-            SpotifyAuth.gerar_code_verifier()
+        self.spotify_code_verifier = SpotifyAuth.gerar_code_verifier()
+
+        SpotifyTokenStorage.salvar(
+            self.spotify_token,
+            self.spotify_refresh_token,
+            self.spotify_code_verifier
         )
+
         url = (
             SpotifyAuth.obter_url_login(
                 self.spotify_code_verifier
             )
         )
 
-        print(
-            "[SPOTIFY] Abrindo login:",
-            url
-        )
+        print("[SPOTIFY] Abrindo login:", url)
         SpotifyAndroid.abrir_url(url)
 
     def mostrar_pensamento_spotify_erro(
@@ -603,12 +613,11 @@ class GameWidget(Widget):
             not self.spotify_token
             and self.spotify_code_verifier
         ):
-            code = (
-                SpotifyCallback.obter_code()
-            )
+            print("[SPOTIFY] VERIFIER ATUAL:", self.spotify_code_verifier)
+
+            code = SpotifyCallback.obter_code()
 
             if code:
-
                 resposta = (
                     SpotifyAuth.trocar_code_por_token(
                         code,
@@ -628,7 +637,8 @@ class GameWidget(Widget):
 
                     SpotifyTokenStorage.salvar(
                         self.spotify_token,
-                        self.spotify_refresh_token
+                        self.spotify_refresh_token,
+                        self.spotify_code_verifier
                     )
 
                     if self.spotify_pendente:
