@@ -168,7 +168,7 @@ if IS_ANDROID:
         ):
             pass
 
-        @java_method("(V)V")
+        @java_method("()V")
         def onBeginningOfSpeech(self):
             pass
 
@@ -186,7 +186,7 @@ if IS_ANDROID:
         ):
             pass
 
-        @java_method("(V)V")
+        @java_method("()V")
         def onEndOfSpeech(self):
             pass
 
