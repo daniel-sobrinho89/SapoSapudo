@@ -520,8 +520,15 @@ class GameWidget(Widget):
                 self.tempo_sem_audio += dt
                 if self.tempo_sem_audio > 10:
                     self.controle_renderer.microfone_ligado = False
-                    self.reconhecedor_voz.ativo_usuario = False
-                    self.reconhecedor_voz.parar()
+                    try:
+                        self.reconhecedor_voz.ativo_usuario = False
+                        self.reconhecedor_voz.parar()
+                        self.reconhecedor_voz.destruir()
+                    except Exception as ex:
+                        print(f"[VOZ] Erro ao destruir: {ex}")
+
+                    self.reconhecedor_voz =  ReconhecedorAndroid()
+                    self.tempo_sem_audio = 0
 
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)
         sinal_direcao = math.sin(direcao_rad)

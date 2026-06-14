@@ -53,7 +53,10 @@ class ComandoVoz:
             "tocar musica",
             "toque musica",
             "toca musica",
-            "toque alguma musica"
+            "toque alguma musica",
+            "tocar",
+            "toca",
+            "toque"
         ]
 
         for comando in comandos:
