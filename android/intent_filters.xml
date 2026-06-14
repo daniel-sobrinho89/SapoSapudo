@@ -6,6 +6,6 @@
     <category android:name="android.intent.category.BROWSABLE"/>
 
     <data
-        android:scheme="saposapudo"
+        android:scheme="br.com.saposapudo"
         android:host="callback"/>
 </intent-filter>

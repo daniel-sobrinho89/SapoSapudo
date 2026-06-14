@@ -205,6 +205,7 @@ class GameWidget(Widget):
                     "access_token"
                 )
             )
+            print("[SPOTIFY] TOKEN RECEBIDO:", self.spotify_token[:20])
             self.spotify_refresh_token = (
                 dados_spotify.get(
                     "refresh_token"
@@ -217,6 +218,7 @@ class GameWidget(Widget):
                     )
                 )
                 if resposta:
+                    print("[SPOTIFY] TOKEN RECEBIDO:", resposta)
 
                     self.spotify_token = (
                         resposta.get(
@@ -615,7 +617,7 @@ class GameWidget(Widget):
                 )
 
                 if resposta:
-
+                    print("[SPOTIFY] TOKEN RECEBIDO:", resposta)
                     self.spotify_token = (
                         resposta["access_token"]
                     )

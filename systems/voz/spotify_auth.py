@@ -11,7 +11,7 @@ class SpotifyAuth:
     )
 
     REDIRECT_URI = (
-        "saposapudo://callback"
+        "br.com.saposapudo://callback"
     )
 
     SCOPES = (
@@ -85,13 +85,10 @@ class SpotifyAuth:
         )
 
         if resposta.status_code != 200:
-
-            print(
-                "[SPOTIFY] Falha token:",
-                resposta.text
-            )
-
+            print("[SPOTIFY] Falha token:", resposta.text)
             return None
+
+        print( "[SPOTIFY] TOKEN RESPONSE:", resposta.text)
 
         return resposta.json()
     

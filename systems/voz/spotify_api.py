@@ -19,6 +19,9 @@ class SpotifyApi:
         )
 
         if resposta.status_code != 200:
+            print("[SPOTIFY] DEVICES:", resposta.status_code)
+            print("[SPOTIFY] DEVICES BODY:", resposta.text)
+
             return None
 
         dispositivos = (
