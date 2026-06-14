@@ -47,6 +47,7 @@ class Sapo:
         self.background_renderer = None
         self.indo_para_feira = False
         self.retornando_da_feira = False
+        self.comando_ir_feira = False
         self.clima = clima_service
 
     # métodos de delegação / API pública
@@ -226,13 +227,17 @@ class Sapo:
             # saiu pela esquerda
             if (
                 self.x < 0
-                and not self.indo_para_feira
+                and (
+                    self.comando_ir_feira
+                    or not self.indo_para_feira
+                )
                 and not self.background_renderer.cenario_feira
             ):
                 self.background_renderer.cenario_feira = True
                 self.indo_para_feira = True
                 # reaparece do lado direito
                 self.x = LARGURA + 100
+                self.comando_ir_feira = False
 
             if self.indo_para_feira:
                 destino = (
@@ -242,6 +247,7 @@ class Sapo:
                 if self.x <= destino:
                     self.x = destino
                     self.indo_para_feira = False
+                    self.comando_ir_feira = False
                     self.controle_esquerda = False
                     self.andando_manual = False
                     a.andando_esquerda = False

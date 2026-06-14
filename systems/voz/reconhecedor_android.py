@@ -29,6 +29,14 @@ if IS_ANDROID:
         "android.speech.SpeechRecognizer"
     )
 
+    String = autoclass(
+        "java.lang.String"
+    )
+
+    Integer = autoclass(
+        "java.lang.Integer"
+    )
+
 
 class ReconhecedorAndroid:
 
@@ -79,7 +87,7 @@ class ReconhecedorAndroid:
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            "pt-BR"
+            String("pt-BR")
         )
 
         intent.putExtra(
@@ -89,11 +97,14 @@ class ReconhecedorAndroid:
 
         intent.putExtra(
             RecognizerIntent.EXTRA_MAX_RESULTS,
-            1
+            Integer(1)
         )
 
-        self.recognizer.startListening(
-            intent
+        self.activity.runOnUiThread(
+            IniciarEscutaRunnable(
+                self,
+                intent
+            )
         )
 
     def inicializar_recognizer(self):
@@ -232,7 +243,6 @@ if IS_ANDROID:
                     )
 
                     self.reconhecedor.ultimo_texto = str(texto)
-                    print(f"[VOZ] {texto}") #REMOVER
 
                     self.reconhecedor.ativo = False
 
@@ -290,3 +300,30 @@ if IS_ANDROID:
 
             if self.reconhecedor.ativo_usuario:
                 self.reconhecedor.iniciar()
+
+    class IniciarEscutaRunnable(
+        PythonJavaClass
+    ):
+
+        __javainterfaces__ = [
+            "java/lang/Runnable"
+        ]
+
+        __javacontext__ = "app"
+
+        def __init__(
+            self,
+            reconhecedor,
+            intent
+        ):
+            super().__init__()
+
+            self.reconhecedor = reconhecedor
+            self.intent = intent
+
+        @java_method("()V")
+        def run(self):
+
+            self.reconhecedor.recognizer.startListening(
+                self.intent
+            )

@@ -129,7 +129,7 @@ class GameWidget(Widget):
 
         self.tecla_esquerda_pressionada = False
         self.tecla_direita_pressionada = False
-        
+
         Window.bind(
             on_key_down=self.on_key_down,
             on_key_up=self.on_key_up
@@ -484,7 +484,7 @@ class GameWidget(Widget):
                 self.tempo_sem_audio = 0
 
                 if ComandoVoz.eh_comando_feira(texto):
-                    self.sapo.indo_para_feira = True
+                    self.sapo.comando_ir_feira = True
                     a = self.sapo.animacoes
                     self.sapo.andar_iniciado_por_controle = False
                     if self.sapo.pode_caminhar():
