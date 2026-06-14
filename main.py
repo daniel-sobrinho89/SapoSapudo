@@ -3,6 +3,9 @@
 # =========================================
 
 import os
+
+from systems.voz.media_session_android import MediaSessionAndroid
+from systems.voz.spotify_api import SpotifyApi
 IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
 
 if not IS_ANDROID:
@@ -67,6 +70,9 @@ from render.controle_renderer import ControleRenderer
 from systems.voz.reconhecedor_android import ReconhecedorAndroid
 from systems.voz.comando_voz import ComandoVoz
 from systems.voz.spotify_android import SpotifyAndroid
+from systems.voz.spotify_auth import SpotifyAuth
+from systems.voz.spotify_token_storage import SpotifyTokenStorage
+from systems.voz.spotify_callback import SpotifyCallback
 
 # =========================================
 # INIT
@@ -181,9 +187,49 @@ class GameWidget(Widget):
         self.drag_duende = False
         self.drag_violao = False
         self.cenario_feira_anterior = False
-        self.reconhecedor_voz =  ReconhecedorAndroid()
+        self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
+        self.spotify_token = None
+        self.spotify_refresh_token = None
+        self.spotify_code_verifier = None
+        self.spotify_pendente = None
+        self.spotify_pendente_timer = 0
+        self.spotify_tentativas = 0
 
+        dados_spotify = (
+            SpotifyTokenStorage.carregar()
+        )
+        if dados_spotify:
+            self.spotify_token = (
+                dados_spotify.get(
+                    "access_token"
+                )
+            )
+            self.spotify_refresh_token = (
+                dados_spotify.get(
+                    "refresh_token"
+                )
+            )
+            if self.spotify_refresh_token:
+                resposta = (
+                    SpotifyAuth.renovar_token(
+                        self.spotify_refresh_token
+                    )
+                )
+                if resposta:
+
+                    self.spotify_token = (
+                        resposta.get(
+                            "access_token"
+                        )
+                    )
+                    SpotifyTokenStorage.salvar(
+                        self.spotify_token,
+                        self.spotify_refresh_token
+                    )
+                    print(
+                        "[SPOTIFY] Token renovado"
+                    )
 
         # drawing setup
         with self.canvas:
@@ -212,6 +258,22 @@ class GameWidget(Widget):
             print(f"[VOZ] Erro ao desligar: {ex}")
 
         self.reconhecedor_voz = ReconhecedorAndroid()
+
+    def iniciar_login_spotify(self):
+        self.spotify_code_verifier = (
+            SpotifyAuth.gerar_code_verifier()
+        )
+        url = (
+            SpotifyAuth.obter_url_login(
+                self.spotify_code_verifier
+            )
+        )
+
+        print(
+            "[SPOTIFY] Abrindo login:",
+            url
+        )
+        SpotifyAndroid.abrir_url(url)
 
     def mostrar_pensamento_spotify_erro(
         self
@@ -500,6 +562,77 @@ class GameWidget(Widget):
 
         self.clima_service.atualizar_visual(dt)
 
+        if self.spotify_pendente:
+            self.spotify_pendente_timer -= dt
+            if self.spotify_pendente_timer <= 0:
+                device_id = (
+                    SpotifyApi.obter_dispositivo_ativo(
+                        self.spotify_token
+                    )
+                )
+                if not device_id:
+                    self.spotify_tentativas -= 1
+                    if self.spotify_tentativas <= 0:
+                        self.spotify_pendente = None
+                        self.sapo.pensamentos.texto = ("Não encontrei um Spotify ativo.")
+                        self.sapo.pensamentos.tempo_restante = 5
+                        self.spotify_pendente = None
+                        self.spotify_pendente_timer = 0
+                        self.spotify_tentativas = 0
+                    else:
+                        self.spotify_pendente_timer = 2
+                else:
+                    uri = (
+                        SpotifyApi.buscar_faixa(
+                            self.spotify_token,
+                            self.spotify_pendente
+                        )
+                    )
+                    if uri:
+                        SpotifyApi.tocar_faixa(
+                            self.spotify_token,
+                            device_id,
+                            uri
+                        )
+                    self.spotify_pendente = None
+                    self.spotify_tentativas = 0
+                
+        if (
+            not self.spotify_token
+            and self.spotify_code_verifier
+        ):
+            code = (
+                SpotifyCallback.obter_code()
+            )
+
+            if code:
+
+                resposta = (
+                    SpotifyAuth.trocar_code_por_token(
+                        code,
+                        self.spotify_code_verifier
+                    )
+                )
+
+                if resposta:
+
+                    self.spotify_token = (
+                        resposta["access_token"]
+                    )
+
+                    self.spotify_refresh_token = (
+                        resposta["refresh_token"]
+                    )
+
+                    SpotifyTokenStorage.salvar(
+                        self.spotify_token,
+                        self.spotify_refresh_token
+                    )
+
+                    if self.spotify_pendente:
+                        self.spotify_pendente_timer = 2
+                        self.spotify_tentativas = 5
+
         if self.controle_renderer.microfone_ligado:
             texto = self.reconhecedor_voz.obter_texto()
 
@@ -511,14 +644,104 @@ class GameWidget(Widget):
                     )
                 )
                 if comando_spotify:
-                    sucesso = SpotifyAndroid.tocar(
-                        comando_spotify[
-                            "pesquisa"
-                        ]
-                    )
+                    acao = comando_spotify[
+                        "acao"
+                    ]
+                    sucesso = False
+                    
+                    if acao == "pause":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.pause(
+                                self.spotify_token
+                            )
+                        else:
+                            MediaSessionAndroid.pause()
+                            sucesso = True
+                    elif acao == "play":
+                        if self.spotify_token:
+                            device_id = (
+                                SpotifyApi.obter_dispositivo_ativo(
+                                    self.spotify_token
+                                )
+                            )
+                            if device_id:
+                                sucesso = SpotifyApi.play(
+                                    self.spotify_token,
+                                    device_id
+                                )
+                            else:
+                                sucesso = SpotifyAndroid.abrir_spotify()
+                        else:
+                            MediaSessionAndroid.play()
+                            sucesso = True
+                    elif acao == "next":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.next(
+                                self.spotify_token
+                            )
+                        else:
+                            MediaSessionAndroid.next()
+                            sucesso = True
+                    elif acao == "previous":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.previous(
+                                self.spotify_token
+                            )
+                        else:
+                            MediaSessionAndroid.previous()
+                            sucesso = True
+                    elif acao == "buscar":
+                        if not self.spotify_token:
+                            self.spotify_pendente = (
+                                comando_spotify[
+                                    "pesquisa"
+                                ]
+                            )
+                            self.spotify_pendente_timer = 2
+                            self.spotify_tentativas = 5
+                            self.iniciar_login_spotify()
+                            self.sapo.pensamentos.texto = (
+                                "Preciso conhecer seu Spotify primeiro."
+                            )
+                            self.sapo.pensamentos.tempo_restante = 5
+
+                            return
+
+                        pesquisa = (
+                            comando_spotify[
+                                "pesquisa"
+                            ]
+                        )
+                        if pesquisa:
+                            uri = SpotifyApi.buscar_faixa(
+                                self.spotify_token,
+                                pesquisa
+                            )
+                            if uri:
+                                device_id = (
+                                    SpotifyApi.obter_dispositivo_ativo(self.spotify_token)
+                                )
+                                if not device_id:
+                                    self.spotify_pendente = pesquisa
+                                    self.spotify_pendente_timer = 3
+                                    self.spotify_tentativas = 5
+                                    SpotifyAndroid.abrir_spotify()
+                                    self.sapo.pensamentos.texto = "Abrindo seu Spotify..."
+                                    self.sapo.pensamentos.tempo_restante = 3
+                                    return
+                                
+                                sucesso = SpotifyApi.tocar_faixa(
+                                    self.spotify_token,
+                                    device_id,
+                                    uri
+                                )
+                            else:
+                                sucesso = False
+                        else:
+                            MediaSessionAndroid.play()
+                            sucesso = True
 
                     self.desligar_microfone()
-
                     if not sucesso:
                         self.mostrar_pensamento_spotify_erro()
 
@@ -542,7 +765,7 @@ class GameWidget(Widget):
                     except Exception as ex:
                         print(f"[VOZ] Erro ao destruir: {ex}")
 
-                    self.reconhecedor_voz =  ReconhecedorAndroid()
+                    self.reconhecedor_voz = ReconhecedorAndroid()
                     self.tempo_sem_audio = 0
 
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)

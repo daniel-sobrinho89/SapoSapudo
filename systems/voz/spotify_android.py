@@ -25,6 +25,123 @@ if IS_ANDROID:
 class SpotifyAndroid:
 
     @staticmethod
+    def abrir_spotify():
+        if not IS_ANDROID:
+            return False
+
+        try:
+            activity = (
+                PythonActivity.mActivity
+            )
+            package_manager = (
+                activity.getPackageManager()
+            )
+            launch_intent = (
+                package_manager
+                .getLaunchIntentForPackage(
+                    "com.spotify.music"
+                )
+            )
+
+            if launch_intent:
+                launch_intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                )
+                activity.startActivity(
+                    launch_intent
+                )
+                return True
+
+        except Exception as ex:
+            print(ex)
+
+        return False
+
+    @staticmethod
+    def abrir_url(url):
+
+        if not IS_ANDROID:
+            return False
+
+        try:
+
+            Uri = autoclass(
+                "android.net.Uri"
+            )
+
+            Intent = autoclass(
+                "android.content.Intent"
+            )
+
+            activity = (
+                PythonActivity.mActivity
+            )
+
+            intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url)
+            )
+
+            activity.startActivity(
+                intent
+            )
+
+            return True
+
+        except Exception as ex:
+
+            print(
+                "[SPOTIFY]",
+                ex
+            )
+
+        return False
+
+    @staticmethod
+    def tocar_uri(uri):
+
+        if not IS_ANDROID:
+            return False
+
+        try:
+
+            activity = (
+                PythonActivity.mActivity
+            )
+
+            url = (
+                uri.replace(
+                    "spotify:track:",
+                    "https://open.spotify.com/track/"
+                )
+            )
+
+            intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url)
+            )
+
+            intent.setPackage(
+                "com.spotify.music"
+            )
+
+            intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+            )
+
+            activity.startActivity(
+                intent
+            )
+
+            return True
+
+        except Exception as ex:
+
+            print(ex)
+
+            return False
+
+    @staticmethod
     def tocar(
         pesquisa=None
     ):

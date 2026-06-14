@@ -38,41 +38,96 @@ class ComandoVoz:
         texto
     ):
 
-        texto = cls.normalizar(
-            texto
-        )
+        texto = cls.normalizar(texto)
 
         if not texto.startswith(
             "sapudo"
         ):
             return None
 
-        comandos = [
-            "iniciar musica",
-            "inicia musica",
-            "tocar musica",
-            "toque musica",
-            "toca musica",
-            "toque alguma musica",
-            "tocar",
-            "toca",
-            "toque"
-        ]
+        if (
+            "proxima musica" in texto
+            or "próxima música" in texto
+        ):
+            return {
+                "tipo": "spotify",
+                "acao": "next"
+            }
 
-        for comando in comandos:
-            if comando in texto:
-                posicao = texto.find(
-                    comando
-                )
+        if (
+            "musica anterior" in texto
+            or "música anterior" in texto
+        ):
+            return {
+                "tipo": "spotify",
+                "acao": "previous"
+            }
 
-                pesquisa = texto[
-                    posicao
-                    + len(comando):
-                ].strip()
+        if (
+            "parar musica" in texto
+            or "pausar musica" in texto
+        ):
+            return {
+                "tipo": "spotify",
+                "acao": "pause"
+            }
 
-                return {
-                    "tipo": "spotify",
-                    "pesquisa": pesquisa
-                }
+        if (
+            texto == "sapudo tocar"
+            or texto == "sapudo tocar musica"
+            or texto == "sapudo continuar"
+            or texto == "sapudo continuar musica"
+            or texto == "sapudo retomar"
+            or texto == "sapudo retomar musica"
+        ):
+            return {
+                "tipo": "spotify",
+                "acao": "play"
+            }
+
+        if texto.startswith(
+            "sapudo tocar "
+        ):
+
+            pesquisa = texto.replace(
+                "sapudo tocar ",
+                ""
+            ).strip()
+
+            return {
+                "tipo": "spotify",
+                "acao": "buscar",
+                "pesquisa": pesquisa
+            }
+
+        if texto.startswith(
+            "sapudo toque "
+        ):
+
+            pesquisa = texto.replace(
+                "sapudo toque ",
+                ""
+            ).strip()
+
+            return {
+                "tipo": "spotify",
+                "acao": "buscar",
+                "pesquisa": pesquisa
+            }
+
+        if texto.startswith(
+            "sapudo toca "
+        ):
+
+            pesquisa = texto.replace(
+                "sapudo toca ",
+                ""
+            ).strip()
+
+            return {
+                "tipo": "spotify",
+                "acao": "buscar",
+                "pesquisa": pesquisa
+            }
 
         return None
