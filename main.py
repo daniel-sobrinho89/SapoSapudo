@@ -195,6 +195,7 @@ class GameWidget(Widget):
         self.spotify_pendente = None
         self.spotify_pendente_timer = 0
         self.spotify_tentativas = 0
+        SpotifyCallback.iniciar()
 
         dados_spotify = SpotifyTokenStorage.carregar()
         if dados_spotify:

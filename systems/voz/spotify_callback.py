@@ -5,65 +5,81 @@ IS_ANDROID = (
     in os.environ
 )
 
+ULTIMO_CODE = None
+
 if IS_ANDROID:
 
-    from jnius import autoclass
-
-    PythonActivity = autoclass(
-        "org.kivy.android.PythonActivity"
-    )
-
+    from android import activity
 
 class SpotifyCallback:
 
     @staticmethod
-    def obter_code():
+    def iniciar():
 
         if not IS_ANDROID:
-            return None
+            return
+
+        activity.bind(
+            on_new_intent=(
+                SpotifyCallback._novo_intent
+            )
+        )
+
+        print(
+            "[SPOTIFY] Callback registrado"
+        )
+
+    @staticmethod
+    def _novo_intent(*args):
+        print("[SPOTIFY] ARGS:", len(args))
+
+        global ULTIMO_CODE
 
         try:
 
-            activity = PythonActivity.mActivity
-            print("[SPOTIFY] Activity:", activity)
-            print("[SPOTIFY] TASK ID:", activity.getTaskId())
+            intent = args[-1]
 
-            intent =  activity.getIntent()
-            print("[SPOTIFY] Intent:", intent)
-            print("[SPOTIFY] ACTION:", intent.getAction())
-            print("[SPOTIFY] INTENT:", intent.toString())
-
-            if intent is None:
-                print("[SPOTIFY] Intent é None")
-                return None
+            print(
+                "[SPOTIFY] NOVO INTENT:",
+                intent
+            )
 
             data = intent.getData()
 
-            print("[SPOTIFY] Data:", data)
+            print(
+                "[SPOTIFY] DATA:",
+                data
+            )
 
-            if data is None:
-                print("[SPOTIFY] Data é None")
-                return None
+            if not data:
+                return
 
-            try:
-                print("[SPOTIFY] URI:", data.toString())
-            except Exception:
-                pass
+            print(
+                "[SPOTIFY] URI:",
+                data.toString()
+            )
 
-            code = data.getQueryParameter("code")
+            code = data.getQueryParameter(
+                "code"
+            )
 
-            print("[SPOTIFY] Code:", code)
+            print("[SPOTIFY] CODE:", code)
 
-            intent.setData(None)
-
-            return code
+            ULTIMO_CODE = code
 
         except Exception as ex:
+            print("[SPOTIFY] Erro callback:", ex)
 
             import traceback
-
-            print("[SPOTIFY] Erro obter_code:", ex)
-
             traceback.print_exc()
 
-            return None
+    @staticmethod
+    def obter_code():
+
+        global ULTIMO_CODE
+
+        code = ULTIMO_CODE
+
+        ULTIMO_CODE = None
+
+        return code
