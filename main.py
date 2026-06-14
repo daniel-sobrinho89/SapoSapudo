@@ -201,6 +201,18 @@ class GameWidget(Widget):
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
 
+    def desligar_microfone(self):
+        self.controle_renderer.microfone_ligado = False
+        self.tempo_sem_audio = 0
+        try:
+            self.reconhecedor_voz.ativo_usuario = False
+            self.reconhecedor_voz.parar()
+            self.reconhecedor_voz.destruir()
+        except Exception as ex:
+            print(f"[VOZ] Erro ao desligar: {ex}")
+
+        self.reconhecedor_voz = ReconhecedorAndroid()
+
     def mostrar_pensamento_spotify_erro(
         self
     ):
@@ -289,6 +301,7 @@ class GameWidget(Widget):
             )
 
             if self.controle_renderer.microfone_ligado:
+                self.tempo_sem_audio = 0
                 self.reconhecedor_voz.ativo_usuario = True
                 self.reconhecedor_voz.iniciar()
             else:
@@ -503,12 +516,14 @@ class GameWidget(Widget):
                             "pesquisa"
                         ]
                     )
+
+                    self.desligar_microfone()
+
                     if not sucesso:
                         self.mostrar_pensamento_spotify_erro()
 
-                elif ComandoVoz.eh_comando_feira(
-                    texto
-                ):
+                elif ComandoVoz.eh_comando_feira(texto):
+                    self.desligar_microfone()
                     self.sapo.comando_ir_feira = True
                     a = self.sapo.animacoes
                     self.sapo.andar_iniciado_por_controle = False

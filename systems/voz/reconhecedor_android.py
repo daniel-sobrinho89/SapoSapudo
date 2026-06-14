@@ -131,14 +131,16 @@ class ReconhecedorAndroid:
             pass
 
     def destruir(self):
-
         if not IS_ANDROID:
             return
-
         try:
-            self.recognizer.destroy()
+            if self.recognizer:
+                self.recognizer.destroy()
         except Exception:
             pass
+
+        self.recognizer = None
+        self.ativo = False
 
     def obter_texto(self):
 
@@ -206,16 +208,19 @@ if IS_ANDROID:
             self,
             error
         ):
-
+            ERROR_CLIENT = 5
             ERROR_SPEECH_TIMEOUT = 6
             ERROR_NO_MATCH = 7
+            ERROR_RECOGNIZER_BUSY = 8
 
             self.reconhecedor.ativo = False
 
             if (
                 error in (
+                    ERROR_CLIENT,
                     ERROR_SPEECH_TIMEOUT,
-                    ERROR_NO_MATCH
+                    ERROR_NO_MATCH,
+                    ERROR_RECOGNIZER_BUSY
                 )
                 and self.reconhecedor.ativo_usuario
             ):
@@ -237,18 +242,9 @@ if IS_ANDROID:
                     lista
                     and lista.size() > 0
                 ):
-
-                    texto = lista.get(
-                        0
-                    )
-
+                    texto = lista.get(0)
                     self.reconhecedor.ultimo_texto = str(texto)
-
                     self.reconhecedor.ativo = False
-
-                    if self.reconhecedor.ativo_usuario:
-                        self.reconhecedor.iniciar()
-
             except Exception:
                 pass
 
