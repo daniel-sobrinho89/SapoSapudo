@@ -171,8 +171,8 @@ class AnimacoesSapo:
         ) + agora.minute
 
         horario_dormir = (
-            22 * 60
-        ) + 00
+            23 * 60
+        ) + 59
 
         horario_acordar = (
             7* 60

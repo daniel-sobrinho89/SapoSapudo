@@ -87,7 +87,7 @@ class ReconhecedorAndroid:
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            String("pt-BR")
+            "pt-BR"
         )
 
         intent.putExtra(
@@ -97,7 +97,7 @@ class ReconhecedorAndroid:
 
         intent.putExtra(
             RecognizerIntent.EXTRA_MAX_RESULTS,
-            Integer(1)
+            1
         )
 
         self.activity.runOnUiThread(
