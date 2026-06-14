@@ -26,7 +26,9 @@ class ComandoVoz:
     ):
 
         texto = cls.normalizar(texto)
-
+        texto = texto.replace("sapado", "sapudo")
+        texto = texto.replace("sapo do", "sapudo")
+        texto = texto.replace("sabudo", "sapudo")
         if "sapudo" not in texto:
             return False
 
@@ -39,15 +41,25 @@ class ComandoVoz:
     ):
 
         texto = cls.normalizar(texto)
-
-        if not texto.startswith(
-            "sapudo"
-        ):
+        texto = texto.replace("sapado", "sapudo")
+        texto = texto.replace("sapo do", "sapudo")
+        texto = texto.replace("sabudo", "sapudo")
+        if "sapudo" not in texto:
             return None
 
         if (
-            "proxima musica" in texto
-            or "próxima música" in texto
+            "tocar proxima musica" in texto
+            or "proxima musica" in texto
+            or "avancar musica" in texto
+            or "passar musica" in texto
+            or "pular musica" in texto
+            or "trocar musica" in texto
+            or "proxima faixa" in texto
+            or "avancar faixa" in texto
+            or "passar faixa" in texto
+            or "pular faixa" in texto
+            or "trocar faixa" in texto
+            or "proxima" in texto
         ):
             return {
                 "tipo": "spotify",
@@ -64,7 +76,8 @@ class ComandoVoz:
             }
 
         if (
-            "parar musica" in texto
+            "parar" in texto
+            or "parar musica" in texto
             or "pausar musica" in texto
         ):
             return {

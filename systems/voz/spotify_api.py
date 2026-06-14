@@ -33,8 +33,9 @@ class SpotifyApi:
             )
         )
 
-        for dispositivo in dispositivos:
+        print("[SPOTIFY] DEVICES:", dispositivos)
 
+        for dispositivo in dispositivos:
             if dispositivo.get(
                 "is_active"
             ):
@@ -46,6 +47,40 @@ class SpotifyApi:
             return dispositivos[0]["id"]
 
         return None
+
+    @classmethod
+    def transferir_playback(
+        cls,
+        token,
+        device_id
+    ):
+
+        resposta = requests.put(
+            "https://api.spotify.com/v1/me/player",
+            headers={
+                "Authorization":
+                f"Bearer {token}"
+            },
+            json={
+                "device_ids": [
+                    device_id
+                ],
+                "play": False
+            },
+            timeout=10
+        )
+
+        print(
+            "[SPOTIFY] TRANSFER:",
+            resposta.status_code,
+            resposta.text
+        )
+
+        return resposta.status_code in (
+            200,
+            202,
+            204
+        )
 
     @classmethod
     def buscar_faixa(

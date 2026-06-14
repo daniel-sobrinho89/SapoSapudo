@@ -211,9 +211,6 @@ class GameWidget(Widget):
                 )
             )
 
-            if self.spotify_token:
-                print("[SPOTIFY] TOKEN RECEBIDO:", self.spotify_token[:20])
-
             self.spotify_refresh_token = (
                 dados_spotify.get(
                     "refresh_token"
@@ -226,8 +223,6 @@ class GameWidget(Widget):
                     )
                 )
                 if resposta:
-                    print("[SPOTIFY] TOKEN RECEBIDO:", resposta)
-
                     self.spotify_token = (
                         resposta.get(
                             "access_token"
@@ -285,7 +280,6 @@ class GameWidget(Widget):
             )
         )
 
-        print("[SPOTIFY] Abrindo login:", url)
         SpotifyAndroid.abrir_url(url)
 
     def mostrar_pensamento_spotify_erro(
@@ -593,7 +587,7 @@ class GameWidget(Widget):
                         self.spotify_pendente_timer = 0
                         self.spotify_tentativas = 0
                     else:
-                        self.spotify_pendente_timer = 2
+                        self.spotify_pendente_timer = 5
                 else:
                     uri = (
                         SpotifyApi.buscar_faixa(
@@ -602,11 +596,21 @@ class GameWidget(Widget):
                         )
                     )
                     if uri:
-                        SpotifyApi.tocar_faixa(
+                        print("[SPOTIFY] DEVICE:", device_id)
+                        print("[SPOTIFY] URI:", uri)
+                        SpotifyApi.transferir_playback(
+                            self.spotify_token,
+                            device_id
+                        )
+
+                        sucesso = SpotifyApi.tocar_faixa(
                             self.spotify_token,
                             device_id,
                             uri
                         )
+                        print("[SPOTIFY] PLAY SUCESSO:", sucesso)
+                        SpotifyAndroid.abrir_spotify()
+
                     self.spotify_pendente = None
                     self.spotify_tentativas = 0
                 
@@ -614,8 +618,6 @@ class GameWidget(Widget):
             not self.spotify_token
             and self.spotify_code_verifier
         ):
-            print("[SPOTIFY] VERIFIER ATUAL:", self.spotify_code_verifier)
-
             code = SpotifyCallback.obter_code()
 
             if code:
@@ -627,7 +629,6 @@ class GameWidget(Widget):
                 )
 
                 if resposta:
-                    print("[SPOTIFY] TOKEN RECEBIDO:", resposta)
                     self.spotify_token = (
                         resposta["access_token"]
                     )
@@ -643,13 +644,15 @@ class GameWidget(Widget):
                     )
 
                     if self.spotify_pendente:
-                        self.spotify_pendente_timer = 2
-                        self.spotify_tentativas = 5
+                        self.spotify_pendente_timer = 6
+                        self.spotify_tentativas = 10
 
         if self.controle_renderer.microfone_ligado:
             texto = self.reconhecedor_voz.obter_texto()
-
+        
             if texto:
+                print(f"[VOZ] TEXTO: [{texto}]")
+
                 self.tempo_sem_audio = 0
                 comando_spotify = (
                     ComandoVoz.obter_comando_spotify(
@@ -710,7 +713,7 @@ class GameWidget(Widget):
                                     "pesquisa"
                                 ]
                             )
-                            self.spotify_pendente_timer = 2
+                            self.spotify_pendente_timer = 5
                             self.spotify_tentativas = 5
                             self.iniciar_login_spotify()
                             self.sapo.pensamentos.texto = (
@@ -738,16 +741,23 @@ class GameWidget(Widget):
                                     self.spotify_pendente = pesquisa
                                     self.spotify_pendente_timer = 3
                                     self.spotify_tentativas = 5
-                                    SpotifyAndroid.abrir_spotify()
                                     self.sapo.pensamentos.texto = "Abrindo seu Spotify..."
                                     self.sapo.pensamentos.tempo_restante = 3
                                     return
-                                
+                                print("[SPOTIFY] DEVICE:", device_id)
+                                print("[SPOTIFY] URI:", uri)
+                                SpotifyApi.transferir_playback(
+                                    self.spotify_token,
+                                    device_id
+                                )
+
                                 sucesso = SpotifyApi.tocar_faixa(
                                     self.spotify_token,
                                     device_id,
                                     uri
                                 )
+                                print("[SPOTIFY] PLAY SUCESSO:", sucesso)
+                                SpotifyAndroid.abrir_spotify()
                             else:
                                 sucesso = False
                         else:
