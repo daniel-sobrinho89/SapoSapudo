@@ -267,7 +267,6 @@ if IS_ANDROID:
         ):
             pass
 
-if IS_ANDROID:
     class CriarRecognizerRunnable(
         PythonJavaClass
     ):

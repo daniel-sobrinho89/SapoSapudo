@@ -66,6 +66,7 @@ from render.semente_renderer import SementeRenderer
 from render.controle_renderer import ControleRenderer
 from systems.voz.reconhecedor_android import ReconhecedorAndroid
 from systems.voz.comando_voz import ComandoVoz
+from systems.voz.spotify_android import SpotifyAndroid
 
 # =========================================
 # INIT
@@ -199,6 +200,15 @@ class GameWidget(Widget):
 
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
+
+    def mostrar_pensamento_spotify_erro(
+        self
+    ):
+        self.sapo.pensamentos.texto = (
+            "Não estou conseguindo visitar este universo musical agora."
+        )
+
+        self.sapo.pensamentos.tempo_restante = 6
 
     def carregar_cenario_feira(self):
 
@@ -482,8 +492,23 @@ class GameWidget(Widget):
 
             if texto:
                 self.tempo_sem_audio = 0
+                comando_spotify = (
+                    ComandoVoz.obter_comando_spotify(
+                        texto
+                    )
+                )
+                if comando_spotify:
+                    sucesso = SpotifyAndroid.tocar(
+                        comando_spotify[
+                            "pesquisa"
+                        ]
+                    )
+                    if not sucesso:
+                        self.mostrar_pensamento_spotify_erro()
 
-                if ComandoVoz.eh_comando_feira(texto):
+                elif ComandoVoz.eh_comando_feira(
+                    texto
+                ):
                     self.sapo.comando_ir_feira = True
                     a = self.sapo.animacoes
                     self.sapo.andar_iniciado_por_controle = False
@@ -491,7 +516,6 @@ class GameWidget(Widget):
                         a.proxima_tentativa_caminhada = None
                         a._ultimo_frame_andar = -1
                         a.iniciar_andar_esquerda()
-
             else:
                 self.tempo_sem_audio += dt
                 if self.tempo_sem_audio > 10:
