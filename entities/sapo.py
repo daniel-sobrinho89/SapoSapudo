@@ -4,10 +4,10 @@
 
 import math
 
-from systems.animacoes_sapo import AnimacoesSapo
-from systems.respiracao_sapo import RespiracaoSapo
-from systems.pensamentos_sapo import PensamentosSapo
-from systems.ia_sapo import IASapo
+from systems.sapudo.animacoes_sapo import AnimacoesSapo
+from systems.sapudo.respiracao_sapo import RespiracaoSapo
+from systems.sapudo.pensamentos_sapo import PensamentosSapo
+from systems.sapudo.ia_sapo import IASapo
 from systems.system_utils import atualizar_sistemas_basicos
 from datetime import datetime, timedelta
 from config import *

@@ -461,6 +461,8 @@ class AnimacoesSapo:
         self.iniciou_tocar_violao = False
         self.pegando_violao = True
         self.tocando_violao = False
+        self.levantando_violao = False
+        self.guardando_violao = False
         self.frame_pegar_violao = 0
         self.tempo_pegar_violao = 0
         self.frame_violao = 0
@@ -530,7 +532,9 @@ class AnimacoesSapo:
                 )
 
             if spotify_tocando:
-                self.iniciar_violao()
+                self.tocando_violao = True
+                self.frame_violao = 0
+                self.direcao_violao = 1
             else:
                 self.guardando_violao = True
                 self.frame_guardar_violao = 0

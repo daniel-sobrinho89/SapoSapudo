@@ -18,10 +18,10 @@ class SpotifyApi:
             timeout=10
         )
 
-        if resposta.status_code != 200:
-            print("[SPOTIFY] DEVICES:", resposta.status_code)
-            print("[SPOTIFY] DEVICES BODY:", resposta.text)
+        if resposta.status_code == 401:
+            return "TOKEN_EXPIRADO"
 
+        if resposta.status_code != 200:
             return None
 
         dispositivos = (
@@ -273,6 +273,9 @@ class SpotifyApi:
                 timeout=10
             )
 
+            if resposta.status_code == 401:
+                return None
+
             if resposta.status_code != 200:
                 return False
 
@@ -304,6 +307,9 @@ class SpotifyApi:
                 timeout=10
             )
 
+            if resposta.status_code == 401:
+                return "TOKEN_EXPIRADO"
+
             if resposta.status_code != 200:
                 return None
 
@@ -327,7 +333,9 @@ class SpotifyApi:
 
             return {
                 "musica": item.get("name"),
-                "artista": artista
+                "artista": artista,
+                "duracao_ms": item.get("duration_ms"),
+                "progresso_ms": dados.get("progress_ms")
             }
 
         except Exception as ex:
