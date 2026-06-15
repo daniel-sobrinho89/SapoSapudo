@@ -16,22 +16,15 @@ from systems.fisica import (
 class Semente:
 
     def __init__(self):
-
         self.x = 500
         self.y = 520
-
         self.vel_x = 0
         self.vel_y = 0
-
         self.gravidade = 220
-
         self.largura = 30
         self.altura = 30
-
         self.no_chao = True
-
         self.sorrindo = False
-
         self.piscando = False
 
         self.timer_piscada = random.uniform(
@@ -40,7 +33,6 @@ class Semente:
         )
 
         self.duracao_piscada = 0.15
-
         self.tempo_piscando = 0
 
         self.timer_movimento = random.uniform(
@@ -49,14 +41,10 @@ class Semente:
         )
 
         self.altura_salto = -120
-
         self.limite_chao = 560
-
-        self.limite_esquerda = 50
-        self.limite_direita = 980
-
+        self.limite_esquerda = 20
+        self.limite_direita = 1024
         self.flutuando = False
-
         self.estado = "parado"
 
         # rajada moved to ClimaService
@@ -74,34 +62,26 @@ class Semente:
 
         self.offset_flutuacao_x = 0
         self.offset_flutuacao_y = 0
-
         self.altura_alvo_flutuacao = 0
-
         self.timer_altura_vento = 0
-
         self.pulos_restantes = 0
         self.sustentacao_restante = 0
         self.estava_flutuando = False
         self.pousando_do_vento = False
 
     def iniciar_pulo_lateral(self):
-
         if self.x <= self.limite_esquerda + 20:
-
             self.direcao_pulo = 1
 
         elif self.x >= self.limite_direita - 20:
-
             self.direcao_pulo = -1
 
         else:
-
             if random.random() < 0.10:
-
                 self.direcao_pulo *= -1
 
         self.vel_x = (
-            self.direcao_pulo * 40
+            self.direcao_pulo * 60
         )
 
         self.vel_y = (
@@ -109,29 +89,24 @@ class Semente:
         )
 
     def definir_estado(self, novo_estado):
-
         self.estado = novo_estado
 
     def entrar_flutuando(self):
-
         self.flutuando = True
         self.sorrindo = False
         self.estava_flutuando = True
         self.definir_estado("flutuando")
 
     def sair_flutuando(self):
-
         self.flutuando = False
         self.estava_flutuando = False
         # estado posterior será avaliado por resolver_limites/ao_pousar
 
     def marcar_pousando_do_vento(self):
-
         self.pousando_do_vento = True
         self.estava_flutuando = False
 
     def atualizar_temporizadores(self, dt):
-
         # timer_movimento apenas decresce quando está no chão e não vem do vento
         if (
             self.no_chao
@@ -146,7 +121,6 @@ class Semente:
         self.timer_altura_vento -= dt
 
         if self.timer_altura_vento <= 0:
-
             self.altura_alvo_flutuacao = (
                 random.uniform(
                     180,
@@ -162,13 +136,11 @@ class Semente:
             )
 
     def ao_pousar(self, pousou_agora):
-
         # Ações ao pousar: se veio do vento, dar um tempo antes de mover
         if (
             pousou_agora
             and self.pousando_do_vento
         ):
-
             self.timer_movimento = (
                 random.uniform(
                     3,
@@ -183,7 +155,6 @@ class Semente:
             self.pousando_do_vento = False
 
     def gerar_quantidade_pulos(self):
-
         sorteio = random.random()
 
         if sorteio < 0.60:
@@ -215,7 +186,6 @@ class Semente:
         dt,
         clima_service
     ):
-
         self.atualizar_piscada(dt)
 
         # Atualiza temporizadores (movimento, rajada e altura do vento)
@@ -235,11 +205,9 @@ class Semente:
                 )
 
             self.iniciar_pulo_lateral()
-
             self.pulos_restantes -= 1
 
             if self.pulos_restantes > 0:
-
                 self.timer_movimento = (
                     random.uniform(
                         0.6,
@@ -248,7 +216,6 @@ class Semente:
                 )
 
             else:
-
                 self.timer_movimento = (
                     random.uniform(
                         4,
@@ -267,21 +234,15 @@ class Semente:
         sistema_fisica.resolver_limites(self, clima_service)
 
         if self.x <= self.limite_esquerda:
-
             self.x = self.limite_esquerda
 
             if self.vel_x < 0:
-
                 self.vel_x = 0
-
                 self.direcao_pulo = 1
 
         elif self.x >= self.limite_direita:
-
             self.x = self.limite_direita
 
             if self.vel_x > 0:
-
                 self.vel_x = 0
-
                 self.direcao_pulo = -1

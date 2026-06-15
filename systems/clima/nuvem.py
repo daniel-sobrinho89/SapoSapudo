@@ -2,95 +2,64 @@
 # nuvem.py
 # ==========================================
 
-import pygame
 import random
 import math
-
-from pathlib import Path
-
 from systems.fisica import sistema_fisica
-
+import threading
+import kivy_adapter
 
 class Nuvem:
-
     # cache global
     sprites = None
     sprites_flip = None
 
+    carregando = False
+    carregado = False
+    sprites_carregados = None
+    carregamento_concluido = False
+
     cache_escalas = {}
     cache_alpha = {}
 
-
-    OUTSIDE_DISTANCE = 1
-    SPEED_MIN = 5
-    SPEED_MAX = 12
+    OUTSIDE_DISTANCE = 50
+    SPEED_MIN = 1
+    SPEED_MAX = 5
 
     def __init__(
         self,
         area,
+        transform,
         intensidade=1,
         wind_direction=0,
-        wind_speed=0
+        wind_speed=0,
+        ceu_limpo=False
     ):
-
-        # =====================================
-        # LOAD SPRITES
-        # =====================================
-
-        if Nuvem.sprites is None:
-
-            from render.asset_manager import asset_manager
-
-            nuvem_1 = asset_manager.carregar(
-                "clima/nuvem_1.png"
-            )
-
-            nuvem_2 = asset_manager.carregar(
-                "clima/nuvem_2.png"
-            )
-
-            Nuvem.sprites = [
-                nuvem_1,
-                nuvem_2
-            ]
-
-            Nuvem.sprites_flip = [
-                pygame.transform.flip(
-                    nuvem_1,
-                    True,
-                    False
-                ),
-                pygame.transform.flip(
-                    nuvem_2,
-                    True,
-                    False
-                )
-            ]
+        self.transform = transform
+        self.tempo = random.uniform(0, 100)
+        self.ceu_limpo = ceu_limpo
 
         # =====================================
         # SPRITE
         # =====================================
 
-        indice = random.randint(0, 1)
-
-        if random.random() > 0.5:
-
-            self.sprite_original = (
-                Nuvem.sprites_flip[indice]
+        self.frame_animacao = random.randint(
+            0,
+            max(
+                0,
+                len(Nuvem.sprites) - 1
             )
+        )
 
-        else:
-
-            self.sprite_original = (
-                Nuvem.sprites[indice]
-            )
+        self.velocidade_animacao = random.uniform(
+            0.5,
+            0.9
+        )
 
         # =====================================
         # AREA
         # =====================================
 
         self.area = area
-
         self.intensidade = intensidade
         self.wind_direction = wind_direction
         self.wind_speed = wind_speed
@@ -99,24 +68,32 @@ class Nuvem:
         # ESCALA
         # =====================================
 
-        self.escala = random.uniform(
-            0.10,
-            0.28
-        ) * max(0.4, intensidade)
+        if self.ceu_limpo:
+            self.escala = random.uniform(
+                0.7,
+                1.0
+            )
+        else:
+            self.escala = random.uniform(
+                0.9,
+                1.4
+            ) * max(0.4, intensidade)
 
         # =====================================
         # POSIÇÃO
         # =====================================
 
-        self.sprite = (
-            self.obter_sprite_escalado(
-                self.sprite_original,
-                self.escala
-            )
+        sprite_referencia = Nuvem.sprites[0]
+
+        self.width = int(
+            sprite_referencia.get_width()
+            * self.escala
         )
 
-        self.width = self.sprite.get_width()
-        self.height = self.sprite.get_height()
+        self.height = int(
+            sprite_referencia.get_height()
+            * self.escala
+        )
 
         direcao_destino = (
             wind_direction + 180
@@ -149,21 +126,16 @@ class Nuvem:
         )
 
         if self.start_side == "left":
-
             self.vx = velocidade_base
-
             self.x = random.uniform(
-                self.area.left - self.width * 3,
-                self.area.left + self.area.width * 0.10
+                -80,
+                -30
             )
-
         else:
-
             self.vx = -velocidade_base
-
             self.x = random.uniform(
-                self.area.right - self.area.width * 0.10,
-                self.area.right + self.width * 3
+                self.area.right + 30,
+                self.area.right + 80
             )
 
         self.base_y = random.uniform(
@@ -213,23 +185,93 @@ class Nuvem:
         # =====================================
 
         self.offset = random.uniform(0, 100)
-        self.float_amplitude = random.uniform(2, 6)
+        self.float_amplitude = random.uniform(
+            4,
+            12
+        )
 
         # =====================================
         # ALPHA
         # =====================================
 
         # tornar nuvens menos transparentes (mais visíveis)
-        self.alpha = random.randint(
-            50,
-            110
-        )
+        if self.ceu_limpo:
+            self.alpha = random.randint(
+                60,
+                80
+            )
+        else:
+            self.alpha = random.randint(
+                80,
+                100
+            )
+
+    @classmethod
+    def iniciar_carregamento(cls):
+        if cls.carregando or cls.carregado:
+            return
+
+        cls.carregando = True
+
+        def worker():
+            try:
+                from render.asset_manager import asset_manager
+                raw_sprites = []
+
+                for i in range(48):
+
+                    raw = asset_manager.carregar_raw(
+                        f"clima/nuvens/nuvem_{i:04d}.webp"
+                    )
+
+                    raw_sprites.append(raw)
+
+                cls.sprites_carregados = raw_sprites
+                cls.carregamento_concluido = True
+            finally:
+                cls.carregando = False
+
+        threading.Thread(
+            target=worker,
+            daemon=True
+        ).start()
 
     # ==========================================
     # UPDATE
     # ==========================================
+    @classmethod
+    def finalizar_carregamento(cls):
+
+        if not cls.carregamento_concluido:
+            return
+
+        if cls.carregado:
+            return
+
+        sprites = []
+
+        for raw in cls.sprites_carregados:
+            sprites.append(
+                kivy_adapter.image.from_raw(raw)
+            )
+
+        cls.sprites = sprites
+        cls.carregado = True
 
     def atualizar(self, dt):
+        if not Nuvem.sprites:
+            return True
+
+        self.tempo += dt
+
+        self.frame_animacao += (
+            self.velocidade_animacao * dt
+        )
+
+        if self.frame_animacao >= len(Nuvem.sprites):
+            self.frame_animacao -= len(
+                Nuvem.sprites
+            )
 
         if self.dying:
             self.alpha = max(0, self.alpha - self.fade_speed * dt)
@@ -243,7 +285,7 @@ class Nuvem:
 
         # movimento flutuante vertical
         self.y = self.base_y + math.sin(
-            pygame.time.get_ticks() * 0.00035
+            self.tempo * 0.35
             + self.offset
         ) * self.float_amplitude
 
@@ -289,6 +331,16 @@ class Nuvem:
         tela,
         eh_dia=False
     ):
+        if not Nuvem.sprites:
+            return
+
+        indice = int(
+            self.frame_animacao
+        )
+
+        sprite_base = (
+            Nuvem.sprites[indice]
+        )
 
         alpha_final = self.alpha
 
@@ -301,8 +353,16 @@ class Nuvem:
             int(alpha_final)
         )
 
+        sprite_escalado = (
+            self.obter_sprite_escalado(
+                sprite_base,
+                self.escala,
+                self.transform
+            )
+        )
+
         sprite = self.obter_sprite_alpha(
-            self.sprite,
+            sprite_escalado,
             alpha_final
         )
 
@@ -319,35 +379,49 @@ class Nuvem:
     # ==========================================
     # HELPERS
     # ==========================================
-
     @classmethod
     def obter_sprite_escalado(
         cls,
         sprite,
-        escala
+        escala,
+        transform
     ):
+
+        largura = max(
+            8,
+            round(sprite.get_width() * escala)
+        )
+
+        altura = max(
+            8,
+            round(sprite.get_height() * escala)
+        )
+
         chave = (
             id(sprite),
-            round(escala, 3)
+            largura,
+            altura
         )
 
         if chave not in cls.cache_escalas:
 
-            largura = max(
-                8,
-                int(sprite.get_width() * escala)
+            if len(cls.cache_escalas) > 200:
+                cls.cache_escalas.clear()
+
+            sprite_escalado = transform.escalar_nuvem(
+                sprite,
+                (
+                    largura,
+                    altura
+                )
             )
 
-            altura = max(
-                8,
-                int(sprite.get_height() * escala)
+            sprite_escalado = (
+                sprite_escalado.convert_alpha()
             )
 
             cls.cache_escalas[chave] = (
-                pygame.transform.smoothscale(
-                    sprite,
-                    (largura, altura)
-                ).convert_alpha()
+                sprite_escalado
             )
 
         return cls.cache_escalas[chave]
@@ -358,7 +432,7 @@ class Nuvem:
         sprite,
         alpha
     ):
-
+        alpha = int(alpha / 10) * 10
         chave = (
             id(sprite),
             alpha
@@ -367,8 +441,10 @@ class Nuvem:
         if chave not in cls.cache_alpha:
 
             copia = sprite.copy()
-
             copia.set_alpha(alpha)
+
+            if len(cls.cache_alpha) > 500:
+                cls.cache_alpha.clear()
 
             cls.cache_alpha[chave] = copia
 

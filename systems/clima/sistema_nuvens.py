@@ -2,49 +2,43 @@
 # sistema_nuvens.py
 # ==========================================
 
-import pygame
+import kivy_adapter
 
 from systems.clima.nuvem import Nuvem
 
 
 class SistemaNuvens:
 
-    def __init__(self, area_interna):
+    def __init__(
+        self, 
+        transform
+    ):
 
-        self.atualizar_area_interna(area_interna)
+        self.atualizar_area_interna()
 
         self.intensidade = 0
         self.wind_direction = 0
         self.wind_speed = 0
-
-        # atualiza nuvens apenas 20 vezes por segundo
-        self.timer_update = 0
-        self.intervalo_update = 1 / 20
+        self.transform = transform
+        Nuvem.iniciar_carregamento()
 
         # nuvens ativas
         self.nuvens = []
 
         # pool pré-criado
-        self.pool_nuvens = [
-
-            Nuvem(
-                self.area_interna,
-                intensidade=1
-            )
-
-            for _ in range(12)
-        ]
+        self.pool_nuvens = []
 
     # ==========================================
     # ATUALIZAR ÁREA
     # ==========================================
+    def atualizar_area_interna(self):
+        from config import LARGURA
 
-    def atualizar_area_interna(self, area_interna):
-        self.area_interna = pygame.Rect(
+        self.area_interna = kivy_adapter.Rect(
             0,
             0,
-            1280,
-            320
+            LARGURA,
+            270
         )
 
     # ==========================================
@@ -98,6 +92,8 @@ class SistemaNuvens:
         wind_direction,
         wind_speed
     ):
+        if not Nuvem.carregado:
+            return
 
         self.intensidade = self.calcular_intensidade(
             cloudiness,
@@ -107,10 +103,10 @@ class SistemaNuvens:
         )
 
         # quantidade de nuvens
-        alvo = max(
-            0,
-            int(self.intensidade / 15) - 1
-        )
+        if self.intensidade <= 5:
+            alvo = 2
+        else:
+            alvo = max(1, round(self.intensidade / 16))
 
         # escala geral
         escala = max(
@@ -128,12 +124,15 @@ class SistemaNuvens:
 
         # cria nuvens
         while len(self.nuvens) < alvo:
+            ceu_limpo = self.intensidade <= 5
 
             nova_nuvem = Nuvem(
                 self.area_interna,
+                self.transform,
                 intensidade=escala,
                 wind_direction=self.wind_direction,
-                wind_speed=self.wind_speed
+                wind_speed=self.wind_speed,
+                ceu_limpo=ceu_limpo
             )
 
             pode_adicionar = True
@@ -149,8 +148,8 @@ class SistemaNuvens:
                 )
 
                 if (
-                    distancia_x < 250
-                    and distancia_y < 80
+                    distancia_x < 380
+                    and distancia_y < 120
                 ):
                     pode_adicionar = False
                     break
@@ -174,7 +173,6 @@ class SistemaNuvens:
         nuvens_ativas = []
 
         for nuvem in self.nuvens:
-
             if nuvem.atualizar(dt):
                 nuvens_ativas.append(nuvem)
 
@@ -183,15 +181,18 @@ class SistemaNuvens:
     # ==========================================
     # RENDER
     # ==========================================
+    def limpar(self):
+        self.nuvens.clear()
 
     def renderizar(
         self,
         tela,
         eh_dia=False
     ):
-
+        if not Nuvem.carregado:
+            return
+        
         for nuvem in self.nuvens:
-
             nuvem.renderizar(
                 tela,
                 eh_dia

@@ -1,8 +1,13 @@
 {
-    "cloudiness": 0,
-    "wind_speed": 10.1,
-    "wind_direction": 288,
-    "future_cloudiness_1h": 0,
-    "future_cloudiness_2h": 0,
-    "future_cloudiness_3h": 0
+    "cloudiness": 100,
+    "wind_speed": 9.4,
+    "wind_direction": 135,
+    "future_cloudiness_1h": 100,
+    "future_cloudiness_2h": 100,
+    "future_cloudiness_3h": 100,
+    "is_day": 0,
+    "condition_code": 1183,
+    "condition_text": "Light rain",
+    "temperature": 14.1,
+    "humidity": 100
 }

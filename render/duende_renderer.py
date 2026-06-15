@@ -3,7 +3,7 @@
 # =====================================
 
 import math
-import pygame
+import kivy_adapter
 
 
 class DuendeRenderer:
@@ -11,11 +11,13 @@ class DuendeRenderer:
     def __init__(
         self,
         tela,
-        assets
+        assets,
+        transform
     ):
 
         self.tela = tela
         self.assets = assets
+        self.transform = transform
 
         self.carregar_assets()
 
@@ -73,10 +75,10 @@ class DuendeRenderer:
             int(imagem.get_height() * escala_y)
         )
 
-        imagem = pygame.transform.smoothscale(
+        imagem = self.transform.escalar(
             imagem,
             (largura, altura)
-        ).convert_alpha()
+        )
 
         imagem.set_alpha(alpha)
 
@@ -123,7 +125,7 @@ class DuendeRenderer:
             )
         )
 
-        eye_scale = body_scale * 0.52
+        eye_scale = body_scale * 0.40
 
         # =================================
         # POSIÇÕES BASE
@@ -154,42 +156,14 @@ class DuendeRenderer:
         # OLHOS
         # =================================
 
-        olho_esq_x = body_x + (10 * escala * 15)
-        olho_dir_x = body_x - (10 * escala * 12)
+        olho_offset_x = body_width * 0.07
+        olho_offset_y = body_height * 0.06
 
-        olho_esq_y = body_y - (3 * escala * 11)
-        olho_dir_y = body_y - (3 * escala * 8)
+        olho_esq_x = body_x + olho_offset_x + 1
+        olho_dir_x = body_x - olho_offset_x
 
-        # =================================
-        # SOMBRA
-        # =================================
-
-        shadow_surface = pygame.Surface(
-            (140, 60),
-            pygame.SRCALPHA
-        )
-
-        pygame.draw.ellipse(
-            shadow_surface,
-            (0, 0, 0, 45),
-            (0, 0, 140, 60)
-        )
-
-        shadow_surface = pygame.transform.smoothscale(
-            shadow_surface,
-            (
-                int(140 * escala),
-                int(60 * escala)
-            )
-        )
-
-        self.tela.blit(
-            shadow_surface,
-            (
-                body_x - shadow_surface.get_width() // 2,
-                body_y + (20 * escala)
-            )
-        )
+        olho_esq_y = body_y - olho_offset_y + 4
+        olho_dir_y = body_y - olho_offset_y + 5
 
         # =================================
         # BRILHO MÁGICO

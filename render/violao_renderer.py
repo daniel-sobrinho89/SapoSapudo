@@ -1,20 +1,19 @@
-import pygame
-
-
 class ViolaoRenderer:
 
-    VIOLAO_SCALE = 0.10
+    VIOLAO_SCALE = 0.15
 
     def __init__(
         self,
         tela,
-        assets
+        assets,
+        transform
     ):
 
         self.tela = tela
+        self.transform = transform
 
         original = assets.carregar(
-            "sapudo/violao.png"
+            "sapudo/violao.webp"
         )
 
         largura = int(
@@ -27,7 +26,7 @@ class ViolaoRenderer:
             * self.VIOLAO_SCALE
         )
 
-        self.violao = pygame.transform.smoothscale(
+        self.violao = self.transform.escalar(
             original,
             (
                 largura,
@@ -46,7 +45,7 @@ class ViolaoRenderer:
                 entidade.y
             )
         )
-        # Não atribuir rect à entidade — entidade não deve depender de pygame
+
         self.tela.blit(
             self.violao,
             rect

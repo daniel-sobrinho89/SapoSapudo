@@ -4,7 +4,7 @@
 
 import math
 import random
-import pygame
+import kivy_adapter
 
 from systems.ia_duende import IADuende
 from systems.animacoes_duende import AnimacoesDuende
@@ -87,12 +87,8 @@ class DuendeNeblina:
         self.offset_drag_x = 0
         self.offset_drag_y = 0
 
-        self.cabeca_rect = pygame.Rect(
-            0,
-            0,
-            0,
-            0
-        )
+        self.corpo_rect = kivy_adapter.Rect(0, 0, 0, 0)
+        self.cabeca_rect = kivy_adapter.Rect(0, 0, 0, 0)
 
         # =================================
         # MOVIMENTO
@@ -131,7 +127,7 @@ class DuendeNeblina:
         # ESCALA
         # =================================
 
-        self.escala = 0.09
+        self.escala = 0.40
 
         # =================================
         # TRANSFORMAÇÃO SONO
@@ -266,16 +262,33 @@ class DuendeNeblina:
 
     def atualizar_hitboxes(
         self,
-        head_x,
-        head_y,
-        head_width,
-        head_height
+        body_x,
+        body_y,
+        body_width,
+        body_height
     ):
+        cabeca_w = int(body_width * 0.30)
+        cabeca_h = int(body_height * 0.30)
+
+        cabeca_x = int(body_x - cabeca_w / 2)
+        cabeca_y = int(
+            body_y
+            - body_height * 0.25
+            - cabeca_h / 2
+        )
+
         self.cabeca_rect.update(
-            int(head_x - head_width * 0.15),
-            int(head_y - head_height * 0.15),
-            int(head_width * 0.30),
-            int(head_height * 0.30)
+            cabeca_x,
+            cabeca_y,
+            cabeca_w,
+            cabeca_h
+        )
+
+        self.corpo_rect.update(
+            body_x - body_width // 2,
+            body_y - body_height // 2,
+            body_width,
+            body_height
         )
 
     # =====================================

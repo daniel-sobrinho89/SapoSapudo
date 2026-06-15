@@ -1,17 +1,19 @@
 import math
 
-import pygame
+import kivy_adapter
 
 class SementeRenderer:
 
     def __init__(
         self,
         tela,
-        assets
+        assets,
+        transform
     ):
 
         self.tela = tela
         self.assets = assets
+        self.transform = transform
 
         self.corpo_aberto = (
             assets.carregar(
@@ -56,7 +58,7 @@ class SementeRenderer:
             * escala
         )
 
-        sprite = pygame.transform.smoothscale(
+        sprite = self.transform.escalar(
             imagem,
             (
                 largura,
@@ -64,7 +66,7 @@ class SementeRenderer:
             )
         )
 
-        sprite = pygame.transform.rotate(
+        sprite = self.transform.rotacionar(
             sprite,
             rotacao
         )
@@ -83,8 +85,8 @@ class SementeRenderer:
         semente
     ):
 
-        escala_corpo = 0.08
-        escala_olho = 0.035
+        escala_corpo = 0.32
+        escala_olho = 0.13
 
         corpo = (
             self.corpo_sorrindo

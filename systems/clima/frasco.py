@@ -1,10 +1,18 @@
-import pygame
+import math
+import random
+
+import kivy_adapter
 
 
 class FrascoClimatico:
 
-    def __init__(self):
+    def __init__(
+        self,
+        transform
+    ):
 
+        self.transform = transform
+        
         # =====================================
         # POSIÇÃO GLOBAL DO FRASCO
         # =====================================
@@ -37,15 +45,15 @@ class FrascoClimatico:
         from render.asset_manager import asset_manager
 
         base_original = asset_manager.carregar(
-            "clima/frasco/frasco_base.png"
+            "clima/frasco/frasco_base.webp"
         )
 
         vidro_original = asset_manager.carregar(
-            "clima/frasco/frasco_vidro.png"
+            "clima/frasco/frasco_vidro.webp"
         )
 
         tampa_original = asset_manager.carregar(
-            "clima/frasco/frasco_tampa.png"
+            "clima/frasco/frasco_tampa.webp"
         )
 
         # =====================================
@@ -65,6 +73,20 @@ class FrascoClimatico:
         ).copy()
 
         # =====================================
+        # NEVOA
+        # =====================================
+        self.tempo_nevoa = 0.0
+        self.nevoa_bolhas = []
+        for _ in range(40):
+            self.nevoa_bolhas.append({
+                "x": random.random(),
+                "y": random.random(),
+                "raio": random.randint(15, 40),
+                "fase": random.uniform(0, 6.28),
+                "velocidade": random.uniform(0.3, 1.2)
+            })
+
+        # =====================================
         # ESCALAS DAS PEÇAS
         # =====================================
 
@@ -76,7 +98,7 @@ class FrascoClimatico:
         # BASE
         # =====================================
 
-        self.frasco_base = pygame.transform.smoothscale(
+        self.frasco_base = self.transform.escalar(
             base_crop,
             (
                 int(base_crop.get_width() * escala_base),
@@ -88,7 +110,7 @@ class FrascoClimatico:
         # VIDRO
         # =====================================
 
-        self.frasco_vidro = pygame.transform.smoothscale(
+        self.frasco_vidro = self.transform.escalar(
             vidro_crop,
             (
                 int(vidro_crop.get_width() * escala_vidro),
@@ -100,7 +122,7 @@ class FrascoClimatico:
         # TAMPA
         # =====================================
 
-        self.frasco_tampa = pygame.transform.smoothscale(
+        self.frasco_tampa = self.transform.escalar(
             tampa_crop,
             (
                 int(tampa_crop.get_width() * escala_tampa),
@@ -188,9 +210,9 @@ class FrascoClimatico:
         # SURFACE FINAL
         # =====================================
 
-        self.frasco_surface = pygame.Surface(
+        self.frasco_surface = kivy_adapter.Surface(
             (self.largura, self.altura),
-            pygame.SRCALPHA
+            kivy_adapter.SRCALPHA
         )
 
         # =====================================
@@ -234,14 +256,14 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.62
         )
 
-        self.area_interna = pygame.Rect(
+        self.area_interna = kivy_adapter.Rect(
             self.x + self.area_interna_offset_x,
             self.y + self.area_interna_offset_y,
             self.area_interna_width,
             self.area_interna_height
         )
 
-        self.area_particulas = pygame.Rect(
+        self.area_particulas = kivy_adapter.Rect(
             self.x + 40,
             self.y - 180,
             self.largura - 130,
@@ -272,12 +294,18 @@ class FrascoClimatico:
             self.frasco_vidro.get_height() * 0.55
         )
 
-        self.area_pote = pygame.Rect(
+        self.area_pote = kivy_adapter.Rect(
             pote_x,
             pote_y,
             pote_w,
             pote_h
         )
+
+    def atualizar(
+        self,
+        dt
+    ):
+        self.tempo_nevoa += dt
 
     # =====================================
     # RENDER
@@ -328,10 +356,131 @@ class FrascoClimatico:
     # =====================================
 
     def renderizar(self, tela, centro_y=None):
-
         self.atualizar_posicao(centro_y)
-
         tela.blit(
             self.frasco_surface,
             (self.x, self.y)
         )
+
+    def desenhar_nevoa(
+        self,
+        tela,
+        intensidade
+    ):
+        tempo = self.tempo_nevoa
+
+        if intensidade <= 0:
+            return
+
+        quantidade = len(self.nevoa_bolhas)
+
+        alpha_base = int(
+            (intensidade / 7.0)
+            * 120
+        )
+
+        for bolha in self.nevoa_bolhas[:quantidade]:
+            raio = bolha["raio"]
+
+            x = int(
+                self.area_pote.centerx
+                +
+                (bolha["x"] - 0.5)
+                * self.area_pote.width
+                * 0.8
+                +
+                math.cos(
+                    tempo * bolha["velocidade"] * 0.6
+                    + bolha["fase"]
+                ) * 8
+            )
+
+            y = int(
+                self.area_pote.centery
+                +
+                (bolha["y"] - 0.5)
+                * self.area_pote.height
+                * 0.8
+                +
+                math.sin(
+                    tempo * bolha["velocidade"]
+                    + bolha["fase"]
+                ) * 12
+            )
+
+            x = max(
+                self.area_pote.left + raio,
+                min(
+                    x,
+                    self.area_pote.right - raio
+                )
+            )
+
+            y = max(
+                self.area_pote.top + raio,
+                min(
+                    y,
+                    self.area_pote.bottom - raio
+                )
+            )
+
+            superficie = kivy_adapter.Surface(
+                (
+                    raio * 2,
+                    raio * 2
+                ),
+                kivy_adapter.SRCALPHA
+            )
+
+            kivy_adapter.draw.circle(
+                superficie,
+                (
+                    220,
+                    235,
+                    255,
+                    int(alpha_base * 0.15)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                raio
+            )
+
+            kivy_adapter.draw.circle(
+                superficie,
+                (
+                    220,
+                    235,
+                    255,
+                    int(alpha_base * 0.40)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                int(raio * 0.70)
+            )
+
+            kivy_adapter.draw.circle(
+                superficie,
+                (
+                    235,
+                    245,
+                    255,
+                    int(alpha_base * 0.80)
+                ),
+                (
+                    raio,
+                    raio
+                ),
+                int(raio * 0.35)
+            )
+
+            tela.blit(
+                superficie,
+                (
+                    x - raio,
+                    y - raio
+                )
+            )

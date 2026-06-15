@@ -2,9 +2,39 @@
 # MAIN.PY
 # =========================================
 
-import pygame
-import threading
 import os
+
+from systems.voz.media_session_android import MediaSessionAndroid
+from systems.voz.spotify_api import SpotifyApi
+IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
+
+if not IS_ANDROID:
+    os.environ["SDL_AUDIODRIVER"] = "alsa"
+    os.environ["AUDIODEV"] = "hw:2,0"
+
+if IS_ANDROID:
+    from android.permissions import (
+        request_permissions,
+        Permission
+    )
+    request_permissions([
+        Permission.RECORD_AUDIO
+    ])
+
+import logging
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
+
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.graphics import Rectangle, Color
+from kivy.graphics.texture import Texture
+from kivy.clock import Clock
+from kivy.core.window import Window
+
+import kivy_adapter
+import threading
 import math
 
 from config import *
@@ -15,67 +45,60 @@ from systems.animacoes_folha import AnimacoesFolha
 from systems.ambiente import Ambiente
 from systems.particulas.poeira import ParticulaPoeira
 from systems.clima.frasco import FrascoClimatico
+from systems.clima.evento_livro import EventoLivro
 
-from render.asset_manager import AssetManager
+from render.asset_manager import asset_manager
 from render.transform_utils import TransformUtils
 from render.background_renderer import BackgroundRenderer
-from render.sapo_renderer import SapoRenderer
+from render.sapo_renderer import SapoRenderer, PensamentoSapoRenderer
+from render.tamandua_renderer import TamanduaRenderer
+from render.barraca_renderer import BarracaRenderer
 
 from systems.clima.clima_service import ClimaService
 from systems.clima.sistema_nuvens import SistemaNuvens
+from systems.clima.nuvem import Nuvem
 
 from render.duende_renderer import DuendeRenderer
 from entities.duende_neblina import DuendeNeblina
 from systems.audio_manager import AudioManager
+
 from entities.violao import Violao
 from render.violao_renderer import ViolaoRenderer
 from entities.semente import Semente
 from render.semente_renderer import SementeRenderer
+from render.controle_renderer import ControleRenderer
+from systems.voz.reconhecedor_android import ReconhecedorAndroid
+from systems.voz.comando_voz import ComandoVoz
+from systems.voz.spotify_android import SpotifyAndroid
+from systems.voz.spotify_auth import SpotifyAuth
+from systems.voz.spotify_token_storage import SpotifyTokenStorage
+from systems.voz.spotify_callback import SpotifyCallback
 
 # =========================================
 # INIT
 # =========================================
 
-pygame.init()
-
-# =========================================
-# WINDOW
-# =========================================
-
-# detectar resolução física do dispositivo
-info = pygame.display.Info()
-LARGURA_REAL = info.current_w
-ALTURA_REAL = info.current_h
-
-# criar janela na resolução real
-screen = pygame.display.set_mode(
-    (LARGURA_REAL, ALTURA_REAL)
-)
-
-pygame.display.set_caption(
-    TITULO
-)
+# Kivy-based application: window size
+info_w, info_h = Window.width, Window.height
+LARGURA_REAL = int(info_w)
+ALTURA_REAL = int(info_h)
+DISTANCIA_VIOLAO = 20
 
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
-tela_virtual = pygame.Surface((LARGURA, ALTURA))
 
 # manter a variável `tela` como a superfície virtual para compatibilidade
+tela_virtual = kivy_adapter.Surface((LARGURA, ALTURA))
 tela = tela_virtual
 
-clock = pygame.time.Clock()
+clock = kivy_adapter.Clock()
 
 from utils.input import (
     init_scaling,
-    event_pos_virtual,
-    obter_posicao_ponteiro,
-    virtual_to_real
+    real_to_virtual
 )
 
 # inicializar escala para helpers de input
 init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
-
-# detectar se estamos rodando no Android (Buildozer)
-IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
 
 
 # =========================================
@@ -90,490 +113,1199 @@ centro_y = (
 )
 
 # =========================================
-# SYSTEMS
+# Kivy App wrapper
 # =========================================
 
-assets = AssetManager()
+class GameWidget(Widget):
+    @property
+    def tem_duende(self):
+        return self.duende is not None
 
-transform = TransformUtils()
+    @property
+    def tem_feira(self):
+        return self.tamandua_renderer is not None
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-background_renderer = BackgroundRenderer(
-    tela,
-    LARGURA,
-    ALTURA
-)
+        self.audio = AudioManager()
+        self.audio.callback_spotify_tocando = self.spotify_esta_tocando
 
-
-ambiente = Ambiente()
-
-sapo_renderer = SapoRenderer(
-    tela,
-    assets,
-    transform
-)
-
-animacoes_folha = AnimacoesFolha()
-
-duende = DuendeNeblina()
-
-renderer_duende = DuendeRenderer(
-    tela,
-    assets
-)
-
-violao = Violao()
-
-renderer_violao = ViolaoRenderer(
-    tela,
-    assets
-)
-
-duende.violao_monitorado = violao
-
-semente = Semente()
-
-renderer_semente = SementeRenderer(
-    tela,
-    assets
-)
-
-# =========================================
-# FRASCO
-# =========================================
-
-frasco_climatico = FrascoClimatico()
-
-frasco_climatico.atualizar_posicao(centro_y)
-
-particulas = [
-    ParticulaPoeira(
-        frasco_climatico.area_particulas,
-        frasco_climatico.area_pote
-    )
-    for _ in range(QUANTIDADE_POEIRA)
-]
-
-# associar área protegida (pote) para que partículas dentro do pote não sofram vento
-for p in particulas:
-    p.area_protegida = frasco_climatico.area_pote
-
-    p.protegido = (
-        p.area_protegida.collidepoint(
-            int(p.x),
-            int(p.y)
+        Clock.schedule_once(
+            lambda dt: self.audio.iniciar(),
+            2
         )
-    )
 
-# =========================================
-# CLIMA
-# =========================================
+        self.tecla_esquerda_pressionada = False
+        self.tecla_direita_pressionada = False
 
-clima_service = ClimaService()
+        Window.bind(
+            on_key_down=self.on_key_down,
+            on_key_up=self.on_key_up
+        )
 
-sistema_nuvens = SistemaNuvens(
-    frasco_climatico.area_interna
-)
+        # initialize game state (mirrors previous top-level init)
+        self.transform = TransformUtils()
+        self.ambiente = Ambiente()
+        self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
+        self.pensamento_renderer = PensamentoSapoRenderer()
+        self.animacoes_folha = AnimacoesFolha()
+        self.duende = None
+        self.renderer_duende = None
+        self.violao = Violao()
+        self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
+        self.spotify_andando_para_violao = False
+        self.semente = None
+        self.renderer_semente = None
+        self.frasco_climatico = FrascoClimatico(self.transform)
+        self.frasco_climatico.atualizar_posicao(centro_y)
+        self.particulas = [ParticulaPoeira(self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote) for _ in range(QUANTIDADE_POEIRA)]
+        self.evento_livro = EventoLivro(asset_manager, self.transform)        
+        self.evento_livro.particulas = self.particulas
+        for p in self.particulas:
+            p.area_protegida = self.frasco_climatico.area_pote
+            p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
+        
 
+        self.clima_service = ClimaService()
 
-# ENTIDADE SAPO
-sapo = Sapo(centro_x, centro_y)
+        self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform, self.clima_service)
+        self.controle_renderer = ControleRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
 
-# =========================================
-#   AUDIO
-# =========================================
+        self.tamandua_renderer = None
+        self.barraca_renderer = None
+        if self.background_renderer.cenario_feira:
+            self.carregar_cenario_feira()
+        else:
+            self.carregar_cenario_principal()
 
-audio = AudioManager()
+        self.sistema_nuvens = SistemaNuvens(self.transform)
+        self.sapo = Sapo(centro_x, centro_y, self.clima_service)
+        self.sapo.background_renderer = (self.background_renderer)
+        self.sapo.animacoes.callback_verificar_spotify = (
+            self.spotify_esta_tocando
+        )
+        # interaction state
+        self.drag_duende = False
+        self.drag_violao = False
+        self.cenario_feira_anterior = False
+        self.reconhecedor_voz = ReconhecedorAndroid()
+        self.tempo_sem_audio = 0
+        self.spotify_token = None
+        self.spotify_refresh_token = None
+        self.spotify_code_verifier = None
+        self.spotify_pendente = None
+        self.spotify_pendente_timer = 0
+        self.spotify_tentativas = 0
+        self.spotify_tocando_cache = False
+        self.spotify_cache_timer = 0
+        self.spotify_consulta_em_andamento = False
+        self.spotify_musica_atual = None
+        self.spotify_artista_atual = None
+        self.spotify_pensamento_timer = 0
+        self.spotify_mostrar_artista = True
+        SpotifyCallback.iniciar()
 
-audio.iniciar()
-
-# =========================================
-# LOOP
-# =========================================
-
-rodando = True
-
-drag_duende = False
-
-drag_violao = False
-
-while rodando:
-
-    dt = min(
-        clock.tick(FPS) / 1000.0,
-        0.05
-    )
-
-    # =====================================
-    # EVENTOS
-    # =====================================
-
-    for evento in pygame.event.get():
-
-        # converter posição do evento (resolução real -> virtual)
-        pos_virtual = event_pos_virtual(evento)
-
-        # mapear eventos de toque (Android) para tipos compatíveis com mouse
-        mtype = evento.type
-        mbutton = getattr(evento, 'button', None)
-
-        if getattr(pygame, 'FINGERDOWN', None) is not None and evento.type == pygame.FINGERDOWN:
-            mtype = pygame.MOUSEBUTTONDOWN
-            mbutton = 1
-
-        if getattr(pygame, 'FINGERMOTION', None) is not None and evento.type == pygame.FINGERMOTION:
-            mtype = pygame.MOUSEMOTION
-
-        if getattr(pygame, 'FINGERUP', None) is not None and evento.type == pygame.FINGERUP:
-            mtype = pygame.MOUSEBUTTONUP
-            mbutton = 1
-
-        if evento.type == pygame.QUIT:
-
-            rodando = False
-
-        # Android back button should quit (only on Android)
-        if IS_ANDROID and evento.type == pygame.KEYDOWN:
-            back_keys = [pygame.K_ESCAPE, getattr(pygame, 'K_AC_BACK', None)]
-            if evento.key in back_keys:
-                rodando = False
-
-        # =====================================
-        # MOUSE DOWN
-        # =====================================
-
-        if (
-            mtype == pygame.MOUSEBUTTONDOWN
-            and mbutton == 1
-        ):
-
-            if duende.cabeca_rect.collidepoint(
-                pos_virtual
-            ):
-                drag_duende = True
-
-                duende.iniciar_arraste(
-                    *pos_virtual
+        dados_spotify = SpotifyTokenStorage.carregar()
+        if dados_spotify:
+            self.spotify_code_verifier = (
+                dados_spotify.get(
+                    "code_verifier"
                 )
+            )
 
-
-            elif renderer_violao.obter_rect(violao).collidepoint(
-                pos_virtual
-            ):
-
-                drag_violao = True
-
-                violao.iniciar_arraste(
-                    *pos_virtual
+            self.spotify_token = (
+                dados_spotify.get(
+                    "access_token"
                 )
+            )
 
-            if (
-                violao.acoplado
-                and sapo_renderer.corpo_rect.collidepoint(
-                    pos_virtual
+            self.spotify_refresh_token = (
+                dados_spotify.get(
+                    "refresh_token"
                 )
-            ):
-                violao.acoplado = False
-
-                sapo.parar_violao()
-
-                drag_violao = True
-
-                audio.alternar()
-                
-
-                violao.iniciar_arraste(
-                    *pos_virtual
-                )
-
-        # =====================================
-        # DRAG
-        # =====================================
-
-        if mtype == pygame.MOUSEMOTION:
-
-            if drag_violao:
-
-                violao.mover_arraste(
-                    *pos_virtual
-                )
-
-            if drag_duende:
-
-                duende.mover_arraste(
-                    *pos_virtual
-                )
-
-        # =====================================
-        # SOLTOU
-        # =====================================
-
-        if (
-            mtype == pygame.MOUSEBUTTONUP
-            and mbutton == 1
-        ):
-
-            if drag_violao:
-
-                drag_violao = False
-
-                violao.finalizar_arraste()
-
-                area_sapo = pygame.Rect(
-                    centro_x - 80,
-                    centro_y - 80,
-                    160,
-                    160
-                )
-
-                if (
-                    area_sapo.collidepoint(
-                        violao.x,
-                        violao.y
+            )
+            if self.spotify_refresh_token:
+                resposta = (
+                    SpotifyAuth.renovar_token(
+                        self.spotify_refresh_token
                     )
-                    and sapo.pode_receber_violao()
-                ):
+                )
+                if resposta:
+                    self.spotify_token = (
+                        resposta.get(
+                            "access_token"
+                        )
+                    )
 
-                    violao.acoplado = True
+                    novo_refresh = (
+                        resposta.get(
+                            "refresh_token"
+                        )
+                    )
 
-                    sapo.iniciar_violao()
+                    if novo_refresh:
+                        self.spotify_refresh_token = (
+                            novo_refresh
+                        )
 
-                    violao.x = centro_x + 5
-                    violao.y = centro_y + 20
+                    SpotifyTokenStorage.salvar(
+                        self.spotify_token,
+                        self.spotify_refresh_token,
+                        self.spotify_code_verifier
+                    )
+                    print(
+                        "[SPOTIFY] Token renovado"
+                    )
+
+        # drawing setup
+        with self.canvas:
+            self.texture = Texture.create(
+                size=(LARGURA, ALTURA),
+                colorfmt='rgba'
+            )
+            self.texture.flip_vertical()
+            self.rect = Rectangle(
+                texture=self.texture,
+                pos=(0, 0),
+                size=Window.size
+            )
+
+        # schedule updates
+        Clock.schedule_interval(self.update, 1.0 / FPS)
+
+    def desligar_microfone(self):
+        self.controle_renderer.microfone_ligado = False
+        self.tempo_sem_audio = 0
+        try:
+            self.reconhecedor_voz.ativo_usuario = False
+            self.reconhecedor_voz.parar()
+            self.reconhecedor_voz.destruir()
+        except Exception as ex:
+            print(f"[VOZ] Erro ao desligar: {ex}")
+
+        self.reconhecedor_voz = ReconhecedorAndroid()
+
+    def iniciar_login_spotify(self):
+        self.spotify_code_verifier = SpotifyAuth.gerar_code_verifier()
+
+        SpotifyTokenStorage.salvar(
+            self.spotify_token,
+            self.spotify_refresh_token,
+            self.spotify_code_verifier
+        )
+
+        url = (
+            SpotifyAuth.obter_url_login(
+                self.spotify_code_verifier
+            )
+        )
+
+        SpotifyAndroid.abrir_url(url)
+
+    def renovar_token_spotify(self):
+
+        if not self.spotify_refresh_token:
+            return False
+
+        resposta = SpotifyAuth.renovar_token(
+            self.spotify_refresh_token
+        )
+
+        if not resposta:
+            return False
+
+        self.spotify_token = resposta.get(
+            "access_token"
+        )
+
+        novo_refresh = resposta.get(
+            "refresh_token"
+        )
+
+        if novo_refresh:
+            self.spotify_refresh_token = (
+                novo_refresh
+            )
+
+        SpotifyTokenStorage.salvar(
+            self.spotify_token,
+            self.spotify_refresh_token,
+            self.spotify_code_verifier
+        )
+
+        print(
+            "[SPOTIFY] Token renovado automaticamente"
+        )
+
+        return True
+
+    def obter_dispositivo_ativo_com_renovacao(self):
+        if not self.spotify_token:
+            return None
+
+        device_id = (
+            SpotifyApi.obter_dispositivo_ativo(
+                self.spotify_token
+            )
+        )
+        if device_id == "TOKEN_EXPIRADO":
+            if self.renovar_token_spotify():
+                device_id = (
+                    SpotifyApi.obter_dispositivo_ativo(
+                        self.spotify_token
+                    )
+                )
+
+        return device_id
+
+    def executar_com_renovacao(self, funcao):
+        resultado = funcao()
+        if resultado is not None:
+            return resultado
+
+        if not self.renovar_token_spotify():
+            return None
+
+        return funcao()
+
+    def mostrar_pensamento_spotify_erro(self):
+        self.sapo.pensamentos.texto = (
+            "Não estou conseguindo visitar este universo musical agora."
+        )
+
+        self.sapo.pensamentos.tempo_restante = 6
+
+    def spotify_esta_tocando(self):
+        if not self.spotify_token:
+            return False
+
+        resultado = SpotifyApi.esta_tocando(
+            self.spotify_token
+        )
+        if resultado is not None:
+            return resultado
+
+        if self.renovar_token_spotify():
+            resultado = SpotifyApi.esta_tocando(
+                self.spotify_token
+            )
+            if resultado is not None:
+                return resultado
+
+        return False
+
+    def spotify_ativo(self):
+        return (
+            self.spotify_token
+            and self.spotify_esta_tocando()
+        )
+
+    def atualizar_animacao_spotify(self, dt):
+        if (
+            not self.violao
+            or not self.sapo.pode_receber_violao()
+        ):
+            return
+
+        animacoes = self.sapo.animacoes
+        spotify_tocando = self.spotify_tocando_cache
+
+        # =====================================
+        # PENSAMENTOS SOBRE A MÚSICA
+        # =====================================
+
+        if (
+            spotify_tocando
+            and self.spotify_artista_atual
+            and self.spotify_musica_atual
+        ):
+            self.spotify_pensamento_timer -= dt
+
+            if self.spotify_pensamento_timer <= 0:
+
+                self.spotify_pensamento_timer = 10
+
+                if self.spotify_mostrar_artista:
+
+                    self.sapo.pensamentos.texto = (
+                        f"Ihuuu! Estou ouvindo {self.spotify_artista_atual}"
+                    )
 
                 else:
 
-                    violao.iniciar_queda()
+                    self.sapo.pensamentos.texto = (
+                        f"Lá lá lá... {self.spotify_musica_atual}"
+                    )
 
-                    if duende.pode_resgatar_violao():
+                self.sapo.pensamentos.tempo_restante = 10
 
-                        # só teleportar se realmente estiver longe o suficiente
-                        distancia_violao = abs(violao.x - duende.x)
-                        MIN_TELEPORT_DIST = 120
+                self.spotify_mostrar_artista = (
+                    not self.spotify_mostrar_artista
+                )
 
-                        if not duende.consegue_alcancar_antes_da_queda(
-                            violao
-                        ) and distancia_violao > MIN_TELEPORT_DIST:
-                            duende.teleportar_para_violao(
-                                violao
-                            )
+        # =====================================
+        # SPOTIFY TOCANDO
+        # =====================================
 
-                        duende.iniciar_resgate_violao(
-                            violao
+        if spotify_tocando:
+
+            if (
+                not animacoes.tocando_violao
+                and not animacoes.pegando_violao
+                and not animacoes.levantando_violao
+                and not animacoes.guardando_violao
+            ):
+                self.iniciar_sequencia_spotify()
+
+            return
+
+        # =====================================
+        # SPOTIFY PAROU
+        # =====================================
+
+        if (
+            animacoes.tocando_violao
+            and not spotify_tocando
+        ):
+            animacoes.iniciar_levantar_violao()
+
+    def iniciar_sequencia_spotify(self):
+        animacoes = self.sapo.animacoes
+
+        if (
+            self.violao.acoplado
+            and (
+                animacoes.pegando_violao
+                or animacoes.tocando_violao
+            )
+        ):
+            return
+
+        if (
+            self.spotify_andando_para_violao
+            and not animacoes.andando_direita
+            and not animacoes.andando_esquerda
+        ):
+            self.spotify_andando_para_violao = False
+
+        if (
+            not self.sapo.pode_caminhar()
+            or self.spotify_andando_para_violao
+            or self.sapo.animacoes.pegando_violao
+            or self.sapo.animacoes.tocando_violao
+            or self.sapo.animacoes.levantando_violao
+            or self.sapo.animacoes.guardando_violao
+        ):
+            return
+
+        sapo_x = self.sapo.x
+        violao_x = self.violao.x
+
+        if abs(sapo_x - violao_x) < DISTANCIA_VIOLAO:
+            if not self.violao.acoplado:
+                self.violao.acoplado = True
+
+            if (
+                self.spotify_tocando_cache
+                and not animacoes.pegando_violao
+                and not animacoes.tocando_violao
+                and not animacoes.levantando_violao
+                and not animacoes.guardando_violao
+            ):
+                self.sapo.iniciar_violao()
+            else:
+                self.sapo.animacoes.iniciar_levantar_violao()
+
+            return
+
+        self.spotify_andando_para_violao = True
+
+        if sapo_x < violao_x:
+            self.sapo.animacoes.iniciar_andar_direita()
+        else:
+            self.sapo.animacoes.iniciar_andar_esquerda()
+
+    def iniciar_sequencia_spotify_com_violao(self):
+        animacoes = self.sapo.animacoes
+        if (
+            animacoes.pegando_violao
+            or animacoes.tocando_violao
+            or animacoes.levantando_violao
+            or animacoes.guardando_violao
+        ):
+            return
+
+        self.violao.acoplado = True
+        if self.spotify_tocando_cache:
+            self.sapo.iniciar_violao()
+        else:
+            animacoes.iniciar_levantar_violao()
+
+    def atualizar_estado_spotify(self):
+        try:
+            self.spotify_tocando_cache = self.spotify_esta_tocando()
+
+            if (
+                self.spotify_token
+                and self.spotify_tocando_cache
+            ):
+                dados = (
+                    SpotifyApi.obter_musica_atual(self.spotify_token)
+                )
+                if dados:
+                    self.spotify_musica_atual = (dados["musica"])
+                    self.spotify_artista_atual = (dados["artista"])
+
+                    if (
+                        dados.get("duracao_ms")
+                        and dados.get("progresso_ms")
+                    ):
+                        restante = (
+                            dados["duracao_ms"]
+                            - dados["progresso_ms"]
+                        ) / 1000
+
+                        self.spotify_cache_timer = max(10, restante + 2)
+        except Exception:
+            pass
+        finally:
+            self.spotify_consulta_em_andamento = False
+
+    def atualizar_dados_musica_atual(self):
+        if not self.spotify_token:
+            return
+        try:
+            dados = SpotifyApi.obter_musica_atual(self.spotify_token)
+
+            if dados == "TOKEN_EXPIRADO":
+                if self.renovar_token_spotify():
+                    dados = SpotifyApi.obter_musica_atual(
+                        self.spotify_token
+                    )
+
+            if dados:
+                self.spotify_musica_atual = (
+                    dados["musica"]
+                )
+                self.spotify_artista_atual = (
+                    dados["artista"]
+                )
+                self.spotify_pensamento_timer = 0
+                self.spotify_mostrar_artista = True
+        except Exception as ex:
+            print(
+                f"[SPOTIFY] Erro ao obter música: {ex}"
+            )
+
+    def carregar_cenario_feira(self):
+
+        self.tamandua_renderer = TamanduaRenderer(
+            tela,
+            self.transform
+        )
+
+        self.barraca_renderer = BarracaRenderer(
+            tela,
+            self.transform,
+            LARGURA,
+            ALTURA
+        )
+
+        x_barraca, y_barraca = (
+            self.barraca_renderer.obter_posicao()
+        )
+
+        self.tamandua_renderer.definir_posicao(
+            x_barraca + 33,
+            y_barraca - 25
+        )
+
+    def descarregar_cenario_feira(self):
+
+        self.tamandua_renderer = None
+        self.barraca_renderer = None
+
+    def carregar_cenario_principal(self):
+
+        self.duende = DuendeNeblina()
+        self.renderer_duende = DuendeRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
+        self.duende.violao_monitorado = self.violao
+
+        self.semente = Semente()
+
+        self.renderer_semente = SementeRenderer(
+            tela,
+            asset_manager,
+            self.transform
+        )
+
+    def descarregar_cenario_principal(self):
+
+        self.duende = None
+        self.renderer_duende = None
+
+        self.semente = None
+        self.renderer_semente = None
+
+    def on_size(self, *args):
+        self.rect.size = (self.width, self.height)
+
+        init_scaling(
+            self.width,
+            self.height,
+            LARGURA,
+            ALTURA
+        )
+
+    def on_pos(self, *args):
+        self.rect.pos = self.pos
+
+    def on_touch_down(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
+
+        if (
+            self.controle_renderer.rect_microfone
+            .collidepoint(pos_virtual)
+        ):
+            self.controle_renderer.microfone_ligado = (
+                not self.controle_renderer.microfone_ligado
+            )
+
+            if self.controle_renderer.microfone_ligado:
+                self.tempo_sem_audio = 0
+                self.reconhecedor_voz.ativo_usuario = True
+                self.reconhecedor_voz.iniciar()
+            else:
+                self.reconhecedor_voz.ativo_usuario = False
+                self.reconhecedor_voz.parar()
+
+            return True
+
+        # if IS_ANDROID:
+        if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
+            self.controle_renderer.botao_esquerda_pressionado = True
+            self.sapo.iniciar_controle_esquerda()
+            return True
+
+        if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
+            self.controle_renderer.botao_direita_pressionado = True
+            self.sapo.iniciar_controle_direita()
+            return True
+
+        # =========================
+        # LIVRO
+        # =========================
+        if self.evento_livro.livro_aberto_visivel:
+            self.evento_livro.fechar_livro_aberto()
+            return True
+
+        if self.evento_livro.livro_visivel:
+            if (
+                self.evento_livro.rect_livro
+                and self.evento_livro.rect_livro.collidepoint(pos_virtual)
+            ):
+                self.evento_livro.ocultar_livro_por_clique()
+                return True
+
+        # =========================
+        # POEIRA
+        # =========================
+        if not self.evento_livro.livro_visivel:
+            for particula in self.particulas:
+                if (
+                    particula.ativa
+                    and particula.obter_rect().collidepoint(pos_virtual)
+                ):
+                    particula.ativa = False
+                    self.evento_livro.registrar_clique_poeira()
+                    return True
+
+        # =========================
+        # DUENDE
+        # =========================
+
+        if (
+            self.tem_duende
+            and self.duende.corpo_rect.collidepoint(pos_virtual)
+        ):
+            self.drag_duende = True
+            self.duende.iniciar_arraste(*pos_virtual)
+
+            return True
+
+        # =========================
+        # VIOLÃO ACOPLADO AO SAPO
+        # =========================
+
+        if self.violao.acoplado:
+            distancia = (
+                (pos_virtual[0] - self.sapo.x) ** 2 +
+                (pos_virtual[1] - self.sapo.y) ** 2
+            ) ** 0.5
+
+            if distancia < 120:
+                self.violao.acoplado = False
+                if self.spotify_token:
+                    SpotifyApi.pause(
+                        self.spotify_token
+                    )
+                    self.spotify_tocando_cache = False
+                else:
+                    MediaSessionAndroid.pause()
+                    self.spotify_tocando_cache = False
+                
+                self.sapo.parar_violao()
+                self.drag_violao = True
+                # self.audio.alternar_musica_violao() REMOVER
+                self.violao.iniciar_arraste(
+                    *pos_virtual
+                )
+                return True
+
+        # =========================
+        # VIOLÃO NORMAL
+        # =========================
+
+        if self.renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
+            self.drag_violao = True
+            self.violao.iniciar_arraste(*pos_virtual)
+
+            return True
+
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
+
+        if self.drag_violao:
+            self.violao.mover_arraste(*pos_virtual)
+        if (
+            self.drag_duende
+            and self.tem_duende
+        ):
+            self.duende.mover_arraste(*pos_virtual)
+
+        if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
+            self.controle_renderer.botao_esquerda_pressionado = False
+
+        if not self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
+            self.controle_renderer.botao_direita_pressionado = False
+
+    def on_touch_up(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
+
+        self.controle_renderer.botao_esquerda_pressionado = False
+        self.controle_renderer.botao_direita_pressionado = False
+        self.sapo.parar_controle_esquerda()
+        self.sapo.parar_controle_direita()
+
+        if self.drag_violao:
+            self.drag_violao = False
+            self.violao.finalizar_arraste()
+            area_sapo = kivy_adapter.Rect(self.sapo.x - 80, self.sapo.y - 80, 160, 160)
+            if (
+                area_sapo.collidepoint(
+                    self.violao.x,
+                    self.violao.y
+                )
+                and self.sapo.pode_receber_violao()
+            ):
+                self.violao.acoplado = True
+                self.violao.x = self.sapo.x + 5
+                self.violao.y = self.sapo.y + 20
+                if self.spotify_token:
+                    device_id = self.obter_dispositivo_ativo_com_renovacao()
+                    if device_id:
+                        sucesso = SpotifyApi.play(
+                            self.spotify_token,
+                            device_id
+                        )
+                        if sucesso:
+                            self.spotify_tocando_cache = True
+                            self.iniciar_sequencia_spotify_com_violao()
+                            self.atualizar_dados_musica_atual()
+                    else:
+                        self.sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
+                        self.sapo.pensamentos.tempo_restante = 5
+
+                else:
+                    MediaSessionAndroid.play()
+                    self.spotify_tocando_cache = True
+                    self.iniciar_sequencia_spotify_com_violao()
+            else:
+                self.violao.iniciar_queda()
+                if (
+                    self.tem_duende
+                    and self.duende.pode_resgatar_violao()
+                ):
+                    distancia_violao = abs(self.violao.x - self.duende.x)
+                    MIN_TELEPORT_DIST = 120
+                    if not self.duende.consegue_alcancar_antes_da_queda(self.violao) and distancia_violao > MIN_TELEPORT_DIST:
+                        self.duende.teleportar_para_violao(self.violao)
+                    self.duende.iniciar_resgate_violao(self.violao)
+
+        if (
+            self.drag_duende
+            and self.tem_duende
+        ):
+            self.drag_duende = False
+            self.duende.finalizar_arraste(self.frasco_climatico.area_interna)
+            if self.duende.esta_dentro_do_frasco(self.frasco_climatico.area_interna):
+                self.duende.animacoes.iniciar_sono()
+                self.duende.animacoes.iniciar_sono_programado()
+            elif self.duende.animacoes.dormindo:
+                self.duende.animacoes.iniciar_acordar()
+                self.duende.animacoes.cancelar_sono_programado()
+                self.duende.escolher_novo_destino()
+
+    def on_key_down(
+        self,
+        window,
+        key,
+        scancode,
+        codepoint,
+        modifiers
+    ):
+        # seta esquerda
+        if key == 276:
+            self.tecla_esquerda_pressionada = True
+            self.sapo.iniciar_controle_esquerda()
+
+        # seta direita
+        if key == 275:
+            self.tecla_direita_pressionada = True
+            self.sapo.iniciar_controle_direita()
+
+        return True
+
+    def on_key_up(
+        self,
+        window,
+        key,
+        scancode
+    ):
+        if key == 276:
+            self.tecla_esquerda_pressionada = False
+            self.sapo.parar_controle_esquerda()
+
+        if key == 275:
+            self.tecla_direita_pressionada = False
+            self.sapo.parar_controle_direita()
+
+        return True
+
+    def update(self, dt):
+        # cap dt
+        dt = min(dt, 0.05)
+
+        # clima update
+        if self.clima_service.precisa_atualizar():
+            def atualizar_clima():
+                self.clima_service.atualizar()
+            threading.Thread(target=atualizar_clima, daemon=True).start()
+
+        self.clima_service.atualizar_visual(dt)
+
+        self.spotify_cache_timer -= dt
+        if (
+            self.spotify_cache_timer <= 0
+            and not self.spotify_consulta_em_andamento
+        ):
+            self.spotify_consulta_em_andamento = True
+            self.spotify_cache_timer = float("inf")
+            threading.Thread(
+                target=self.atualizar_estado_spotify,
+                daemon=True
+            ).start()
+
+        if self.spotify_pendente:
+            self.spotify_pendente_timer -= dt
+            if self.spotify_pendente_timer <= 0:
+                device_id = self.obter_dispositivo_ativo_com_renovacao()
+                if not device_id:
+                    self.spotify_tentativas -= 1
+                    if self.spotify_tentativas <= 0:
+                        self.spotify_pendente = None
+                        self.sapo.pensamentos.texto = ("Não encontrei um Spotify ativo.")
+                        self.sapo.pensamentos.tempo_restante = 5
+                        self.spotify_pendente = None
+                        self.spotify_pendente_timer = 0
+                        self.spotify_tentativas = 0
+                    else:
+                        self.spotify_pendente_timer = 5
+                else:
+                    uri = (
+                        SpotifyApi.buscar_faixa(
+                            self.spotify_token,
+                            self.spotify_pendente
+                        )
+                    )
+                    if uri:
+                        SpotifyApi.transferir_playback(
+                            self.spotify_token,
+                            device_id
                         )
 
-            if drag_duende:
+                        SpotifyAndroid.abrir_spotify()
 
-                drag_duende = False
+                        sucesso = SpotifyApi.tocar_faixa(
+                            self.spotify_token,
+                            device_id,
+                            uri
+                        )
 
-                duende.finalizar_arraste(frasco_climatico.area_interna)
+                        if sucesso:
+                            self.iniciar_sequencia_spotify()
+                            self.atualizar_dados_musica_atual()    
 
-                if duende.esta_dentro_do_frasco(
-                    frasco_climatico.area_interna
-                ):
+                    self.spotify_pendente = None
+                    self.spotify_tentativas = 0
+                
+        if (
+            not self.spotify_token
+            and self.spotify_code_verifier
+        ):
+            code = SpotifyCallback.obter_code()
 
-                    duende.animacoes.iniciar_sono()
+            if code:
+                resposta = (
+                    SpotifyAuth.trocar_code_por_token(
+                        code,
+                        self.spotify_code_verifier
+                    )
+                )
 
-                    duende.animacoes.iniciar_sono_programado()
+                if resposta:
+                    self.spotify_token = (
+                        resposta["access_token"]
+                    )
 
-                elif duende.animacoes.dormindo:
+                    self.spotify_refresh_token = (
+                        resposta["refresh_token"]
+                    )
 
-                    duende.animacoes.iniciar_acordar()
+                    SpotifyTokenStorage.salvar(
+                        self.spotify_token,
+                        self.spotify_refresh_token,
+                        self.spotify_code_verifier
+                    )
 
-                    duende.animacoes.cancelar_sono_programado()
+                    if self.spotify_pendente:
+                        self.spotify_pendente_timer = 6
+                        self.spotify_tentativas = 10
 
-                    duende.escolher_novo_destino()
+        if self.controle_renderer.microfone_ligado:
+            texto = self.reconhecedor_voz.obter_texto()
+        
+            if texto:
+                print(f"[VOZ] TEXTO: [{texto}]")
 
-    # =====================================
-    # CLIMA
-    # =====================================
+                self.tempo_sem_audio = 0
+                comando_spotify = (
+                    ComandoVoz.obter_comando_spotify(
+                        texto
+                    )
+                )
+                if comando_spotify:
+                    acao = comando_spotify["acao"]
+                    sucesso = False
+                    
+                    if acao == "pause":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.pause(
+                                self.spotify_token
+                            )
+                        else:
+                            MediaSessionAndroid.pause()
+                            sucesso = True
 
-    if clima_service.precisa_atualizar():
+                        self.spotify_tocando_cache = False
+                        self.sapo.parar_violao()
+                    elif acao == "play":
+                        if self.spotify_token:
+                            device_id = self.obter_dispositivo_ativo_com_renovacao()
+                            if device_id:
+                                sucesso = SpotifyApi.play(
+                                    self.spotify_token,
+                                    device_id
+                                )
+                                self.spotify_tocando_cache = True                     
+                        else:
+                            MediaSessionAndroid.play()
+                            sucesso = True
+                    elif acao == "next":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.next(
+                                self.spotify_token
+                            )
+                            self.spotify_tocando_cache = True
+                        else:
+                            MediaSessionAndroid.next()
+                            sucesso = True
+                    elif acao == "previous":
+                        if self.spotify_token:
+                            sucesso = SpotifyApi.previous(
+                                self.spotify_token
+                            )
+                            self.spotify_tocando_cache = True
+                        else:
+                            MediaSessionAndroid.previous()
+                            sucesso = True
+                    elif acao == "buscar":
+                        if not self.spotify_token:
+                            self.spotify_pendente = (
+                                comando_spotify[
+                                    "pesquisa"
+                                ]
+                            )
+                            self.spotify_pendente_timer = 5
+                            self.spotify_tentativas = 5
+                            self.iniciar_login_spotify()
+                            self.sapo.pensamentos.texto = (
+                                "Preciso conhecer seu Spotify primeiro."
+                            )
+                            self.sapo.pensamentos.tempo_restante = 5
 
-        def atualizar_clima():
+                            return
 
-            clima_service.atualizar()
+                        pesquisa = (
+                            comando_spotify[
+                                "pesquisa"
+                            ]
+                        )
+                        if pesquisa:
+                            uri = SpotifyApi.buscar_faixa(
+                                self.spotify_token,
+                                pesquisa
+                            )
+                            if uri:
+                                device_id = self.obter_dispositivo_ativo_com_renovacao()
+                                if not device_id:
+                                    self.spotify_pendente = pesquisa
+                                    self.spotify_pendente_timer = 3
+                                    self.spotify_tentativas = 5
+                                    self.sapo.pensamentos.texto = "Abrindo seu Spotify..."
+                                    self.sapo.pensamentos.tempo_restante = 3
+                                    return
 
-        threading.Thread(
-            target=atualizar_clima,
-            daemon=True
-        ).start()
+                                SpotifyApi.transferir_playback(
+                                    self.spotify_token,
+                                    device_id
+                                )
 
-    clima_service.atualizar_visual(dt)
+                                sucesso = SpotifyApi.tocar_faixa(
+                                    self.spotify_token,
+                                    device_id,
+                                    uri
+                                )
+                                self.spotify_tocando_cache = True
+                            else:
+                                sucesso = False
+                        else:
+                            MediaSessionAndroid.play()
+                            sucesso = True
 
-    # pequena contribuição do vento climático para o ambiente local (com sinal de direção)
-    direcao_rad = math.radians(clima_service.wind_direction + 180)
-    sinal_direcao = math.sin(direcao_rad)
+                    self.desligar_microfone()
 
-    influencia_clima = (
-        sinal_direcao
-        * clima_service.wind_speed
-        * 0.15
-    )
+                    if (
+                        acao != "pause" 
+                        and sucesso
+                    ):
+                        self.iniciar_sequencia_spotify()
+                        self.atualizar_dados_musica_atual()
+                    elif not sucesso:
+                        self.mostrar_pensamento_spotify_erro()
 
-    if getattr(
-        clima_service,
-        'rajada_ativa',
-        False
-    ):
-        influencia_clima += (
-            sinal_direcao
-            * clima_service.wind_speed
-            * 0.35
+                elif ComandoVoz.eh_comando_feira(texto):
+                    self.desligar_microfone()
+                    self.sapo.comando_ir_feira = True
+                    a = self.sapo.animacoes
+                    self.sapo.andar_iniciado_por_controle = False
+                    if self.sapo.pode_caminhar():
+                        a.proxima_tentativa_caminhada = None
+                        a._ultimo_frame_andar = -1
+                        a.iniciar_andar_esquerda()
+            else:
+                self.tempo_sem_audio += dt
+                if self.tempo_sem_audio > 10:
+                    self.controle_renderer.microfone_ligado = False
+                    try:
+                        self.reconhecedor_voz.ativo_usuario = False
+                        self.reconhecedor_voz.parar()
+                        self.reconhecedor_voz.destruir()
+                    except Exception as ex:
+                        print(f"[VOZ] Erro ao destruir: {ex}")
+
+                    self.reconhecedor_voz = ReconhecedorAndroid()
+                    self.tempo_sem_audio = 0
+
+        direcao_rad = math.radians(self.clima_service.wind_direction + 180)
+        sinal_direcao = math.sin(direcao_rad)
+        influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
+        self.ambiente.atualizar(
+            dt,
+            influencia_clima
         )
 
-    # aumentar sensibilidade da folha durante rajada para que ela respeite a rajada_vento
-    if getattr(clima_service, 'rajada_ativa', False):
-        animacoes_folha.intensidade_vento = 5.0
-    else:
-        animacoes_folha.intensidade_vento = 1.8
+        if getattr(self.clima_service, 'rajada_ativa', False):
+            influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
 
-    # =====================================
-    # UPDATE
-    # =====================================
+        if getattr(self.clima_service, 'rajada_ativa', False):
+            self.animacoes_folha.intensidade_vento = 5.0
+        else:
+            self.animacoes_folha.intensidade_vento = 1.8
 
-    # As partículas mantêm a referência a `area_pote` (retângulo do frasco)
-    # O retângulo é atualizado em `frasco_climatico.atualizar_posicao`,
-    # então não precisamos resetar as partículas a cada frame.
+        # updates
+        from systems.fisica import sistema_fisica
+        if self.violao.caindo:
+            sistema_fisica.aplicar_forca_vento(self.violao, self.clima_service, dt, sensibilidade=0.6)
 
-    ambiente.atualizar(dt, influencia_clima)
+        self.violao.atualizar(dt)
+        self.frasco_climatico.atualizar(dt)
+        self.evento_livro.atualizar(dt)
+        self.sistema_nuvens.atualizar_area_interna()
 
-    # aplicar vento ao violão quando estiver caindo (usa clima_service.wind_speed, sem rajada extra)
-    from systems.fisica import sistema_fisica
-    if violao.caindo:
-        sistema_fisica.aplicar_forca_vento(violao, clima_service, dt, sensibilidade=0.6)
+        Nuvem.finalizar_carregamento()
+        self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
-    violao.atualizar(dt)
+        events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
 
-    sistema_nuvens.atualizar_area_interna(
-        frasco_climatico.area_interna
-    )
+        self.atualizar_animacao_spotify(dt)
 
-    sistema_nuvens.atualizar(
-        dt,
-        clima_service.cloudiness_visual,
-        clima_service.future_cloudiness_1h,
-        clima_service.future_cloudiness_2h,
-        clima_service.future_cloudiness_3h,
-        clima_service.wind_direction,
-        clima_service.wind_speed
-    )
+        if self.spotify_andando_para_violao:
+            distancia = abs(
+                self.sapo.x
+                - self.violao.x
+            )
+            if distancia <= DISTANCIA_VIOLAO:
+                self.spotify_andando_para_violao = False
+                self.sapo.animacoes.andando_direita = False
+                self.sapo.animacoes.andando_esquerda = False
+                self.violao.acoplado = True
 
-    events = sapo.atualizar(
-        dt,
-        ambiente,
-        animacoes_folha,
-        violao
-    )
+                if self.spotify_tocando_cache:
+                    self.sapo.iniciar_violao()
+                else:
+                    self.sapo.animacoes.iniciar_levantar_violao()
 
-    # eventos retornados por `Sapo.atualizar` que encapsulam flags internas
-    if events.get("start_audio"):
-        audio.alternar()
+        if (
+            not self.cenario_feira_anterior
+            and self.background_renderer.cenario_feira
+        ):
+            self.sistema_nuvens.limpar()
+            self.descarregar_cenario_principal()
 
-    if events.get("stop_audio"):
-        audio.alternar()
+            import gc
+            gc.collect()
 
-    # Aplicar vento climático diretamente às entidades principais
-    from systems.fisica import sistema_fisica
+            self.carregar_cenario_feira()
 
-    # semente já recebe clima_service dentro de sua atualização
-    sistema_fisica.aplicar_forca_vento(sapo, clima_service, dt, sensibilidade=0.25)
+        if (
+            self.cenario_feira_anterior
+            and not self.background_renderer.cenario_feira
+        ):
+            self.sistema_nuvens.limpar()
+            self.descarregar_cenario_feira()
 
+            import gc
+            gc.collect()
 
-    # =====================================
-    # PONTOS DE INTERESSE
-    # =====================================
+            self.carregar_cenario_principal()
 
-    sapo_x = sapo.x
-    sapo_y = sapo.y
-
-    pote_x = centro_x - 260
-    pote_y = centro_y + 40
-
-    # =====================================
-    # DUENDE
-    # =====================================
-
-    duende.atualizar(
-        dt,
-        sapo,
-        pote_x,
-        pote_y,
-        clima_service,
-        frasco_climatico.area_interna,
-        ambiente
-    )
-
-    sistema_fisica.aplicar_forca_vento(duende, clima_service, dt, sensibilidade=0.5)
-
-    # =====================================
-    # SEMENTE
-    # =====================================
-
-    semente.atualizar(
-        dt,
-        clima_service
-    )
-
-    # =====================================
-    # PARTÍCULAS
-    # =====================================
-
-    for particula in particulas:
-
-        particula.atualizar(
-            ambiente,
-            dt
+        self.cenario_feira_anterior = (
+            self.background_renderer.cenario_feira
         )
 
-    # =====================================
-    # RENDER
-    # =====================================
+        # REMOVER
+        # if events.get('start_audio_violao'):
+        #     self.audio.alternar_musica_violao()
+        # if events.get('stop_audio_violao'):
+        #     self.audio.alternar_musica_violao()
+        if events.get("start_audio_passeio"):
+            self.audio.tocar_passeio_sapudo()
 
-    background_renderer.desenhar()
+        sistema_fisica.aplicar_forca_vento(self.sapo, self.clima_service, dt, sensibilidade=0.25)
 
-    # NUVENS NO CÉU
-    sistema_nuvens.renderizar(
-        tela,
-        background_renderer.eh_dia()
-    )
+        pote_x = centro_x - 260
+        pote_y = centro_y + 40
 
-    # FRASCO
-    frasco_climatico.renderizar(
-        tela,
-        centro_y
-    )
+        if not self.background_renderer.cenario_feira:
+            self.duende.atualizar(dt, self.sapo, pote_x, pote_y, self.clima_service, self.frasco_climatico.area_interna, self.ambiente)
+            sistema_fisica.aplicar_forca_vento(self.duende, self.clima_service, dt, sensibilidade=0.5)
 
-    # PARTÍCULAS
-    for particula in particulas:
+            self.semente.atualizar(dt, self.clima_service)
 
-        particula.desenhar(tela)
+            for particula in self.particulas:
+                particula.atualizar(self.ambiente, dt)
 
-    # SAPO
-    sapo_renderer.renderizar(
-        sapo.x,
-        sapo.y,
-        ESCALA,
-        sapo.animacoes
-    )
+        # render
+        self.background_renderer.desenhar()
 
-    # DUENDE
-    renderer_duende.renderizar(duende)
+        if self.background_renderer.cenario_feira:
+            self.tamandua_renderer.atualizar(dt)
+            self.tamandua_renderer.renderizar()
+            self.barraca_renderer.renderizar()
 
-    # SEMENTE
-    renderer_semente.renderizar(
-        semente
-    )
+        self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
+        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
+        self.pensamento_renderer.renderizar(tela, self.sapo)
 
-    # VIOLÃO
-    if not violao.acoplado:
+        if not self.background_renderer.cenario_feira:
+            self.frasco_climatico.renderizar(tela, centro_y)
 
-        renderer_violao.renderizar(
-            violao
+            if not self.evento_livro.livro_visivel:
+                for particula in self.particulas:
+                    particula.desenhar(tela)
+                    
+                self.frasco_climatico.desenhar_nevoa(
+                    tela,
+                    self.evento_livro.nevoa
+                )
+
+            self.renderer_duende.renderizar(self.duende)
+            self.renderer_semente.renderizar(self.semente)
+
+            self.evento_livro.renderizar(tela, self.frasco_climatico)
+            self.evento_livro.renderizar_livro_aberto(tela, self.clima_service)
+
+        if not self.violao.acoplado:
+            self.renderer_violao.renderizar(self.violao)
+
+        # escalonar e apresentar
+        img = tela._img
+
+        # if IS_ANDROID:
+        self.controle_renderer.renderizar()
+
+        self.texture.blit_buffer(
+            img.tobytes(),
+            colorfmt='rgba',
+            bufferfmt='ubyte'
         )
 
-    # escalonar a superfície virtual para a resolução real e apresentar
-    scaled = pygame.transform.scale(tela, (LARGURA_REAL, ALTURA_REAL))
-    screen.blit(scaled, (0, 0))
-    pygame.display.flip()
+        self.canvas.ask_update()
 
-pygame.quit()
+
+class GameApp(App):
+    def build(self):
+        return GameWidget()
+    
+    def on_stop(self):
+        if hasattr(
+            self.root,
+            "reconhecedor_voz"
+        ):
+            self.root.reconhecedor_voz.destruir()
+
+
+if __name__ == '__main__':
+    GameApp().run()

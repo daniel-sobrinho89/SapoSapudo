@@ -1,6 +1,6 @@
 LARGURA = 1024
 ALTURA = 600
-FPS = 60
+FPS = 30
 
 TITULO = "Sapo Sapudo"
 
@@ -12,7 +12,7 @@ TITULO = "Sapo Sapudo"
 AUDIO_HABILITADO = False
 
 MUSICA_FUNDO = (
-    "assets/musica/vila_duendes.mp3"
+    "assets/musica/vila_duendes.ogg"
 )
 
 VOLUME_MUSICA = 0.25

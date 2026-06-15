@@ -18,7 +18,7 @@ package.domain = br.com.saposapudo
 source.dir = .
 
 # (list) Source files to include (leave empty to include all the files)
-source.include_exts = py,png,jpg,jpeg,wav,ogg,mp3,json
+source.include_exts = py,png,jpg,jpeg,webp,wav,ogg,mp3,json,ttf
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -42,7 +42,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,pygame==2.5.2,requests
+requirements = python3,kivy,requests,Pillow,pyjnius
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -103,8 +103,8 @@ fullscreen = 1
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions.html for all the supported syntaxes and properties)
-android.permissions = INTERNET
-
+android.permissions = INTERNET,RECORD_AUDIO,QUERY_ALL_PACKAGES,WAKE_LOCK
+android.manifest_queries = package:com.spotify.music
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
 
@@ -244,13 +244,13 @@ android.accept_sdk_license = True
 #android.ouya.icon.filename = %(source.dir)s/data/ouya_icon.png
 
 # (str) XML file to include as an intent filters in <activity> tag
-#android.manifest.intent_filters =
+android.manifest.intent_filters = android/intent_filters.xml
 
 # (list) Copy these files to src/main/res/xml/ (used for example with intent-filters)
 #android.res_xml = PATH_TO_FILE,
 
 # (str) launchMode to set for the main activity
-#android.manifest.launch_mode = standard
+android.manifest.launch_mode = singleTask
 
 # (str) screenOrientation to set for the main activity.
 # Valid values can be found at https://developer.android.com/guide/topics/manifest/activity-element
@@ -265,7 +265,7 @@ android.accept_sdk_license = True
 
 # (bool) Indicate whether the screen should stay on
 # Don't forget to add the WAKE_LOCK permission if you set this to True
-#android.wakelock = False
+android.wakelock = True
 
 # (list) Android application meta-data to set (key=value format)
 #android.meta_data =
@@ -330,7 +330,7 @@ android.allow_backup = True
 #
 
 # (str) python-for-android URL to use for checkout
-p4a.url = https://github.com/kivy/python-for-android.git
+#p4a.url = https://github.com/kivy/python-for-android.git
 
 # (str) python-for-android fork to use in case if p4a.url is not specified, defaults to upstream (kivy)
 #p4a.fork = kivy
@@ -339,7 +339,7 @@ p4a.url = https://github.com/kivy/python-for-android.git
 #p4a.branch = 2024.01.21
 
 # (str) python-for-android specific commit to use, defaults to HEAD, must be within p4a.branch
-p4a.commit = 957a3e5f8c270f7aa648ba185e5a68c1077a798d
+#p4a.commit = 957a3e5f8c270f7aa648ba185e5a68c1077a798d
 
 # (str) python-for-android git clone directory
 #p4a.source_dir =
