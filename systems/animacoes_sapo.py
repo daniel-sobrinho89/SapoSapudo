@@ -171,8 +171,8 @@ class AnimacoesSapo:
         ) + agora.minute
 
         horario_dormir = (
-            23 * 60
-        ) + 30
+            22 * 60
+        ) + 00
 
         horario_acordar = (
             7* 60
@@ -444,50 +444,37 @@ class AnimacoesSapo:
             return
 
         self.tempo_pegar_violao = 0
-
         self.frame_pegar_violao += 1
 
         if self.frame_pegar_violao >= 15:
-
             self.frame_pegar_violao = 14
-
             self.pegando_violao = False
             self.tocando_violao = True
-
             self.frame_violao = 0
             self.direcao_violao = 1
-
             self.iniciou_tocar_violao = True
 
     def iniciar_violao(self):
-
         if self.tocando_violao or self.pegando_violao:
             return
 
         self.iniciou_tocar_violao = False
-
         self.pegando_violao = True
         self.tocando_violao = False
-
         self.frame_pegar_violao = 0
         self.tempo_pegar_violao = 0
-
         self.frame_violao = 0
         self.direcao_violao = 1
 
     def parar_violao(self):
-
         self.iniciou_tocar_violao = False
-
         self.pegando_violao = False
         self.tocando_violao = False
-
         self.frame_pegar_violao = 0
         self.frame_violao = 0
         self.ultimo_frame_violao = 0
 
     def atualizar_violao(self, dt):
-
         if not self.tocando_violao:
             return
 
@@ -514,15 +501,10 @@ class AnimacoesSapo:
             self.direcao_violao = 1
 
     def iniciar_levantar_violao(self):
-
         self.parar_audio_violao = True
-
         self.tocando_violao = False
-
         self.levantando_violao = True
-
         self.frame_levantar_violao = 0
-
         self.tempo_levantar_violao = 0
 
     def atualizar_levantar_violao(self, dt):
@@ -557,7 +539,6 @@ class AnimacoesSapo:
                 self.iniciou_guardar_violao = True
 
     def atualizar_guardar_violao(self, dt):
-
         if not self.guardando_violao:
             return
 
@@ -567,14 +548,12 @@ class AnimacoesSapo:
             return
 
         self.tempo_guardar_violao = 0
-
         self.frame_guardar_violao += 1
 
         if self.frame_guardar_violao >= 9:
             self.frame_guardar_violao = 0
 
     def atualizar_soltar_violao(self, dt):
-
         if not self.soltando_violao:
             return
 
@@ -584,17 +563,12 @@ class AnimacoesSapo:
             return
 
         self.tempo_soltar_violao = 0
-
         self.frame_soltar_violao += 1
 
         if self.frame_soltar_violao >= 9:
-
             self.frame_soltar_violao = 8
-
             self.soltando_violao = False
-
             self.finalizou_soltar_violao = True
-
             self.tempo_tocando_violao = 0
 
     def iniciar_andar_esquerda(self):
@@ -611,7 +585,6 @@ class AnimacoesSapo:
 
 
     def atualizar_andar_esquerda(self, dt):
-
         if not self.andando_esquerda:
             return
 
@@ -628,7 +601,6 @@ class AnimacoesSapo:
 
 
     def atualizar_andar_direita(self, dt):
-
         if not self.andando_direita:
             return
 
