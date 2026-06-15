@@ -753,6 +753,8 @@ class GameWidget(Widget):
                             device_id
                         )
 
+                        SpotifyAndroid.abrir_spotify()
+
                         sucesso = SpotifyApi.tocar_faixa(
                             self.spotify_token,
                             device_id,
@@ -838,8 +840,6 @@ class GameWidget(Widget):
                                     device_id
                                 )
                                 self.spotify_tocando_cache = True
-                            else:
-                                sucesso = SpotifyAndroid.abrir_spotify()
                         else:
                             MediaSessionAndroid.play()
                             sucesso = True
