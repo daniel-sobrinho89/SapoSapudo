@@ -15,6 +15,7 @@ class AudioManager:
         self.habilitado = AUDIO_HABILITADO
         self.inicializado = False
         self.musica_atual = None
+        self.callback_spotify_tocando = None
 
     def inicializar(self):
         if self.inicializado:
@@ -42,12 +43,22 @@ class AudioManager:
         kivy_adapter.mixer.music.play(-1)
 
     def alternar_musica_violao(self):
-
         if self.habilitado:
             self.desligar()
-        else:
-            self.habilitado = True
-            self.voltar_musica_fundo()
+            return
+
+        spotify_tocando = False
+
+        if self.callback_spotify_tocando:
+            spotify_tocando = (
+                self.callback_spotify_tocando()
+            )
+
+        if spotify_tocando:
+            return
+
+        self.habilitado = True
+        self.voltar_musica_fundo()
 
     def tocar_musica_fundo(self, arquivo):
         self.musica_atual = arquivo

@@ -82,6 +82,7 @@ from systems.voz.spotify_callback import SpotifyCallback
 info_w, info_h = Window.width, Window.height
 LARGURA_REAL = int(info_w)
 ALTURA_REAL = int(info_h)
+DISTANCIA_VIOLAO = 20
 
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
 
@@ -128,6 +129,7 @@ class GameWidget(Widget):
         super().__init__(**kwargs)
 
         self.audio = AudioManager()
+        self.audio.callback_spotify_tocando = self.spotify_esta_tocando
 
         Clock.schedule_once(
             lambda dt: self.audio.iniciar(),
@@ -152,6 +154,7 @@ class GameWidget(Widget):
         self.renderer_duende = None
         self.violao = Violao()
         self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
+        self.spotify_andando_para_violao = False
         self.semente = None
         self.renderer_semente = None
         self.frasco_climatico = FrascoClimatico(self.transform)
@@ -183,6 +186,9 @@ class GameWidget(Widget):
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y, self.clima_service)
         self.sapo.background_renderer = (self.background_renderer)
+        self.sapo.animacoes.callback_verificar_spotify = (
+            self.spotify_esta_tocando
+        )
         # interaction state
         self.drag_duende = False
         self.drag_violao = False
@@ -282,14 +288,79 @@ class GameWidget(Widget):
 
         SpotifyAndroid.abrir_url(url)
 
-    def mostrar_pensamento_spotify_erro(
-        self
-    ):
+    def mostrar_pensamento_spotify_erro(self):
         self.sapo.pensamentos.texto = (
             "Não estou conseguindo visitar este universo musical agora."
         )
 
         self.sapo.pensamentos.tempo_restante = 6
+
+    def spotify_esta_tocando(self):
+        if self.spotify_token:
+            return SpotifyApi.esta_tocando(
+                self.spotify_token
+            )
+        return False
+
+    def spotify_ativo(self):
+        return (
+            self.spotify_token
+            and self.spotify_esta_tocando()
+        )
+
+    def atualizar_animacao_spotify(self):
+        if (
+            not self.violao
+            or not self.violao.acoplado 
+            or not self.sapo.pode_receber_violao()
+        ):
+            return
+
+        animacoes = self.sapo.animacoes
+        spotify_tocando = (
+            self.spotify_esta_tocando()
+        )
+
+        if spotify_tocando:
+            if (
+                not animacoes.tocando_violao
+                and not animacoes.pegando_violao
+                and not animacoes.levantando_violao
+                and not animacoes.guardando_violao
+            ):
+                self.iniciar_sequencia_spotify()
+            return
+
+        if animacoes.tocando_violao:
+            animacoes.iniciar_levantar_violao()
+            return
+
+        if animacoes.levantando_violao:
+            if self.spotify_esta_tocando():
+                animacoes.levantando_violao = False
+                self.iniciar_sequencia_spotify()
+                return
+
+    def iniciar_sequencia_spotify(self):
+        if (
+            not self.sapo.pode_caminhar() 
+            or self.spotify_andando_para_violao
+        ):
+            return
+
+        sapo_x = self.sapo.x
+        violao_x = self.violao.x
+
+        if abs(sapo_x - violao_x) < DISTANCIA_VIOLAO:
+            self.sapo.iniciar_violao()
+            return
+
+        self.spotify_andando_para_violao = True
+
+        if sapo_x < violao_x:
+            self.sapo.animacoes.iniciar_andar_direita()
+        else:
+            self.sapo.animacoes.iniciar_andar_esquerda()
 
     def carregar_cenario_feira(self):
 
@@ -596,8 +667,6 @@ class GameWidget(Widget):
                         )
                     )
                     if uri:
-                        print("[SPOTIFY] DEVICE:", device_id)
-                        print("[SPOTIFY] URI:", uri)
                         SpotifyApi.transferir_playback(
                             self.spotify_token,
                             device_id
@@ -608,7 +677,10 @@ class GameWidget(Widget):
                             device_id,
                             uri
                         )
-                        print("[SPOTIFY] PLAY SUCESSO:", sucesso)
+
+                        if sucesso:
+                            self.iniciar_sequencia_spotify()
+
                         SpotifyAndroid.abrir_spotify()
 
                     self.spotify_pendente = None
@@ -660,9 +732,7 @@ class GameWidget(Widget):
                     )
                 )
                 if comando_spotify:
-                    acao = comando_spotify[
-                        "acao"
-                    ]
+                    acao = comando_spotify["acao"]
                     sucesso = False
                     
                     if acao == "pause":
@@ -765,7 +835,10 @@ class GameWidget(Widget):
                             sucesso = True
 
                     self.desligar_microfone()
-                    if not sucesso:
+
+                    if sucesso:
+                        self.iniciar_sequencia_spotify()
+                    elif not sucesso:
                         self.mostrar_pensamento_spotify_erro()
 
                 elif ComandoVoz.eh_comando_feira(texto):
@@ -821,6 +894,24 @@ class GameWidget(Widget):
         self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
 
         events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
+
+        self.atualizar_animacao_spotify()
+
+        if self.spotify_andando_para_violao:
+            if not self.violao.acoplado:
+                self.spotify_andando_para_violao = False
+                self.sapo.animacoes.andando_direita = False
+                self.sapo.animacoes.andando_esquerda = False
+            else:
+                distancia = abs(
+                    self.sapo.x
+                    - self.violao.x
+                )
+                if distancia <= DISTANCIA_VIOLAO:
+                    self.spotify_andando_para_violao = False
+                    self.sapo.animacoes.andando_direita = False
+                    self.sapo.animacoes.andando_esquerda = False
+                    self.sapo.iniciar_violao()
 
         if (
             not self.cenario_feira_anterior

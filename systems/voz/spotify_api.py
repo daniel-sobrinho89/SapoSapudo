@@ -256,3 +256,34 @@ class SpotifyApi:
             202,
             204
         )
+    
+    @classmethod
+    def esta_tocando(
+        cls,
+        token
+    ):
+        try:
+
+            resposta = requests.get(
+                "https://api.spotify.com/v1/me/player",
+                headers={
+                    "Authorization":
+                    f"Bearer {token}"
+                },
+                timeout=10
+            )
+
+            if resposta.status_code != 200:
+                return False
+
+            dados = resposta.json()
+
+            return bool(
+                dados.get(
+                    "is_playing",
+                    False
+                )
+            )
+        except Exception as ex:
+            print("[SPOTIFY] ERRO PLAYBACK:", ex)
+            return False

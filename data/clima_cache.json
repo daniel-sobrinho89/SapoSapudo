@@ -1,13 +1,13 @@
 {
-    "cloudiness": 75,
-    "wind_speed": 9.0,
-    "wind_direction": 292,
-    "future_cloudiness_1h": 72,
-    "future_cloudiness_2h": 87,
-    "future_cloudiness_3h": 74,
-    "is_day": 1,
+    "cloudiness": 50,
+    "wind_speed": 6.5,
+    "wind_direction": 271,
+    "future_cloudiness_1h": 85,
+    "future_cloudiness_2h": 74,
+    "future_cloudiness_3h": 100,
+    "is_day": 0,
     "condition_code": 1003,
     "condition_text": "Partly cloudy",
-    "temperature": 20.3,
-    "humidity": 78
+    "temperature": 17.1,
+    "humidity": 100
 }

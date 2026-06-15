@@ -89,7 +89,7 @@ class AnimacoesSapo:
         self.frame_max_violao = 9
 
         self.intervalo_violao = 0.22
-
+        self.callback_verificar_spotify = None
 
         # ====================================
         # SONO VISUAL
@@ -171,8 +171,8 @@ class AnimacoesSapo:
         ) + agora.minute
 
         horario_dormir = (
-            22 * 60
-        ) + 00
+            23 * 60
+        ) + 30
 
         horario_acordar = (
             7* 60
@@ -526,7 +526,6 @@ class AnimacoesSapo:
         self.tempo_levantar_violao = 0
 
     def atualizar_levantar_violao(self, dt):
-
         if not self.levantando_violao:
             return
 
@@ -536,24 +535,26 @@ class AnimacoesSapo:
             return
 
         self.tempo_levantar_violao = 0
-
         self.frame_levantar_violao += 1
 
         if self.frame_levantar_violao >= 15:
-
             self.frame_levantar_violao = 14
-
             self.levantando_violao = False
+            spotify_tocando = False
 
-            self.guardando_violao = True
+            if self.callback_verificar_spotify:
+                spotify_tocando = (
+                    self.callback_verificar_spotify()
+                )
 
-            self.frame_guardar_violao = 0
-
-            self.tempo_guardar_violao = 0
-
-            self.ultimo_frame_guardar = -1
-
-            self.iniciou_guardar_violao = True
+            if spotify_tocando:
+                self.iniciar_violao()
+            else:
+                self.guardando_violao = True
+                self.frame_guardar_violao = 0
+                self.tempo_guardar_violao = 0
+                self.ultimo_frame_guardar = -1
+                self.iniciou_guardar_violao = True
 
     def atualizar_guardar_violao(self, dt):
 
