@@ -287,3 +287,51 @@ class SpotifyApi:
         except Exception as ex:
             print("[SPOTIFY] ERRO PLAYBACK:", ex)
             return False
+        
+    @classmethod
+    def obter_musica_atual(
+        cls,
+        token
+    ):
+        try:
+
+            resposta = requests.get(
+                "https://api.spotify.com/v1/me/player/currently-playing",
+                headers={
+                    "Authorization":
+                    f"Bearer {token}"
+                },
+                timeout=10
+            )
+
+            if resposta.status_code != 200:
+                return None
+
+            dados = resposta.json()
+
+            item = dados.get("item")
+
+            if not item:
+                return None
+
+            artistas = item.get(
+                "artists",
+                []
+            )
+
+            artista = (
+                artistas[0]["name"]
+                if artistas
+                else None
+            )
+
+            return {
+                "musica": item.get("name"),
+                "artista": artista
+            }
+
+        except Exception as ex:
+            print(
+                f"[SPOTIFY] ERRO MUSICA ATUAL: {ex}"
+            )
+            return None

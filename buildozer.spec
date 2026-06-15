@@ -103,7 +103,7 @@ fullscreen = 1
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions.html for all the supported syntaxes and properties)
-android.permissions = INTERNET,RECORD_AUDIO,QUERY_ALL_PACKAGES
+android.permissions = INTERNET,RECORD_AUDIO,QUERY_ALL_PACKAGES,WAKE_LOCK
 android.manifest_queries = package:com.spotify.music
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
@@ -265,7 +265,7 @@ android.manifest.launch_mode = singleTask
 
 # (bool) Indicate whether the screen should stay on
 # Don't forget to add the WAKE_LOCK permission if you set this to True
-#android.wakelock = False
+android.wakelock = True
 
 # (list) Android application meta-data to set (key=value format)
 #android.meta_data =
