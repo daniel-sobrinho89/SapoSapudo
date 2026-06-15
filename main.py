@@ -339,6 +339,15 @@ class GameWidget(Widget):
             return
 
     def iniciar_sequencia_spotify(self):
+        animacoes = self.sapo.animacoes
+
+        if (
+            self.spotify_andando_para_violao
+            and not animacoes.andando_direita
+            and not animacoes.andando_esquerda
+        ):
+            self.spotify_andando_para_violao = False
+
         if (
             not self.sapo.pode_caminhar()
             or self.spotify_andando_para_violao
@@ -555,7 +564,7 @@ class GameWidget(Widget):
                 
                 self.sapo.parar_violao()
                 self.drag_violao = True
-                self.audio.alternar_musica_violao()
+                # self.audio.alternar_musica_violao() REMOVER
                 self.violao.iniciar_arraste(
                     *pos_virtual
                 )
@@ -1025,10 +1034,11 @@ class GameWidget(Widget):
             self.background_renderer.cenario_feira
         )
 
-        if events.get('start_audio_violao'):
-            self.audio.alternar_musica_violao()
-        if events.get('stop_audio_violao'):
-            self.audio.alternar_musica_violao()
+        # REMOVER
+        # if events.get('start_audio_violao'):
+        #     self.audio.alternar_musica_violao()
+        # if events.get('stop_audio_violao'):
+        #     self.audio.alternar_musica_violao()
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
 

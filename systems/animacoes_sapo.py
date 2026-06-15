@@ -573,12 +573,14 @@ class AnimacoesSapo:
 
     def iniciar_andar_esquerda(self):
         self.andando_esquerda = True
+        self.andando_direita = False
         self.frame_andar_esquerda = 0
         self.tempo_andar_esquerda = 0
         self.iniciou_andar_esquerda = True
 
     def iniciar_andar_direita(self):
         self.andando_direita = True
+        self.andando_esquerda = False
         self.frame_andar_direita = 0
         self.tempo_andar_direita = 0
         self.iniciou_andar_direita = True

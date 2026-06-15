@@ -253,6 +253,16 @@ class Sapo:
                     a.andando_esquerda = False
                     a._ultimo_frame_andar = -1
 
+        if getattr(a, "andando_direita", False):
+            frame_atual = a.frame_andar_direita
+
+            if not hasattr(a, "_ultimo_frame_andar_direita"):
+                a._ultimo_frame_andar_direita = -1
+
+            if frame_atual != a._ultimo_frame_andar_direita:
+                a._ultimo_frame_andar_direita = frame_atual
+                self.x += 4
+
         if violao is not None:
             if getattr(a, "guardando_violao", False):
                 destino_x = getattr(violao, "x_inicial", None) - 65
