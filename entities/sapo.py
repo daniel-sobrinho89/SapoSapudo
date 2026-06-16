@@ -35,6 +35,7 @@ class Sapo:
         self.controle_direita = False
         self.andando_manual = False
         self.andar_iniciado_por_controle = False
+        self.andar_iniciado_por_spotify = False
 
         # FLAGS mínimas
         self.acoplado_violao = False
@@ -268,7 +269,10 @@ class Sapo:
                 a.finalizou_soltar_violao = False
 
         if getattr(a, "iniciou_andar_esquerda", False):
-            if not self.andar_iniciado_por_controle:
+            if (
+                not self.andar_iniciado_por_controle
+                and not self.andar_iniciado_por_spotify
+            ):
                 events["start_audio_passeio"] = True
 
             a.iniciou_andar_esquerda = False

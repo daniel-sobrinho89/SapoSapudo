@@ -40,15 +40,13 @@ from systems.clima.evento_livro import EventoLivro
 from systems.clima.frasco import FrascoClimatico
 from systems.clima.nuvem import Nuvem
 from systems.clima.sistema_nuvens import SistemaNuvens
+from systems.fisica import sistema_fisica
 from systems.particulas.poeira import ParticulaPoeira
 from systems.voz.comando_voz import ComandoVoz
 from systems.voz.media_session_android import MediaSessionAndroid
 from systems.voz.reconhecedor_android import ReconhecedorAndroid
-from systems.voz.spotify_android import SpotifyAndroid
 from systems.voz.spotify_api import SpotifyApi
-from systems.voz.spotify_auth import SpotifyAuth
-from systems.voz.spotify_callback import SpotifyCallback
-from systems.voz.spotify_token_storage import SpotifyTokenStorage
+from systems.voz.spotify_manager import SpotifyManager
 from utils.input import init_scaling, real_to_virtual
 
 logging.getLogger().setLevel(logging.INFO)
@@ -115,8 +113,11 @@ class GameWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.spotify = SpotifyManager()
+        self.spotify.iniciar()
+
         self.audio = AudioManager()
-        self.audio.callback_spotify_tocando = self.spotify_esta_tocando
+        self.audio.callback_spotify_tocando = self.spotify.spotify_esta_tocando
 
         Clock.schedule_once(lambda dt: self.audio.iniciar(), 2)
 
@@ -169,51 +170,15 @@ class GameWidget(Widget):
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y, self.clima_service)
         self.sapo.background_renderer = self.background_renderer
-        self.sapo.animacoes.callback_verificar_spotify = self.spotify_esta_tocando
+        self.sapo.animacoes.callback_verificar_spotify = (
+            self.spotify.spotify_esta_tocando
+        )
         # interaction state
         self.drag_duende = False
         self.drag_violao = False
         self.cenario_feira_anterior = False
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
-        self.spotify_token = None
-        self.spotify_refresh_token = None
-        self.spotify_code_verifier = None
-        self.spotify_pendente = None
-        self.spotify_pendente_timer = 0
-        self.spotify_tentativas = 0
-        self.spotify_tocando_cache = False
-        self.spotify_cache_timer = 0
-        self.spotify_consulta_em_andamento = False
-        self.spotify_musica_atual = None
-        self.spotify_artista_atual = None
-        self.spotify_pensamento_timer = 0
-        self.spotify_mostrar_artista = True
-        SpotifyCallback.iniciar()
-
-        dados_spotify = SpotifyTokenStorage.carregar()
-        if dados_spotify:
-            self.spotify_code_verifier = dados_spotify.get("code_verifier")
-
-            self.spotify_token = dados_spotify.get("access_token")
-
-            self.spotify_refresh_token = dados_spotify.get("refresh_token")
-            if self.spotify_refresh_token:
-                resposta = SpotifyAuth.renovar_token(self.spotify_refresh_token)
-                if resposta:
-                    self.spotify_token = resposta.get("access_token")
-
-                    novo_refresh = resposta.get("refresh_token")
-
-                    if novo_refresh:
-                        self.spotify_refresh_token = novo_refresh
-
-                    SpotifyTokenStorage.salvar(
-                        self.spotify_token,
-                        self.spotify_refresh_token,
-                        self.spotify_code_verifier,
-                    )
-                    print("[SPOTIFY] Token renovado")
 
         # drawing setup
         with self.canvas:
@@ -236,138 +201,12 @@ class GameWidget(Widget):
 
         self.reconhecedor_voz = ReconhecedorAndroid()
 
-    def iniciar_login_spotify(self):
-        self.spotify_code_verifier = SpotifyAuth.gerar_code_verifier()
-
-        SpotifyTokenStorage.salvar(
-            self.spotify_token, self.spotify_refresh_token, self.spotify_code_verifier
-        )
-
-        url = SpotifyAuth.obter_url_login(self.spotify_code_verifier)
-
-        SpotifyAndroid.abrir_url(url)
-
-    def renovar_token_spotify(self):
-        if not self.spotify_refresh_token:
-            return False
-
-        resposta = SpotifyAuth.renovar_token(self.spotify_refresh_token)
-
-        if not resposta:
-            return False
-
-        self.spotify_token = resposta.get("access_token")
-
-        novo_refresh = resposta.get("refresh_token")
-
-        if novo_refresh:
-            self.spotify_refresh_token = novo_refresh
-
-        SpotifyTokenStorage.salvar(
-            self.spotify_token, self.spotify_refresh_token, self.spotify_code_verifier
-        )
-
-        print("[SPOTIFY] Token renovado automaticamente")
-
-        return True
-
-    def obter_dispositivo_ativo_com_renovacao(self):
-        if not self.spotify_token:
-            return None
-
-        device_id = SpotifyApi.obter_dispositivo_ativo(self.spotify_token)
-        if device_id == "TOKEN_EXPIRADO" and self.renovar_token_spotify():
-            device_id = SpotifyApi.obter_dispositivo_ativo(self.spotify_token)
-
-        return device_id
-
-    def executar_com_renovacao(self, funcao):
-        resultado = funcao()
-        if resultado is not None:
-            return resultado
-
-        if not self.renovar_token_spotify():
-            return None
-
-        return funcao()
-
     def mostrar_pensamento_spotify_erro(self):
         self.sapo.pensamentos.texto = (
             "Não estou conseguindo visitar este universo musical agora."
         )
 
         self.sapo.pensamentos.tempo_restante = 6
-
-    def spotify_esta_tocando(self):
-        if not self.spotify_token:
-            return False
-
-        resultado = SpotifyApi.esta_tocando(self.spotify_token)
-        if resultado is not None:
-            return resultado
-
-        if self.renovar_token_spotify():
-            resultado = SpotifyApi.esta_tocando(self.spotify_token)
-            if resultado is not None:
-                return resultado
-
-        return False
-
-    def spotify_ativo(self):
-        return self.spotify_token and self.spotify_esta_tocando()
-
-    def atualizar_animacao_spotify(self, dt):
-        if not self.violao or not self.sapo.pode_receber_violao():
-            return
-
-        animacoes = self.sapo.animacoes
-        spotify_tocando = self.spotify_tocando_cache
-
-        # =====================================
-        # PENSAMENTOS SOBRE A MÚSICA
-        # =====================================
-
-        if spotify_tocando and self.spotify_artista_atual and self.spotify_musica_atual:
-            self.spotify_pensamento_timer -= dt
-
-            if self.spotify_pensamento_timer <= 0:
-                self.spotify_pensamento_timer = 10
-
-                if self.spotify_mostrar_artista:
-                    self.sapo.pensamentos.texto = (
-                        f"Ihuuu! Estou ouvindo {self.spotify_artista_atual}"
-                    )
-
-                else:
-                    self.sapo.pensamentos.texto = (
-                        f"Lá lá lá... {self.spotify_musica_atual}"
-                    )
-
-                self.sapo.pensamentos.tempo_restante = 10
-
-                self.spotify_mostrar_artista = not self.spotify_mostrar_artista
-
-        # =====================================
-        # SPOTIFY TOCANDO
-        # =====================================
-
-        if spotify_tocando:
-            if (
-                not animacoes.tocando_violao
-                and not animacoes.pegando_violao
-                and not animacoes.levantando_violao
-                and not animacoes.guardando_violao
-            ):
-                self.iniciar_sequencia_spotify()
-
-            return
-
-        # =====================================
-        # SPOTIFY PAROU
-        # =====================================
-
-        if animacoes.tocando_violao and not spotify_tocando:
-            animacoes.iniciar_levantar_violao()
 
     def iniciar_sequencia_spotify(self):
         animacoes = self.sapo.animacoes
@@ -402,7 +241,7 @@ class GameWidget(Widget):
                 self.violao.acoplado = True
 
             if (
-                self.spotify_tocando_cache
+                self.spotify.spotify_tocando_cache
                 and not animacoes.pegando_violao
                 and not animacoes.tocando_violao
                 and not animacoes.levantando_violao
@@ -432,46 +271,10 @@ class GameWidget(Widget):
             return
 
         self.violao.acoplado = True
-        if self.spotify_tocando_cache:
+        if self.spotify.spotify_tocando_cache:
             self.sapo.iniciar_violao()
         else:
             animacoes.iniciar_levantar_violao()
-
-    def atualizar_estado_spotify(self):
-        try:
-            self.spotify_tocando_cache = self.spotify_esta_tocando()
-
-            if self.spotify_token and self.spotify_tocando_cache:
-                dados = SpotifyApi.obter_musica_atual(self.spotify_token)
-                if dados:
-                    self.spotify_musica_atual = dados["musica"]
-                    self.spotify_artista_atual = dados["artista"]
-
-                    if dados.get("duracao_ms") and dados.get("progresso_ms"):
-                        restante = (dados["duracao_ms"] - dados["progresso_ms"]) / 1000
-
-                        self.spotify_cache_timer = max(10, restante + 2)
-        except Exception:
-            pass
-        finally:
-            self.spotify_consulta_em_andamento = False
-
-    def atualizar_dados_musica_atual(self):
-        if not self.spotify_token:
-            return
-        try:
-            dados = SpotifyApi.obter_musica_atual(self.spotify_token)
-
-            if dados == "TOKEN_EXPIRADO" and self.renovar_token_spotify():
-                dados = SpotifyApi.obter_musica_atual(self.spotify_token)
-
-            if dados:
-                self.spotify_musica_atual = dados["musica"]
-                self.spotify_artista_atual = dados["artista"]
-                self.spotify_pensamento_timer = 0
-                self.spotify_mostrar_artista = True
-        except Exception as ex:
-            print(f"[SPOTIFY] Erro ao obter música: {ex}")
 
     def carregar_cenario_feira(self):
         self.tamandua_renderer = TamanduaRenderer(tela, self.transform)
@@ -585,12 +388,12 @@ class GameWidget(Widget):
 
             if distancia < 120:
                 self.violao.acoplado = False
-                if self.spotify_token:
-                    SpotifyApi.pause(self.spotify_token)
-                    self.spotify_tocando_cache = False
+                if self.spotify.spotify_token:
+                    SpotifyApi.pause(self.spotify.spotify_token)
+                    self.spotify.spotify_tocando_cache = False
                 else:
                     MediaSessionAndroid.pause()
-                    self.spotify_tocando_cache = False
+                    self.spotify.spotify_tocando_cache = False
 
                 self.sapo.parar_violao()
                 self.drag_violao = True
@@ -641,21 +444,21 @@ class GameWidget(Widget):
                 self.violao.acoplado = True
                 self.violao.x = self.sapo.x + 5
                 self.violao.y = self.sapo.y + 20
-                if self.spotify_token:
-                    device_id = self.obter_dispositivo_ativo_com_renovacao()
+                if self.spotify.spotify_token:
+                    device_id = self.spotify.obter_dispositivo_ativo_com_renovacao()
                     if device_id:
-                        sucesso = SpotifyApi.play(self.spotify_token, device_id)
+                        sucesso = SpotifyApi.play(self.spotify.spotify_token, device_id)
                         if sucesso:
-                            self.spotify_tocando_cache = True
+                            self.spotify.spotify_tocando_cache = True
                             self.iniciar_sequencia_spotify_com_violao()
-                            self.atualizar_dados_musica_atual()
+                            self.spotify.atualizar_dados_musica_atual()
                     else:
                         self.sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
                         self.sapo.pensamentos.tempo_restante = 5
 
                 else:
                     MediaSessionAndroid.play()
-                    self.spotify_tocando_cache = True
+                    self.spotify.spotify_tocando_cache = True
                     self.iniciar_sequencia_spotify_com_violao()
             else:
                 self.violao.iniciar_queda()
@@ -704,11 +507,7 @@ class GameWidget(Widget):
 
         return True
 
-    def update(self, dt):
-        # cap dt
-        dt = min(dt, 0.05)
-
-        # clima update
+    def _atualizar_clima(self, dt):
         if self.clima_service.precisa_atualizar():
 
             def atualizar_clima():
@@ -718,70 +517,7 @@ class GameWidget(Widget):
 
         self.clima_service.atualizar_visual(dt)
 
-        self.spotify_cache_timer -= dt
-        if self.spotify_cache_timer <= 0 and not self.spotify_consulta_em_andamento:
-            self.spotify_consulta_em_andamento = True
-            self.spotify_cache_timer = float("inf")
-            threading.Thread(target=self.atualizar_estado_spotify, daemon=True).start()
-
-        if self.spotify_pendente:
-            self.spotify_pendente_timer -= dt
-            if self.spotify_pendente_timer <= 0:
-                device_id = self.obter_dispositivo_ativo_com_renovacao()
-                if not device_id:
-                    self.spotify_tentativas -= 1
-                    if self.spotify_tentativas <= 0:
-                        self.spotify_pendente = None
-                        self.sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
-                        self.sapo.pensamentos.tempo_restante = 5
-                        self.spotify_pendente = None
-                        self.spotify_pendente_timer = 0
-                        self.spotify_tentativas = 0
-                    else:
-                        self.spotify_pendente_timer = 5
-                else:
-                    uri = SpotifyApi.buscar_faixa(
-                        self.spotify_token, self.spotify_pendente
-                    )
-                    if uri:
-                        SpotifyApi.transferir_playback(self.spotify_token, device_id)
-
-                        SpotifyAndroid.abrir_spotify()
-
-                        sucesso = SpotifyApi.tocar_faixa(
-                            self.spotify_token, device_id, uri
-                        )
-
-                        if sucesso:
-                            self.iniciar_sequencia_spotify()
-                            self.atualizar_dados_musica_atual()
-
-                    self.spotify_pendente = None
-                    self.spotify_tentativas = 0
-
-        if not self.spotify_token and self.spotify_code_verifier:
-            code = SpotifyCallback.obter_code()
-
-            if code:
-                resposta = SpotifyAuth.trocar_code_por_token(
-                    code, self.spotify_code_verifier
-                )
-
-                if resposta:
-                    self.spotify_token = resposta["access_token"]
-
-                    self.spotify_refresh_token = resposta["refresh_token"]
-
-                    SpotifyTokenStorage.salvar(
-                        self.spotify_token,
-                        self.spotify_refresh_token,
-                        self.spotify_code_verifier,
-                    )
-
-                    if self.spotify_pendente:
-                        self.spotify_pendente_timer = 6
-                        self.spotify_tentativas = 10
-
+    def _atualizar_comandos_voz(self, dt):
         if self.controle_renderer.microfone_ligado:
             texto = self.reconhecedor_voz.obter_texto()
 
@@ -795,43 +531,47 @@ class GameWidget(Widget):
                     sucesso = False
 
                     if acao == "pause":
-                        if self.spotify_token:
-                            sucesso = SpotifyApi.pause(self.spotify_token)
+                        if self.spotify.spotify_token:
+                            sucesso = SpotifyApi.pause(self.spotify.spotify_token)
                         else:
                             MediaSessionAndroid.pause()
                             sucesso = True
 
-                        self.spotify_tocando_cache = False
+                        self.spotify.spotify_tocando_cache = False
                         self.sapo.parar_violao()
                     elif acao == "play":
-                        if self.spotify_token:
-                            device_id = self.obter_dispositivo_ativo_com_renovacao()
+                        if self.spotify.spotify_token:
+                            device_id = (
+                                self.spotify.obter_dispositivo_ativo_com_renovacao()
+                            )
                             if device_id:
-                                sucesso = SpotifyApi.play(self.spotify_token, device_id)
-                                self.spotify_tocando_cache = True
+                                sucesso = SpotifyApi.play(
+                                    self.spotify.spotify_token, device_id
+                                )
+                                self.spotify.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.play()
                             sucesso = True
                     elif acao == "next":
-                        if self.spotify_token:
-                            sucesso = SpotifyApi.next(self.spotify_token)
-                            self.spotify_tocando_cache = True
+                        if self.spotify.spotify_token:
+                            sucesso = SpotifyApi.next(self.spotify.spotify_token)
+                            self.spotify.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.next()
                             sucesso = True
                     elif acao == "previous":
-                        if self.spotify_token:
-                            sucesso = SpotifyApi.previous(self.spotify_token)
-                            self.spotify_tocando_cache = True
+                        if self.spotify.spotify_token:
+                            sucesso = SpotifyApi.previous(self.spotify.spotify_token)
+                            self.spotify.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.previous()
                             sucesso = True
                     elif acao == "buscar":
-                        if not self.spotify_token:
-                            self.spotify_pendente = comando_spotify["pesquisa"]
-                            self.spotify_pendente_timer = 5
-                            self.spotify_tentativas = 5
-                            self.iniciar_login_spotify()
+                        if not self.spotify.spotify_token:
+                            self.spotify.spotify_pendente = comando_spotify["pesquisa"]
+                            self.spotify.spotify_pendente_timer = 5
+                            self.spotify.spotify_tentativas = 5
+                            self.spotify.iniciar_login_spotify()
                             self.sapo.pensamentos.texto = (
                                 "Preciso conhecer seu Spotify primeiro."
                             )
@@ -841,13 +581,17 @@ class GameWidget(Widget):
 
                         pesquisa = comando_spotify["pesquisa"]
                         if pesquisa:
-                            uri = SpotifyApi.buscar_faixa(self.spotify_token, pesquisa)
+                            uri = SpotifyApi.buscar_faixa(
+                                self.spotify.spotify_token, pesquisa
+                            )
                             if uri:
-                                device_id = self.obter_dispositivo_ativo_com_renovacao()
+                                device_id = (
+                                    self.spotify.obter_dispositivo_ativo_com_renovacao()
+                                )
                                 if not device_id:
-                                    self.spotify_pendente = pesquisa
-                                    self.spotify_pendente_timer = 3
-                                    self.spotify_tentativas = 5
+                                    self.spotify.spotify_pendente = pesquisa
+                                    self.spotify.spotify_pendente_timer = 3
+                                    self.spotify.spotify_tentativas = 5
                                     self.sapo.pensamentos.texto = (
                                         "Abrindo seu Spotify..."
                                     )
@@ -855,13 +599,13 @@ class GameWidget(Widget):
                                     return
 
                                 SpotifyApi.transferir_playback(
-                                    self.spotify_token, device_id
+                                    self.spotify.spotify_token, device_id
                                 )
 
                                 sucesso = SpotifyApi.tocar_faixa(
-                                    self.spotify_token, device_id, uri
+                                    self.spotify.spotify_token, device_id, uri
                                 )
-                                self.spotify_tocando_cache = True
+                                self.spotify.spotify_tocando_cache = True
                             else:
                                 sucesso = False
                         else:
@@ -872,7 +616,7 @@ class GameWidget(Widget):
 
                     if acao != "pause" and sucesso:
                         self.iniciar_sequencia_spotify()
-                        self.atualizar_dados_musica_atual()
+                        self.spotify.atualizar_dados_musica_atual()
                     elif not sucesso:
                         self.mostrar_pensamento_spotify_erro()
 
@@ -899,6 +643,7 @@ class GameWidget(Widget):
                     self.reconhecedor_voz = ReconhecedorAndroid()
                     self.tempo_sem_audio = 0
 
+    def _atualizar_ambiente(self, dt):
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)
         sinal_direcao = math.sin(direcao_rad)
         influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
@@ -907,54 +652,16 @@ class GameWidget(Widget):
         if getattr(self.clima_service, "rajada_ativa", False):
             influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
 
+        sistema_fisica.aplicar_forca_vento(
+            self.sapo, self.clima_service, dt, sensibilidade=0.25
+        )
+
         if getattr(self.clima_service, "rajada_ativa", False):
             self.animacoes_folha.intensidade_vento = 5.0
         else:
             self.animacoes_folha.intensidade_vento = 1.8
 
-        # updates
-        from systems.fisica import sistema_fisica
-
-        if self.violao.caindo:
-            sistema_fisica.aplicar_forca_vento(
-                self.violao, self.clima_service, dt, sensibilidade=0.6
-            )
-
-        self.violao.atualizar(dt)
-        self.frasco_climatico.atualizar(dt)
-        self.evento_livro.atualizar(dt)
-        self.sistema_nuvens.atualizar_area_interna()
-
-        Nuvem.finalizar_carregamento()
-        self.sistema_nuvens.atualizar(
-            dt,
-            self.clima_service.cloudiness_visual,
-            self.clima_service.future_cloudiness_1h,
-            self.clima_service.future_cloudiness_2h,
-            self.clima_service.future_cloudiness_3h,
-            self.clima_service.wind_direction,
-            self.clima_service.wind_speed,
-        )
-
-        events = self.sapo.atualizar(
-            dt, self.ambiente, self.animacoes_folha, self.violao
-        )
-
-        self.atualizar_animacao_spotify(dt)
-
-        if self.spotify_andando_para_violao:
-            distancia = abs(self.sapo.x - self.violao.x)
-            if distancia <= DISTANCIA_VIOLAO:
-                self.spotify_andando_para_violao = False
-                self.sapo.animacoes.andando_direita = False
-                self.sapo.animacoes.andando_esquerda = False
-                self.violao.acoplado = True
-
-                if self.spotify_tocando_cache:
-                    self.sapo.iniciar_violao()
-                else:
-                    self.sapo.animacoes.iniciar_levantar_violao()
-
+    def _gerenciar_transicao_cenario(self, dt):
         if not self.cenario_feira_anterior and self.background_renderer.cenario_feira:
             self.sistema_nuvens.limpar()
             self.descarregar_cenario_principal()
@@ -976,18 +683,6 @@ class GameWidget(Widget):
             self.carregar_cenario_principal()
 
         self.cenario_feira_anterior = self.background_renderer.cenario_feira
-
-        # REMOVER
-        # if events.get('start_audio_violao'):
-        #     self.audio.alternar_musica_violao()
-        # if events.get('stop_audio_violao'):
-        #     self.audio.alternar_musica_violao()
-        if events.get("start_audio_passeio"):
-            self.audio.tocar_passeio_sapudo()
-
-        sistema_fisica.aplicar_forca_vento(
-            self.sapo, self.clima_service, dt, sensibilidade=0.25
-        )
 
         pote_x = centro_x - 260
         pote_y = centro_y + 40
@@ -1023,7 +718,6 @@ class GameWidget(Widget):
         self.sapo_renderer.renderizar(
             self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes
         )
-        self.pensamento_renderer.renderizar(tela, self.sapo)
 
         if not self.background_renderer.cenario_feira:
             self.frasco_climatico.renderizar(tela, centro_y)
@@ -1039,6 +733,64 @@ class GameWidget(Widget):
 
             self.evento_livro.renderizar(tela, self.frasco_climatico)
             self.evento_livro.renderizar_livro_aberto(tela, self.clima_service)
+
+    def update(self, dt):
+        dt = min(dt, 0.05)
+
+        self._atualizar_clima(dt)
+
+        events = self.sapo.atualizar(
+            dt, self.ambiente, self.animacoes_folha, self.violao
+        )
+        # REMOVER
+        # if events.get('start_audio_violao'):
+        #     self.audio.alternar_musica_violao()
+        # if events.get('stop_audio_violao'):
+        #     self.audio.alternar_musica_violao()
+        if events.get("start_audio_passeio"):
+            self.audio.tocar_passeio_sapudo()
+
+        self.spotify.atualizar_spotify(self, dt, self.sapo, self.violao)
+
+        if self.spotify_andando_para_violao:
+            distancia = abs(self.sapo.x - self.violao.x)
+            if distancia <= DISTANCIA_VIOLAO:
+                self.spotify_andando_para_violao = False
+                self.sapo.animacoes.andando_direita = False
+                self.sapo.animacoes.andando_esquerda = False
+                self.violao.acoplado = True
+
+                if self.spotify.spotify_tocando_cache:
+                    self.sapo.iniciar_violao()
+                else:
+                    self.sapo.animacoes.iniciar_levantar_violao()
+
+        self._atualizar_comandos_voz(dt)
+        self._atualizar_ambiente(dt)
+        self._gerenciar_transicao_cenario(dt)
+
+        if self.violao.caindo:
+            sistema_fisica.aplicar_forca_vento(
+                self.violao, self.clima_service, dt, sensibilidade=0.6
+            )
+
+        self.violao.atualizar(dt)
+        self.frasco_climatico.atualizar(dt)
+        self.evento_livro.atualizar(dt)
+        self.sistema_nuvens.atualizar_area_interna()
+
+        Nuvem.finalizar_carregamento()
+        self.sistema_nuvens.atualizar(
+            dt,
+            self.clima_service.cloudiness_visual,
+            self.clima_service.future_cloudiness_1h,
+            self.clima_service.future_cloudiness_2h,
+            self.clima_service.future_cloudiness_3h,
+            self.clima_service.wind_direction,
+            self.clima_service.wind_speed,
+        )
+
+        self.pensamento_renderer.renderizar(tela, self.sapo)
 
         if not self.violao.acoplado:
             self.renderer_violao.renderizar(self.violao)
