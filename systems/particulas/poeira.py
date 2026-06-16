@@ -1,17 +1,12 @@
 import math
+import random
 
 import kivy_adapter
-import random
 from systems.fisica import sistema_fisica
 
-class ParticulaPoeira:
 
-    def __init__(
-        self,
-        area_particulas,
-        area_protegida
-    ):
-        
+class ParticulaPoeira:
+    def __init__(self, area_particulas, area_protegida):
         self.area_particulas = area_particulas
         self.area_protegida = area_protegida
         self.protegido = False
@@ -22,58 +17,40 @@ class ParticulaPoeira:
     def resetar(self):
         if self.area_protegida is not None:
             self.x = random.randint(
-                self.area_protegida.left + 4,
-                self.area_protegida.right - 20
+                self.area_protegida.left + 4, self.area_protegida.right - 20
             )
 
             self.y = random.randint(
-                self.area_protegida.bottom - 57,
-                self.area_protegida.bottom - 15
+                self.area_protegida.bottom - 57, self.area_protegida.bottom - 15
             )
 
             self.x_inicial = self.x
 
-            self.oscilacao = random.uniform(
-                0.0,
-                6.28
-            )
+            self.oscilacao = random.uniform(0.0, 6.28)
 
             self.tempo_vida = 0.0
 
-            self.amplitude_lateral = random.uniform(
-                2.0,
-                6.0
-            )
+            self.amplitude_lateral = random.uniform(2.0, 6.0)
 
         else:
             self.x = random.randint(
-                self.area_particulas.left,
-                self.area_particulas.right
+                self.area_particulas.left, self.area_particulas.right
             )
 
             self.y = random.randint(
-                self.area_particulas.top,
-                self.area_particulas.bottom
+                self.area_particulas.top, self.area_particulas.bottom
             )
 
         # valores originais eram por-frame; converter para pixels/segundo
-        self.vel_x = random.uniform(
-            -0.08,
-            0.12
-        ) * 60.0
+        self.vel_x = random.uniform(-0.08, 0.12) * 60.0
 
-        self.vel_y = random.uniform(
-            -0.03,
-            -0.12
-        ) * 60.0
+        self.vel_y = random.uniform(-0.03, -0.12) * 60.0
 
         self.gravidade = 12.0
         self.sustentacao_restante = 0.0
         self.no_chao = False
 
-        self.limite_chao = (
-            self.area_particulas.bottom
-        ) 
+        self.limite_chao = self.area_particulas.bottom
 
         self.raio = random.randint(4, 5)
 
@@ -90,14 +67,10 @@ class ParticulaPoeira:
         else:
             self.protegido = False
 
-    def atualizar(
-        self,
-        ambiente,
-        dt
-    ):
+    def atualizar(self, ambiente, dt):
         if not self.ativa:
             return
-        
+
         self.tempo_vida += dt
         current_protegido = False
 
@@ -107,8 +80,7 @@ class ParticulaPoeira:
 
             else:
                 current_protegido = self.area_protegida.collidepoint(
-                    int(self.x),
-                    int(self.y)
+                    int(self.x), int(self.y)
                 )
 
         # Ajustar sensibilidade ao vento de acordo com o tamanho (raio)
@@ -124,11 +96,7 @@ class ParticulaPoeira:
         if self.protegido and not current_protegido:
             self.saiu_do_pote = True
 
-            self.vel_x = (
-                ambiente.vento
-                * 60.0
-                * sensibilidade
-            )
+            self.vel_x = ambiente.vento * 60.0 * sensibilidade
 
             self.just_exited_timer = 0.60
 
@@ -136,76 +104,38 @@ class ParticulaPoeira:
         self.protegido = current_protegido
 
         if self.protegido:
-            centro_pote = (
-                self.area_protegida.centerx
-            )
+            centro_pote = self.area_protegida.centerx
 
             progresso = (
-                (
-                    self.area_protegida.bottom
-                    - self.y
-                )
-                / self.area_protegida.height
-            )
+                self.area_protegida.bottom - self.y
+            ) / self.area_protegida.height
 
-            progresso = max(
-                0.0,
-                min(1.0, progresso)
-            )
+            progresso = max(0.0, min(1.0, progresso))
 
-            desvio_inicial = (
-                self.x_inicial
-                - centro_pote
-            )
+            desvio_inicial = self.x_inicial - centro_pote
 
-            self.x = (
-                self.x_inicial
-                - desvio_inicial * progresso
-            )
+            self.x = self.x_inicial - desvio_inicial * progresso
 
             self.x += (
-                math.sin(
-                    self.tempo_vida * 1.5
-                    + self.oscilacao
-                )
+                math.sin(self.tempo_vida * 1.5 + self.oscilacao)
                 * self.amplitude_lateral
             )
 
-            self.y += (
-                self.vel_y * dt
-            )
+            self.y += self.vel_y * dt
 
         else:
-            sistema_fisica.aplicar_gravidade_simples(
-                self,
-                dt,
-                0.5
-            )
+            sistema_fisica.aplicar_gravidade_simples(self, dt, 0.5)
 
-            wind_accel = (
-                ambiente.vento
-                * 60.0
-                * sensibilidade
-            )
+            wind_accel = ambiente.vento * 60.0 * sensibilidade
 
-            target_vx = (
-                ambiente.vento
-                * 60.0
-                * sensibilidade
-            )
+            target_vx = ambiente.vento * 60.0 * sensibilidade
 
-            self.vel_x += (
-                target_vx
-                - self.vel_x
-            ) * 0.25 * dt
+            self.vel_x += (target_vx - self.vel_x) * 0.25 * dt
 
             if self.just_exited_timer > 0:
                 wind_accel *= 6.0
 
-            self.vel_x += (
-                wind_accel
-                * dt
-            )
+            self.vel_x += wind_accel * dt
 
             self.vel_x *= 0.998
 
@@ -221,7 +151,7 @@ class ParticulaPoeira:
             self.y += self.vel_y * dt
 
             # reduzir timer de pós-saída
-            if getattr(self, 'just_exited_timer', 0.0) > 0.0:
+            if getattr(self, "just_exited_timer", 0.0) > 0.0:
                 self.just_exited_timer = max(0.0, self.just_exited_timer - dt)
 
             margem = 150
@@ -235,22 +165,13 @@ class ParticulaPoeira:
                 self.resetar()
                 return
 
-    def desenhar(
-        self,
-        tela
-    ):
+    def desenhar(self, tela):
         if not self.ativa:
             return
 
         tamanho = self.raio * 6
 
-        superficie = kivy_adapter.Surface(
-            (
-                tamanho,
-                tamanho
-            ),
-            kivy_adapter.SRCALPHA
-        )
+        superficie = kivy_adapter.Surface((tamanho, tamanho), kivy_adapter.SRCALPHA)
 
         centro = tamanho // 2
 
@@ -260,17 +181,9 @@ class ParticulaPoeira:
 
         kivy_adapter.draw.circle(
             superficie,
-            (
-                255,
-                255,
-                255,
-                int(self.alpha * 0.25)
-            ),
-            (
-                centro,
-                centro
-            ),
-            self.raio * 2
+            (255, 255, 255, int(self.alpha * 0.25)),
+            (centro, centro),
+            self.raio * 2,
         )
 
         # =================================
@@ -278,35 +191,12 @@ class ParticulaPoeira:
         # =================================
 
         kivy_adapter.draw.circle(
-            superficie,
-            (
-                255,
-                255,
-                255,
-                self.alpha
-            ),
-            (
-                centro,
-                centro
-            ),
-            self.raio
+            superficie, (255, 255, 255, self.alpha), (centro, centro), self.raio
         )
 
-        tela.blit(
-            superficie,
-            (
-                self.x,
-                self.y
-            )
-        )
+        tela.blit(superficie, (self.x, self.y))
 
     def obter_rect(self):
-
         tamanho = self.raio * 6
 
-        return kivy_adapter.Rect(
-            self.x,
-            self.y,
-            tamanho,
-            tamanho
-        )
+        return kivy_adapter.Rect(self.x, self.y, tamanho, tamanho)

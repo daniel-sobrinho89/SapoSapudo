@@ -3,17 +3,11 @@
 # ==========================================
 
 import kivy_adapter
-
 from systems.clima.nuvem import Nuvem
 
 
 class SistemaNuvens:
-
-    def __init__(
-        self, 
-        transform
-    ):
-
+    def __init__(self, transform):
         self.atualizar_area_interna()
 
         self.intensidade = 0
@@ -34,47 +28,25 @@ class SistemaNuvens:
     def atualizar_area_interna(self):
         from config import LARGURA
 
-        self.area_interna = kivy_adapter.Rect(
-            0,
-            0,
-            LARGURA,
-            270
-        )
+        self.area_interna = kivy_adapter.Rect(0, 0, LARGURA, 270)
 
     # ==========================================
     # CALCULAR INTENSIDADE
     # ==========================================
 
-    def calcular_intensidade(
-        self,
-        atual,
-        futuro_1h,
-        futuro_2h,
-        futuro_3h
-    ):
-
+    def calcular_intensidade(self, atual, futuro_1h, futuro_2h, futuro_3h):
         intensidade = atual
 
         # crescimento gradual futuro
 
         if futuro_3h > atual:
+            intensidade += (futuro_1h - atual) * 0.2
 
-            intensidade += (
-                (futuro_1h - atual) * 0.2
-            )
+            intensidade += (futuro_2h - atual) * 0.3
 
-            intensidade += (
-                (futuro_2h - atual) * 0.3
-            )
+            intensidade += (futuro_3h - atual) * 0.5
 
-            intensidade += (
-                (futuro_3h - atual) * 0.5
-            )
-
-        intensidade = max(
-            0,
-            min(100, intensidade)
-        )
+        intensidade = max(0, min(100, intensidade))
 
         return intensidade
 
@@ -90,29 +62,20 @@ class SistemaNuvens:
         future_2h,
         future_3h,
         wind_direction,
-        wind_speed
+        wind_speed,
     ):
         if not Nuvem.carregado:
             return
 
         self.intensidade = self.calcular_intensidade(
-            cloudiness,
-            future_1h,
-            future_2h,
-            future_3h
+            cloudiness, future_1h, future_2h, future_3h
         )
 
         # quantidade de nuvens
-        if self.intensidade <= 5:
-            alvo = 2
-        else:
-            alvo = max(1, round(self.intensidade / 16))
+        alvo = 2 if self.intensidade <= 5 else max(1, round(self.intensidade / 16))
 
         # escala geral
-        escala = max(
-            0.7,
-            self.intensidade / 100
-        )
+        escala = max(0.7, self.intensidade / 100)
 
         self.wind_direction = wind_direction
         self.wind_speed = wind_speed
@@ -132,41 +95,28 @@ class SistemaNuvens:
                 intensidade=escala,
                 wind_direction=self.wind_direction,
                 wind_speed=self.wind_speed,
-                ceu_limpo=ceu_limpo
+                ceu_limpo=ceu_limpo,
             )
 
             pode_adicionar = True
 
             for nuvem in self.nuvens:
+                distancia_x = abs(nova_nuvem.x - nuvem.x)
 
-                distancia_x = abs(
-                    nova_nuvem.x - nuvem.x
-                )
+                distancia_y = abs(nova_nuvem.y - nuvem.y)
 
-                distancia_y = abs(
-                    nova_nuvem.y - nuvem.y
-                )
-
-                if (
-                    distancia_x < 380
-                    and distancia_y < 120
-                ):
+                if distancia_x < 380 and distancia_y < 120:
                     pode_adicionar = False
                     break
 
             if pode_adicionar:
-
-                self.nuvens.append(
-                    nova_nuvem
-                )
+                self.nuvens.append(nova_nuvem)
 
             else:
-
                 break
 
         # remove nuvens extras se houver mais do que o alvo
         while len(self.nuvens) > alvo:
-
             self.nuvens.pop()
 
         # atualiza nuvens e mantém apenas as vivas
@@ -184,16 +134,9 @@ class SistemaNuvens:
     def limpar(self):
         self.nuvens.clear()
 
-    def renderizar(
-        self,
-        tela,
-        eh_dia=False
-    ):
+    def renderizar(self, tela, eh_dia=False):
         if not Nuvem.carregado:
             return
-        
+
         for nuvem in self.nuvens:
-            nuvem.renderizar(
-                tela,
-                eh_dia
-            )
+            nuvem.renderizar(tela, eh_dia)

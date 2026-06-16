@@ -1,33 +1,22 @@
 import os
 
-IS_ANDROID = (
-    "ANDROID_ARGUMENT"
-    in os.environ
-)
+IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 
 ULTIMO_CODE = None
 
 if IS_ANDROID:
-
     from android import activity
 
-class SpotifyCallback:
 
+class SpotifyCallback:
     @staticmethod
     def iniciar():
-
         if not IS_ANDROID:
             return
 
-        activity.bind(
-            on_new_intent=(
-                SpotifyCallback._novo_intent
-            )
-        )
+        activity.bind(on_new_intent=(SpotifyCallback._novo_intent))
 
-        print(
-            "[SPOTIFY] Callback registrado"
-        )
+        print("[SPOTIFY] Callback registrado")
 
     @staticmethod
     def _novo_intent(*args):
@@ -43,6 +32,7 @@ class SpotifyCallback:
             print("[SPOTIFY] Erro callback:", ex)
 
             import traceback
+
             traceback.print_exc()
 
     @staticmethod

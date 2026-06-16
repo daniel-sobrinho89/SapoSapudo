@@ -1,20 +1,18 @@
-import random
 import math
-
-from config import *
+import random
 
 from systems.animacoes_semente import (
     aplicar_vento as sistema_aplicar_vento,
+)
+from systems.animacoes_semente import (
     atualizar_piscada as sistema_atualizar_piscada,
 )
-
 from systems.fisica import (
     sistema_fisica,
 )
 
 
 class Semente:
-
     def __init__(self):
         self.x = 500
         self.y = 520
@@ -27,18 +25,12 @@ class Semente:
         self.sorrindo = False
         self.piscando = False
 
-        self.timer_piscada = random.uniform(
-            2,
-            5
-        )
+        self.timer_piscada = random.uniform(2, 5)
 
         self.duracao_piscada = 0.15
         self.tempo_piscando = 0
 
-        self.timer_movimento = random.uniform(
-            4,
-            8
-        )
+        self.timer_movimento = random.uniform(4, 8)
 
         self.altura_salto = -120
         self.limite_chao = 560
@@ -51,14 +43,9 @@ class Semente:
 
         self.tempo_flutuando = 0
 
-        self.direcao_pulo = random.choice(
-            [-1, 1]
-        )
+        self.direcao_pulo = random.choice([-1, 1])
 
-        self.fase_flutuacao = random.uniform(
-            0,
-            math.pi * 2
-        )
+        self.fase_flutuacao = random.uniform(0, math.pi * 2)
 
         self.offset_flutuacao_x = 0
         self.offset_flutuacao_y = 0
@@ -80,13 +67,9 @@ class Semente:
             if random.random() < 0.10:
                 self.direcao_pulo *= -1
 
-        self.vel_x = (
-            self.direcao_pulo * 60
-        )
+        self.vel_x = self.direcao_pulo * 60
 
-        self.vel_y = (
-            self.altura_salto
-        )
+        self.vel_y = self.altura_salto
 
     def definir_estado(self, novo_estado):
         self.estado = novo_estado
@@ -108,11 +91,7 @@ class Semente:
 
     def atualizar_temporizadores(self, dt):
         # timer_movimento apenas decresce quando está no chão e não vem do vento
-        if (
-            self.no_chao
-            and not self.flutuando
-            and not self.pousando_do_vento
-        ):
+        if self.no_chao and not self.flutuando and not self.pousando_do_vento:
             self.timer_movimento -= dt
 
         # rajada agora é gerida por ClimaService (veja clima_service.rajada_ativa)
@@ -121,32 +100,14 @@ class Semente:
         self.timer_altura_vento -= dt
 
         if self.timer_altura_vento <= 0:
-            self.altura_alvo_flutuacao = (
-                random.uniform(
-                    180,
-                    350
-                )
-            )
+            self.altura_alvo_flutuacao = random.uniform(180, 350)
 
-            self.timer_altura_vento = (
-                random.uniform(
-                    0.8,
-                    2
-                )
-            )
+            self.timer_altura_vento = random.uniform(0.8, 2)
 
     def ao_pousar(self, pousou_agora):
         # Ações ao pousar: se veio do vento, dar um tempo antes de mover
-        if (
-            pousou_agora
-            and self.pousando_do_vento
-        ):
-            self.timer_movimento = (
-                random.uniform(
-                    3,
-                    6
-                )
-            )
+        if pousou_agora and self.pousando_do_vento:
+            self.timer_movimento = random.uniform(3, 6)
 
             self.pulos_restantes = 0
 
@@ -168,24 +129,13 @@ class Semente:
 
         return 5
 
-    def aplicar_vento(
-        self,
-        clima_service,
-        dt
-    ):
+    def aplicar_vento(self, clima_service, dt):
         return sistema_aplicar_vento(self, clima_service, dt)
 
-    def atualizar_piscada(
-        self,
-        dt
-    ):
+    def atualizar_piscada(self, dt):
         return sistema_atualizar_piscada(self, dt)
 
-    def atualizar(
-        self,
-        dt,
-        clima_service
-    ):
+    def atualizar(self, dt, clima_service):
         self.atualizar_piscada(dt)
 
         # Atualiza temporizadores (movimento, rajada e altura do vento)
@@ -197,36 +147,19 @@ class Semente:
             and not self.pousando_do_vento
             and self.timer_movimento <= 0
         ):
-
             if self.pulos_restantes <= 0:
-
-                self.pulos_restantes = (
-                    self.gerar_quantidade_pulos()
-                )
+                self.pulos_restantes = self.gerar_quantidade_pulos()
 
             self.iniciar_pulo_lateral()
             self.pulos_restantes -= 1
 
             if self.pulos_restantes > 0:
-                self.timer_movimento = (
-                    random.uniform(
-                        0.6,
-                        1.2
-                    )
-                )
+                self.timer_movimento = random.uniform(0.6, 1.2)
 
             else:
-                self.timer_movimento = (
-                    random.uniform(
-                        4,
-                        8
-                    )
-                )
+                self.timer_movimento = random.uniform(4, 8)
 
-        self.aplicar_vento(
-            clima_service,
-            dt
-        )
+        self.aplicar_vento(clima_service, dt)
 
         # Física: gravidade, integração de movimento e resolução de limites
         sistema_fisica.aplicar_gravidade(self, dt)

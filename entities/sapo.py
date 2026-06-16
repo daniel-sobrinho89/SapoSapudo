@@ -2,25 +2,19 @@
 # entities/sapo.py
 # =====================================
 
-import math
 
-from systems.sapudo.animacoes_sapo import AnimacoesSapo
-from systems.sapudo.respiracao_sapo import RespiracaoSapo
-from systems.sapudo.pensamentos_sapo import PensamentosSapo
-from systems.sapudo.ia_sapo import IASapo
-from systems.system_utils import atualizar_sistemas_basicos
 from datetime import datetime, timedelta
-from config import *
+
+from config import LARGURA
+from systems.sapudo.animacoes_sapo import AnimacoesSapo
+from systems.sapudo.ia_sapo import IASapo
+from systems.sapudo.pensamentos_sapo import PensamentosSapo
+from systems.sapudo.respiracao_sapo import RespiracaoSapo
+from systems.system_utils import atualizar_sistemas_basicos
+
 
 class Sapo:
-
-    def __init__(
-            self, 
-            x, 
-            y,
-            clima_service
-        ):
-
+    def __init__(self, x, y, clima_service):
         # POSIÇÃO CENTRAL (coordenadas usadas pelo renderer)
         self.x = x
         self.y = y
@@ -58,10 +52,8 @@ class Sapo:
         self.animacoes.parar_violao()
 
     def pode_receber_violao(self):
-
-        return (
-            not getattr(self.animacoes, "iniciou_sono_hoje", False)
-            and not getattr(self.animacoes, "dormindo", False)
+        return not getattr(self.animacoes, "iniciou_sono_hoje", False) and not getattr(
+            self.animacoes, "dormindo", False
         )
 
     def esta_tocando_violao(self):
@@ -70,7 +62,7 @@ class Sapo:
     def iniciar_controle_esquerda(self):
         if not self.pode_caminhar():
             return
-        
+
         self.andando_manual = True
         self.controle_esquerda = True
         self.andar_iniciado_por_controle = True
@@ -88,7 +80,7 @@ class Sapo:
     def iniciar_controle_direita(self):
         if not self.pode_caminhar():
             return
-        
+
         self.andando_manual = True
         self.controle_direita = True
         self.andar_iniciado_por_controle = True
@@ -118,8 +110,7 @@ class Sapo:
         )
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
-    def atualizar(self, dt, ambiente, animacao_folha = None, violao=None):
-
+    def atualizar(self, dt, ambiente, animacao_folha=None, violao=None):
         atualizar_sistemas_basicos(
             self.animacoes,
             self.respiracao,
@@ -132,10 +123,7 @@ class Sapo:
         events = {}
         a = self.animacoes
 
-        acao = self.ia.obter_acao(
-            dt,
-            self
-        )
+        acao = self.ia.obter_acao(dt, self)
 
         if acao:
             self.pensamentos.executar(acao)
@@ -146,25 +134,18 @@ class Sapo:
         # AGENDAMENTO CAMINHADA
         # =====================================
         agora = datetime.now()
-        horario_atual = (
-            agora.hour,
-            agora.minute
-        )
+        horario_atual = (agora.hour, agora.minute)
         executar_caminhada = False
 
         if self.controle_esquerda and not self.indo_para_feira:
             self.x -= 4
-            if (
-                self.background_renderer.cenario_feira
-                and self.x <= 0
-            ):
+            if self.background_renderer.cenario_feira and self.x <= 0:
                 self.x = 0
 
         if self.controle_direita:
             self.x += 4
 
             if self.background_renderer.cenario_feira:
-
                 if self.x > LARGURA:
                     excesso = self.x - LARGURA
 
@@ -172,33 +153,21 @@ class Sapo:
                     self.x = excesso
 
             else:
-
                 if self.x > LARGURA:
                     self.x = LARGURA
 
         # retry pendente
         if a.proxima_tentativa_caminhada:
-            if (
-                agora >= a.proxima_tentativa_caminhada
-            ):
+            if agora >= a.proxima_tentativa_caminhada:
                 executar_caminhada = True
 
         # horários normais
         else:
             for hora, minuto in a.horarios_caminhada:
                 if horario_atual == (hora, minuto):
-                    chave = (
-                        agora.year,
-                        agora.month,
-                        agora.day,
-                        hora,
-                        minuto
-                    )
+                    chave = (agora.year, agora.month, agora.day, hora, minuto)
 
-                    if (
-                        a.ultima_execucao_caminhada
-                        != chave
-                    ):
+                    if a.ultima_execucao_caminhada != chave:
                         a.ultima_execucao_caminhada = chave
                         executar_caminhada = True
                         break
@@ -210,9 +179,7 @@ class Sapo:
                 a._ultimo_frame_andar = -1
                 a.iniciar_andar_esquerda()
             else:
-                a.proxima_tentativa_caminhada = (
-                    agora + timedelta(minutes=15)
-                )
+                a.proxima_tentativa_caminhada = agora + timedelta(minutes=15)
 
         if getattr(a, "andando_esquerda", False):
             frame_atual = a.frame_andar_esquerda
@@ -227,10 +194,7 @@ class Sapo:
             # saiu pela esquerda
             if (
                 self.x < 0
-                and (
-                    self.comando_ir_feira
-                    or not self.indo_para_feira
-                )
+                and (self.comando_ir_feira or not self.indo_para_feira)
                 and not self.background_renderer.cenario_feira
             ):
                 self.background_renderer.cenario_feira = True
@@ -240,9 +204,7 @@ class Sapo:
                 self.comando_ir_feira = False
 
             if self.indo_para_feira:
-                destino = (
-                    LARGURA // 2
-                ) + 180
+                destino = (LARGURA // 2) + 180
 
                 if self.x <= destino:
                     self.x = destino
@@ -266,20 +228,13 @@ class Sapo:
         if violao is not None:
             if getattr(a, "guardando_violao", False):
                 destino_x = getattr(violao, "x_inicial", None) - 65
-                frame_atual = (
-                    a.frame_guardar_violao
-                )
+                frame_atual = a.frame_guardar_violao
 
                 if frame_atual != a.ultimo_frame_guardar:
-                    a.ultimo_frame_guardar = (
-                        frame_atual
-                    )
+                    a.ultimo_frame_guardar = frame_atual
 
                     if self.x < destino_x:
-                        self.x = min(
-                            destino_x,
-                            self.x + 3.5
-                        )
+                        self.x = min(destino_x, self.x + 3.5)
                         # manter o violão acompanhado ao corpo do sapo
                         violao.x = self.x + 5
                         violao.y = self.y + 20
@@ -305,7 +260,6 @@ class Sapo:
 
             # quando finaliza soltar violao, encapsular ação sobre o violao
             if getattr(a, "finalizou_soltar_violao", False):
-
                 violao.acoplado = False
 
                 violao.x = violao.x_inicial
@@ -314,7 +268,6 @@ class Sapo:
                 a.finalizou_soltar_violao = False
 
         if getattr(a, "iniciou_andar_esquerda", False):
-
             if not self.andar_iniciado_por_controle:
                 events["start_audio_passeio"] = True
 

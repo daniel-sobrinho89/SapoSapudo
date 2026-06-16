@@ -2,6 +2,7 @@
 Fornece funções mínimas para reduzir duplicação nas entidades.
 """
 
+
 def iniciar_drag(entity_x, entity_y, mouse_x, mouse_y):
     """Retorna offsets (offset_x, offset_y) para iniciar arraste."""
     return (entity_x - mouse_x, entity_y - mouse_y)

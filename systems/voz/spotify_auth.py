@@ -1,18 +1,14 @@
-import requests
-import secrets
-import hashlib
 import base64
+import hashlib
+import secrets
+
+import requests
 
 
 class SpotifyAuth:
+    CLIENT_ID = "67fd20c2208342bda350184a50ddb4b2"
 
-    CLIENT_ID = (
-        "67fd20c2208342bda350184a50ddb4b2"
-    )
-
-    REDIRECT_URI = (
-        "br.com.saposapudo://callback"
-    )
+    REDIRECT_URI = "br.com.saposapudo://callback"
 
     SCOPES = (
         "user-read-playback-state "
@@ -22,39 +18,17 @@ class SpotifyAuth:
 
     @staticmethod
     def gerar_code_verifier():
-
-        return secrets.token_urlsafe(
-            64
-        )
+        return secrets.token_urlsafe(64)
 
     @staticmethod
-    def gerar_code_challenge(
-        verifier
-    ):
+    def gerar_code_challenge(verifier):
+        digest = hashlib.sha256(verifier.encode()).digest()
 
-        digest = hashlib.sha256(
-            verifier.encode()
-        ).digest()
-
-        return (
-            base64.urlsafe_b64encode(
-                digest
-            )
-            .decode()
-            .replace("=", "")
-        )
+        return base64.urlsafe_b64encode(digest).decode().replace("=", "")
 
     @classmethod
-    def obter_url_login(
-        cls,
-        verifier
-    ):
-
-        challenge = (
-            cls.gerar_code_challenge(
-                verifier
-            )
-        )
+    def obter_url_login(cls, verifier):
+        challenge = cls.gerar_code_challenge(verifier)
 
         return (
             "https://accounts.spotify.com/authorize"
@@ -67,12 +41,7 @@ class SpotifyAuth:
         )
 
     @classmethod
-    def trocar_code_por_token(
-        cls,
-        code,
-        verifier
-    ):
-
+    def trocar_code_por_token(cls, code, verifier):
         resposta = requests.post(
             "https://accounts.spotify.com/api/token",
             data={
@@ -80,8 +49,8 @@ class SpotifyAuth:
                 "grant_type": "authorization_code",
                 "code": code,
                 "redirect_uri": cls.REDIRECT_URI,
-                "code_verifier": verifier
-            }
+                "code_verifier": verifier,
+            },
         )
 
         if resposta.status_code != 200:
@@ -89,25 +58,16 @@ class SpotifyAuth:
             return None
 
         return resposta.json()
-    
-    @classmethod
-    def renovar_token(
-        cls,
-        refresh_token
-    ):
 
+    @classmethod
+    def renovar_token(cls, refresh_token):
         resposta = requests.post(
             "https://accounts.spotify.com/api/token",
             data={
-                "client_id":
-                cls.CLIENT_ID,
-
-                "grant_type":
-                "refresh_token",
-
-                "refresh_token":
-                refresh_token
-            }
+                "client_id": cls.CLIENT_ID,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+            },
         )
 
         if resposta.status_code != 200:

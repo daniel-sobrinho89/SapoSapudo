@@ -1,55 +1,36 @@
 import os
 
-IS_ANDROID = (
-    "ANDROID_ARGUMENT"
-    in os.environ
-)
+IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 
 if IS_ANDROID:
-    from jnius import autoclass
-    from urllib.parse import quote
     import traceback
-    
-    PythonActivity = autoclass(
-        "org.kivy.android.PythonActivity"
-    )
+    from urllib.parse import quote
 
-    Intent = autoclass(
-        "android.content.Intent"
-    )
+    from jnius import autoclass
 
-    Uri = autoclass(
-        "android.net.Uri"
-    )
+    PythonActivity = autoclass("org.kivy.android.PythonActivity")
+
+    Intent = autoclass("android.content.Intent")
+
+    Uri = autoclass("android.net.Uri")
+
 
 class SpotifyAndroid:
-
     @staticmethod
     def abrir_spotify():
         if not IS_ANDROID:
             return False
 
         try:
-            activity = (
-                PythonActivity.mActivity
-            )
-            package_manager = (
-                activity.getPackageManager()
-            )
-            launch_intent = (
-                package_manager
-                .getLaunchIntentForPackage(
-                    "com.spotify.music"
-                )
+            activity = PythonActivity.mActivity
+            package_manager = activity.getPackageManager()
+            launch_intent = package_manager.getLaunchIntentForPackage(
+                "com.spotify.music"
             )
 
             if launch_intent:
-                launch_intent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK
-                )
-                activity.startActivity(
-                    launch_intent
-                )
+                launch_intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                activity.startActivity(launch_intent)
                 return True
 
         except Exception as ex:
@@ -59,280 +40,160 @@ class SpotifyAndroid:
 
     @staticmethod
     def abrir_url(url):
-
         if not IS_ANDROID:
             return False
 
         try:
+            Uri = autoclass("android.net.Uri")
 
-            Uri = autoclass(
-                "android.net.Uri"
-            )
+            Intent = autoclass("android.content.Intent")
 
-            Intent = autoclass(
-                "android.content.Intent"
-            )
+            activity = PythonActivity.mActivity
 
-            activity =  PythonActivity.mActivity
+            intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
-            intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(url)
-            )
-
-            activity.startActivity(
-                intent
-            )
+            activity.startActivity(intent)
 
             return True
 
         except Exception as ex:
-
-            print(
-                "[SPOTIFY]",
-                ex
-            )
+            print("[SPOTIFY]", ex)
 
         return False
 
     @staticmethod
     def tocar_uri(uri):
-
         if not IS_ANDROID:
             return False
 
         try:
+            activity = PythonActivity.mActivity
 
-            activity = (
-                PythonActivity.mActivity
-            )
+            url = uri.replace("spotify:track:", "https://open.spotify.com/track/")
 
-            url = (
-                uri.replace(
-                    "spotify:track:",
-                    "https://open.spotify.com/track/"
-                )
-            )
+            intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
-            intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(url)
-            )
+            intent.setPackage("com.spotify.music")
 
-            intent.setPackage(
-                "com.spotify.music"
-            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-            intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-            )
-
-            activity.startActivity(
-                intent
-            )
+            activity.startActivity(intent)
 
             return True
 
         except Exception as ex:
-
             print(ex)
 
             return False
 
     @staticmethod
-    def tocar(
-        pesquisa=None
-    ):
+    def tocar(pesquisa=None):
         if not IS_ANDROID:
-
-            print(
-                "[SPOTIFY] Não é Android"
-            )
+            print("[SPOTIFY] Não é Android")
 
             return False
 
         try:
+            activity = PythonActivity.mActivity
 
-            activity = (
-                PythonActivity.mActivity
-            )
+            package_manager = activity.getPackageManager()
 
-            package_manager = (
-                activity.getPackageManager()
-            )
+            print(f"[SPOTIFY] Pesquisa recebida: [{pesquisa}]")
 
-            print(
-                f"[SPOTIFY] Pesquisa recebida: [{pesquisa}]"
-            )
-
-            if (
-                pesquisa
-                and pesquisa.strip()
-            ):
-
+            if pesquisa and pesquisa.strip():
                 try:
+                    pesquisa = pesquisa.strip()
 
-                    pesquisa = (
-                        pesquisa.strip()
-                    )
-
-                    print(
-                        f"[SPOTIFY] Pesquisando: {pesquisa}"
-                    )
+                    print(f"[SPOTIFY] Pesquisando: {pesquisa}")
 
                     intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse(
-                            f"spotify:search:{quote(pesquisa)}"
-                        )
+                        Uri.parse(f"spotify:search:{quote(pesquisa)}"),
                     )
 
-                    intent.addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK
-                    )
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-                    activity.startActivity(
-                        intent
-                    )
+                    activity.startActivity(intent)
 
-                    print(
-                        "[SPOTIFY] Busca enviada"
-                    )
+                    print("[SPOTIFY] Busca enviada")
 
                     return True
 
                 except Exception as ex:
-
-                    print(
-                        f"[SPOTIFY] Falha na busca: {ex}"
-                    )
+                    print(f"[SPOTIFY] Falha na busca: {ex}")
 
                     traceback.print_exc()
 
-            print(
-                "[SPOTIFY] Tentando abrir pelo pacote"
-            )
+            print("[SPOTIFY] Tentando abrir pelo pacote")
 
             try:
-
-                launch_intent = (
-                    package_manager
-                    .getLaunchIntentForPackage(
-                        "com.spotify.music"
-                    )
+                launch_intent = package_manager.getLaunchIntentForPackage(
+                    "com.spotify.music"
                 )
 
                 if launch_intent is not None:
+                    launch_intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-                    launch_intent.addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK
-                    )
+                    activity.startActivity(launch_intent)
 
-                    activity.startActivity(
-                        launch_intent
-                    )
-
-                    print(
-                        "[SPOTIFY] Aplicativo aberto pelo pacote"
-                    )
+                    print("[SPOTIFY] Aplicativo aberto pelo pacote")
 
                     return True
 
-                print(
-                    "[SPOTIFY] LaunchIntent retornou None"
-                )
+                print("[SPOTIFY] LaunchIntent retornou None")
 
             except Exception as ex:
-
-                print(
-                    f"[SPOTIFY] Falha ao abrir pelo pacote: {ex}"
-                )
+                print(f"[SPOTIFY] Falha ao abrir pelo pacote: {ex}")
 
                 traceback.print_exc()
 
-            print(
-                "[SPOTIFY] Tentando URI direta"
-            )
+            print("[SPOTIFY] Tentando URI direta")
 
             try:
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse("spotify:"))
 
-                intent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(
-                        "spotify:"
-                    )
-                )
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-                intent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK
-                )
+                activity.startActivity(intent)
 
-                activity.startActivity(
-                    intent
-                )
-
-                print(
-                    "[SPOTIFY] Spotify aberto por URI"
-                )
+                print("[SPOTIFY] Spotify aberto por URI")
 
                 return True
 
             except Exception as ex:
-                print(
-                    f"[SPOTIFY] URI direta falhou: {ex}"
-                )
+                print(f"[SPOTIFY] URI direta falhou: {ex}")
                 traceback.print_exc()
 
             try:
-
                 termo = ""
 
-                if (
-                    pesquisa
-                    and pesquisa.strip()
-                ):
-                    termo = quote(
-                        pesquisa.strip()
-                    )
+                if pesquisa and pesquisa.strip():
+                    termo = quote(pesquisa.strip())
 
                 if termo:
-                    url = (f"https://open.spotify.com/search/{termo}")
+                    url = f"https://open.spotify.com/search/{termo}"
                 else:
-                    url = ("https://open.spotify.com")
+                    url = "https://open.spotify.com"
 
-                intent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(url)
-                )
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
-                intent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK
-                )
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-                activity.startActivity(
-                    intent
-                )
+                activity.startActivity(intent)
 
-                print(
-                    "[SPOTIFY] Spotify Web aberto"
-                )
+                print("[SPOTIFY] Spotify Web aberto")
 
                 return True
 
             except Exception as ex:
-
-                print(
-                    f"[SPOTIFY] Spotify Web falhou: {ex}"
-                )
+                print(f"[SPOTIFY] Spotify Web falhou: {ex}")
 
                 traceback.print_exc()
 
             return False
 
         except Exception as ex:
-            print(
-                f"[SPOTIFY] ERRO GERAL: {ex}"
-            )
+            print(f"[SPOTIFY] ERRO GERAL: {ex}")
 
             traceback.print_exc()
 

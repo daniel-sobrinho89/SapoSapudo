@@ -3,26 +3,12 @@ import random
 
 
 class LivroClimatico:
-
     def __init__(self):
+        with open("data/livro_climatico.json", encoding="utf-8") as arquivo:
+            self.frases = json.load(arquivo)
 
-        with open(
-            "data/livro_climatico.json",
-            "r",
-            encoding="utf-8"
-        ) as arquivo:
-
-            self.frases = json.load(
-                arquivo
-            )
-
-    def gerar_pagina(
-        self,
-        clima
-    ):
-        direcao_vento = self.obter_direcao_vento(
-            clima.wind_direction
-        )
+    def gerar_pagina(self, clima):
+        direcao_vento = self.obter_direcao_vento(clima.wind_direction)
 
         # ==========================
         # ESCOLHE CATEGORIA
@@ -42,23 +28,15 @@ class LivroClimatico:
 
         categoria = random.choice(categorias)
 
-
         # ==========================
         # TEXTO ESQUERDA
         # ==========================
 
-        texto = random.choice(
-            self.frases[categoria]
-        )
+        texto = random.choice(self.frases[categoria])
 
         linhas_processadas = []
         for linha in texto["linhas"]:
-            linhas_processadas.append(
-                linha.replace(
-                    "{direcao}",
-                    direcao_vento
-                )
-            )
+            linhas_processadas.append(linha.replace("{direcao}", direcao_vento))
 
         # ==========================
         # RETORNO
@@ -66,19 +44,14 @@ class LivroClimatico:
         pagina_direita = self.gerar_previsao_nuvens(clima)
 
         return {
-
             "pagina_esquerda": {
                 "titulo": texto["titulo"],
-                "linhas": linhas_processadas
+                "linhas": linhas_processadas,
             },
-
-            "pagina_direita": pagina_direita
+            "pagina_direita": pagina_direita,
         }
-    
-    def obter_direcao_vento(
-        self,
-        graus
-    ):
+
+    def obter_direcao_vento(self, graus):
         direcoes = [
             "norte",
             "nordeste",
@@ -87,17 +60,14 @@ class LivroClimatico:
             "sul",
             "sudoeste",
             "oeste",
-            "noroeste"
+            "noroeste",
         ]
 
-        indice = round(
-            graus / 45
-        ) % 8
+        indice = round(graus / 45) % 8
 
         return direcoes[indice]
-    
-    def gerar_previsao_nuvens(self, clima):
 
+    def gerar_previsao_nuvens(self, clima):
         agora = clima.cloudiness
         h1 = clima.future_cloudiness_1h
         h2 = clima.future_cloudiness_2h
@@ -106,7 +76,6 @@ class LivroClimatico:
         tendencia = h3 - agora
 
         if tendencia >= 30:
-
             titulo = "As Nuvens Crescem"
 
             linhas = [
@@ -116,11 +85,10 @@ class LivroClimatico:
                 f"Em 1 hora: {h1:.0f}%",
                 f"Em 2 horas: {h2:.0f}%",
                 "",
-                "Talvez a chuva esteja apenas esperando o momento certo para chegar."
+                "Talvez a chuva esteja apenas esperando o momento certo para chegar.",
             ]
 
         elif tendencia <= -30:
-
             titulo = "O Céu se Abrirá"
 
             linhas = [
@@ -130,11 +98,10 @@ class LivroClimatico:
                 f"Em 1 hora: {h1:.0f}%",
                 f"Em 2 horas: {h2:.0f}%",
                 "",
-                "A luz encontrará espaço para atravessar o céu novamente."
+                "A luz encontrará espaço para atravessar o céu novamente.",
             ]
 
         else:
-
             titulo = "Poucas Mudanças"
 
             linhas = [
@@ -145,10 +112,7 @@ class LivroClimatico:
                 f"Em 2 horas: {h2:.0f}%",
                 "",
                 "Nem toda previsão fala de mudanças.",
-                "Às vezes ela fala de paz."
+                "Às vezes ela fala de paz.",
             ]
 
-        return {
-            "titulo": titulo,
-            "linhas": linhas
-        }
+        return {"titulo": titulo, "linhas": linhas}

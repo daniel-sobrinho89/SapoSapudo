@@ -2,29 +2,20 @@ import unicodedata
 
 
 class ComandoVoz:
-
     @staticmethod
     def normalizar(texto):
-
         texto = texto.lower()
 
-        texto = ''.join(
+        texto = "".join(
             c
-            for c in unicodedata.normalize(
-                'NFD',
-                texto
-            )
-            if unicodedata.category(c) != 'Mn'
+            for c in unicodedata.normalize("NFD", texto)
+            if unicodedata.category(c) != "Mn"
         )
 
         return texto
 
     @classmethod
-    def eh_comando_feira(
-        cls,
-        texto
-    ):
-
+    def eh_comando_feira(cls, texto):
         texto = cls.normalizar(texto)
         texto = texto.replace("sapado", "sapudo")
         texto = texto.replace("sapo do", "sapudo")
@@ -33,13 +24,9 @@ class ComandoVoz:
             return False
 
         return "feira" in texto
-    
-    @classmethod
-    def obter_comando_spotify(
-        cls,
-        texto
-    ):
 
+    @classmethod
+    def obter_comando_spotify(cls, texto):
         texto = cls.normalizar(texto)
         texto = texto.replace("sapado", "sapudo")
         texto = texto.replace("sapo do", "sapudo")
@@ -61,29 +48,13 @@ class ComandoVoz:
             or "trocar faixa" in texto
             or "proxima" in texto
         ):
-            return {
-                "tipo": "spotify",
-                "acao": "next"
-            }
+            return {"tipo": "spotify", "acao": "next"}
 
-        if (
-            "musica anterior" in texto
-            or "música anterior" in texto
-        ):
-            return {
-                "tipo": "spotify",
-                "acao": "previous"
-            }
+        if "musica anterior" in texto or "música anterior" in texto:
+            return {"tipo": "spotify", "acao": "previous"}
 
-        if (
-            "parar" in texto
-            or "parar musica" in texto
-            or "pausar musica" in texto
-        ):
-            return {
-                "tipo": "spotify",
-                "acao": "pause"
-            }
+        if "parar" in texto or "parar musica" in texto or "pausar musica" in texto:
+            return {"tipo": "spotify", "acao": "pause"}
 
         if (
             texto == "sapudo tocar"
@@ -93,54 +64,21 @@ class ComandoVoz:
             or texto == "sapudo retomar"
             or texto == "sapudo retomar musica"
         ):
-            return {
-                "tipo": "spotify",
-                "acao": "play"
-            }
+            return {"tipo": "spotify", "acao": "play"}
 
-        if texto.startswith(
-            "sapudo tocar "
-        ):
+        if texto.startswith("sapudo tocar "):
+            pesquisa = texto.replace("sapudo tocar ", "").strip()
 
-            pesquisa = texto.replace(
-                "sapudo tocar ",
-                ""
-            ).strip()
+            return {"tipo": "spotify", "acao": "buscar", "pesquisa": pesquisa}
 
-            return {
-                "tipo": "spotify",
-                "acao": "buscar",
-                "pesquisa": pesquisa
-            }
+        if texto.startswith("sapudo toque "):
+            pesquisa = texto.replace("sapudo toque ", "").strip()
 
-        if texto.startswith(
-            "sapudo toque "
-        ):
+            return {"tipo": "spotify", "acao": "buscar", "pesquisa": pesquisa}
 
-            pesquisa = texto.replace(
-                "sapudo toque ",
-                ""
-            ).strip()
+        if texto.startswith("sapudo toca "):
+            pesquisa = texto.replace("sapudo toca ", "").strip()
 
-            return {
-                "tipo": "spotify",
-                "acao": "buscar",
-                "pesquisa": pesquisa
-            }
-
-        if texto.startswith(
-            "sapudo toca "
-        ):
-
-            pesquisa = texto.replace(
-                "sapudo toca ",
-                ""
-            ).strip()
-
-            return {
-                "tipo": "spotify",
-                "acao": "buscar",
-                "pesquisa": pesquisa
-            }
+            return {"tipo": "spotify", "acao": "buscar", "pesquisa": pesquisa}
 
         return None

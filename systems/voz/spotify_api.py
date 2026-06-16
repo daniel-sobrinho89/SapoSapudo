@@ -2,20 +2,12 @@ import requests
 
 
 class SpotifyApi:
-
     @classmethod
-    def obter_dispositivo_ativo(
-        cls,
-        token
-    ):
-
+    def obter_dispositivo_ativo(cls, token):
         resposta = requests.get(
             "https://api.spotify.com/v1/me/player/devices",
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            timeout=10
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
         )
 
         if resposta.status_code == 401:
@@ -24,24 +16,13 @@ class SpotifyApi:
         if resposta.status_code != 200:
             return None
 
-        dispositivos = (
-            resposta
-            .json()
-            .get(
-                "devices",
-                []
-            )
-        )
+        dispositivos = resposta.json().get("devices", [])
 
         print("[SPOTIFY] DEVICES:", dispositivos)
 
         for dispositivo in dispositivos:
-            if dispositivo.get(
-                "is_active"
-            ):
-                return dispositivo[
-                    "id"
-                ]
+            if dispositivo.get("is_active"):
+                return dispositivo["id"]
 
         if dispositivos:
             return dispositivos[0]["id"]
@@ -49,79 +30,36 @@ class SpotifyApi:
         return None
 
     @classmethod
-    def transferir_playback(
-        cls,
-        token,
-        device_id
-    ):
-
+    def transferir_playback(cls, token, device_id):
         resposta = requests.put(
             "https://api.spotify.com/v1/me/player",
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            json={
-                "device_ids": [
-                    device_id
-                ],
-                "play": False
-            },
-            timeout=10
+            headers={"Authorization": f"Bearer {token}"},
+            json={"device_ids": [device_id], "play": False},
+            timeout=10,
         )
 
-        print(
-            "[SPOTIFY] TRANSFER:",
-            resposta.status_code,
-            resposta.text
-        )
+        print("[SPOTIFY] TRANSFER:", resposta.status_code, resposta.text)
 
-        return resposta.status_code in (
-            200,
-            202,
-            204
-        )
+        return resposta.status_code in (200, 202, 204)
 
     @classmethod
-    def buscar_faixa(
-        cls,
-        token,
-        pesquisa
-    ):
-
+    def buscar_faixa(cls, token, pesquisa):
         try:
-
             resposta = requests.get(
                 "https://api.spotify.com/v1/search",
-                headers={
-                    "Authorization":
-                    f"Bearer {token}"
-                },
-                params={
-                    "q": pesquisa,
-                    "type": "track",
-                    "limit": 1
-                },
-                timeout=10
+                headers={"Authorization": f"Bearer {token}"},
+                params={"q": pesquisa, "type": "track", "limit": 1},
+                timeout=10,
             )
 
             if resposta.status_code != 200:
-
-                print(
-                    "[SPOTIFY] Erro busca:",
-                    resposta.status_code,
-                    resposta.text
-                )
+                print("[SPOTIFY] Erro busca:", resposta.status_code, resposta.text)
 
                 return None
 
             dados = resposta.json()
 
-            itens = (
-                dados
-                .get("tracks", {})
-                .get("items", [])
-            )
+            itens = dados.get("tracks", {}).get("items", [])
 
             if not itens:
                 return None
@@ -129,148 +67,68 @@ class SpotifyApi:
             return itens[0]["uri"]
 
         except Exception as ex:
-
-            print(
-                f"[SPOTIFY] Falha busca: {ex}"
-            )
+            print(f"[SPOTIFY] Falha busca: {ex}")
 
             return None
-        
+
     @classmethod
-    def tocar_faixa(
-        cls,
-        token,
-        device_id,
-        uri
-    ):
+    def tocar_faixa(cls, token, device_id, uri):
         resposta = requests.put(
-            (
-                "https://api.spotify.com/v1/me/player/play"
-                f"?device_id={device_id}"
-            ),
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            json={
-                "uris": [
-                    uri
-                ]
-            },
-            timeout=10
+            (f"https://api.spotify.com/v1/me/player/play?device_id={device_id}"),
+            headers={"Authorization": f"Bearer {token}"},
+            json={"uris": [uri]},
+            timeout=10,
         )
 
-        return (
-            resposta.status_code
-            in (
-                200,
-                202,
-                204
-            )
-        )
-    
+        return resposta.status_code in (200, 202, 204)
+
     @classmethod
-    def play(
-        cls,
-        token,
-        device_id
-    ):
-
+    def play(cls, token, device_id):
         resposta = requests.put(
-            (
-                "https://api.spotify.com/v1/me/player/play"
-                f"?device_id={device_id}"
-            ),
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            timeout=10
+            (f"https://api.spotify.com/v1/me/player/play?device_id={device_id}"),
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
         )
 
-        return resposta.status_code in (
-            200,
-            202,
-            204
-        )
+        return resposta.status_code in (200, 202, 204)
 
     @classmethod
-    def pause(
-        cls,
-        token
-    ):
-
+    def pause(cls, token):
         resposta = requests.put(
             "https://api.spotify.com/v1/me/player/pause",
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            timeout=10
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
         )
 
-        return resposta.status_code in (
-            200,
-            202,
-            204
-        )
+        return resposta.status_code in (200, 202, 204)
 
     @classmethod
-    def next(
-        cls,
-        token
-    ):
-
+    def next(cls, token):
         resposta = requests.post(
             "https://api.spotify.com/v1/me/player/next",
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            timeout=10
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
         )
 
-        return resposta.status_code in (
-            200,
-            202,
-            204
-        )
+        return resposta.status_code in (200, 202, 204)
 
     @classmethod
-    def previous(
-        cls,
-        token
-    ):
-
+    def previous(cls, token):
         resposta = requests.post(
             "https://api.spotify.com/v1/me/player/previous",
-            headers={
-                "Authorization":
-                f"Bearer {token}"
-            },
-            timeout=10
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
         )
 
-        return resposta.status_code in (
-            200,
-            202,
-            204
-        )
-    
+        return resposta.status_code in (200, 202, 204)
+
     @classmethod
-    def esta_tocando(
-        cls,
-        token
-    ):
+    def esta_tocando(cls, token):
         try:
-
             resposta = requests.get(
                 "https://api.spotify.com/v1/me/player",
-                headers={
-                    "Authorization":
-                    f"Bearer {token}"
-                },
-                timeout=10
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
             )
 
             if resposta.status_code == 401:
@@ -281,30 +139,18 @@ class SpotifyApi:
 
             dados = resposta.json()
 
-            return bool(
-                dados.get(
-                    "is_playing",
-                    False
-                )
-            )
+            return bool(dados.get("is_playing", False))
         except Exception as ex:
             print("[SPOTIFY] ERRO PLAYBACK:", ex)
             return False
-        
-    @classmethod
-    def obter_musica_atual(
-        cls,
-        token
-    ):
-        try:
 
+    @classmethod
+    def obter_musica_atual(cls, token):
+        try:
             resposta = requests.get(
                 "https://api.spotify.com/v1/me/player/currently-playing",
-                headers={
-                    "Authorization":
-                    f"Bearer {token}"
-                },
-                timeout=10
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
             )
 
             if resposta.status_code == 401:
@@ -320,26 +166,17 @@ class SpotifyApi:
             if not item:
                 return None
 
-            artistas = item.get(
-                "artists",
-                []
-            )
+            artistas = item.get("artists", [])
 
-            artista = (
-                artistas[0]["name"]
-                if artistas
-                else None
-            )
+            artista = artistas[0]["name"] if artistas else None
 
             return {
                 "musica": item.get("name"),
                 "artista": artista,
                 "duracao_ms": item.get("duration_ms"),
-                "progresso_ms": dados.get("progress_ms")
+                "progresso_ms": dados.get("progress_ms"),
             }
 
         except Exception as ex:
-            print(
-                f"[SPOTIFY] ERRO MUSICA ATUAL: {ex}"
-            )
+            print(f"[SPOTIFY] ERRO MUSICA ATUAL: {ex}")
             return None

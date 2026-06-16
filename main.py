@@ -2,77 +2,71 @@
 # MAIN.PY
 # =========================================
 
-import os
 
+import logging
+import math
+import os
+import threading
+
+from kivy.app import App
+from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.graphics import Rectangle
+from kivy.graphics.texture import Texture
+from kivy.uix.widget import Widget
+
+import kivy_adapter
+from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
+from constants import CENTRO_OFFSET_Y, ESCALA
+from entities.duende_neblina import DuendeNeblina
+from entities.sapo import Sapo
+from entities.semente import Semente
+from entities.violao import Violao
+from render.asset_manager import asset_manager
+from render.background_renderer import BackgroundRenderer
+from render.barraca_renderer import BarracaRenderer
+from render.controle_renderer import ControleRenderer
+from render.duende_renderer import DuendeRenderer
+from render.sapo_renderer import PensamentoSapoRenderer, SapoRenderer
+from render.semente_renderer import SementeRenderer
+from render.tamandua_renderer import TamanduaRenderer
+from render.transform_utils import TransformUtils
+from render.violao_renderer import ViolaoRenderer
+from systems.ambiente import Ambiente
+from systems.animacoes_folha import AnimacoesFolha
+from systems.audio_manager import AudioManager
+from systems.clima.clima_service import ClimaService
+from systems.clima.evento_livro import EventoLivro
+from systems.clima.frasco import FrascoClimatico
+from systems.clima.nuvem import Nuvem
+from systems.clima.sistema_nuvens import SistemaNuvens
+from systems.particulas.poeira import ParticulaPoeira
+from systems.voz.comando_voz import ComandoVoz
 from systems.voz.media_session_android import MediaSessionAndroid
+from systems.voz.reconhecedor_android import ReconhecedorAndroid
+from systems.voz.spotify_android import SpotifyAndroid
 from systems.voz.spotify_api import SpotifyApi
-IS_ANDROID = 'ANDROID_ARGUMENT' in os.environ
+from systems.voz.spotify_auth import SpotifyAuth
+from systems.voz.spotify_callback import SpotifyCallback
+from systems.voz.spotify_token_storage import SpotifyTokenStorage
+from utils.input import init_scaling, real_to_virtual
+
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
+
+
+IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 
 if not IS_ANDROID:
     os.environ["SDL_AUDIODRIVER"] = "alsa"
     os.environ["AUDIODEV"] = "hw:2,0"
 
 if IS_ANDROID:
-    from android.permissions import (
-        request_permissions,
-        Permission
-    )
-    request_permissions([
-        Permission.RECORD_AUDIO
-    ])
+    from android.permissions import Permission, request_permissions
 
-import logging
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("PIL").setLevel(logging.WARNING)
-logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
+    request_permissions([Permission.RECORD_AUDIO])
 
-from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.graphics import Rectangle, Color
-from kivy.graphics.texture import Texture
-from kivy.clock import Clock
-from kivy.core.window import Window
-
-import kivy_adapter
-import threading
-import math
-
-from config import *
-from constants import *
-
-from entities.sapo import Sapo
-from systems.animacoes_folha import AnimacoesFolha
-from systems.ambiente import Ambiente
-from systems.particulas.poeira import ParticulaPoeira
-from systems.clima.frasco import FrascoClimatico
-from systems.clima.evento_livro import EventoLivro
-
-from render.asset_manager import asset_manager
-from render.transform_utils import TransformUtils
-from render.background_renderer import BackgroundRenderer
-from render.sapo_renderer import SapoRenderer, PensamentoSapoRenderer
-from render.tamandua_renderer import TamanduaRenderer
-from render.barraca_renderer import BarracaRenderer
-
-from systems.clima.clima_service import ClimaService
-from systems.clima.sistema_nuvens import SistemaNuvens
-from systems.clima.nuvem import Nuvem
-
-from render.duende_renderer import DuendeRenderer
-from entities.duende_neblina import DuendeNeblina
-from systems.audio_manager import AudioManager
-
-from entities.violao import Violao
-from render.violao_renderer import ViolaoRenderer
-from entities.semente import Semente
-from render.semente_renderer import SementeRenderer
-from render.controle_renderer import ControleRenderer
-from systems.voz.reconhecedor_android import ReconhecedorAndroid
-from systems.voz.comando_voz import ComandoVoz
-from systems.voz.spotify_android import SpotifyAndroid
-from systems.voz.spotify_auth import SpotifyAuth
-from systems.voz.spotify_token_storage import SpotifyTokenStorage
-from systems.voz.spotify_callback import SpotifyCallback
 
 # =========================================
 # INIT
@@ -92,11 +86,6 @@ tela = tela_virtual
 
 clock = kivy_adapter.Clock()
 
-from utils.input import (
-    init_scaling,
-    real_to_virtual
-)
-
 # inicializar escala para helpers de input
 init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
 
@@ -107,14 +96,12 @@ init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
 
 centro_x = LARGURA // 2
 
-centro_y = (
-    ALTURA // 2
-    + CENTRO_OFFSET_Y
-)
+centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
 
 # =========================================
 # Kivy App wrapper
 # =========================================
+
 
 class GameWidget(Widget):
     @property
@@ -124,25 +111,19 @@ class GameWidget(Widget):
     @property
     def tem_feira(self):
         return self.tamandua_renderer is not None
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.audio = AudioManager()
         self.audio.callback_spotify_tocando = self.spotify_esta_tocando
 
-        Clock.schedule_once(
-            lambda dt: self.audio.iniciar(),
-            2
-        )
+        Clock.schedule_once(lambda dt: self.audio.iniciar(), 2)
 
         self.tecla_esquerda_pressionada = False
         self.tecla_direita_pressionada = False
 
-        Window.bind(
-            on_key_down=self.on_key_down,
-            on_key_up=self.on_key_up
-        )
+        Window.bind(on_key_down=self.on_key_down, on_key_up=self.on_key_up)
 
         # initialize game state (mirrors previous top-level init)
         self.transform = TransformUtils()
@@ -159,22 +140,24 @@ class GameWidget(Widget):
         self.renderer_semente = None
         self.frasco_climatico = FrascoClimatico(self.transform)
         self.frasco_climatico.atualizar_posicao(centro_y)
-        self.particulas = [ParticulaPoeira(self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote) for _ in range(QUANTIDADE_POEIRA)]
-        self.evento_livro = EventoLivro(asset_manager, self.transform)        
+        self.particulas = [
+            ParticulaPoeira(
+                self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote
+            )
+            for _ in range(QUANTIDADE_POEIRA)
+        ]
+        self.evento_livro = EventoLivro(asset_manager, self.transform)
         self.evento_livro.particulas = self.particulas
         for p in self.particulas:
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
-        
 
         self.clima_service = ClimaService()
 
-        self.background_renderer = BackgroundRenderer(tela, LARGURA, ALTURA, self.transform, self.clima_service)
-        self.controle_renderer = ControleRenderer(
-            tela,
-            asset_manager,
-            self.transform
+        self.background_renderer = BackgroundRenderer(
+            tela, LARGURA, ALTURA, self.transform, self.clima_service
         )
+        self.controle_renderer = ControleRenderer(tela, asset_manager, self.transform)
 
         self.tamandua_renderer = None
         self.barraca_renderer = None
@@ -185,10 +168,8 @@ class GameWidget(Widget):
 
         self.sistema_nuvens = SistemaNuvens(self.transform)
         self.sapo = Sapo(centro_x, centro_y, self.clima_service)
-        self.sapo.background_renderer = (self.background_renderer)
-        self.sapo.animacoes.callback_verificar_spotify = (
-            self.spotify_esta_tocando
-        )
+        self.sapo.background_renderer = self.background_renderer
+        self.sapo.animacoes.callback_verificar_spotify = self.spotify_esta_tocando
         # interaction state
         self.drag_duende = False
         self.drag_violao = False
@@ -212,68 +193,33 @@ class GameWidget(Widget):
 
         dados_spotify = SpotifyTokenStorage.carregar()
         if dados_spotify:
-            self.spotify_code_verifier = (
-                dados_spotify.get(
-                    "code_verifier"
-                )
-            )
+            self.spotify_code_verifier = dados_spotify.get("code_verifier")
 
-            self.spotify_token = (
-                dados_spotify.get(
-                    "access_token"
-                )
-            )
+            self.spotify_token = dados_spotify.get("access_token")
 
-            self.spotify_refresh_token = (
-                dados_spotify.get(
-                    "refresh_token"
-                )
-            )
+            self.spotify_refresh_token = dados_spotify.get("refresh_token")
             if self.spotify_refresh_token:
-                resposta = (
-                    SpotifyAuth.renovar_token(
-                        self.spotify_refresh_token
-                    )
-                )
+                resposta = SpotifyAuth.renovar_token(self.spotify_refresh_token)
                 if resposta:
-                    self.spotify_token = (
-                        resposta.get(
-                            "access_token"
-                        )
-                    )
+                    self.spotify_token = resposta.get("access_token")
 
-                    novo_refresh = (
-                        resposta.get(
-                            "refresh_token"
-                        )
-                    )
+                    novo_refresh = resposta.get("refresh_token")
 
                     if novo_refresh:
-                        self.spotify_refresh_token = (
-                            novo_refresh
-                        )
+                        self.spotify_refresh_token = novo_refresh
 
                     SpotifyTokenStorage.salvar(
                         self.spotify_token,
                         self.spotify_refresh_token,
-                        self.spotify_code_verifier
+                        self.spotify_code_verifier,
                     )
-                    print(
-                        "[SPOTIFY] Token renovado"
-                    )
+                    print("[SPOTIFY] Token renovado")
 
         # drawing setup
         with self.canvas:
-            self.texture = Texture.create(
-                size=(LARGURA, ALTURA),
-                colorfmt='rgba'
-            )
+            self.texture = Texture.create(size=(LARGURA, ALTURA), colorfmt="rgba")
             self.texture.flip_vertical()
-            self.rect = Rectangle(
-                texture=self.texture,
-                pos=(0, 0),
-                size=Window.size
-            )
+            self.rect = Rectangle(texture=self.texture, pos=(0, 0), size=Window.size)
 
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
@@ -294,53 +240,34 @@ class GameWidget(Widget):
         self.spotify_code_verifier = SpotifyAuth.gerar_code_verifier()
 
         SpotifyTokenStorage.salvar(
-            self.spotify_token,
-            self.spotify_refresh_token,
-            self.spotify_code_verifier
+            self.spotify_token, self.spotify_refresh_token, self.spotify_code_verifier
         )
 
-        url = (
-            SpotifyAuth.obter_url_login(
-                self.spotify_code_verifier
-            )
-        )
+        url = SpotifyAuth.obter_url_login(self.spotify_code_verifier)
 
         SpotifyAndroid.abrir_url(url)
 
     def renovar_token_spotify(self):
-
         if not self.spotify_refresh_token:
             return False
 
-        resposta = SpotifyAuth.renovar_token(
-            self.spotify_refresh_token
-        )
+        resposta = SpotifyAuth.renovar_token(self.spotify_refresh_token)
 
         if not resposta:
             return False
 
-        self.spotify_token = resposta.get(
-            "access_token"
-        )
+        self.spotify_token = resposta.get("access_token")
 
-        novo_refresh = resposta.get(
-            "refresh_token"
-        )
+        novo_refresh = resposta.get("refresh_token")
 
         if novo_refresh:
-            self.spotify_refresh_token = (
-                novo_refresh
-            )
+            self.spotify_refresh_token = novo_refresh
 
         SpotifyTokenStorage.salvar(
-            self.spotify_token,
-            self.spotify_refresh_token,
-            self.spotify_code_verifier
+            self.spotify_token, self.spotify_refresh_token, self.spotify_code_verifier
         )
 
-        print(
-            "[SPOTIFY] Token renovado automaticamente"
-        )
+        print("[SPOTIFY] Token renovado automaticamente")
 
         return True
 
@@ -348,18 +275,9 @@ class GameWidget(Widget):
         if not self.spotify_token:
             return None
 
-        device_id = (
-            SpotifyApi.obter_dispositivo_ativo(
-                self.spotify_token
-            )
-        )
-        if device_id == "TOKEN_EXPIRADO":
-            if self.renovar_token_spotify():
-                device_id = (
-                    SpotifyApi.obter_dispositivo_ativo(
-                        self.spotify_token
-                    )
-                )
+        device_id = SpotifyApi.obter_dispositivo_ativo(self.spotify_token)
+        if device_id == "TOKEN_EXPIRADO" and self.renovar_token_spotify():
+            device_id = SpotifyApi.obter_dispositivo_ativo(self.spotify_token)
 
         return device_id
 
@@ -384,32 +302,22 @@ class GameWidget(Widget):
         if not self.spotify_token:
             return False
 
-        resultado = SpotifyApi.esta_tocando(
-            self.spotify_token
-        )
+        resultado = SpotifyApi.esta_tocando(self.spotify_token)
         if resultado is not None:
             return resultado
 
         if self.renovar_token_spotify():
-            resultado = SpotifyApi.esta_tocando(
-                self.spotify_token
-            )
+            resultado = SpotifyApi.esta_tocando(self.spotify_token)
             if resultado is not None:
                 return resultado
 
         return False
 
     def spotify_ativo(self):
-        return (
-            self.spotify_token
-            and self.spotify_esta_tocando()
-        )
+        return self.spotify_token and self.spotify_esta_tocando()
 
     def atualizar_animacao_spotify(self, dt):
-        if (
-            not self.violao
-            or not self.sapo.pode_receber_violao()
-        ):
+        if not self.violao or not self.sapo.pode_receber_violao():
             return
 
         animacoes = self.sapo.animacoes
@@ -419,41 +327,31 @@ class GameWidget(Widget):
         # PENSAMENTOS SOBRE A MÚSICA
         # =====================================
 
-        if (
-            spotify_tocando
-            and self.spotify_artista_atual
-            and self.spotify_musica_atual
-        ):
+        if spotify_tocando and self.spotify_artista_atual and self.spotify_musica_atual:
             self.spotify_pensamento_timer -= dt
 
             if self.spotify_pensamento_timer <= 0:
-
                 self.spotify_pensamento_timer = 10
 
                 if self.spotify_mostrar_artista:
-
                     self.sapo.pensamentos.texto = (
                         f"Ihuuu! Estou ouvindo {self.spotify_artista_atual}"
                     )
 
                 else:
-
                     self.sapo.pensamentos.texto = (
                         f"Lá lá lá... {self.spotify_musica_atual}"
                     )
 
                 self.sapo.pensamentos.tempo_restante = 10
 
-                self.spotify_mostrar_artista = (
-                    not self.spotify_mostrar_artista
-                )
+                self.spotify_mostrar_artista = not self.spotify_mostrar_artista
 
         # =====================================
         # SPOTIFY TOCANDO
         # =====================================
 
         if spotify_tocando:
-
             if (
                 not animacoes.tocando_violao
                 and not animacoes.pegando_violao
@@ -468,21 +366,14 @@ class GameWidget(Widget):
         # SPOTIFY PAROU
         # =====================================
 
-        if (
-            animacoes.tocando_violao
-            and not spotify_tocando
-        ):
+        if animacoes.tocando_violao and not spotify_tocando:
             animacoes.iniciar_levantar_violao()
 
     def iniciar_sequencia_spotify(self):
         animacoes = self.sapo.animacoes
 
-        if (
-            self.violao.acoplado
-            and (
-                animacoes.pegando_violao
-                or animacoes.tocando_violao
-            )
+        if self.violao.acoplado and (
+            animacoes.pegando_violao or animacoes.tocando_violao
         ):
             return
 
@@ -550,25 +441,14 @@ class GameWidget(Widget):
         try:
             self.spotify_tocando_cache = self.spotify_esta_tocando()
 
-            if (
-                self.spotify_token
-                and self.spotify_tocando_cache
-            ):
-                dados = (
-                    SpotifyApi.obter_musica_atual(self.spotify_token)
-                )
+            if self.spotify_token and self.spotify_tocando_cache:
+                dados = SpotifyApi.obter_musica_atual(self.spotify_token)
                 if dados:
-                    self.spotify_musica_atual = (dados["musica"])
-                    self.spotify_artista_atual = (dados["artista"])
+                    self.spotify_musica_atual = dados["musica"]
+                    self.spotify_artista_atual = dados["artista"]
 
-                    if (
-                        dados.get("duracao_ms")
-                        and dados.get("progresso_ms")
-                    ):
-                        restante = (
-                            dados["duracao_ms"]
-                            - dados["progresso_ms"]
-                        ) / 1000
+                    if dados.get("duracao_ms") and dados.get("progresso_ms"):
+                        restante = (dados["duracao_ms"] - dados["progresso_ms"]) / 1000
 
                         self.spotify_cache_timer = max(10, restante + 2)
         except Exception:
@@ -582,74 +462,40 @@ class GameWidget(Widget):
         try:
             dados = SpotifyApi.obter_musica_atual(self.spotify_token)
 
-            if dados == "TOKEN_EXPIRADO":
-                if self.renovar_token_spotify():
-                    dados = SpotifyApi.obter_musica_atual(
-                        self.spotify_token
-                    )
+            if dados == "TOKEN_EXPIRADO" and self.renovar_token_spotify():
+                dados = SpotifyApi.obter_musica_atual(self.spotify_token)
 
             if dados:
-                self.spotify_musica_atual = (
-                    dados["musica"]
-                )
-                self.spotify_artista_atual = (
-                    dados["artista"]
-                )
+                self.spotify_musica_atual = dados["musica"]
+                self.spotify_artista_atual = dados["artista"]
                 self.spotify_pensamento_timer = 0
                 self.spotify_mostrar_artista = True
         except Exception as ex:
-            print(
-                f"[SPOTIFY] Erro ao obter música: {ex}"
-            )
+            print(f"[SPOTIFY] Erro ao obter música: {ex}")
 
     def carregar_cenario_feira(self):
+        self.tamandua_renderer = TamanduaRenderer(tela, self.transform)
 
-        self.tamandua_renderer = TamanduaRenderer(
-            tela,
-            self.transform
-        )
+        self.barraca_renderer = BarracaRenderer(tela, self.transform, LARGURA, ALTURA)
 
-        self.barraca_renderer = BarracaRenderer(
-            tela,
-            self.transform,
-            LARGURA,
-            ALTURA
-        )
+        x_barraca, y_barraca = self.barraca_renderer.obter_posicao()
 
-        x_barraca, y_barraca = (
-            self.barraca_renderer.obter_posicao()
-        )
-
-        self.tamandua_renderer.definir_posicao(
-            x_barraca + 33,
-            y_barraca - 25
-        )
+        self.tamandua_renderer.definir_posicao(x_barraca + 33, y_barraca - 25)
 
     def descarregar_cenario_feira(self):
-
         self.tamandua_renderer = None
         self.barraca_renderer = None
 
     def carregar_cenario_principal(self):
-
         self.duende = DuendeNeblina()
-        self.renderer_duende = DuendeRenderer(
-            tela,
-            asset_manager,
-            self.transform
-        )
+        self.renderer_duende = DuendeRenderer(tela, asset_manager, self.transform)
         self.duende.violao_monitorado = self.violao
 
         self.semente = Semente()
 
-        self.renderer_semente = SementeRenderer(
-            tela,
-            asset_manager,
-            self.transform
-        )
+        self.renderer_semente = SementeRenderer(tela, asset_manager, self.transform)
 
     def descarregar_cenario_principal(self):
-
         self.duende = None
         self.renderer_duende = None
 
@@ -659,12 +505,7 @@ class GameWidget(Widget):
     def on_size(self, *args):
         self.rect.size = (self.width, self.height)
 
-        init_scaling(
-            self.width,
-            self.height,
-            LARGURA,
-            ALTURA
-        )
+        init_scaling(self.width, self.height, LARGURA, ALTURA)
 
     def on_pos(self, *args):
         self.rect.pos = self.pos
@@ -672,10 +513,7 @@ class GameWidget(Widget):
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        if (
-            self.controle_renderer.rect_microfone
-            .collidepoint(pos_virtual)
-        ):
+        if self.controle_renderer.rect_microfone.collidepoint(pos_virtual):
             self.controle_renderer.microfone_ligado = (
                 not self.controle_renderer.microfone_ligado
             )
@@ -708,23 +546,19 @@ class GameWidget(Widget):
             self.evento_livro.fechar_livro_aberto()
             return True
 
-        if self.evento_livro.livro_visivel:
-            if (
-                self.evento_livro.rect_livro
-                and self.evento_livro.rect_livro.collidepoint(pos_virtual)
-            ):
-                self.evento_livro.ocultar_livro_por_clique()
-                return True
+        if self.evento_livro.livro_visivel and (
+            self.evento_livro.rect_livro
+            and self.evento_livro.rect_livro.collidepoint(pos_virtual)
+        ):
+            self.evento_livro.ocultar_livro_por_clique()
+            return True
 
         # =========================
         # POEIRA
         # =========================
         if not self.evento_livro.livro_visivel:
             for particula in self.particulas:
-                if (
-                    particula.ativa
-                    and particula.obter_rect().collidepoint(pos_virtual)
-                ):
+                if particula.ativa and particula.obter_rect().collidepoint(pos_virtual):
                     particula.ativa = False
                     self.evento_livro.registrar_clique_poeira()
                     return True
@@ -733,10 +567,7 @@ class GameWidget(Widget):
         # DUENDE
         # =========================
 
-        if (
-            self.tem_duende
-            and self.duende.corpo_rect.collidepoint(pos_virtual)
-        ):
+        if self.tem_duende and self.duende.corpo_rect.collidepoint(pos_virtual):
             self.drag_duende = True
             self.duende.iniciar_arraste(*pos_virtual)
 
@@ -748,27 +579,23 @@ class GameWidget(Widget):
 
         if self.violao.acoplado:
             distancia = (
-                (pos_virtual[0] - self.sapo.x) ** 2 +
-                (pos_virtual[1] - self.sapo.y) ** 2
+                (pos_virtual[0] - self.sapo.x) ** 2
+                + (pos_virtual[1] - self.sapo.y) ** 2
             ) ** 0.5
 
             if distancia < 120:
                 self.violao.acoplado = False
                 if self.spotify_token:
-                    SpotifyApi.pause(
-                        self.spotify_token
-                    )
+                    SpotifyApi.pause(self.spotify_token)
                     self.spotify_tocando_cache = False
                 else:
                     MediaSessionAndroid.pause()
                     self.spotify_tocando_cache = False
-                
+
                 self.sapo.parar_violao()
                 self.drag_violao = True
                 # self.audio.alternar_musica_violao() REMOVER
-                self.violao.iniciar_arraste(
-                    *pos_virtual
-                )
+                self.violao.iniciar_arraste(*pos_virtual)
                 return True
 
         # =========================
@@ -788,10 +615,7 @@ class GameWidget(Widget):
 
         if self.drag_violao:
             self.violao.mover_arraste(*pos_virtual)
-        if (
-            self.drag_duende
-            and self.tem_duende
-        ):
+        if self.drag_duende and self.tem_duende:
             self.duende.mover_arraste(*pos_virtual)
 
         if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
@@ -801,8 +625,6 @@ class GameWidget(Widget):
             self.controle_renderer.botao_direita_pressionado = False
 
     def on_touch_up(self, touch):
-        pos_virtual = real_to_virtual(touch.pos)
-
         self.controle_renderer.botao_esquerda_pressionado = False
         self.controle_renderer.botao_direita_pressionado = False
         self.sapo.parar_controle_esquerda()
@@ -813,10 +635,7 @@ class GameWidget(Widget):
             self.violao.finalizar_arraste()
             area_sapo = kivy_adapter.Rect(self.sapo.x - 80, self.sapo.y - 80, 160, 160)
             if (
-                area_sapo.collidepoint(
-                    self.violao.x,
-                    self.violao.y
-                )
+                area_sapo.collidepoint(self.violao.x, self.violao.y)
                 and self.sapo.pode_receber_violao()
             ):
                 self.violao.acoplado = True
@@ -825,10 +644,7 @@ class GameWidget(Widget):
                 if self.spotify_token:
                     device_id = self.obter_dispositivo_ativo_com_renovacao()
                     if device_id:
-                        sucesso = SpotifyApi.play(
-                            self.spotify_token,
-                            device_id
-                        )
+                        sucesso = SpotifyApi.play(self.spotify_token, device_id)
                         if sucesso:
                             self.spotify_tocando_cache = True
                             self.iniciar_sequencia_spotify_com_violao()
@@ -843,20 +659,17 @@ class GameWidget(Widget):
                     self.iniciar_sequencia_spotify_com_violao()
             else:
                 self.violao.iniciar_queda()
-                if (
-                    self.tem_duende
-                    and self.duende.pode_resgatar_violao()
-                ):
+                if self.tem_duende and self.duende.pode_resgatar_violao():
                     distancia_violao = abs(self.violao.x - self.duende.x)
                     MIN_TELEPORT_DIST = 120
-                    if not self.duende.consegue_alcancar_antes_da_queda(self.violao) and distancia_violao > MIN_TELEPORT_DIST:
+                    if (
+                        not self.duende.consegue_alcancar_antes_da_queda(self.violao)
+                        and distancia_violao > MIN_TELEPORT_DIST
+                    ):
                         self.duende.teleportar_para_violao(self.violao)
                     self.duende.iniciar_resgate_violao(self.violao)
 
-        if (
-            self.drag_duende
-            and self.tem_duende
-        ):
+        if self.drag_duende and self.tem_duende:
             self.drag_duende = False
             self.duende.finalizar_arraste(self.frasco_climatico.area_interna)
             if self.duende.esta_dentro_do_frasco(self.frasco_climatico.area_interna):
@@ -867,14 +680,7 @@ class GameWidget(Widget):
                 self.duende.animacoes.cancelar_sono_programado()
                 self.duende.escolher_novo_destino()
 
-    def on_key_down(
-        self,
-        window,
-        key,
-        scancode,
-        codepoint,
-        modifiers
-    ):
+    def on_key_down(self, window, key, scancode, codepoint, modifiers):
         # seta esquerda
         if key == 276:
             self.tecla_esquerda_pressionada = True
@@ -887,12 +693,7 @@ class GameWidget(Widget):
 
         return True
 
-    def on_key_up(
-        self,
-        window,
-        key,
-        scancode
-    ):
+    def on_key_up(self, window, key, scancode):
         if key == 276:
             self.tecla_esquerda_pressionada = False
             self.sapo.parar_controle_esquerda()
@@ -909,23 +710,19 @@ class GameWidget(Widget):
 
         # clima update
         if self.clima_service.precisa_atualizar():
+
             def atualizar_clima():
                 self.clima_service.atualizar()
+
             threading.Thread(target=atualizar_clima, daemon=True).start()
 
         self.clima_service.atualizar_visual(dt)
 
         self.spotify_cache_timer -= dt
-        if (
-            self.spotify_cache_timer <= 0
-            and not self.spotify_consulta_em_andamento
-        ):
+        if self.spotify_cache_timer <= 0 and not self.spotify_consulta_em_andamento:
             self.spotify_consulta_em_andamento = True
             self.spotify_cache_timer = float("inf")
-            threading.Thread(
-                target=self.atualizar_estado_spotify,
-                daemon=True
-            ).start()
+            threading.Thread(target=self.atualizar_estado_spotify, daemon=True).start()
 
         if self.spotify_pendente:
             self.spotify_pendente_timer -= dt
@@ -935,7 +732,7 @@ class GameWidget(Widget):
                     self.spotify_tentativas -= 1
                     if self.spotify_tentativas <= 0:
                         self.spotify_pendente = None
-                        self.sapo.pensamentos.texto = ("Não encontrei um Spotify ativo.")
+                        self.sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
                         self.sapo.pensamentos.tempo_restante = 5
                         self.spotify_pendente = None
                         self.spotify_pendente_timer = 0
@@ -943,60 +740,42 @@ class GameWidget(Widget):
                     else:
                         self.spotify_pendente_timer = 5
                 else:
-                    uri = (
-                        SpotifyApi.buscar_faixa(
-                            self.spotify_token,
-                            self.spotify_pendente
-                        )
+                    uri = SpotifyApi.buscar_faixa(
+                        self.spotify_token, self.spotify_pendente
                     )
                     if uri:
-                        SpotifyApi.transferir_playback(
-                            self.spotify_token,
-                            device_id
-                        )
+                        SpotifyApi.transferir_playback(self.spotify_token, device_id)
 
                         SpotifyAndroid.abrir_spotify()
 
                         sucesso = SpotifyApi.tocar_faixa(
-                            self.spotify_token,
-                            device_id,
-                            uri
+                            self.spotify_token, device_id, uri
                         )
 
                         if sucesso:
                             self.iniciar_sequencia_spotify()
-                            self.atualizar_dados_musica_atual()    
+                            self.atualizar_dados_musica_atual()
 
                     self.spotify_pendente = None
                     self.spotify_tentativas = 0
-                
-        if (
-            not self.spotify_token
-            and self.spotify_code_verifier
-        ):
+
+        if not self.spotify_token and self.spotify_code_verifier:
             code = SpotifyCallback.obter_code()
 
             if code:
-                resposta = (
-                    SpotifyAuth.trocar_code_por_token(
-                        code,
-                        self.spotify_code_verifier
-                    )
+                resposta = SpotifyAuth.trocar_code_por_token(
+                    code, self.spotify_code_verifier
                 )
 
                 if resposta:
-                    self.spotify_token = (
-                        resposta["access_token"]
-                    )
+                    self.spotify_token = resposta["access_token"]
 
-                    self.spotify_refresh_token = (
-                        resposta["refresh_token"]
-                    )
+                    self.spotify_refresh_token = resposta["refresh_token"]
 
                     SpotifyTokenStorage.salvar(
                         self.spotify_token,
                         self.spotify_refresh_token,
-                        self.spotify_code_verifier
+                        self.spotify_code_verifier,
                     )
 
                     if self.spotify_pendente:
@@ -1005,25 +784,19 @@ class GameWidget(Widget):
 
         if self.controle_renderer.microfone_ligado:
             texto = self.reconhecedor_voz.obter_texto()
-        
+
             if texto:
                 print(f"[VOZ] TEXTO: [{texto}]")
 
                 self.tempo_sem_audio = 0
-                comando_spotify = (
-                    ComandoVoz.obter_comando_spotify(
-                        texto
-                    )
-                )
+                comando_spotify = ComandoVoz.obter_comando_spotify(texto)
                 if comando_spotify:
                     acao = comando_spotify["acao"]
                     sucesso = False
-                    
+
                     if acao == "pause":
                         if self.spotify_token:
-                            sucesso = SpotifyApi.pause(
-                                self.spotify_token
-                            )
+                            sucesso = SpotifyApi.pause(self.spotify_token)
                         else:
                             MediaSessionAndroid.pause()
                             sucesso = True
@@ -1034,39 +807,28 @@ class GameWidget(Widget):
                         if self.spotify_token:
                             device_id = self.obter_dispositivo_ativo_com_renovacao()
                             if device_id:
-                                sucesso = SpotifyApi.play(
-                                    self.spotify_token,
-                                    device_id
-                                )
-                                self.spotify_tocando_cache = True                     
+                                sucesso = SpotifyApi.play(self.spotify_token, device_id)
+                                self.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.play()
                             sucesso = True
                     elif acao == "next":
                         if self.spotify_token:
-                            sucesso = SpotifyApi.next(
-                                self.spotify_token
-                            )
+                            sucesso = SpotifyApi.next(self.spotify_token)
                             self.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.next()
                             sucesso = True
                     elif acao == "previous":
                         if self.spotify_token:
-                            sucesso = SpotifyApi.previous(
-                                self.spotify_token
-                            )
+                            sucesso = SpotifyApi.previous(self.spotify_token)
                             self.spotify_tocando_cache = True
                         else:
                             MediaSessionAndroid.previous()
                             sucesso = True
                     elif acao == "buscar":
                         if not self.spotify_token:
-                            self.spotify_pendente = (
-                                comando_spotify[
-                                    "pesquisa"
-                                ]
-                            )
+                            self.spotify_pendente = comando_spotify["pesquisa"]
                             self.spotify_pendente_timer = 5
                             self.spotify_tentativas = 5
                             self.iniciar_login_spotify()
@@ -1077,35 +839,27 @@ class GameWidget(Widget):
 
                             return
 
-                        pesquisa = (
-                            comando_spotify[
-                                "pesquisa"
-                            ]
-                        )
+                        pesquisa = comando_spotify["pesquisa"]
                         if pesquisa:
-                            uri = SpotifyApi.buscar_faixa(
-                                self.spotify_token,
-                                pesquisa
-                            )
+                            uri = SpotifyApi.buscar_faixa(self.spotify_token, pesquisa)
                             if uri:
                                 device_id = self.obter_dispositivo_ativo_com_renovacao()
                                 if not device_id:
                                     self.spotify_pendente = pesquisa
                                     self.spotify_pendente_timer = 3
                                     self.spotify_tentativas = 5
-                                    self.sapo.pensamentos.texto = "Abrindo seu Spotify..."
+                                    self.sapo.pensamentos.texto = (
+                                        "Abrindo seu Spotify..."
+                                    )
                                     self.sapo.pensamentos.tempo_restante = 3
                                     return
 
                                 SpotifyApi.transferir_playback(
-                                    self.spotify_token,
-                                    device_id
+                                    self.spotify_token, device_id
                                 )
 
                                 sucesso = SpotifyApi.tocar_faixa(
-                                    self.spotify_token,
-                                    device_id,
-                                    uri
+                                    self.spotify_token, device_id, uri
                                 )
                                 self.spotify_tocando_cache = True
                             else:
@@ -1116,10 +870,7 @@ class GameWidget(Widget):
 
                     self.desligar_microfone()
 
-                    if (
-                        acao != "pause" 
-                        and sucesso
-                    ):
+                    if acao != "pause" and sucesso:
                         self.iniciar_sequencia_spotify()
                         self.atualizar_dados_musica_atual()
                     elif not sucesso:
@@ -1151,23 +902,23 @@ class GameWidget(Widget):
         direcao_rad = math.radians(self.clima_service.wind_direction + 180)
         sinal_direcao = math.sin(direcao_rad)
         influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
-        self.ambiente.atualizar(
-            dt,
-            influencia_clima
-        )
+        self.ambiente.atualizar(dt, influencia_clima)
 
-        if getattr(self.clima_service, 'rajada_ativa', False):
+        if getattr(self.clima_service, "rajada_ativa", False):
             influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
 
-        if getattr(self.clima_service, 'rajada_ativa', False):
+        if getattr(self.clima_service, "rajada_ativa", False):
             self.animacoes_folha.intensidade_vento = 5.0
         else:
             self.animacoes_folha.intensidade_vento = 1.8
 
         # updates
         from systems.fisica import sistema_fisica
+
         if self.violao.caindo:
-            sistema_fisica.aplicar_forca_vento(self.violao, self.clima_service, dt, sensibilidade=0.6)
+            sistema_fisica.aplicar_forca_vento(
+                self.violao, self.clima_service, dt, sensibilidade=0.6
+            )
 
         self.violao.atualizar(dt)
         self.frasco_climatico.atualizar(dt)
@@ -1175,17 +926,24 @@ class GameWidget(Widget):
         self.sistema_nuvens.atualizar_area_interna()
 
         Nuvem.finalizar_carregamento()
-        self.sistema_nuvens.atualizar(dt, self.clima_service.cloudiness_visual, self.clima_service.future_cloudiness_1h, self.clima_service.future_cloudiness_2h, self.clima_service.future_cloudiness_3h, self.clima_service.wind_direction, self.clima_service.wind_speed)
+        self.sistema_nuvens.atualizar(
+            dt,
+            self.clima_service.cloudiness_visual,
+            self.clima_service.future_cloudiness_1h,
+            self.clima_service.future_cloudiness_2h,
+            self.clima_service.future_cloudiness_3h,
+            self.clima_service.wind_direction,
+            self.clima_service.wind_speed,
+        )
 
-        events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha, self.violao)
+        events = self.sapo.atualizar(
+            dt, self.ambiente, self.animacoes_folha, self.violao
+        )
 
         self.atualizar_animacao_spotify(dt)
 
         if self.spotify_andando_para_violao:
-            distancia = abs(
-                self.sapo.x
-                - self.violao.x
-            )
+            distancia = abs(self.sapo.x - self.violao.x)
             if distancia <= DISTANCIA_VIOLAO:
                 self.spotify_andando_para_violao = False
                 self.sapo.animacoes.andando_direita = False
@@ -1197,33 +955,27 @@ class GameWidget(Widget):
                 else:
                     self.sapo.animacoes.iniciar_levantar_violao()
 
-        if (
-            not self.cenario_feira_anterior
-            and self.background_renderer.cenario_feira
-        ):
+        if not self.cenario_feira_anterior and self.background_renderer.cenario_feira:
             self.sistema_nuvens.limpar()
             self.descarregar_cenario_principal()
 
             import gc
+
             gc.collect()
 
             self.carregar_cenario_feira()
 
-        if (
-            self.cenario_feira_anterior
-            and not self.background_renderer.cenario_feira
-        ):
+        if self.cenario_feira_anterior and not self.background_renderer.cenario_feira:
             self.sistema_nuvens.limpar()
             self.descarregar_cenario_feira()
 
             import gc
+
             gc.collect()
 
             self.carregar_cenario_principal()
 
-        self.cenario_feira_anterior = (
-            self.background_renderer.cenario_feira
-        )
+        self.cenario_feira_anterior = self.background_renderer.cenario_feira
 
         # REMOVER
         # if events.get('start_audio_violao'):
@@ -1233,14 +985,26 @@ class GameWidget(Widget):
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
 
-        sistema_fisica.aplicar_forca_vento(self.sapo, self.clima_service, dt, sensibilidade=0.25)
+        sistema_fisica.aplicar_forca_vento(
+            self.sapo, self.clima_service, dt, sensibilidade=0.25
+        )
 
         pote_x = centro_x - 260
         pote_y = centro_y + 40
 
         if not self.background_renderer.cenario_feira:
-            self.duende.atualizar(dt, self.sapo, pote_x, pote_y, self.clima_service, self.frasco_climatico.area_interna, self.ambiente)
-            sistema_fisica.aplicar_forca_vento(self.duende, self.clima_service, dt, sensibilidade=0.5)
+            self.duende.atualizar(
+                dt,
+                self.sapo,
+                pote_x,
+                pote_y,
+                self.clima_service,
+                self.frasco_climatico.area_interna,
+                self.ambiente,
+            )
+            sistema_fisica.aplicar_forca_vento(
+                self.duende, self.clima_service, dt, sensibilidade=0.5
+            )
 
             self.semente.atualizar(dt, self.clima_service)
 
@@ -1256,7 +1020,9 @@ class GameWidget(Widget):
             self.barraca_renderer.renderizar()
 
         self.sistema_nuvens.renderizar(tela, self.background_renderer.eh_dia())
-        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
+        self.sapo_renderer.renderizar(
+            self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes
+        )
         self.pensamento_renderer.renderizar(tela, self.sapo)
 
         if not self.background_renderer.cenario_feira:
@@ -1265,11 +1031,8 @@ class GameWidget(Widget):
             if not self.evento_livro.livro_visivel:
                 for particula in self.particulas:
                     particula.desenhar(tela)
-                    
-                self.frasco_climatico.desenhar_nevoa(
-                    tela,
-                    self.evento_livro.nevoa
-                )
+
+                self.frasco_climatico.desenhar_nevoa(tela, self.evento_livro.nevoa)
 
             self.renderer_duende.renderizar(self.duende)
             self.renderer_semente.renderizar(self.semente)
@@ -1286,11 +1049,7 @@ class GameWidget(Widget):
         # if IS_ANDROID:
         self.controle_renderer.renderizar()
 
-        self.texture.blit_buffer(
-            img.tobytes(),
-            colorfmt='rgba',
-            bufferfmt='ubyte'
-        )
+        self.texture.blit_buffer(img.tobytes(), colorfmt="rgba", bufferfmt="ubyte")
 
         self.canvas.ask_update()
 
@@ -1298,14 +1057,11 @@ class GameWidget(Widget):
 class GameApp(App):
     def build(self):
         return GameWidget()
-    
+
     def on_stop(self):
-        if hasattr(
-            self.root,
-            "reconhecedor_voz"
-        ):
+        if hasattr(self.root, "reconhecedor_voz"):
             self.root.reconhecedor_voz.destruir()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     GameApp().run()

@@ -2,9 +2,7 @@ import math
 
 
 class AnimacoesFolha:
-
     def __init__(self):
-
         self.tempo = 0.0
 
         # ==========================
@@ -38,32 +36,20 @@ class AnimacoesFolha:
     # UPDATE
     # =====================================
 
-    def atualizar(
-        self,
-        dt,
-        intensidade_respiracao,
-        ambiente
-    ):
-
+    def atualizar(self, dt, intensidade_respiracao, ambiente):
         self.tempo += dt
 
         # =================================
         # VENTO LENTO E NATURAL
         # =================================
 
-        vento = (
-            ambiente.vento
-            * self.intensidade_vento
-        )
+        vento = ambiente.vento * self.intensidade_vento
 
         # =================================
         # RESPIRAÇÃO
         # =================================
 
-        respiracao = (
-            intensidade_respiracao
-            * self.intensidade_respiracao
-        )
+        respiracao = intensidade_respiracao * self.intensidade_respiracao
 
         # Durante rajadas fortes, priorizar vento sobre respiração
         if abs(ambiente.vento) > 0.7:
@@ -79,30 +65,21 @@ class AnimacoesFolha:
         # SPRING PHYSICS
         # =================================
 
-        aceleracao = (
-            alvo - self.rotacao
-        ) * self.forca_retorno
+        aceleracao = (alvo - self.rotacao) * self.forca_retorno
 
         self.velocidade += aceleracao * (dt * 60)
 
         self.velocidade *= self.amortecimento
 
         self.rotacao += self.velocidade * dt
-        
-        self.rotacao = max(
-            -18,
-            min(
-                18,
-                self.rotacao
-            )
-        )
+
+        self.rotacao = max(-18, min(18, self.rotacao))
 
     # =====================================
     # ROTAÇÃO
     # =====================================
 
     def obter_rotacao(self):
-
         return self.rotacao
 
     # =====================================
@@ -110,60 +87,29 @@ class AnimacoesFolha:
     # =====================================
 
     def obter_offset_x(self):
-
-        return (
-            math.sin(self.tempo * 0.55)
-            * 0.35
-        )
+        return math.sin(self.tempo * 0.55) * 0.35
 
     def obter_offset_y(self):
-
-        return (
-            math.sin(self.tempo * 0.9)
-            * 0.2
-        )
+        return math.sin(self.tempo * 0.9) * 0.2
 
     # =====================================
     # MOVIMENTO HERDADO
     # DA RESPIRAÇÃO DA CABEÇA
     # =====================================
 
-    def obter_offset_respiracao(
-        self,
-        intensidade_respiracao
-    ):
-
-        curva = math.sin(
-            self.tempo * 0.9
-        )
+    def obter_offset_respiracao(self, intensidade_respiracao):
+        curva = math.sin(self.tempo * 0.9)
 
         # Quando a cabeça infla,
         # a folha desce e desloca
         # levemente para esquerda
 
-        offset_x = (
-            curva
-            * intensidade_respiracao
-            * -0.45
-        )
+        offset_x = curva * intensidade_respiracao * -0.45
 
         if curva > 0:
-
-            offset_y = (
-                curva
-                * intensidade_respiracao
-                * 0.45
-            )
+            offset_y = curva * intensidade_respiracao * 0.45
 
         else:
+            offset_y = curva * intensidade_respiracao * 1.4
 
-            offset_y = (
-                curva
-                * intensidade_respiracao
-                * 1.4
-            )
-
-        return (
-            offset_x,
-            offset_y
-        )
+        return (offset_x, offset_y)

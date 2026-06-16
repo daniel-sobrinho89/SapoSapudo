@@ -1,47 +1,26 @@
 import os
+from contextlib import suppress
 
-IS_ANDROID = (
-    "ANDROID_ARGUMENT"
-    in os.environ
-)
+IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 
 if IS_ANDROID:
+    from jnius import PythonJavaClass, autoclass, java_method
 
-    from jnius import (
-        autoclass,
-        PythonJavaClass,
-        java_method
-    )
+    PythonActivity = autoclass("org.kivy.android.PythonActivity")
 
-    PythonActivity = autoclass(
-        "org.kivy.android.PythonActivity"
-    )
+    Intent = autoclass("android.content.Intent")
 
-    Intent = autoclass(
-        "android.content.Intent"
-    )
+    RecognizerIntent = autoclass("android.speech.RecognizerIntent")
 
-    RecognizerIntent = autoclass(
-        "android.speech.RecognizerIntent"
-    )
+    SpeechRecognizer = autoclass("android.speech.SpeechRecognizer")
 
-    SpeechRecognizer = autoclass(
-        "android.speech.SpeechRecognizer"
-    )
+    String = autoclass("java.lang.String")
 
-    String = autoclass(
-        "java.lang.String"
-    )
-
-    Integer = autoclass(
-        "java.lang.Integer"
-    )
+    Integer = autoclass("java.lang.Integer")
 
 
 class ReconhecedorAndroid:
-
     def __init__(self):
-
         self.ativo = False
         self.ativo_usuario = False
         self.ultimo_texto = None
@@ -49,20 +28,13 @@ class ReconhecedorAndroid:
         if not IS_ANDROID:
             return
 
-        self.activity = (
-            PythonActivity.mActivity
-        )
+        self.activity = PythonActivity.mActivity
 
         self.recognizer = None
 
-        self.listener = (
-            SpeechRecognitionListener(
-                self
-            )
-        )
+        self.listener = SpeechRecognitionListener(self)
 
     def iniciar(self):
-
         if not IS_ANDROID:
             return
 
@@ -76,74 +48,48 @@ class ReconhecedorAndroid:
 
         self.ativo = True
 
-        intent = Intent(
-            RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-        )
+        intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
         )
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE,
-            "pt-BR"
-        )
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_PARTIAL_RESULTS,
-            False
-        )
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, False)
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_MAX_RESULTS,
-            1
-        )
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
 
-        self.activity.runOnUiThread(
-            IniciarEscutaRunnable(
-                self,
-                intent
-            )
-        )
+        self.activity.runOnUiThread(IniciarEscutaRunnable(self, intent))
 
     def inicializar_recognizer(self):
-
         if self.recognizer is not None:
             return
 
-        self.activity.runOnUiThread(
-            CriarRecognizerRunnable(
-                self
-            )
-        )
+        self.activity.runOnUiThread(CriarRecognizerRunnable(self))
 
     def parar(self):
-
         if not IS_ANDROID:
             return
 
         self.ativo = False
 
-        try:
+        with suppress(Exception):
             self.recognizer.stopListening()
-        except Exception:
-            pass
 
     def destruir(self):
         if not IS_ANDROID:
             return
-        try:
+
+        with suppress(Exception):
             if self.recognizer:
                 self.recognizer.destroy()
-        except Exception:
-            pass
 
         self.recognizer = None
         self.ativo = False
 
     def obter_texto(self):
-
         texto = self.ultimo_texto
 
         self.ultimo_texto = None
@@ -153,32 +99,18 @@ class ReconhecedorAndroid:
 
 if IS_ANDROID:
 
-    class SpeechRecognitionListener(
-        PythonJavaClass
-    ):
-
-        __javainterfaces__ = [
-            "android/speech/RecognitionListener"
-        ]
+    class SpeechRecognitionListener(PythonJavaClass):
+        __javainterfaces__ = ["android/speech/RecognitionListener"]
 
         __javacontext__ = "app"
 
-        def __init__(
-            self,
-            reconhecedor
-        ):
-
+        def __init__(self, reconhecedor):
             super().__init__()
 
-            self.reconhecedor = (
-                reconhecedor
-            )
+            self.reconhecedor = reconhecedor
 
         @java_method("(Landroid/os/Bundle;)V")
-        def onReadyForSpeech(
-            self,
-            params
-        ):
+        def onReadyForSpeech(self, params):
             pass
 
         @java_method("()V")
@@ -186,17 +118,11 @@ if IS_ANDROID:
             pass
 
         @java_method("(F)V")
-        def onRmsChanged(
-            self,
-            rmsdB
-        ):
+        def onRmsChanged(self, rmsdB):
             pass
 
         @java_method("([B)V")
-        def onBufferReceived(
-            self,
-            buffer
-        ):
+        def onBufferReceived(self, buffer):
             pass
 
         @java_method("()V")
@@ -204,10 +130,7 @@ if IS_ANDROID:
             pass
 
         @java_method("(I)V")
-        def onError(
-            self,
-            error
-        ):
+        def onError(self, error):
             ERROR_CLIENT = 5
             ERROR_SPEECH_TIMEOUT = 6
             ERROR_NO_MATCH = 7
@@ -216,77 +139,48 @@ if IS_ANDROID:
             self.reconhecedor.ativo = False
 
             if (
-                error in (
+                error
+                in (
                     ERROR_CLIENT,
                     ERROR_SPEECH_TIMEOUT,
                     ERROR_NO_MATCH,
-                    ERROR_RECOGNIZER_BUSY
+                    ERROR_RECOGNIZER_BUSY,
                 )
                 and self.reconhecedor.ativo_usuario
             ):
                 self.reconhecedor.iniciar()
 
         @java_method("(Landroid/os/Bundle;)V")
-        def onResults(
-            self,
-            results
-        ):
+        def onResults(self, results):
+            with suppress(Exception):
+                lista = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
-            try:
-
-                lista = results.getStringArrayList(
-                    SpeechRecognizer.RESULTS_RECOGNITION
-                )
-
-                if (
-                    lista
-                    and lista.size() > 0
-                ):
+                if lista and lista.size() > 0:
                     texto = lista.get(0)
                     self.reconhecedor.ultimo_texto = str(texto)
                     self.reconhecedor.ativo = False
-            except Exception:
-                pass
 
         @java_method("(Landroid/os/Bundle;)V")
-        def onPartialResults(
-            self,
-            partialResults
-        ):
+        def onPartialResults(self, partialResults):
             pass
 
         @java_method("(ILandroid/os/Bundle;)V")
-        def onEvent(
-            self,
-            eventType,
-            params
-        ):
+        def onEvent(self, eventType, params):
             pass
 
-    class CriarRecognizerRunnable(
-        PythonJavaClass
-    ):
-
-        __javainterfaces__ = [
-            "java/lang/Runnable"
-        ]
+    class CriarRecognizerRunnable(PythonJavaClass):
+        __javainterfaces__ = ["java/lang/Runnable"]
 
         __javacontext__ = "app"
 
-        def __init__(
-            self,
-            reconhecedor
-        ):
+        def __init__(self, reconhecedor):
             super().__init__()
             self.reconhecedor = reconhecedor
 
         @java_method("()V")
         def run(self):
-
-            self.reconhecedor.recognizer = (
-                SpeechRecognizer.createSpeechRecognizer(
-                    self.reconhecedor.activity
-                )
+            self.reconhecedor.recognizer = SpeechRecognizer.createSpeechRecognizer(
+                self.reconhecedor.activity
             )
 
             self.reconhecedor.recognizer.setRecognitionListener(
@@ -296,21 +190,12 @@ if IS_ANDROID:
             if self.reconhecedor.ativo_usuario:
                 self.reconhecedor.iniciar()
 
-    class IniciarEscutaRunnable(
-        PythonJavaClass
-    ):
-
-        __javainterfaces__ = [
-            "java/lang/Runnable"
-        ]
+    class IniciarEscutaRunnable(PythonJavaClass):
+        __javainterfaces__ = ["java/lang/Runnable"]
 
         __javacontext__ = "app"
 
-        def __init__(
-            self,
-            reconhecedor,
-            intent
-        ):
+        def __init__(self, reconhecedor, intent):
             super().__init__()
 
             self.reconhecedor = reconhecedor
@@ -318,7 +203,4 @@ if IS_ANDROID:
 
         @java_method("()V")
         def run(self):
-
-            self.reconhecedor.recognizer.startListening(
-                self.intent
-            )
+            self.reconhecedor.recognizer.startListening(self.intent)
