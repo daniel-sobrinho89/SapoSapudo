@@ -1,6 +1,7 @@
 from PIL import ImageDraw, ImageFont
 
 import kivy_adapter
+from systems.sapudo.maquina_estado_sapo import EstadoSapo
 
 
 class SapoRenderer:
@@ -95,34 +96,34 @@ class SapoRenderer:
     # =====================================
 
     def renderizar(self, centro_x, centro_y, escala, animacoes):
-        if animacoes.adormecendo:
+        if animacoes.maquina.eh(EstadoSapo.ADORMECENDO):
             frame = self.frames_dormir[animacoes.frame_dormir]
 
-        elif animacoes.dormindo:
+        elif animacoes.maquina.eh(EstadoSapo.DORMINDO):
             frame = self.frames_dormindo[animacoes.frame_dormindo]
 
-        elif animacoes.pegando_violao:
+        elif animacoes.maquina.eh(EstadoSapo.PEGANDO_VIOLAO):
             frame = self.frames_pegar_violao[animacoes.frame_pegar_violao]
 
-        elif animacoes.tocando_violao:
+        elif animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
             frame = self.frames_tocar_violao[animacoes.frame_violao]
 
-        elif animacoes.acordando:
+        elif animacoes.maquina.eh(EstadoSapo.ACORDANDO):
             frame = self.frames_acordar[animacoes.frame_acordar]
 
-        elif animacoes.levantando_violao:
+        elif animacoes.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
             frame = self.frames_levantar_violao[animacoes.frame_levantar_violao]
 
-        elif animacoes.andando_esquerda:
+        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
             frame = self.frames_andar_esquerda[animacoes.frame_andar_esquerda]
 
-        elif animacoes.andando_direita:
+        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             frame = self.frames_andar_direita[animacoes.frame_andar_direita]
 
-        elif animacoes.guardando_violao:
+        elif animacoes.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
             frame = self.frames_guardar_violao[animacoes.frame_guardar_violao]
 
-        elif animacoes.soltando_violao:
+        elif animacoes.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
             frame = self.frames_soltar_violao[animacoes.frame_soltar_violao]
 
         else:

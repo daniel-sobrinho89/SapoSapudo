@@ -1,5 +1,6 @@
 import threading
 
+from systems.sapudo.maquina_estado_sapo import EstadoSapo
 from systems.voz.spotify_android import SpotifyAndroid
 from systems.voz.spotify_api import SpotifyApi
 from systems.voz.spotify_auth import SpotifyAuth
@@ -195,12 +196,7 @@ class SpotifyManager:
         # =====================================
 
         if spotify_tocando:
-            if (
-                not animacoes.tocando_violao
-                and not animacoes.pegando_violao
-                and not animacoes.levantando_violao
-                and not animacoes.guardando_violao
-            ):
+            if not animacoes.maquina.esta_com_violao():
                 main.iniciar_sequencia_spotify()
 
             return
@@ -209,7 +205,7 @@ class SpotifyManager:
         # SPOTIFY PAROU
         # =====================================
 
-        if animacoes.tocando_violao and not spotify_tocando:
+        if animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO) and not spotify_tocando:
             animacoes.iniciar_levantar_violao()
 
     def atualizar_spotify(self, main, dt, sapo, violao):

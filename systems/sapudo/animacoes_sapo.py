@@ -1,18 +1,15 @@
 import random
 from datetime import datetime
 
+from systems.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
+
 
 class AnimacoesSapo:
     def __init__(self):
         # ====================================
         # ESTADOS
         # ====================================
-
-        self.piscando = False
-
-        self.dormindo = False
-
-        self.acordando = False
+        self.maquina = MaquinaEstadoSapo()
 
         # ====================================
         # CONTROLE SONO
@@ -46,8 +43,6 @@ class AnimacoesSapo:
         # DORMIR (PNG)
         # ====================================
 
-        self.adormecendo = False
-
         self.frame_dormir = 0
 
         self.tempo_dormir = 0.0
@@ -64,8 +59,6 @@ class AnimacoesSapo:
         # CONTROLE VIOLÃO
         # ====================================
 
-        self.pegando_violao = False
-        self.tocando_violao = False
         self.ultimo_frame_guardar = -1
         self.parar_audio_violao = False
 
@@ -87,55 +80,29 @@ class AnimacoesSapo:
         self.callback_verificar_spotify = None
 
         # ====================================
-        # SONO VISUAL
-        # ====================================
-
-        self.sleep_offset_y = 0
-
-        self.sleep_body_offset_y = 0
-
-        self.sleep_transition_delay = 0.0
-
-        # ====================================
         # ACORDAR (PNG)
         # ====================================
 
-        self.acordando = False
-
         self.frame_acordar = 0
-
         self.tempo_acordar = 0.0
 
         self.executou_acordar_hoje = False
 
-        self.iniciou_tocar_violao = False
-
-        self.levantando_violao = False
-        self.guardando_violao = False
-        self.soltando_violao = False
-        self.finalizou_soltar_violao = False
-
         self.frame_levantar_violao = 0
         self.frame_guardar_violao = 0
         self.frame_soltar_violao = 0
-
         self.tempo_levantar_violao = 0
         self.tempo_guardar_violao = 0
         self.tempo_soltar_violao = 0
 
         self.tempo_tocando_violao = 0
 
-        self.iniciou_guardar_violao = False
-
         # ====================================
-        # CAMINHADA ESQUERDA
+        # CAMINHADA
         # ====================================
 
-        self.andando_esquerda = False
         self.frame_andar_esquerda = 0
         self.tempo_andar_esquerda = 0.0
-
-        self.andando_direita = False
         self.frame_andar_direita = 0
         self.tempo_andar_direita = 0.0
 
@@ -147,7 +114,6 @@ class AnimacoesSapo:
 
         # evita disparar várias vezes no mesmo minuto
         self.ultima_execucao_caminhada = None
-        self.iniciou_andar_esquerda = False
 
     # ====================================
     # SONO
@@ -159,7 +125,6 @@ class AnimacoesSapo:
         horario_atual = (agora.hour * 60) + agora.minute
 
         horario_dormir = (22 * 60) + 00
-
         horario_acordar = (7 * 60) + 30
 
         if horario_dormir < horario_acordar:
@@ -193,7 +158,7 @@ class AnimacoesSapo:
             if self.frame_parado >= 60:
                 self.frame_parado = 0
 
-        if self.acordando:
+        if self.maquina.eh(EstadoSapo.ACORDANDO):
             self.tempo_acordar += dt
 
             if self.tempo_acordar >= 0.15:
@@ -204,33 +169,25 @@ class AnimacoesSapo:
                 if self.frame_acordar >= 60:
                     self.frame_acordar = 59
 
-                    self.acordando = False
-
-                    self.dormindo = False
+                    self.maquina.trocar(EstadoSapo.PARADO)
 
             return
 
-        if self.adormecendo:
+        if self.maquina.eh(EstadoSapo.ADORMECENDO):
             self.tempo_dormir += dt
 
             if not horario_sono:
-                self.adormecendo = False
-
                 self.iniciar_acordar()
 
                 return
 
             if self.tempo_dormir >= 0.15:
                 self.tempo_dormir = 0
-
                 self.frame_dormir += 1
 
                 if self.frame_dormir >= 60:
                     self.frame_dormir = 59
-
-                    self.adormecendo = False
-
-                    self.dormindo = True
+                    self.maquina.trocar(EstadoSapo.DORMINDO)
 
             return
 
@@ -239,14 +196,12 @@ class AnimacoesSapo:
         # ====================================
         if agora.hour == 8 and agora.minute == 0:
             self.iniciou_sono_hoje = False
-
             self.executou_acordar_hoje = False
 
         if (
             not horario_sono
-            and (self.dormindo or self.adormecendo)
-            and not self.acordando
             and not self.executou_acordar_hoje
+            and (self.maquina.em_estado(EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO))
         ):
             self.iniciar_acordar()
 
@@ -261,8 +216,9 @@ class AnimacoesSapo:
         if (
             horario_sono
             and not self.iniciou_sono_hoje
-            and not self.dormindo
-            and not self.adormecendo
+            and not (
+                self.maquina.em_estado(EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO)
+            )
         ):
             self.iniciou_sono_hoje = True
 
@@ -271,40 +227,10 @@ class AnimacoesSapo:
             return
 
         # ====================================
-        # SONO
-        # ====================================
-
-        if horario_sono:
-            self.dormindo = True
-            self.piscando = False
-            self.tempo_piscada = 0.0
-            self.tempo_espera_piscada = 0.0
-
-        else:
-            self.dormindo = False
-            self.sleep_transition_delay = 0
-
-            # ====================================
-            # HORÁRIO
-            # ====================================
-            hora = agora.hour
-            minuto = agora.minute
-
-            if hora >= 19:
-                minuto_base = (minuto // 5) * 5
-                pode_bocejar = (
-                    minuto % 5 == 0 and self.ultimo_bocejo_minuto != minuto_base
-                )
-                if pode_bocejar:
-                    self.ultimo_bocejo_minuto = minuto_base
-
-                    return
-
-        # ====================================
         # DELAY SONO
         # ====================================
 
-        if self.dormindo:
+        if self.maquina.eh(EstadoSapo.DORMINDO):
             self.tempo_dormindo += dt
 
             if self.tempo_dormindo >= 0.5:
@@ -315,37 +241,10 @@ class AnimacoesSapo:
                 if self.frame_dormindo >= 9:
                     self.frame_dormindo = 0
 
-        else:
-            self.sleep_transition_delay = 0
-
-        # ====================================
-        # TARGETS
-        # ====================================
-
-        target_head_offset = 0
-        target_body_offset = 0
-
-        if self.dormindo and self.sleep_transition_delay >= 0.45:
-            target_head_offset = 28
-
-            target_body_offset = 4
-
-        # ====================================
-        # INTERPOLAÇÃO
-        # ====================================
-        velocidade = dt * 2.0
-
-        self.sleep_offset_y += (target_head_offset - self.sleep_offset_y) * velocidade
-
-        self.sleep_body_offset_y += (
-            target_body_offset - self.sleep_body_offset_y
-        ) * velocidade
-
     def iniciar_dormir(self):
-        self.adormecendo = True
+        self.maquina.trocar(EstadoSapo.ADORMECENDO)
 
         self.frame_dormir = 0
-
         self.tempo_dormir = 0
 
     # ====================================
@@ -353,14 +252,9 @@ class AnimacoesSapo:
     # ====================================
 
     def iniciar_acordar(self):
-        self.dormindo = False
-
-        self.adormecendo = False
-
-        self.acordando = True
+        self.maquina.trocar(EstadoSapo.ACORDANDO)
 
         self.frame_acordar = 0
-
         self.tempo_acordar = 0
 
     # ====================================
@@ -368,7 +262,7 @@ class AnimacoesSapo:
     # ====================================
 
     def atualizar_pegar_violao(self, dt):
-        if not self.pegando_violao:
+        if not self.maquina.eh(EstadoSapo.PEGANDO_VIOLAO):
             return
 
         self.tempo_pegar_violao += dt
@@ -381,36 +275,28 @@ class AnimacoesSapo:
 
         if self.frame_pegar_violao >= 15:
             self.frame_pegar_violao = 14
-            self.pegando_violao = False
-            self.tocando_violao = True
+            self.maquina.trocar(EstadoSapo.TOCANDO_VIOLAO)
             self.frame_violao = 0
             self.direcao_violao = 1
-            self.iniciou_tocar_violao = True
 
     def iniciar_violao(self):
-        if self.tocando_violao or self.pegando_violao:
+        if self.maquina.em_estado(EstadoSapo.TOCANDO_VIOLAO, EstadoSapo.PEGANDO_VIOLAO):
             return
 
-        self.iniciou_tocar_violao = False
-        self.pegando_violao = True
-        self.tocando_violao = False
-        self.levantando_violao = False
-        self.guardando_violao = False
+        self.maquina.trocar(EstadoSapo.PEGANDO_VIOLAO)
         self.frame_pegar_violao = 0
         self.tempo_pegar_violao = 0
         self.frame_violao = 0
         self.direcao_violao = 1
 
     def parar_violao(self):
-        self.iniciou_tocar_violao = False
-        self.pegando_violao = False
-        self.tocando_violao = False
+        self.maquina.trocar(EstadoSapo.PARADO)
         self.frame_pegar_violao = 0
         self.frame_violao = 0
         self.ultimo_frame_violao = 0
 
     def atualizar_violao(self, dt):
-        if not self.tocando_violao:
+        if not self.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
             return
 
         self.tempo_tocando_violao += dt
@@ -436,14 +322,12 @@ class AnimacoesSapo:
             self.direcao_violao = 1
 
     def iniciar_levantar_violao(self):
-        self.parar_audio_violao = True
-        self.tocando_violao = False
-        self.levantando_violao = True
+        self.maquina.trocar(EstadoSapo.LEVANTANDO_VIOLAO)
         self.frame_levantar_violao = 0
         self.tempo_levantar_violao = 0
 
     def atualizar_levantar_violao(self, dt):
-        if not self.levantando_violao:
+        if not self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
             return
 
         self.tempo_levantar_violao += dt
@@ -456,25 +340,22 @@ class AnimacoesSapo:
 
         if self.frame_levantar_violao >= 15:
             self.frame_levantar_violao = 14
-            self.levantando_violao = False
-            spotify_tocando = False
 
             if self.callback_verificar_spotify:
                 spotify_tocando = self.callback_verificar_spotify()
 
             if spotify_tocando:
-                self.tocando_violao = True
+                self.maquina.trocar(EstadoSapo.TOCANDO_VIOLAO)
                 self.frame_violao = 0
                 self.direcao_violao = 1
             else:
-                self.guardando_violao = True
+                self.maquina.trocar(EstadoSapo.GUARDANDO_VIOLAO)
                 self.frame_guardar_violao = 0
                 self.tempo_guardar_violao = 0
                 self.ultimo_frame_guardar = -1
-                self.iniciou_guardar_violao = True
 
     def atualizar_guardar_violao(self, dt):
-        if not self.guardando_violao:
+        if not self.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
             return
 
         self.tempo_guardar_violao += dt
@@ -484,12 +365,11 @@ class AnimacoesSapo:
 
         self.tempo_guardar_violao = 0
         self.frame_guardar_violao += 1
-
         if self.frame_guardar_violao >= 9:
             self.frame_guardar_violao = 0
 
     def atualizar_soltar_violao(self, dt):
-        if not self.soltando_violao:
+        if not self.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
             return
 
         self.tempo_soltar_violao += dt
@@ -502,26 +382,21 @@ class AnimacoesSapo:
 
         if self.frame_soltar_violao >= 9:
             self.frame_soltar_violao = 8
-            self.soltando_violao = False
-            self.finalizou_soltar_violao = True
+            self.maquina.trocar(EstadoSapo.PARADO)
             self.tempo_tocando_violao = 0
 
     def iniciar_andar_esquerda(self):
-        self.andando_esquerda = True
-        self.andando_direita = False
+        self.maquina.trocar(EstadoSapo.ANDANDO_ESQUERDA)
         self.frame_andar_esquerda = 0
         self.tempo_andar_esquerda = 0
-        self.iniciou_andar_esquerda = True
 
     def iniciar_andar_direita(self):
-        self.andando_direita = True
-        self.andando_esquerda = False
+        self.maquina.trocar(EstadoSapo.ANDANDO_DIREITA)
         self.frame_andar_direita = 0
         self.tempo_andar_direita = 0
-        self.iniciou_andar_direita = True
 
     def atualizar_andar_esquerda(self, dt):
-        if not self.andando_esquerda:
+        if not self.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
             return
 
         self.tempo_andar_esquerda += dt
@@ -536,7 +411,7 @@ class AnimacoesSapo:
             self.frame_andar_esquerda = 0
 
     def atualizar_andar_direita(self, dt):
-        if not self.andando_direita:
+        if not self.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             return
 
         self.tempo_andar_direita += dt

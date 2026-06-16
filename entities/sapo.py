@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from config import LARGURA
 from systems.sapudo.animacoes_sapo import AnimacoesSapo
 from systems.sapudo.ia_sapo import IASapo
+from systems.sapudo.maquina_estado_sapo import EstadoSapo
 from systems.sapudo.pensamentos_sapo import PensamentosSapo
 from systems.sapudo.respiracao_sapo import RespiracaoSapo
 from systems.system_utils import atualizar_sistemas_basicos
@@ -53,12 +54,12 @@ class Sapo:
         self.animacoes.parar_violao()
 
     def pode_receber_violao(self):
-        return not getattr(self.animacoes, "iniciou_sono_hoje", False) and not getattr(
-            self.animacoes, "dormindo", False
+        return not self.animacoes.maquina.em_estado(
+            EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO
         )
 
     def esta_tocando_violao(self):
-        return bool(getattr(self.animacoes, "tocando_violao", False))
+        return self.animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO)
 
     def iniciar_controle_esquerda(self):
         if not self.pode_caminhar():
@@ -68,13 +69,13 @@ class Sapo:
         self.controle_esquerda = True
         self.andar_iniciado_por_controle = True
 
-        if not self.animacoes.andando_esquerda:
+        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
             self.animacoes.iniciar_andar_esquerda()
 
     def parar_controle_esquerda(self):
         self.andando_manual = False
         self.controle_esquerda = False
-        self.animacoes.andando_esquerda = False
+        self.animacoes.maquina.trocar(EstadoSapo.PARADO)
         self.animacoes.frame_andar_esquerda = 0
         self.animacoes.tempo_andar_esquerda = 0
 
@@ -86,29 +87,18 @@ class Sapo:
         self.controle_direita = True
         self.andar_iniciado_por_controle = True
 
-        if not self.animacoes.andando_direita:
+        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             self.animacoes.iniciar_andar_direita()
 
     def parar_controle_direita(self):
         self.andando_manual = False
         self.controle_direita = False
-        self.animacoes.andando_direita = False
+        self.animacoes.maquina.trocar(EstadoSapo.PARADO)
         self.animacoes.frame_andar_direita = 0
         self.animacoes.tempo_andar_direita = 0
 
     def pode_caminhar(self):
-        a = self.animacoes
-
-        return (
-            not a.tocando_violao
-            and not a.pegando_violao
-            and not a.levantando_violao
-            and not a.guardando_violao
-            and not a.soltando_violao
-            and not a.dormindo
-            and not a.adormecendo
-            and not a.acordando
-        )
+        return self.animacoes.maquina.eh(EstadoSapo.PARADO)
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
     def atualizar(self, dt, ambiente, animacao_folha=None, violao=None):
@@ -182,7 +172,7 @@ class Sapo:
             else:
                 a.proxima_tentativa_caminhada = agora + timedelta(minutes=15)
 
-        if getattr(a, "andando_esquerda", False):
+        if a.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
             frame_atual = a.frame_andar_esquerda
 
             if not hasattr(a, "_ultimo_frame_andar"):
@@ -213,10 +203,10 @@ class Sapo:
                     self.comando_ir_feira = False
                     self.controle_esquerda = False
                     self.andando_manual = False
-                    a.andando_esquerda = False
+                    a.maquina.trocar(EstadoSapo.PARADO)
                     a._ultimo_frame_andar = -1
 
-        if getattr(a, "andando_direita", False):
+        if a.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             frame_atual = a.frame_andar_direita
 
             if not hasattr(a, "_ultimo_frame_andar_direita"):
@@ -227,7 +217,7 @@ class Sapo:
                 self.x += 4
 
         if violao is not None:
-            if getattr(a, "guardando_violao", False):
+            if a.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
                 destino_x = getattr(violao, "x_inicial", None) - 65
                 frame_atual = a.frame_guardar_violao
 
@@ -241,8 +231,7 @@ class Sapo:
                         violao.y = self.y + 20
 
                     else:
-                        a.guardando_violao = False
-                        a.soltando_violao = True
+                        a.maquina.trocar(EstadoSapo.SOLTANDO_VIOLAO)
                         a.frame_soltar_violao = 0
                         a.tempo_soltar_violao = 0
 

@@ -42,6 +42,7 @@ from systems.clima.nuvem import Nuvem
 from systems.clima.sistema_nuvens import SistemaNuvens
 from systems.fisica import sistema_fisica
 from systems.particulas.poeira import ParticulaPoeira
+from systems.sapudo.maquina_estado_sapo import EstadoSapo
 from systems.voz.comando_voz import ComandoVoz
 from systems.voz.media_session_android import MediaSessionAndroid
 from systems.voz.reconhecedor_android import ReconhecedorAndroid
@@ -211,26 +212,19 @@ class GameWidget(Widget):
     def iniciar_sequencia_spotify(self):
         animacoes = self.sapo.animacoes
 
-        if self.violao.acoplado and (
-            animacoes.pegando_violao or animacoes.tocando_violao
+        if self.violao.acoplado and animacoes.maquina.em_estado(
+            EstadoSapo.PEGANDO_VIOLAO,
+            EstadoSapo.TOCANDO_VIOLAO,
         ):
             return
 
-        if (
-            self.spotify_andando_para_violao
-            and not animacoes.andando_direita
-            and not animacoes.andando_esquerda
+        if self.spotify_andando_para_violao and not animacoes.maquina.em_estado(
+            EstadoSapo.ANDANDO_DIREITA,
+            EstadoSapo.ANDANDO_ESQUERDA,
         ):
             self.spotify_andando_para_violao = False
 
-        if (
-            not self.sapo.pode_caminhar()
-            or self.spotify_andando_para_violao
-            or self.sapo.animacoes.pegando_violao
-            or self.sapo.animacoes.tocando_violao
-            or self.sapo.animacoes.levantando_violao
-            or self.sapo.animacoes.guardando_violao
-        ):
+        if not self.sapo.pode_caminhar() or self.spotify_andando_para_violao:
             return
 
         sapo_x = self.sapo.x
@@ -242,10 +236,7 @@ class GameWidget(Widget):
 
             if (
                 self.spotify.spotify_tocando_cache
-                and not animacoes.pegando_violao
-                and not animacoes.tocando_violao
-                and not animacoes.levantando_violao
-                and not animacoes.guardando_violao
+                and not animacoes.maquina.esta_com_violao()
             ):
                 self.sapo.iniciar_violao()
             else:
@@ -262,12 +253,7 @@ class GameWidget(Widget):
 
     def iniciar_sequencia_spotify_com_violao(self):
         animacoes = self.sapo.animacoes
-        if (
-            animacoes.pegando_violao
-            or animacoes.tocando_violao
-            or animacoes.levantando_violao
-            or animacoes.guardando_violao
-        ):
+        if animacoes.maquina.esta_com_violao():
             return
 
         self.violao.acoplado = True
@@ -756,10 +742,8 @@ class GameWidget(Widget):
             distancia = abs(self.sapo.x - self.violao.x)
             if distancia <= DISTANCIA_VIOLAO:
                 self.spotify_andando_para_violao = False
-                self.sapo.animacoes.andando_direita = False
-                self.sapo.animacoes.andando_esquerda = False
                 self.violao.acoplado = True
-
+                self.sapo.animacoes.maquina.trocar(EstadoSapo.PARADO)
                 if self.spotify.spotify_tocando_cache:
                     self.sapo.iniciar_violao()
                 else:

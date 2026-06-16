@@ -1,5 +1,7 @@
 import random
 
+from systems.sapudo.maquina_estado_sapo import EstadoSapo
+
 
 class IASapo:
     def __init__(self):
@@ -24,12 +26,13 @@ class IASapo:
             return None
 
         a = sapo.animacoes
+        m = a.maquina
 
         # =================================
         # SONHOS / EXISTENCIAIS
         # =================================
 
-        if a.dormindo:
+        if m.eh(EstadoSapo.DORMINDO):
             self.cooldown = random.uniform(300, 600)
 
             if random.random() < 0.40:
@@ -37,13 +40,13 @@ class IASapo:
 
             return None
 
-        if a.adormecendo:
+        if m.eh(EstadoSapo.ADORMECENDO):
             return None
 
-        if a.acordando:
+        if m.eh(EstadoSapo.ACORDANDO):
             return None
 
-        if a.andando_esquerda:
+        if m.eh(EstadoSapo.ANDANDO_ESQUERDA):
             self.cooldown = random.uniform(180, 360)
 
             if random.random() < 0.15:
@@ -55,7 +58,7 @@ class IASapo:
         # VIOLÃO
         # =================================
 
-        if a.tocando_violao:
+        if m.eh(EstadoSapo.TOCANDO_VIOLAO):
             self.cooldown = random.uniform(60, 120)
 
             return self.escolher_pensamento(
