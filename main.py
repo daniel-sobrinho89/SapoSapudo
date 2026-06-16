@@ -519,6 +519,8 @@ class GameWidget(Widget):
                     if acao == "pause":
                         if self.spotify.spotify_token:
                             sucesso = SpotifyApi.pause(self.spotify.spotify_token)
+                            self.spotify.spotify_tocando_cache = False
+                            self.spotify.spotify_cache_timer = 240
                         else:
                             MediaSessionAndroid.pause()
                             sucesso = True
@@ -535,6 +537,7 @@ class GameWidget(Widget):
                                     self.spotify.spotify_token, device_id
                                 )
                                 self.spotify.spotify_tocando_cache = True
+                                self.spotify.spotify_cache_timer = 1
                         else:
                             MediaSessionAndroid.play()
                             sucesso = True
@@ -542,6 +545,7 @@ class GameWidget(Widget):
                         if self.spotify.spotify_token:
                             sucesso = SpotifyApi.next(self.spotify.spotify_token)
                             self.spotify.spotify_tocando_cache = True
+                            self.spotify.spotify_cache_timer = 1
                         else:
                             MediaSessionAndroid.next()
                             sucesso = True
@@ -549,6 +553,7 @@ class GameWidget(Widget):
                         if self.spotify.spotify_token:
                             sucesso = SpotifyApi.previous(self.spotify.spotify_token)
                             self.spotify.spotify_tocando_cache = True
+                            self.spotify.spotify_cache_timer = 1
                         else:
                             MediaSessionAndroid.previous()
                             sucesso = True
@@ -592,6 +597,7 @@ class GameWidget(Widget):
                                     self.spotify.spotify_token, device_id, uri
                                 )
                                 self.spotify.spotify_tocando_cache = True
+                                self.spotify.spotify_cache_timer = 1
                             else:
                                 sucesso = False
                         else:

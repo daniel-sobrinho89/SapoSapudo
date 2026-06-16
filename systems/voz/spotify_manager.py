@@ -1,6 +1,5 @@
 import threading
 
-from systems.sapudo.maquina_estado_sapo import EstadoSapo
 from systems.voz.spotify_android import SpotifyAndroid
 from systems.voz.spotify_api import SpotifyApi
 from systems.voz.spotify_auth import SpotifyAuth
@@ -136,10 +135,19 @@ class SpotifyManager:
                     self.spotify_musica_atual = dados["musica"]
                     self.spotify_artista_atual = dados["artista"]
 
-                    if dados.get("duracao_ms") and dados.get("progresso_ms"):
+                    if (
+                        dados.get("duracao_ms") is not None
+                        and dados.get("progresso_ms") is not None
+                    ):
                         restante = (dados["duracao_ms"] - dados["progresso_ms"]) / 1000
 
                         self.spotify_cache_timer = max(10, restante + 2)
+                    else:
+                        self.spotify_cache_timer = 240
+            else:
+                self.spotify_musica_atual = None
+                self.spotify_artista_atual = None
+
         except Exception:
             pass
         finally:
@@ -205,7 +213,7 @@ class SpotifyManager:
         # SPOTIFY PAROU
         # =====================================
 
-        if animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO) and not spotify_tocando:
+        if animacoes.maquina.esta_com_violao() and not spotify_tocando:
             animacoes.iniciar_levantar_violao()
 
     def atualizar_spotify(self, main, dt, sapo, violao):
@@ -246,6 +254,7 @@ class SpotifyManager:
                         if sucesso:
                             main.iniciar_sequencia_spotify()
                             self.atualizar_dados_musica_atual()
+                            self.spotify_tocando_cache = True
 
                     self.spotify_pendente = None
                     self.spotify_tentativas = 0
@@ -270,7 +279,9 @@ class SpotifyManager:
                     )
 
                     if self.spotify_pendente:
-                        self.spotify_pendente_timer = 6
-                        self.spotify_tentativas = 10
+                        SpotifyAndroid.abrir_spotify()
+
+                        self.spotify_pendente_timer = 7
+                        self.spotify_tentativas = 5
 
         self.atualizar_animacao_spotify(main, dt, sapo, violao)

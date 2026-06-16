@@ -95,44 +95,38 @@ class SapoRenderer:
     # RENDER
     # =====================================
 
-    def renderizar(self, centro_x, centro_y, escala, animacoes):
+    def obter_frame_animacao(self, animacoes):
         if animacoes.maquina.eh(EstadoSapo.ADORMECENDO):
-            frame = self.frames_dormir[animacoes.frame_dormir]
-
+            return self.frames_dormir[animacoes.dormir.frame]
         elif animacoes.maquina.eh(EstadoSapo.DORMINDO):
-            frame = self.frames_dormindo[animacoes.frame_dormindo]
-
+            return self.frames_dormindo[animacoes.dormindo.frame]
+        elif animacoes.maquina.eh(EstadoSapo.ACORDANDO):
+            return self.frames_acordar[animacoes.acordar.frame]
         elif animacoes.maquina.eh(EstadoSapo.PEGANDO_VIOLAO):
-            frame = self.frames_pegar_violao[animacoes.frame_pegar_violao]
+            return self.frames_pegar_violao[animacoes.pegar_violao.frame]
+        elif animacoes.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
+            return self.frames_levantar_violao[animacoes.levantar_violao.frame]
+        elif animacoes.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
+            return self.frames_guardar_violao[animacoes.guardar_violao.frame]
+        elif animacoes.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
+            return self.frames_soltar_violao[animacoes.soltar_violao.frame]
+        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
+            return self.frames_andar_esquerda[animacoes.andar_esquerda.frame]
+        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
+            return self.frames_andar_direita[animacoes.andar_direita.frame]
 
-        elif animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
+        return self.frames_parado[animacoes.parado.frame]
+
+    def renderizar(self, centro_x, centro_y, escala, animacoes):
+        if animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
             frame = self.frames_tocar_violao[animacoes.frame_violao]
 
-        elif animacoes.maquina.eh(EstadoSapo.ACORDANDO):
-            frame = self.frames_acordar[animacoes.frame_acordar]
-
-        elif animacoes.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
-            frame = self.frames_levantar_violao[animacoes.frame_levantar_violao]
-
-        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
-            frame = self.frames_andar_esquerda[animacoes.frame_andar_esquerda]
-
-        elif animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
-            frame = self.frames_andar_direita[animacoes.frame_andar_direita]
-
-        elif animacoes.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
-            frame = self.frames_guardar_violao[animacoes.frame_guardar_violao]
-
-        elif animacoes.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
-            frame = self.frames_soltar_violao[animacoes.frame_soltar_violao]
-
         else:
-            frame = self.frames_parado[animacoes.frame_parado]
+            frame = self.obter_frame_animacao(animacoes)
 
         self.draw(frame, centro_x, centro_y, escala)
 
         largura = int(frame.get_width() * escala)
-
         altura = int(frame.get_height() * escala)
 
         self.corpo_rect = kivy_adapter.Rect(

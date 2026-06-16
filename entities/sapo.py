@@ -76,8 +76,6 @@ class Sapo:
         self.andando_manual = False
         self.controle_esquerda = False
         self.animacoes.maquina.trocar(EstadoSapo.PARADO)
-        self.animacoes.frame_andar_esquerda = 0
-        self.animacoes.tempo_andar_esquerda = 0
 
     def iniciar_controle_direita(self):
         if not self.pode_caminhar():
@@ -94,8 +92,6 @@ class Sapo:
         self.andando_manual = False
         self.controle_direita = False
         self.animacoes.maquina.trocar(EstadoSapo.PARADO)
-        self.animacoes.frame_andar_direita = 0
-        self.animacoes.tempo_andar_direita = 0
 
     def pode_caminhar(self):
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)
@@ -173,7 +169,7 @@ class Sapo:
                 a.proxima_tentativa_caminhada = agora + timedelta(minutes=15)
 
         if a.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
-            frame_atual = a.frame_andar_esquerda
+            frame_atual = a.andar_esquerda.frame
 
             if not hasattr(a, "_ultimo_frame_andar"):
                 a._ultimo_frame_andar = -1
@@ -182,7 +178,6 @@ class Sapo:
                 a._ultimo_frame_andar = frame_atual
                 self.x -= 4
 
-            # saiu pela esquerda
             if (
                 self.x < 0
                 and (self.comando_ir_feira or not self.indo_para_feira)
@@ -190,7 +185,7 @@ class Sapo:
             ):
                 self.background_renderer.cenario_feira = True
                 self.indo_para_feira = True
-                # reaparece do lado direito
+
                 self.x = LARGURA + 100
                 self.comando_ir_feira = False
 
@@ -199,43 +194,48 @@ class Sapo:
 
                 if self.x <= destino:
                     self.x = destino
+
                     self.indo_para_feira = False
                     self.comando_ir_feira = False
+
                     self.controle_esquerda = False
                     self.andando_manual = False
+
                     a.maquina.trocar(EstadoSapo.PARADO)
+
                     a._ultimo_frame_andar = -1
 
         if a.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
-            frame_atual = a.frame_andar_direita
+            frame_atual = a.andar_direita.frame
 
             if not hasattr(a, "_ultimo_frame_andar_direita"):
                 a._ultimo_frame_andar_direita = -1
 
             if frame_atual != a._ultimo_frame_andar_direita:
                 a._ultimo_frame_andar_direita = frame_atual
+
                 self.x += 4
 
         if violao is not None:
             if a.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
                 destino_x = getattr(violao, "x_inicial", None) - 65
-                frame_atual = a.frame_guardar_violao
+
+                frame_atual = a.guardar_violao.frame
 
                 if frame_atual != a.ultimo_frame_guardar:
                     a.ultimo_frame_guardar = frame_atual
 
                     if self.x < destino_x:
                         self.x = min(destino_x, self.x + 3.5)
-                        # manter o violão acompanhado ao corpo do sapo
+
                         violao.x = self.x + 5
                         violao.y = self.y + 20
 
                     else:
                         a.maquina.trocar(EstadoSapo.SOLTANDO_VIOLAO)
-                        a.frame_soltar_violao = 0
-                        a.tempo_soltar_violao = 0
 
-                        # restaurar posição do violao quando terminado
+                        a.soltar_violao.reset()
+
                         violao.x = violao.x_inicial
                         violao.y = violao.y_inicial
 
