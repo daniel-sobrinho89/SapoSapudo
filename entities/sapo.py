@@ -45,6 +45,71 @@ class Sapo:
         self.retornando_da_feira = False
         self.comando_ir_feira = False
         self.clima = clima_service
+        self.andando_para_violao = False
+
+    def ir_para_feira(self):
+        """Inicia o deslocamento para a feira."""
+        self.comando_ir_feira = True
+        self.andar_iniciado_por_controle = False
+        if self.pode_caminhar():
+            self.animacoes.proxima_tentativa_caminhada = None
+            self.animacoes._ultimo_frame_andar = -1
+            self.animacoes.iniciar_andar_esquerda()
+
+    def buscar_violao(self, violao, spotify, distancia_violao):
+        """Inicia a sequência de busca e acoplamento do violão."""
+        animacoes = self.animacoes
+
+        if violao.acoplado and animacoes.maquina.em_estado(
+            EstadoSapo.PEGANDO_VIOLAO,
+            EstadoSapo.TOCANDO_VIOLAO,
+        ):
+            return
+
+        if self.andando_para_violao and not animacoes.maquina.em_estado(
+            EstadoSapo.ANDANDO_DIREITA,
+            EstadoSapo.ANDANDO_ESQUERDA,
+        ):
+            self.andando_para_violao = False
+
+        if not self.pode_caminhar() or self.andando_para_violao:
+            return
+
+        sapo_x = self.x
+        violao_x = violao.x
+
+        if abs(sapo_x - violao_x) < distancia_violao:
+            if not violao.acoplado:
+                violao.acoplado = True
+
+            if (
+                spotify.spotify_tocando_cache
+                and not animacoes.maquina.esta_com_violao()
+            ):
+                self.iniciar_violao()
+            else:
+                self.animacoes.iniciar_levantar_violao()
+
+            return
+
+        self.andando_para_violao = True
+
+        if sapo_x < violao_x:
+            self.animacoes.iniciar_andar_direita()
+        else:
+            self.animacoes.iniciar_andar_esquerda()
+
+    def iniciar_sequencia_spotify_com_violao(self, violao, spotify):
+        """Inicia a animação de violão se estiver acoplado."""
+        animacoes = self.animacoes
+        if animacoes.maquina.esta_com_violao():
+            return
+
+        violao.acoplado = True
+        if spotify.spotify_tocando_cache:
+            self.iniciar_violao()
+        else:
+            animacoes.iniciar_levantar_violao()
 
     # métodos de delegação / API pública
     def iniciar_violao(self):
@@ -75,7 +140,8 @@ class Sapo:
     def parar_controle_esquerda(self):
         self.andando_manual = False
         self.controle_esquerda = False
-        self.animacoes.maquina.trocar(EstadoSapo.PARADO)
+        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
+            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
 
     def iniciar_controle_direita(self):
         if not self.pode_caminhar():
@@ -91,7 +157,8 @@ class Sapo:
     def parar_controle_direita(self):
         self.andando_manual = False
         self.controle_direita = False
-        self.animacoes.maquina.trocar(EstadoSapo.PARADO)
+        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
+            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
 
     def pode_caminhar(self):
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)

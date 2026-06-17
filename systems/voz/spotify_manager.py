@@ -1,5 +1,6 @@
 import threading
 
+from systems.voz.media_session_android import MediaSessionAndroid
 from systems.voz.spotify_android import SpotifyAndroid
 from systems.voz.spotify_api import SpotifyApi
 from systems.voz.spotify_auth import SpotifyAuth
@@ -22,6 +23,10 @@ class SpotifyManager:
         self.spotify_artista_atual = None
         self.spotify_pensamento_timer = 0
         self.spotify_mostrar_artista = True
+
+    # =====================================
+    # AUTENTICAÇÃO E DISPOSITIVOS
+    # =====================================
 
     def iniciar(self):
         SpotifyCallback.iniciar()
@@ -95,16 +100,111 @@ class SpotifyManager:
 
         return device_id
 
-    # Remover
-    # def executar_com_renovacao(self, funcao):
-    #     resultado = funcao()
-    #     if resultado is not None:
-    #         return resultado
+    # =====================================
+    # CONTROLE DE REPRODUÇÃO (PLAYBACK)
+    # =====================================
 
-    #     if not self.renovar_token_spotify():
-    #         return None
+    def pausar(self):
+        """Pausa a reprodução (Spotify ou MediaSession)."""
+        sucesso = False
+        if self.spotify_token:
+            sucesso = SpotifyApi.pause(self.spotify_token)
+            self.spotify_tocando_cache = False
+            self.spotify_cache_timer = 240
+        else:
+            MediaSessionAndroid.pause()
+            sucesso = True
 
-    #     return funcao()
+        self.spotify_tocando_cache = False
+        return sucesso
+
+    def tocar(self):
+        """Inicia/Retoma a reprodução (Spotify ou MediaSession)."""
+        sucesso = False
+        if self.spotify_token:
+            device_id = self.obter_dispositivo_ativo_com_renovacao()
+            if device_id:
+                sucesso = SpotifyApi.play(self.spotify_token, device_id)
+                if sucesso:
+                    self.spotify_tocando_cache = True
+                    self.spotify_cache_timer = 1
+                    self.atualizar_dados_musica_atual()
+        else:
+            MediaSessionAndroid.play()
+            self.spotify_tocando_cache = True
+            sucesso = True
+        return sucesso
+
+    def proxima(self):
+        """Pula para a próxima faixa."""
+        sucesso = False
+        if self.spotify_token:
+            sucesso = SpotifyApi.next(self.spotify_token)
+            if sucesso:
+                self.spotify_tocando_cache = True
+                self.spotify_cache_timer = 1
+                self.atualizar_dados_musica_atual()
+        else:
+            MediaSessionAndroid.next()
+            self.spotify_tocando_cache = True
+            sucesso = True
+        return sucesso
+
+    def anterior(self):
+        """Pula para a faixa anterior."""
+        sucesso = False
+        if self.spotify_token:
+            sucesso = SpotifyApi.previous(self.spotify_token)
+            if sucesso:
+                self.spotify_tocando_cache = True
+                self.spotify_cache_timer = 1
+                self.atualizar_dados_musica_atual()
+        else:
+            MediaSessionAndroid.previous()
+            self.spotify_tocando_cache = True
+            sucesso = True
+        return sucesso
+
+    def buscar_e_tocar(self, pesquisa, sapo, desligar_microfone_callback):
+        """Busca uma faixa e inicia a reprodução."""
+        if not self.spotify_token:
+            self.spotify_pendente = pesquisa
+            self.spotify_pendente_timer = 5
+            self.spotify_tentativas = 5
+            self.iniciar_login_spotify()
+            sapo.pensamentos.texto = "Preciso conhecer seu Spotify primeiro."
+            sapo.pensamentos.tempo_restante = 5
+            desligar_microfone_callback()
+            return False
+
+        if not pesquisa:
+            return self.tocar()
+
+        uri = SpotifyApi.buscar_faixa(self.spotify_token, pesquisa)
+        if uri:
+            device_id = self.obter_dispositivo_ativo_com_renovacao()
+            if not device_id:
+                self.spotify_pendente = pesquisa
+                self.spotify_pendente_timer = 3
+                self.spotify_tentativas = 5
+                sapo.pensamentos.texto = "Abrindo seu Spotify..."
+                sapo.pensamentos.tempo_restante = 3
+                desligar_microfone_callback()
+                return False
+
+            SpotifyApi.transferir_playback(self.spotify_token, device_id)
+            sucesso = SpotifyApi.tocar_faixa(self.spotify_token, device_id, uri)
+            if sucesso:
+                self.spotify_tocando_cache = True
+                self.spotify_cache_timer = 1
+                self.atualizar_dados_musica_atual()
+                return True
+
+        return False
+
+    # =====================================
+    # CONSULTA DE ESTADO E CACHE
+    # =====================================
 
     def spotify_esta_tocando(self):
         if not self.spotify_token:
@@ -120,10 +220,6 @@ class SpotifyManager:
                 return resultado
 
         return False
-
-    # Remover
-    # def spotify_ativo(self):
-    #     return self.spotify_token and self.spotify_esta_tocando()
 
     def atualizar_estado_spotify(self):
         try:
@@ -169,6 +265,10 @@ class SpotifyManager:
                 self.spotify_mostrar_artista = True
         except Exception as ex:
             print(f"[SPOTIFY] Erro ao obter música: {ex}")
+
+    # =====================================
+    # INTEGRAÇÃO VISUAL (PENSAMENTOS/ANIMAÇÃO)
+    # =====================================
 
     def atualizar_animacao_spotify(self, main, dt, sapo, violao):
         if not violao or not sapo.pode_receber_violao():
@@ -216,6 +316,10 @@ class SpotifyManager:
         if animacoes.maquina.esta_com_violao() and not spotify_tocando:
             animacoes.iniciar_levantar_violao()
 
+    # =====================================
+    # LOOP PRINCIPAL E PROCESSAMENTO ASSÍNCRONO
+    # =====================================
+
     def atualizar_spotify(self, main, dt, sapo, violao):
         self.spotify_cache_timer -= dt
         if self.spotify_cache_timer <= 0 and not self.spotify_consulta_em_andamento:
@@ -224,64 +328,56 @@ class SpotifyManager:
             threading.Thread(target=self.atualizar_estado_spotify, daemon=True).start()
 
         if self.spotify_pendente:
-            self.spotify_pendente_timer -= dt
-            if self.spotify_pendente_timer <= 0:
-                device_id = self.obter_dispositivo_ativo_com_renovacao()
-                if not device_id:
-                    self.spotify_tentativas -= 1
-                    if self.spotify_tentativas <= 0:
-                        self.spotify_pendente = None
-                        sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
-                        sapo.pensamentos.tempo_restante = 5
-                        self.spotify_pendente = None
-                        self.spotify_pendente_timer = 0
-                        self.spotify_tentativas = 0
-                    else:
-                        self.spotify_pendente_timer = 5
-                else:
-                    uri = SpotifyApi.buscar_faixa(
-                        self.spotify_token, self.spotify_pendente
-                    )
-                    if uri:
-                        SpotifyApi.transferir_playback(self.spotify_token, device_id)
-
-                        SpotifyAndroid.abrir_spotify()
-
-                        sucesso = SpotifyApi.tocar_faixa(
-                            self.spotify_token, device_id, uri
-                        )
-
-                        if sucesso:
-                            main.iniciar_sequencia_spotify()
-                            self.atualizar_dados_musica_atual()
-                            self.spotify_tocando_cache = True
-
-                    self.spotify_pendente = None
-                    self.spotify_tentativas = 0
+            self._processar_busca_pendente(main, dt, sapo)
 
         if not self.spotify_token and self.spotify_code_verifier:
-            code = SpotifyCallback.obter_code()
-
-            if code:
-                resposta = SpotifyAuth.trocar_code_por_token(
-                    code, self.spotify_code_verifier
-                )
-
-                if resposta:
-                    self.spotify_token = resposta["access_token"]
-
-                    self.spotify_refresh_token = resposta["refresh_token"]
-
-                    SpotifyTokenStorage.salvar(
-                        self.spotify_token,
-                        self.spotify_refresh_token,
-                        self.spotify_code_verifier,
-                    )
-
-                    if self.spotify_pendente:
-                        SpotifyAndroid.abrir_spotify()
-
-                        self.spotify_pendente_timer = 7
-                        self.spotify_tentativas = 5
+            self._processar_finalizacao_autenticacao()
 
         self.atualizar_animacao_spotify(main, dt, sapo, violao)
+
+    def _processar_busca_pendente(self, main, dt, sapo):
+        self.spotify_pendente_timer -= dt
+        if self.spotify_pendente_timer <= 0:
+            device_id = self.obter_dispositivo_ativo_com_renovacao()
+            if not device_id:
+                self.spotify_tentativas -= 1
+                if self.spotify_tentativas <= 0:
+                    self.spotify_pendente = None
+                    sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
+                    sapo.pensamentos.tempo_restante = 5
+                    self.spotify_pendente_timer = 0
+                    self.spotify_tentativas = 0
+                else:
+                    self.spotify_pendente_timer = 5
+            else:
+                uri = SpotifyApi.buscar_faixa(self.spotify_token, self.spotify_pendente)
+                if uri:
+                    SpotifyApi.transferir_playback(self.spotify_token, device_id)
+                    SpotifyAndroid.abrir_spotify()
+                    sucesso = SpotifyApi.tocar_faixa(self.spotify_token, device_id, uri)
+                    if sucesso:
+                        main.iniciar_sequencia_spotify()
+                        self.atualizar_dados_musica_atual()
+                        self.spotify_tocando_cache = True
+
+                self.spotify_pendente = None
+                self.spotify_tentativas = 0
+
+    def _processar_finalizacao_autenticacao(self):
+        code = SpotifyCallback.obter_code()
+        if code:
+            resposta = SpotifyAuth.trocar_code_por_token(
+                code, self.spotify_code_verifier
+            )
+            if resposta:
+                self.spotify_token = resposta["access_token"]
+                self.spotify_refresh_token = resposta["refresh_token"]
+                SpotifyTokenStorage.salvar(
+                    self.spotify_token,
+                    self.spotify_refresh_token,
+                    self.spotify_code_verifier,
+                )
+                if self.spotify_pendente:
+                    SpotifyAndroid.abrir_spotify()
+                    self.spotify_pendente_timer = 7
+                    self.spotify_tentativas = 5

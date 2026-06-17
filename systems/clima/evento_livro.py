@@ -208,6 +208,25 @@ class EventoLivro:
 
         self.rect_livro_aberto = kivy_adapter.Rect(x, y, largura, altura)
 
+    def processar_toque(self, pos_virtual):
+        if self.livro_aberto_visivel:
+            self.fechar_livro_aberto()
+            return True
+
+        if self.livro_visivel and (
+            self.rect_livro and self.rect_livro.collidepoint(pos_virtual)
+        ):
+            self.ocultar_livro_por_clique()
+            return True
+
+        if not self.livro_visivel:
+            for particula in self.particulas:
+                if particula.ativa and particula.obter_rect().collidepoint(pos_virtual):
+                    particula.ativa = False
+                    self.registrar_clique_poeira()
+                    return True
+        return False
+
     def renderizar(self, tela, frasco_climatico):
         if not self.livro_visivel:
             return

@@ -36,16 +36,20 @@ class MediaSessionAndroid:
 
     @classmethod
     def pause(cls):
-        cls.enviar(KeyEvent.KEYCODE_MEDIA_PAUSE)
+        if IS_ANDROID:
+            cls.enviar(KeyEvent.KEYCODE_MEDIA_PAUSE)
 
     @classmethod
     def play(cls):
-        cls.enviar(KeyEvent.KEYCODE_MEDIA_PLAY)
+        if IS_ANDROID:
+            cls.enviar(KeyEvent.KEYCODE_MEDIA_PLAY)
 
     @classmethod
     def next(cls):
-        cls.enviar(KeyEvent.KEYCODE_MEDIA_NEXT)
+        if IS_ANDROID:
+            cls.enviar(KeyEvent.KEYCODE_MEDIA_NEXT)
 
     @classmethod
     def previous(cls):
-        cls.enviar(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+        if IS_ANDROID:
+            cls.enviar(KeyEvent.KEYCODE_MEDIA_PREVIOUS)

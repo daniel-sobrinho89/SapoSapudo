@@ -58,6 +58,51 @@ class Violao:
 
         self.acoplado = False
 
+    def tentar_desacoplar(self, mouse_pos, sapo, spotify):
+        """Tenta desacoplar o violão se o toque for próximo ao sapo."""
+        distancia = ((mouse_pos[0] - sapo.x) ** 2 + (mouse_pos[1] - sapo.y) ** 2) ** 0.5
+
+        if distancia < 120:
+            self.acoplado = False
+            spotify.pausar()
+            sapo.parar_violao()
+            self.iniciar_arraste(*mouse_pos)
+            return True
+        return False
+
+    def finalizar_interacao(self, sapo, spotify, gerenciador_cenarios):
+        """Finaliza o arraste e decide se acopla ao sapo ou cai."""
+        if not self.arrastando:
+            return False
+
+        self.finalizar_arraste()
+
+        # Área de acoplamento simplificada (substituindo Rect do Kivy)
+        dentro_area = abs(self.x - sapo.x) < 80 and abs(self.y - sapo.y) < 80
+
+        if dentro_area and sapo.pode_receber_violao():
+            self.acoplado = True
+            self.x = sapo.x + 5
+            self.y = sapo.y + 20
+
+            spotify.tocar()
+            # O Sapo já cuida de iniciar as animações necessárias ao detectar o toque
+        else:
+            self.iniciar_queda()
+            if gerenciador_cenarios and gerenciador_cenarios.tem_duende:
+                duende = gerenciador_cenarios.duende
+                if duende.pode_resgatar_violao():
+                    distancia_violao = abs(self.x - duende.x)
+                    MIN_TELEPORT_DIST = 120
+                    if (
+                        not duende.consegue_alcancar_antes_da_queda(self)
+                        and distancia_violao > MIN_TELEPORT_DIST
+                    ):
+                        duende.teleportar_para_violao(self)
+                    duende.iniciar_resgate_violao(self)
+
+        return True
+
     def atualizar(self, dt):
         if not self.caindo:
             return
