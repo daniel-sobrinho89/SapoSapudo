@@ -120,6 +120,9 @@ android.minapi = 24
 # (str) Android NDK version to use
 #android.ndk = 23b
 
+# (str) Android app environment variables
+android.add_env = GEMINI_API_KEY=AQ.Ab8RN6L9tRL6CddA0k_JuW0flekFj_qOJXWGf1mcwAPkOHj0wA
+
 # (int) Android NDK API to use. This is the minimum API your app will support, it should usually match android.minapi.
 #android.ndk_api = 21
 

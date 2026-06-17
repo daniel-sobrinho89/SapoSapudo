@@ -251,9 +251,13 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
-        self.gemini = GeminiClient(
-            api_key="AQ.Ab8RN6L9tRL6CddA0k_JuW0flekFj_qOJXWGf1mcwAPkOHj0wA"
-        )
+        api_key = os.environ.get("GEMINI_API_KEY")
+
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY não configurada")
+
+        self.gemini = GeminiClient(api_key=api_key)
+
         self.conversa_sapudo = ConversaSapudo(self.gemini)
 
         self.controlador_voz_musical = ControladorVozMusical(
