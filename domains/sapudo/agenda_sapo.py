@@ -1,5 +1,5 @@
 # =====================================
-# systems/sapudo/agenda_sapo.py
+# domains.sapudo/agenda_sapo.py
 # =====================================
 
 from datetime import datetime

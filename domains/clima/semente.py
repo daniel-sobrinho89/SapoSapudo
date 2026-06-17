@@ -1,14 +1,14 @@
 import math
 import random
 
-from systems.animacoes_semente import (
+from core.fisica import (
+    sistema_fisica,
+)
+from domains.clima.animacoes.semente import (
     aplicar_vento as sistema_aplicar_vento,
 )
-from systems.animacoes_semente import (
+from domains.clima.animacoes.semente import (
     atualizar_piscada as sistema_atualizar_piscada,
-)
-from systems.fisica import (
-    sistema_fisica,
 )
 
 

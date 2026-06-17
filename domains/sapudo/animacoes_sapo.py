@@ -1,6 +1,6 @@
-from systems.sapudo.agenda_sapo import AgendaSapo
-from systems.sapudo.logica_violao import LogicaViolaoSapo
-from systems.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
+from domains.sapudo.agenda_sapo import AgendaSapo
+from domains.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
+from domains.violao.logic import LogicaViolaoSapo
 
 
 class AnimacoesSapo:

@@ -1,11 +1,11 @@
 import threading
 
-from systems.voz.media_session_android import MediaSessionAndroid
-from systems.voz.spotify_android import SpotifyAndroid
-from systems.voz.spotify_api import SpotifyApi
-from systems.voz.spotify_auth import SpotifyAuth
-from systems.voz.spotify_callback import SpotifyCallback
-from systems.voz.spotify_token_storage import SpotifyTokenStorage
+from domains.spotify.spotify_android import SpotifyAndroid
+from domains.spotify.spotify_api import SpotifyApi
+from domains.spotify.spotify_auth import SpotifyAuth
+from domains.spotify.spotify_callback import SpotifyCallback
+from domains.spotify.spotify_token_storage import SpotifyTokenStorage
+from domains.voz.media_session_android import MediaSessionAndroid
 
 
 class SpotifyManager:

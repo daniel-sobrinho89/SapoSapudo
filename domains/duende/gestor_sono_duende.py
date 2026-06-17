@@ -1,5 +1,5 @@
 # =====================================
-# systems/duende/gestor_sono_duende.py
+# domains.duende/gestor_sono_duende.py
 # =====================================
 
 import math

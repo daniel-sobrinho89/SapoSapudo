@@ -1,7 +1,7 @@
 from PIL import ImageDraw, ImageFont
 
 import kivy_adapter
-from systems.sapudo.maquina_estado_sapo import EstadoSapo
+from domains.sapudo.maquina_estado_sapo import EstadoSapo
 
 
 class SapoRenderer:

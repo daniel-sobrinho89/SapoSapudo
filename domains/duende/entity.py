@@ -6,16 +6,16 @@ import math
 import random
 
 import kivy_adapter
-from systems.animacoes_duende import AnimacoesDuende
-from systems.duende.arraste_duende import ArrasteDuende
-from systems.duende.gestor_sono_duende import GestorSonoDuende
-from systems.duende.resgate_duende import ResgateDuende
+from core.system_utils import atualizar_sistemas_basicos
+from domains.duende.animacoes import AnimacoesDuende
+from domains.duende.arraste_duende import ArrasteDuende
+from domains.duende.gestor_sono_duende import GestorSonoDuende
+from domains.duende.ia import IADuende
+from domains.duende.resgate_duende import ResgateDuende
+from domains.duende.respiracao import RespiracaoDuende
 
 # Novos componentes
-from systems.duende.teleporte_duende import TeleporteDuende
-from systems.ia_duende import IADuende
-from systems.respiracao_duende import RespiracaoDuende
-from systems.system_utils import atualizar_sistemas_basicos
+from domains.duende.teleporte_duende import TeleporteDuende
 
 
 class DuendeNeblina:

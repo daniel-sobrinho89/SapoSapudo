@@ -1,5 +1,5 @@
 # =====================================
-# systems/duende/resgate_duende.py
+# domains.duende/resgate_duende.py
 # =====================================
 
 import math

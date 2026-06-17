@@ -1,13 +1,12 @@
-from datetime import datetime
-
 from render.asset_manager import asset_manager
 
 
 class BackgroundRenderer:
-    def __init__(self, tela, largura, altura, transform, clima_service):
+    def __init__(self, tela, largura, altura, transform, clima_service, ambiente):
         self.tela = tela
         self.transform = transform
         self.clima_service = clima_service
+        self.ambiente = ambiente
 
         # =====================================
         # BACKGROUND MANHÃ
@@ -116,8 +115,7 @@ class BackgroundRenderer:
         if self.esta_chovendo():
             return self.background_chuva
 
-        agora = datetime.now()
-        hora_atual = agora.hour + (agora.minute / 60)
+        hora_atual = self.ambiente.obter_hora_decimal()
 
         # =====================================
         # MANHÃ
@@ -150,9 +148,7 @@ class BackgroundRenderer:
         if self.esta_chovendo():
             return self.background_feira_chuva
 
-        agora = datetime.now()
-
-        hora_atual = agora.hour + (agora.minute / 60)
+        hora_atual = self.ambiente.obter_hora_decimal()
 
         if 6 <= hora_atual < 12:
             return self.background_feira_manha
@@ -166,15 +162,10 @@ class BackgroundRenderer:
         return self.background_feira
 
     def eh_dia(self):
-        hora_atual = datetime.now().hour
-
-        return not (hora_atual >= 19 or hora_atual < 6)
+        return self.ambiente.eh_dia()
 
     def esta_chovendo(self):
-        if not self.clima_service:
-            return False
-
-        return self.clima_service.cloudiness >= 70
+        return self.ambiente.esta_chovendo(self.clima_service)
 
     def desenhar(self):
         background = self.obter_background_atual()

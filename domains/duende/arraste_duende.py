@@ -1,5 +1,5 @@
 # =====================================
-# systems/duende/arraste_duende.py
+# domains.duende/arraste_duende.py
 # =====================================
 
 from utils.drag import iniciar_drag, mover_com_offset

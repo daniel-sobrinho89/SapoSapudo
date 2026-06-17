@@ -3,7 +3,7 @@
 # ==========================================
 
 import kivy_adapter
-from systems.clima.nuvem import Nuvem
+from domains.clima.nuvem import Nuvem
 
 
 class SistemaNuvens:

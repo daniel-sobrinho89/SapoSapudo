@@ -7,7 +7,7 @@ import random
 import threading
 
 import kivy_adapter
-from systems.fisica import sistema_fisica
+from core.fisica import sistema_fisica
 
 
 class Nuvem:

@@ -6,12 +6,12 @@
 from datetime import datetime, timedelta
 
 from config import LARGURA
-from systems.sapudo.animacoes_sapo import AnimacoesSapo
-from systems.sapudo.ia_sapo import IASapo
-from systems.sapudo.maquina_estado_sapo import EstadoSapo
-from systems.sapudo.pensamentos_sapo import PensamentosSapo
-from systems.sapudo.respiracao_sapo import RespiracaoSapo
-from systems.system_utils import atualizar_sistemas_basicos
+from core.system_utils import atualizar_sistemas_basicos
+from domains.sapudo.animacoes_sapo import AnimacoesSapo
+from domains.sapudo.ia_sapo import IASapo
+from domains.sapudo.maquina_estado_sapo import EstadoSapo
+from domains.sapudo.pensamentos_sapo import PensamentosSapo
+from domains.sapudo.respiracao_sapo import RespiracaoSapo
 
 
 class Sapo:
@@ -66,19 +66,11 @@ class Sapo:
         ):
             return
 
-        if self.andando_para_violao and not animacoes.maquina.em_estado(
-            EstadoSapo.ANDANDO_DIREITA,
-            EstadoSapo.ANDANDO_ESQUERDA,
-        ):
-            self.andando_para_violao = False
-
-        if not self.pode_caminhar() or self.andando_para_violao:
-            return
-
         sapo_x = self.x
         violao_x = violao.x
 
         if abs(sapo_x - violao_x) < distancia_violao:
+            self.andando_para_violao = False
             if not violao.acoplado:
                 violao.acoplado = True
 
@@ -90,6 +82,15 @@ class Sapo:
             else:
                 self.animacoes.iniciar_levantar_violao()
 
+            return
+
+        if self.andando_para_violao and not animacoes.maquina.em_estado(
+            EstadoSapo.ANDANDO_DIREITA,
+            EstadoSapo.ANDANDO_ESQUERDA,
+        ):
+            self.andando_para_violao = False
+
+        if not self.pode_caminhar() or self.andando_para_violao:
             return
 
         self.andando_para_violao = True

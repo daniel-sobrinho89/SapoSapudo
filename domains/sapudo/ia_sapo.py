@@ -1,6 +1,6 @@
 import random
 
-from systems.sapudo.maquina_estado_sapo import EstadoSapo
+from domains.sapudo.maquina_estado_sapo import EstadoSapo
 
 
 class IASapo:

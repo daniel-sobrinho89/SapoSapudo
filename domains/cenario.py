@@ -2,14 +2,14 @@ import gc
 
 from config import ALTURA, LARGURA
 from constants import CENTRO_OFFSET_Y
-from entities.duende_neblina import DuendeNeblina
-from entities.semente import Semente
+from core.fisica import sistema_fisica
+from domains.clima.semente import Semente
+from domains.duende.entity import DuendeNeblina
 from render.asset_manager import asset_manager
 from render.barraca_renderer import BarracaRenderer
 from render.duende_renderer import DuendeRenderer
 from render.semente_renderer import SementeRenderer
 from render.tamandua_renderer import TamanduaRenderer
-from systems.fisica import sistema_fisica
 
 
 class GerenciadorCenarios:

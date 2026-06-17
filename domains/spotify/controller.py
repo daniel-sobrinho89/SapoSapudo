@@ -1,5 +1,5 @@
-from systems.voz.comando_voz import ComandoVoz
-from systems.voz.reconhecedor_android import ReconhecedorAndroid
+from domains.voz.comando_voz import ComandoVoz
+from domains.voz.reconhecedor_android import ReconhecedorAndroid
 
 
 class ControladorVozMusical:

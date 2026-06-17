@@ -4,7 +4,6 @@
 
 
 import logging
-import math
 import os
 import threading
 
@@ -18,27 +17,27 @@ from kivy.uix.widget import Widget
 import kivy_adapter
 from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
 from constants import CENTRO_OFFSET_Y, ESCALA
-from entities.sapo import Sapo
-from entities.violao import Violao
+from core.ambiente import Ambiente
+from core.audio_manager import AudioManager
+from core.fisica import sistema_fisica
+from domains.cenario import GerenciadorCenarios
+from domains.clima.animacoes.folha import AnimacoesFolha
+from domains.clima.clima_service import ClimaService
+from domains.clima.evento_livro import EventoLivro
+from domains.clima.frasco import FrascoClimatico
+from domains.clima.nuvem import Nuvem
+from domains.clima.particulas.poeira import ParticulaPoeira
+from domains.clima.sistema_nuvens import SistemaNuvens
+from domains.sapudo.entity import Sapo
+from domains.spotify.controller import ControladorVozMusical
+from domains.spotify.spotify_manager import SpotifyManager
+from domains.violao.entity import Violao
 from render.asset_manager import asset_manager
 from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
 from render.sapo_renderer import PensamentoSapoRenderer, SapoRenderer
 from render.transform_utils import TransformUtils
 from render.violao_renderer import ViolaoRenderer
-from systems.ambiente import Ambiente
-from systems.animacoes_folha import AnimacoesFolha
-from systems.audio_manager import AudioManager
-from systems.clima.clima_service import ClimaService
-from systems.clima.evento_livro import EventoLivro
-from systems.clima.frasco import FrascoClimatico
-from systems.clima.nuvem import Nuvem
-from systems.clima.sistema_nuvens import SistemaNuvens
-from systems.fisica import sistema_fisica
-from systems.gerenciador_cenarios import GerenciadorCenarios
-from systems.particulas.poeira import ParticulaPoeira
-from systems.voz.controlador_voz_musical import ControladorVozMusical
-from systems.voz.spotify_manager import SpotifyManager
 from utils.input import init_scaling, real_to_virtual
 
 logging.getLogger().setLevel(logging.INFO)
@@ -217,7 +216,7 @@ class GameWidget(Widget):
         self.clima_service = ClimaService()
 
         self.background_renderer = BackgroundRenderer(
-            tela, LARGURA, ALTURA, self.transform, self.clima_service
+            tela, LARGURA, ALTURA, self.transform, self.clima_service, self.ambiente
         )
         self.controle_renderer = ControleRenderer(tela, asset_manager, self.transform)
         self.sistema_nuvens = SistemaNuvens(self.transform)
@@ -401,13 +400,7 @@ class GameWidget(Widget):
         self.clima_service.atualizar_visual(dt)
 
     def _atualizar_ambiente_fisica(self, dt):
-        direcao_rad = math.radians(self.clima_service.wind_direction + 180)
-        sinal_direcao = math.sin(direcao_rad)
-        influencia_clima = sinal_direcao * self.clima_service.wind_speed * 0.15
-        self.ambiente.atualizar(dt, influencia_clima)
-
-        if getattr(self.clima_service, "rajada_ativa", False):
-            influencia_clima += sinal_direcao * self.clima_service.wind_speed * 0.35
+        self.ambiente.atualizar(dt, self.clima_service)
 
         sistema_fisica.aplicar_forca_vento(
             self.sapo, self.clima_service, dt, sensibilidade=0.25

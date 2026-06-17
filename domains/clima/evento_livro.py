@@ -9,7 +9,7 @@ import textwrap
 from PIL import ImageDraw, ImageFont
 
 import kivy_adapter
-from systems.clima.livro_climatico import LivroClimatico
+from domains.clima.livro_climatico import LivroClimatico
 
 
 class EventoLivro:
