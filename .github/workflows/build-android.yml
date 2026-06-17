@@ -7,7 +7,6 @@ jobs:
 build:
 runs-on: ubuntu-22.04
 
-```
 steps:
   - uses: actions/checkout@v4
 
@@ -43,7 +42,12 @@ steps:
       python << 'EOF'
       import os
 
-      chave = os.environ["APP_GEMINI_API_KEY"]
+      chave = os.environ.get("APP_GEMINI_API_KEY")
+
+      if not chave:
+          raise RuntimeError(
+              "APP_GEMINI_API_KEY não definida no GitHub Secrets"
+          )
 
       with open("config_gemini.py", "w", encoding="utf-8") as f:
           f.write(f"GEMINI_API_KEY = {chave!r}\n")
@@ -87,4 +91,3 @@ steps:
     with:
       name: apk
       path: bin/*.apk
-```
