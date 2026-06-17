@@ -1,5 +1,9 @@
-from domains.voz.comando_voz import ComandoVoz
+import threading
+
+from kivy.clock import Clock
+
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
+from domains.voz.roteador_voz import RoteadorVoz
 
 
 class ControladorVozMusical:
@@ -17,6 +21,7 @@ class ControladorVozMusical:
         controle_renderer,
         distancia_violao,
         gerenciador_cenarios=None,
+        conversa_sapudo=None,
     ):
         self.sapo = sapo
         self.violao = violao
@@ -25,6 +30,7 @@ class ControladorVozMusical:
         self.controle_renderer = controle_renderer
         self.distancia_violao = distancia_violao
         self.gerenciador_cenarios = gerenciador_cenarios
+        self.conversa_sapudo = conversa_sapudo
 
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
@@ -94,12 +100,16 @@ class ControladorVozMusical:
             if texto:
                 print(f"[VOZ] TEXTO: [{texto}]")
                 self.tempo_sem_audio = 0
-                comando_spotify = ComandoVoz.obter_comando_spotify(texto)
 
-                if comando_spotify:
-                    self._processar_comando_spotify(comando_spotify)
-                elif ComandoVoz.eh_comando_feira(texto):
+                rota = RoteadorVoz.identificar(texto)
+                if rota["tipo"] == "spotify":
+                    self._processar_comando_spotify(rota["dados"])
+
+                elif rota["tipo"] == "feira":
                     self._processar_comando_feira()
+
+                elif rota["tipo"] == "conversa":
+                    self._processar_conversa(rota["texto"])
             else:
                 self.tempo_sem_audio += dt
                 if self.tempo_sem_audio > 10:
@@ -140,3 +150,45 @@ class ControladorVozMusical:
     def _processar_comando_feira(self):
         self.desligar_microfone()
         self.sapo.ir_para_feira()
+
+    def _processar_conversa(self, texto):
+        self.desligar_microfone()
+
+        self.sapo.pensamentos.texto = "Escutando os ecos da lagoa..."
+        self.sapo.pensamentos.tempo_restante = 10
+
+        threading.Thread(
+            target=self._executar_gemini,
+            args=(texto,),
+            daemon=True,
+        ).start()
+
+    def _executar_gemini(self, texto):
+        try:
+            texto = texto.lower()
+
+            texto = texto.replace("sapado", "sapudo")
+            texto = texto.replace("sapo do", "sapudo")
+            texto = texto.replace("sabudo", "sapudo")
+
+            for palavra in ("sapudo", "sapo"):
+                if texto.startswith(palavra):
+                    texto = texto[len(palavra) :].strip()
+                    break
+
+            resposta = self.conversa_sapudo.conversar(texto)
+
+            Clock.schedule_once(lambda dt: self._mostrar_resposta(resposta))
+        except Exception as ex:
+            print(f"[GEMINI] Erro: {ex}")
+
+            Clock.schedule_once(
+                lambda dt: self._mostrar_resposta("A lagoa ficou silenciosa.")
+            )
+
+    def _mostrar_resposta(self, resposta):
+        if not resposta:
+            return
+
+        self.sapo.pensamentos.texto = resposta
+        self.sapo.pensamentos.tempo_restante = 60

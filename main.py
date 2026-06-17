@@ -28,6 +28,8 @@ from domains.clima.frasco import FrascoClimatico
 from domains.clima.nuvem import Nuvem
 from domains.clima.particulas.poeira import ParticulaPoeira
 from domains.clima.sistema_nuvens import SistemaNuvens
+from domains.conversas.conversa_sapudo import ConversaSapudo
+from domains.conversas.gemini_client import GeminiClient
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
@@ -249,6 +251,11 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
+        self.gemini = GeminiClient(
+            api_key="AQ.Ab8RN6L9tRL6CddA0k_JuW0flekFj_qOJXWGf1mcwAPkOHj0wA"
+        )
+        self.conversa_sapudo = ConversaSapudo(self.gemini)
+
         self.controlador_voz_musical = ControladorVozMusical(
             self.sapo,
             self.violao,
@@ -257,6 +264,7 @@ class GameWidget(Widget):
             self.controle_renderer,
             DISTANCIA_VIOLAO,
             self.gerenciador_cenarios,
+            self.conversa_sapudo,
         )
 
     def _configurar_graficos(self):

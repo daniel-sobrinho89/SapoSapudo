@@ -209,6 +209,9 @@ class AnimacoesSapo:
         self.violao_logic.resetar()
 
     def iniciar_levantar_violao(self):
+        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
+            return
+
         self.maquina.trocar(EstadoSapo.LEVANTANDO_VIOLAO)
         self.levantar_violao.reset()
 
