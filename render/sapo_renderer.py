@@ -190,9 +190,11 @@ class PensamentoSapoRenderer:
     def obter_alpha(self, tempo_restante):
         tempo_total = 6
 
+        if tempo_restante > tempo_total:
+            return 255
+
         if tempo_restante > 5:
             fade = tempo_total - tempo_restante
-
             return int(255 * fade)
 
         if tempo_restante < 1:

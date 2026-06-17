@@ -54,5 +54,11 @@ class GeminiClient:
 
             return dados["candidates"][0]["content"]["parts"][0]["text"]
 
-        except Exception:
+        except Exception as ex:
+            print(f"[GEMINI] Erro: {type(ex).__name__}: {ex}")
+
+            if hasattr(ex, "response") and ex.response is not None:
+                print("[GEMINI] Status:", ex.response.status_code)
+                print("[GEMINI] Body:", ex.response.text)
+
             return "A lagoa está sem conexão com os espíritos da internet."

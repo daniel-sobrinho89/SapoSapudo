@@ -111,7 +111,6 @@ class ControladorVozMusical:
                     self._processar_comando_feira()
 
                 elif rota["tipo"] == "conversa":
-                    print("[CONVERSA] Entrando em _processar_conversa")
                     self._processar_conversa(rota["texto"])
             else:
                 self.tempo_sem_audio += dt
@@ -155,11 +154,7 @@ class ControladorVozMusical:
         self.sapo.ir_para_feira()
 
     def _processar_conversa(self, texto):
-        print("[CONVERSA] Antes desligar")
-
         self.desligar_microfone()
-
-        print("[CONVERSA] Depois desligar")
 
         self.sapo.pensamentos.texto = "Escutando os ecos da lagoa..."
         self.sapo.pensamentos.tempo_restante = 10
