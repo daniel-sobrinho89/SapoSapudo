@@ -35,14 +35,29 @@ jobs:
             cmake libffi-dev libssl-dev \
             build-essential ccache libltdl-dev
 
+      - name: Injetar Gemini Key
+        env:
+          APP_GEMINI_API_KEY: ${{ secrets.APP_GEMINI_API_KEY }}
+        run: |
+          sed -i "s|android.add_env = GEMINI_API_KEY=|android.add_env = GEMINI_API_KEY=$APP_GEMINI_API_KEY|" buildozer.spec
+          
+      - name: Verificar substituição
+        run: |
+          grep "android.add_env" buildozer.spec
+
+          if grep -q '\${APP_GEMINI_API_KEY}' buildozer.spec; then
+            echo "ERRO: variável não substituída"
+            exit 1
+          fi
+
+          echo "OK: variável substituída"
+
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
       - name: Gerar APK
-        env:
-          APP_GEMINI_API_KEY: ${{ secrets.APP_GEMINI_API_KEY }}
         run: |
           buildozer android debug
 
