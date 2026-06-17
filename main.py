@@ -16,6 +16,7 @@ from kivy.uix.widget import Widget
 
 import kivy_adapter
 from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
+from config_gemini import GEMINI_API_KEY
 from constants import CENTRO_OFFSET_Y, ESCALA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
@@ -251,12 +252,10 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
-        api_key = os.environ.get("GEMINI_API_KEY")
+        if not GEMINI_API_KEY:
+            raise RuntimeError("GEMINI_API_KEY vazia")
 
-        if not api_key:
-            raise RuntimeError("GEMINI_API_KEY não configurada")
-
-        self.gemini = GeminiClient(api_key=api_key)
+        self.gemini = GeminiClient(api_key=GEMINI_API_KEY)
 
         self.conversa_sapudo = ConversaSapudo(self.gemini)
 

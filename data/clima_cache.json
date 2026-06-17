@@ -1,13 +1,13 @@
 {
     "cloudiness": 0,
-    "wind_speed": 5.8,
-    "wind_direction": 213,
+    "wind_speed": 7.6,
+    "wind_direction": 171,
     "future_cloudiness_1h": 0,
-    "future_cloudiness_2h": 2,
-    "future_cloudiness_3h": 2,
+    "future_cloudiness_2h": 0,
+    "future_cloudiness_3h": 0,
     "is_day": 1,
     "condition_code": 1000,
     "condition_text": "Sunny",
-    "temperature": 20.1,
-    "humidity": 53
+    "temperature": 20.4,
+    "humidity": 28
 }
