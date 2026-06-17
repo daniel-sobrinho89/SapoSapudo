@@ -41,6 +41,8 @@ jobs:
           pip install buildozer==1.5.0 cython==0.29.36
 
       - name: Gerar APK
+        env:
+          APP_GEMINI_API_KEY: ${{ secrets.APP_GEMINI_API_KEY }}
         run: |
           buildozer android debug
 
