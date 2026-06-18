@@ -181,7 +181,10 @@ class Sapo:
         acao = self.ia.obter_acao(dt, self)
 
         if acao:
-            self.pensamentos.executar(acao)
+            texto = self.pensamentos.executar(acao)
+
+            if texto:
+                events["novo_pensamento"] = texto
 
         self.pensamentos.atualizar(dt)
 

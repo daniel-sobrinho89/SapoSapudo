@@ -30,8 +30,9 @@ class PensamentosSapo:
         self.texto = random.choice(disponiveis)
 
         self.ultimo_texto = self.texto
-
         self.tempo_restante = 6
+
+        return self.texto
 
     def atualizar(self, dt):
         if self.tempo_restante > 0:

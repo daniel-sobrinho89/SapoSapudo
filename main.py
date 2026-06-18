@@ -35,6 +35,7 @@ from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
 from domains.violao.entity import Violao
+from domains.voz.tts_service import TTSService
 from render.asset_manager import asset_manager
 from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
@@ -167,6 +168,11 @@ class GameWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        Clock.schedule_once(
+            lambda dt: self.tts.falar("A lagoa continua a mesma, mas o dia nunca é."),
+            10,
+        )
+
         self._inicializar_audio_spotify()
         self._inicializar_controles()
         self._inicializar_sistemas_base()
@@ -200,6 +206,7 @@ class GameWidget(Widget):
         self.animacoes_folha = AnimacoesFolha()
         self.violao = Violao()
         self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
+        self.tts = TTSService()
 
     def _inicializar_clima_e_ambiente(self):
         self.frasco_climatico = FrascoClimatico(self.transform)
@@ -433,6 +440,10 @@ class GameWidget(Widget):
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
 
+        texto = events.get("novo_pensamento")
+        if texto:
+            self.tts.falar(texto)
+
         self.spotify.atualizar_spotify(self, dt, self.sapo, self.violao)
 
         self.controlador_voz_musical.atualizar(dt)
@@ -481,6 +492,9 @@ class GameApp(App):
         return GameWidget()
 
     def on_stop(self):
+        if hasattr(self.root, "tts"):
+            self.root.tts.destruir()
+
         if hasattr(self.root, "reconhecedor_voz"):
             self.root.reconhecedor_voz.destruir()
 

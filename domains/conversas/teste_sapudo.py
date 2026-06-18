@@ -1,7 +1,7 @@
 from domains.conversas.conversa_sapudo import ConversaSapudo
 from domains.conversas.gemini_client import GeminiClient
 
-API_KEY = ""
+API_KEY = "AQ.Ab8RN6KJ70zkPn3FVG3EWR4HtZomCLzShmwnzNyRc22OhjUjfA"
 
 
 def main():
