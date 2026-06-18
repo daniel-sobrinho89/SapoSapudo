@@ -10,3 +10,6 @@ select = [
     "B",
     "SIM"
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"core/event_bus.py" = ["UP006", "UP035"]

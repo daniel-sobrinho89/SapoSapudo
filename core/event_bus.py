@@ -3,7 +3,7 @@
 import re
 import threading
 from collections import defaultdict
-from typing import Any, Callable, dict, list
+from typing import Any, Callable, Dict, List
 
 
 def _camel_to_snake(name: str) -> str:
@@ -49,7 +49,7 @@ class EventBus:
     # desacoplada entre módulos.
 
     def __init__(self):
-        self._subscribers: dict[Any, list[Callable[[Any], None]]] = defaultdict(list)
+        self._subscribers: Dict[Any, List[Callable[[Any], None]]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def subscribe(self, event_type: Any, handler: Callable[[Any], None]):
