@@ -197,11 +197,11 @@ class ControladorVozMusical:
             return
 
         pensamento = resposta
-        if len(pensamento) > 120:
-            pensamento = pensamento[:120].rsplit(" ", 1)[0] + "..."
+        if len(pensamento) > 100:
+            pensamento = pensamento[:100].rsplit(" ", 1)[0] + "..."
 
         self.sapo.pensamentos.texto = pensamento
-        self.sapo.pensamentos.tempo_restante = 40
+        self.sapo.pensamentos.tempo_restante = 30
 
         if self.tts:
             self.tts.falar(resposta)
