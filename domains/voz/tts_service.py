@@ -11,6 +11,7 @@ if IS_ANDROID:
     TextToSpeech = autoclass("android.speech.tts.TextToSpeech")
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
     Bundle = autoclass("android.os.Bundle")
+    JavaString = autoclass("java.lang.String")
 
     class _TTSListener(PythonJavaClass):
         __javainterfaces__ = ["android/speech/tts/TextToSpeech$OnInitListener"]
@@ -22,8 +23,12 @@ if IS_ANDROID:
         @java_method("(I)V")
         def onInit(self, status):
             if status == TextToSpeech.SUCCESS:
+                self.service.tts.setLanguage(Locale("pt", "BR"))
                 self.service.pronto = True
+                self.service.disponivel = True
                 print("TTS pronto")
+            else:
+                print("Falha ao inicializar TTS:", status)
 
 else:
 
@@ -44,14 +49,11 @@ class TTSService:
         try:
             activity = PythonActivity.mActivity
             self.pronto = False
+            self.disponivel = False
 
             self.listener = _TTSListener(self)
 
             self.tts = TextToSpeech(activity, self.listener)
-
-            self.tts.setLanguage(Locale("pt", "BR"))
-
-            self.disponivel = True
 
         except Exception as ex:
             print("Erro inicializando TTS:", ex)
@@ -72,7 +74,9 @@ class TTSService:
         try:
             params = Bundle()
 
-            self.tts.speak(texto, TextToSpeech.QUEUE_ADD, params, "sapudo")
+            self.tts.speak(
+                JavaString(texto), TextToSpeech.QUEUE_ADD, params, JavaString("sapudo")
+            )
 
         except Exception as ex:
             print("Erro TTS:", ex)
