@@ -22,6 +22,7 @@ class ControladorVozMusical:
         distancia_violao,
         gerenciador_cenarios=None,
         conversa_sapudo=None,
+        tts=None,
     ):
         self.sapo = sapo
         self.violao = violao
@@ -31,6 +32,7 @@ class ControladorVozMusical:
         self.distancia_violao = distancia_violao
         self.gerenciador_cenarios = gerenciador_cenarios
         self.conversa_sapudo = conversa_sapudo
+        self.tts = tts
 
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
@@ -196,3 +198,6 @@ class ControladorVozMusical:
 
         self.sapo.pensamentos.texto = resposta
         self.sapo.pensamentos.tempo_restante = 60
+
+        if self.tts:
+            self.tts.falar(resposta)

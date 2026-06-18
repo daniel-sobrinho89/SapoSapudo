@@ -16,10 +16,13 @@ from kivy.uix.widget import Widget
 
 import kivy_adapter
 from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
-from config_gemini import GEMINI_API_KEY
 from constants import CENTRO_OFFSET_Y, ESCALA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
+from core.event_bus import (
+    PensamentoExibidoEvent,
+    event_bus,
+)
 from core.fisica import sistema_fisica
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
@@ -30,7 +33,7 @@ from domains.clima.nuvem import Nuvem
 from domains.clima.particulas.poeira import ParticulaPoeira
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
-from domains.conversas.gemini_client import GeminiClient
+from domains.conversas.ollama_client import OllamaClient
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
@@ -259,12 +262,11 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
-        if not GEMINI_API_KEY:
-            raise RuntimeError("GEMINI_API_KEY vazia")
+        self.ollama = OllamaClient(
+            host="http://192.168.15.25:11434", modelo="qwen2.5:1.5b"
+        )
 
-        self.gemini = GeminiClient(api_key=GEMINI_API_KEY)
-
-        self.conversa_sapudo = ConversaSapudo(self.gemini)
+        self.conversa_sapudo = ConversaSapudo(self.ollama)
 
         self.controlador_voz_musical = ControladorVozMusical(
             self.sapo,
@@ -275,6 +277,7 @@ class GameWidget(Widget):
             DISTANCIA_VIOLAO,
             self.gerenciador_cenarios,
             self.conversa_sapudo,
+            self.tts,
         )
 
     def _configurar_graficos(self):
@@ -439,10 +442,15 @@ class GameWidget(Widget):
         )
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
+            event_bus.publicar("musica_iniciada", musica_info="O Passeio do Sapudo")
 
         texto = events.get("novo_pensamento")
         if texto:
             self.tts.falar(texto)
+            event_bus.publicar(PensamentoExibidoEvent(pensamento_texto=texto))
+
+        if self.clima_service.precisa_atualizar():
+            event_bus.publicar("clima_atualizado", clima_data=self.clima_service)
 
         self.spotify.atualizar_spotify(self, dt, self.sapo, self.violao)
 
