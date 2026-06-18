@@ -39,18 +39,18 @@ class GeminiClient:
                 ],
             }
 
-            # resposta = self.session.post(
-            #     f"{self.url}?key={self.api_key}", json=payload, timeout=(5, 30)
-            # )
             resposta = self.session.post(
-                self.url,
-                headers={
-                    "X-goog-api-key": self.api_key,
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-                timeout=(5, 30),
+                f"{self.url}?key={self.api_key}", json=payload, timeout=(5, 30)
             )
+            # resposta = self.session.post(
+            #     self.url,
+            #     headers={
+            #         "X-goog-api-key": self.api_key,
+            #         "Content-Type": "application/json",
+            #     },
+            #     json=payload,
+            #     timeout=(5, 30),
+            # )
 
             resposta.raise_for_status()
 

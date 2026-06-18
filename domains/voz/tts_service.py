@@ -10,6 +10,7 @@ if IS_ANDROID:
     Locale = autoclass("java.util.Locale")
     TextToSpeech = autoclass("android.speech.tts.TextToSpeech")
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
+    Bundle = autoclass("android.os.Bundle")
 
     class _TTSListener(PythonJavaClass):
         __javainterfaces__ = ["android/speech/tts/TextToSpeech$OnInitListener"]
@@ -69,7 +70,9 @@ class TTSService:
                 return
 
         try:
-            self.tts.speak(texto, TextToSpeech.QUEUE_ADD, None, "sapudo")
+            params = Bundle()
+
+            self.tts.speak(texto, TextToSpeech.QUEUE_ADD, params, "sapudo")
 
         except Exception as ex:
             print("Erro TTS:", ex)
