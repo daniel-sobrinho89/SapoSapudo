@@ -18,7 +18,7 @@ class OllamaClient:
                     "prompt": prompt,
                     "stream": False,
                     "keep_alive": "24h",
-                    "options": {"num_predict": 150, "temperature": 0.5},
+                    "options": {"num_predict": 150, "temperature": 0.6},
                 },
                 timeout=(10, 300),
             )

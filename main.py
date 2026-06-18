@@ -263,7 +263,7 @@ class GameWidget(Widget):
         self.gerenciador_cenarios.sapo = self.sapo
 
         self.ollama = OllamaClient(
-            host="http://192.168.15.25:11434", modelo="qwen2.5:1.5b"
+            host="http://192.168.15.25:11434", modelo="qwen2.5:3b"
         )
 
         self.conversa_sapudo = ConversaSapudo(self.ollama)
