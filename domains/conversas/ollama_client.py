@@ -8,16 +8,17 @@ class OllamaClient:
 
         self.session = requests.Session()
 
-    def gerar(self, prompt):
+    def gerar(self, prompt, system=None):
         try:
             resposta = self.session.post(
                 f"{self.host}/api/generate",
                 json={
                     "model": self.modelo,
+                    "system": system or "",
                     "prompt": prompt,
                     "stream": False,
                     "keep_alive": "24h",
-                    "options": {"num_predict": 70, "temperature": 0.7},
+                    "options": {"num_predict": 80, "temperature": 0.6},
                 },
                 timeout=(10, 300),
             )

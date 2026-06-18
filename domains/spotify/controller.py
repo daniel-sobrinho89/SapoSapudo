@@ -196,8 +196,12 @@ class ControladorVozMusical:
         if not resposta:
             return
 
-        self.sapo.pensamentos.texto = resposta
-        self.sapo.pensamentos.tempo_restante = 60
+        pensamento = resposta
+        if len(pensamento) > 120:
+            pensamento = pensamento[:120].rsplit(" ", 1)[0] + "..."
+
+        self.sapo.pensamentos.texto = pensamento
+        self.sapo.pensamentos.tempo_restante = 40
 
         if self.tts:
             self.tts.falar(resposta)

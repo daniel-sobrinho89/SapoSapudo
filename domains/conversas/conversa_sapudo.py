@@ -14,20 +14,18 @@ class ConversaSapudo:
         self.processando = True
 
         prompt = f"""
-    {PERSONALIDADE_SAPUDO}
+        Contexto atual:
 
-    Contexto atual:
+        {contexto_extra}
 
-    {contexto_extra}
+        Usuário:
+        {mensagem_usuario}
 
-    Usuário:
-    {mensagem_usuario}
-
-    Responda como Sapudo.
-    """
+        Responda à mensagem do usuário.
+        """
 
         try:
-            resposta = self.gemini.gerar(prompt)
+            resposta = self.gemini.gerar(prompt, PERSONALIDADE_SAPUDO)
 
             return resposta
 
