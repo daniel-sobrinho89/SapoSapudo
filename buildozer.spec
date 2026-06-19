@@ -232,7 +232,7 @@ android.accept_sdk_license = True
 # please enclose in double quotes 
 # e.g. android.add_packaging_options = "exclude 'META-INF/common.kotlin_module'", "exclude 'META-INF/*.kotlin_module'"
 #android.add_packaging_options =
-
+android.add_src = domains/voz/java
 # (list) Java classes to add as activities to the manifest.
 #android.add_activities = com.example.ExampleActivity
 

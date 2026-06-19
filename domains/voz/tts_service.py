@@ -1,94 +1,66 @@
 from contextlib import suppress
 
+from kivy.clock import Clock
+
 from core.event_bus import event_bus
 from core.platform import IS_ANDROID
 
 PALAVRAS_BLOQUEADAS = ("estou ouvindo", "lá lá lá")
 
 if IS_ANDROID:
-    from jnius import PythonJavaClass, autoclass, java_method
+    from jnius import autoclass
 
-    Locale = autoclass("java.util.Locale")
-    TextToSpeech = autoclass("android.speech.tts.TextToSpeech")
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
-    Bundle = autoclass("android.os.Bundle")
-    JavaString = autoclass("java.lang.String")
-
-    class _TTSListener(PythonJavaClass):
-        __javainterfaces__ = ["android/speech/tts/TextToSpeech$OnInitListener"]
-
-        def __init__(self, service):
-            super().__init__()
-            self.service = service
-
-        @java_method("(I)V")
-        def onInit(self, status):
-            if status == TextToSpeech.SUCCESS:
-                self.service.tts.setLanguage(Locale("pt", "BR"))
-
-                self.service.progress_listener = _UtteranceListener()
-
-                self.service.tts.setOnUtteranceProgressListener(
-                    self.service.progress_listener
-                )
-
-                self.service.pronto = True
-                self.service.disponivel = True
-                print("TTS pronto")
-            else:
-                print("Falha ao inicializar TTS:", status)
-
-    class _UtteranceListener(PythonJavaClass):
-        __javaclass__ = "android/speech/tts/UtteranceProgressListener"
-
-        @java_method("(Ljava/lang/String;)V")
-        def onStart(self, utteranceId):
-            print("TTS START")
-            event_bus.publicar("tts_iniciado")
-
-        @java_method("(Ljava/lang/String;)V")
-        def onDone(self, utteranceId):
-            print("TTS DONE")
-            event_bus.publicar("tts_finalizado")
-
-        @java_method("(Ljava/lang/String;)V")
-        def onError(self, utteranceId):
-            print("TTS ERROR")
-            event_bus.publicar("tts_finalizado")
-
-else:
-
-    class _TTSListener:
-        pass
-
-    class _UtteranceListener:
-        pass
+    SapudoTTS = autoclass("domains.voz.java.TTS")
 
 
 class TTSService:
     def __init__(self):
         self.tts = None
-        self.listener = None
         self.disponivel = False
         self.pronto = False
+        self.estava_falando = False
 
         if not IS_ANDROID:
             return
 
         try:
             activity = PythonActivity.mActivity
-            self.pronto = False
-            self.disponivel = False
 
-            self.listener = _TTSListener(self)
+            self.tts = SapudoTTS(activity)
 
-            self.tts = TextToSpeech(activity, self.listener)
+            Clock.schedule_interval(self._verificar_pronto, 0.1)
+
+            Clock.schedule_interval(self._verificar_tts, 0.1)
 
         except Exception as ex:
-            print("Erro inicializando TTS:", ex)
+            print("Erro TTS:", ex)
+
+    def _verificar_tts(self, dt):
+        if not self.pronto:
+            return
+
+        if not self.tts:
+            return
+
+        try:
+            falando = bool(self.tts.isSpeaking())
+
+            if falando and not self.estava_falando:
+                self.estava_falando = True
+
+                event_bus.publicar("tts_iniciado")
+
+            elif not falando and self.estava_falando:
+                self.estava_falando = False
+
+                event_bus.publicar("tts_finalizado")
+
+        except Exception:
+            pass
 
     def falar(self, texto):
-        if not self.disponivel or not self.pronto:
+        if not self.pronto:
             return
 
         if not texto:
@@ -101,36 +73,38 @@ class TTSService:
                 return
 
         try:
-            params = Bundle()
-
-            self.tts.speak(
-                JavaString(texto), TextToSpeech.QUEUE_ADD, params, JavaString("sapudo")
-            )
-
+            self.tts.speak(texto)
         except Exception as ex:
-            print("Erro TTS:", ex)
+            print(ex)
 
     def parar(self):
-        if not self.disponivel:
+        if not self.tts:
             return
 
         with suppress(Exception):
             self.tts.stop()
-
-        event_bus.publicar("tts_finalizado")
 
     def destruir(self):
-        if not self.disponivel:
+        if not self.tts:
             return
 
         with suppress(Exception):
-            self.tts.stop()
+            Clock.unschedule(self._verificar_tts)
+
+            Clock.unschedule(self._verificar_pronto)
+
             self.tts.shutdown()
 
-        event_bus.publicar("tts_finalizado")
+    def _verificar_pronto(self, dt):
+        if not self.tts:
+            return
 
-    def on_start(self):
-        event_bus.publicar("tts_iniciado")
+        try:
+            if self.tts.isReady():
+                self.pronto = True
+                self.disponivel = True
 
-    def on_done(self):
-        event_bus.publicar("tts_finalizado")
+                Clock.unschedule(self._verificar_pronto)
+
+        except Exception:
+            pass

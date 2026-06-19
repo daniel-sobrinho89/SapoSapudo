@@ -77,10 +77,24 @@ jobs:
           print("Tamanho:", len(module.GEMINI_API_KEY))
           EOF
 
+      - name: Validar TTS.java
+        run: |
+          test -f domains/voz/java/TTS.java
+
+          echo "Arquivo encontrado"
+
+          grep "package domains.voz.java;" domains/voz/java/TTS.java
+
+          grep "public class TTS" domains/voz/java/TTS.java
+
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
+
+      - name: Verificar buildozer.spec
+        run: |
+          grep "android.add_src = domains/voz/java" buildozer.spec
 
       - name: Gerar APK
         run: |
