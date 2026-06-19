@@ -38,7 +38,6 @@ class AnimacoesSapo:
         self.callback_verificar_spotify = None
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
-
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
 
     # ====================================
