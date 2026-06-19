@@ -13,9 +13,6 @@ if IS_ANDROID:
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
     Bundle = autoclass("android.os.Bundle")
     JavaString = autoclass("java.lang.String")
-    UtteranceProgressListener = autoclass(
-        "android.speech.tts.UtteranceProgressListener"
-    )
 
     class _TTSListener(PythonJavaClass):
         __javainterfaces__ = ["android/speech/tts/TextToSpeech$OnInitListener"]
@@ -28,6 +25,13 @@ if IS_ANDROID:
         def onInit(self, status):
             if status == TextToSpeech.SUCCESS:
                 self.service.tts.setLanguage(Locale("pt", "BR"))
+
+                self.service.progress_listener = _UtteranceListener()
+
+                self.service.tts.setOnUtteranceProgressListener(
+                    self.service.progress_listener
+                )
+
                 self.service.pronto = True
                 self.service.disponivel = True
                 print("TTS pronto")
@@ -35,23 +39,22 @@ if IS_ANDROID:
                 print("Falha ao inicializar TTS:", status)
 
     class _UtteranceListener(PythonJavaClass):
-        __javainterfaces__ = ["android/speech/tts/UtteranceProgressListener"]
-
-        def __init__(self, service):
-            super().__init__()
-            self.service = service
+        __javaclass__ = "android/speech/tts/UtteranceProgressListener"
 
         @java_method("(Ljava/lang/String;)V")
         def onStart(self, utteranceId):
-            self.service.on_start()
+            print("TTS START")
+            event_bus.publicar("tts_iniciado")
 
         @java_method("(Ljava/lang/String;)V")
         def onDone(self, utteranceId):
-            self.service.on_done()
+            print("TTS DONE")
+            event_bus.publicar("tts_finalizado")
 
         @java_method("(Ljava/lang/String;)V")
         def onError(self, utteranceId):
-            self.service.on_done()
+            print("TTS ERROR")
+            event_bus.publicar("tts_finalizado")
 
 else:
 
@@ -80,9 +83,6 @@ class TTSService:
             self.listener = _TTSListener(self)
 
             self.tts = TextToSpeech(activity, self.listener)
-
-            self.progress_listener = _UtteranceListener(self)
-            self.tts.setOnUtteranceProgressListener(self.progress_listener)
 
         except Exception as ex:
             print("Erro inicializando TTS:", ex)
@@ -117,6 +117,8 @@ class TTSService:
         with suppress(Exception):
             self.tts.stop()
 
+        event_bus.publicar("tts_finalizado")
+
     def destruir(self):
         if not self.disponivel:
             return
@@ -124,6 +126,8 @@ class TTSService:
         with suppress(Exception):
             self.tts.stop()
             self.tts.shutdown()
+
+        event_bus.publicar("tts_finalizado")
 
     def on_start(self):
         event_bus.publicar("tts_iniciado")
