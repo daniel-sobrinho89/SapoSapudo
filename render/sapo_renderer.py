@@ -221,8 +221,8 @@ class PensamentoSapoRenderer:
             return
 
         novo_pensamento = pensamento.texto
-        if len(novo_pensamento) > 100:
-            novo_pensamento = novo_pensamento[:100].rsplit(" ", 1)[0] + "..."
+        if len(novo_pensamento) > 50:
+            novo_pensamento = novo_pensamento[:50].rsplit(" ", 1)[0] + "..."
 
         linhas = self.quebrar_linhas(novo_pensamento)
 
