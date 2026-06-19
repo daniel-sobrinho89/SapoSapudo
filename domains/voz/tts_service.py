@@ -1,5 +1,6 @@
 from contextlib import suppress
 
+from core.event_bus import event_bus
 from core.platform import IS_ANDROID
 
 PALAVRAS_BLOQUEADAS = ("estou ouvindo", "lá lá lá")
@@ -12,6 +13,9 @@ if IS_ANDROID:
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
     Bundle = autoclass("android.os.Bundle")
     JavaString = autoclass("java.lang.String")
+    UtteranceProgressListener = autoclass(
+        "android.speech.tts.UtteranceProgressListener"
+    )
 
     class _TTSListener(PythonJavaClass):
         __javainterfaces__ = ["android/speech/tts/TextToSpeech$OnInitListener"]
@@ -30,9 +34,31 @@ if IS_ANDROID:
             else:
                 print("Falha ao inicializar TTS:", status)
 
+    class _UtteranceListener(PythonJavaClass):
+        __javainterfaces__ = ["android/speech/tts/UtteranceProgressListener"]
+
+        def __init__(self, service):
+            super().__init__()
+            self.service = service
+
+        @java_method("(Ljava/lang/String;)V")
+        def onStart(self, utteranceId):
+            self.service.on_start()
+
+        @java_method("(Ljava/lang/String;)V")
+        def onDone(self, utteranceId):
+            self.service.on_done()
+
+        @java_method("(Ljava/lang/String;)V")
+        def onError(self, utteranceId):
+            self.service.on_done()
+
 else:
 
     class _TTSListener:
+        pass
+
+    class _UtteranceListener:
         pass
 
 
@@ -54,6 +80,9 @@ class TTSService:
             self.listener = _TTSListener(self)
 
             self.tts = TextToSpeech(activity, self.listener)
+
+            self.progress_listener = _UtteranceListener(self)
+            self.tts.setOnUtteranceProgressListener(self.progress_listener)
 
         except Exception as ex:
             print("Erro inicializando TTS:", ex)
@@ -95,3 +124,9 @@ class TTSService:
         with suppress(Exception):
             self.tts.stop()
             self.tts.shutdown()
+
+    def on_start(self):
+        event_bus.publicar("tts_iniciado")
+
+    def on_done(self):
+        event_bus.publicar("tts_finalizado")

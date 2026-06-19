@@ -16,6 +16,7 @@ class EstadoSapo(Enum):
 
     ANDANDO_ESQUERDA = "andando_esquerda"
     ANDANDO_DIREITA = "andando_direita"
+    CONVERSAR = "conversar"
 
 
 class MaquinaEstadoSapo:

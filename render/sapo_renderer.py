@@ -71,6 +71,12 @@ class SapoRenderer:
             for frame in self.frames_andar_esquerda
         )
 
+        self.frames_conversar = []
+        for i in range(60):
+            self.frames_conversar.append(
+                self.assets.carregar(f"sapudo/conversar/sapudo_{i:04d}.webp")
+            )
+
     # =====================================
     # DRAW
     # =====================================
@@ -114,6 +120,8 @@ class SapoRenderer:
             return self.frames_andar_esquerda[animacoes.andar_esquerda.frame]
         elif animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             return self.frames_andar_direita[animacoes.andar_direita.frame]
+        elif animacoes.maquina.eh(EstadoSapo.CONVERSAR):
+            return self.frames_conversar[animacoes.conversar.frame]
 
         return self.frames_parado[animacoes.parado.frame]
 
@@ -212,7 +220,11 @@ class PensamentoSapoRenderer:
         if not pensamento.texto:
             return
 
-        linhas = self.quebrar_linhas(pensamento.texto)
+        novo_pensamento = pensamento.texto
+        if len(novo_pensamento) > 100:
+            novo_pensamento = novo_pensamento[:100].rsplit(" ", 1)[0] + "..."
+
+        linhas = self.quebrar_linhas(novo_pensamento)
 
         _, altura_linha = self.medir_texto("Ag")
 

@@ -170,6 +170,14 @@ class ClimaAtualizadoEvent(Event):
         super().__init__(clima_data=clima_data)
 
 
+class TTSIniciadoEvent(Event):
+    pass
+
+
+class TTSFinalizadoEvent(Event):
+    pass
+
+
 # Aliases em português para as classes de eventos
 VozDetectadaEvento = VozDetectadaEvent
 MusicaIniciadaEvento = MusicaIniciadaEvent
@@ -194,6 +202,8 @@ _MAPA_EVENTOS = {
     "musicapausadaevento": MusicaPausadaEvent,
     "pensamentoexibidoevento": PensamentoExibidoEvent,
     "climaatualizadoevento": ClimaAtualizadoEvent,
+    "tts_iniciado": TTSIniciadoEvent,
+    "tts_finalizado": TTSFinalizadoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

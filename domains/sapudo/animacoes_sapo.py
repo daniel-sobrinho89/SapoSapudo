@@ -1,3 +1,4 @@
+from core.event_bus import event_bus
 from domains.sapudo.agenda_sapo import AgendaSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
 from domains.violao.logic import LogicaViolaoSapo
@@ -30,10 +31,15 @@ class AnimacoesSapo:
         self.soltar_violao = Animacao(9, 0.14, loop=False)
         self.andar_esquerda = Animacao(10, 0.07)
         self.andar_direita = Animacao(10, 0.07)
+        self.conversar = Animacao(60, 0.17)
 
         self.ultimo_frame_guardar = -1
         self.parar_audio_violao = False
         self.callback_verificar_spotify = None
+
+        event_bus.assinar("tts_iniciado", self.fala_iniciada)
+
+        event_bus.assinar("tts_finalizado", self.fala_finalizada)
 
     # ====================================
     # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)
@@ -109,6 +115,7 @@ class AnimacoesSapo:
         self.andar_direita.atualizar(dt) if self.maquina.eh(
             EstadoSapo.ANDANDO_DIREITA
         ) else None
+        self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
 
@@ -226,6 +233,14 @@ class AnimacoesSapo:
             return
         self.maquina.trocar(EstadoSapo.ANDANDO_DIREITA)
         self.andar_direita.reset()
+
+    def fala_iniciada(self, _evento=None):
+        if self.maquina.eh(EstadoSapo.PARADO):
+            self.maquina.trocar(EstadoSapo.CONVERSAR)
+
+    def fala_finalizada(self, _evento=None):
+        if self.maquina.eh(EstadoSapo.CONVERSAR):
+            self.maquina.trocar(EstadoSapo.PARADO)
 
 
 class Animacao:
