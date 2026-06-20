@@ -172,7 +172,7 @@ class GameWidget(Widget):
         super().__init__(**kwargs)
 
         Clock.schedule_once(
-            lambda dt: self.tts.falar("A lagoa continua a mesma, mas o dia nunca é."),
+            lambda dt: self.tts.falar("A lagoa continua a mesma, mas o dia nunca é..."),
             10,
         )
 
