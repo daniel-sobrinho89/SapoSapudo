@@ -74,15 +74,21 @@ jobs:
 
           find .
 
-      - name: Preparar libllama.so
+      - name: Preparar bibliotecas llama.cpp
         run: |
           mkdir -p domains/conversas/libs/arm64-v8a
 
-          find llama_release -name "libllama.so"
+          cp llama_release/llama-b9752/libllama.so \
+            domains/conversas/libs/arm64-v8a/
 
-          cp \
-            $(find llama_release -name "libllama.so" | head -1) \
-            domains/conversas/libs/arm64-v8a/libllama.so
+          cp llama_release/llama-b9752/libggml.so \
+            domains/conversas/libs/arm64-v8a/
+
+          cp llama_release/llama-b9752/libggml-base.so \
+            domains/conversas/libs/arm64-v8a/
+
+          cp llama_release/llama-b9752/libggml-cpu-*.so \
+            domains/conversas/libs/arm64-v8a/
 
           ls -lh domains/conversas/libs/arm64-v8a
 
@@ -121,13 +127,13 @@ jobs:
 
           nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
 
-      - name: Validar bibliotecas
+      - name: Verificar dependências do llama
         run: |
-          ls -lh domains/conversas/libs/arm64-v8a
+          readelf -d domains/conversas/libs/arm64-v8a/libllama.so | grep NEEDED
 
-          file domains/conversas/libs/arm64-v8a/libllama.so
-
-          file domains/conversas/libs/arm64-v8a/libllama_jni.so
+      - name: Listar libs finais
+        run: |
+          find domains/conversas/libs/arm64-v8a -name "*.so"
 
       - name: Baixar modelo Qwen da Release
         env:
