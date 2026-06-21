@@ -149,9 +149,14 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
         fullPrompt.size() + 32
     );
 
+    const llama_vocab * vocab =
+        llama_model_get_vocab(
+            state->model
+        );
+
     int nTokens =
         llama_tokenize(
-            state->model,
+            vocab,
             fullPrompt.c_str(),
             fullPrompt.length(),
             tokens.data(),
@@ -213,8 +218,8 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
             );
 
         if (
-            llama_token_is_eog(
-                state->model,
+            llama_vocab_is_eog(
+                vocab,
                 token
             )
         )
@@ -224,7 +229,7 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
 
         int len =
             llama_token_to_piece(
-                state->model,
+                vocab,
                 token,
                 piece,
                 sizeof(piece),
