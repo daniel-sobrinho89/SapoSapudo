@@ -18,7 +18,7 @@ package.domain = br.com.saposapudo
 source.dir = .
 
 # (list) Source files to include (leave empty to include all the files)
-source.include_exts = py,png,jpg,jpeg,webp,wav,ogg,mp3,json,ttf
+source.include_exts = py,png,jpg,jpeg,webp,wav,ogg,mp3,json,ttf,gguf
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -258,8 +258,8 @@ android.manifest.launch_mode = singleTask
 
 # (list) Android additional libraries to copy into libs/armeabi
 #android.add_libs_armeabi = libs/android/*.so
-#android.add_libs_armeabi_v7a = libs/android-v7/*.so
-#android.add_libs_arm64_v8a = libs/android-v8/*.so
+android.add_libs_armeabi_v7a = 
+android.add_libs_arm64_v8a = domains/conversas/libs/arm64-v8a/libllama.so, domains/conversas/libs/arm64-v8a/libllama_jni.so
 #android.add_libs_x86 = libs/android-x86/*.so
 #android.add_libs_mips = libs/android-mips/*.so
 

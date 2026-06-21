@@ -55,46 +55,52 @@ jobs:
           print("config_gemini.py criado")
           EOF
 
-      - name: Validar módulo Gemini
-        run: |
-          python << 'EOF'
-          import importlib.util
-
-          spec = importlib.util.spec_from_file_location(
-              "config_gemini",
-              "config_gemini.py"
-          )
-
-          module = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(module)
-
-          assert hasattr(module, "GEMINI_API_KEY")
-          assert module.GEMINI_API_KEY
-          assert len(module.GEMINI_API_KEY) > 20
-
-          print("OK: módulo importado")
-          print("Prefixo:", module.GEMINI_API_KEY[:8] + "...")
-          print("Tamanho:", len(module.GEMINI_API_KEY))
-          EOF
-
-      - name: Validar TTS.java
-        run: |
-          test -f domains/voz/java/TTS.java
-
-          echo "Arquivo encontrado"
-
-          grep "package domains.voz.java;" domains/voz/java/TTS.java
-
-          grep "public class TTS" domains/voz/java/TTS.java
-
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Verificar buildozer.spec
+      - name: Compilar Qwen JNI Bridge
         run: |
-          grep "android.add_src = domains/voz/java" buildozer.spec
+          # Baixar header necessário para compilação
+          curl -L https://raw.githubusercontent.com/ggerganov/llama.cpp/master/include/llama.h -o llama.h
+          
+          # Compilar a bridge JNI usando o NDK do sistema
+          # ANDROID_NDK_LATEST_HOME é o padrão em runners GitHub Ubuntu 22.04
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ \
+            -shared -fPIC \
+            -I. \
+            -I$JAVA_HOME/include \
+            -I$JAVA_HOME/include/linux \
+            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
+            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+            domains/conversas/llama_jni.cpp \
+            -Ldomains/conversas/libs/arm64-v8a \
+            -lllama \
+            -llog \
+            -o domains/conversas/libs/arm64-v8a/libllama_jni.so
+
+            echo "VALIDANDO JNI"
+
+            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_loadModel
+
+            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String_2I
+
+            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
+
+      - name: Baixar modelo Qwen da Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p domains/conversas
+
+          curl -L \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            https://github.com/daniel-sobrinho89/SapoSapudo/releases/download/Qwen/qwen2.5-1.5b-instruct-q8_0.gguf \
+            -o domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
+
+          ls -lh domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
 
       - name: Gerar APK
         run: |

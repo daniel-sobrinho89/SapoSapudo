@@ -33,7 +33,7 @@ from domains.clima.nuvem import Nuvem
 from domains.clima.particulas.poeira import ParticulaPoeira
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
-from domains.conversas.ollama_client import OllamaClient
+from domains.conversas.qwen_local_client import QwenLocalClient
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
@@ -262,11 +262,9 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
-        self.ollama = OllamaClient(
-            host="http://192.168.15.25:11434", modelo="qwen2.5:3b"
-        )
+        self.client = QwenLocalClient()
 
-        self.conversa_sapudo = ConversaSapudo(self.ollama)
+        self.conversa_sapudo = ConversaSapudo(self.client)
 
         self.controlador_voz_musical = ControladorVozMusical(
             self.sapo,
