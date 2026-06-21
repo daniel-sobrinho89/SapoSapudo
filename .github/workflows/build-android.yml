@@ -86,14 +86,22 @@ jobs:
 
           ls -lh domains/conversas/libs/arm64-v8a
 
+      - name: Baixar fontes b9752
+        run: |
+          git clone https://github.com/ggml-org/llama.cpp.git llama_src
+
+          cd llama_src
+
+          git checkout b9752
+
       - name: Compilar Qwen JNI Bridge
         run: |
 
           $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ \
             -shared \
             -fPIC \
-            -Illama_release/include \
-            -Illama_release/ggml/include \
+            -Illama_src/include \
+            -Illama_src/ggml/include \
             -I$JAVA_HOME/include \
             -I$JAVA_HOME/include/linux \
             -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
