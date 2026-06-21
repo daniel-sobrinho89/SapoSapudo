@@ -2,8 +2,8 @@ from .personalidade_sapudo import PERSONALIDADE_SAPUDO
 
 
 class ConversaSapudo:
-    def __init__(self, gemini):
-        self.gemini = gemini
+    def __init__(self, client):
+        self.client = client
 
         self.processando = False
 
@@ -25,7 +25,7 @@ Usuário:
             prompt = mensagem_usuario
 
         try:
-            resposta = self.gemini.gerar(prompt, PERSONALIDADE_SAPUDO)
+            resposta = self.client.gerar(prompt, PERSONALIDADE_SAPUDO)
 
             return resposta
 
