@@ -60,33 +60,66 @@ jobs:
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
+      - name: Baixar llama.cpp b9752
+        run: |
+          mkdir -p llama_release
+
+          cd llama_release
+
+          curl -L \
+            https://github.com/ggml-org/llama.cpp/releases/download/b9752/llama-b9752-bin-android-arm64.tar.gz \
+            -o llama.tar.gz
+
+          tar -xzf llama.tar.gz
+
+          find .
+
+      - name: Preparar libllama.so
+        run: |
+          mkdir -p domains/conversas/libs/arm64-v8a
+
+          find llama_release -name "libllama.so"
+
+          cp \
+            $(find llama_release -name "libllama.so" | head -1) \
+            domains/conversas/libs/arm64-v8a/libllama.so
+
+          ls -lh domains/conversas/libs/arm64-v8a
+
       - name: Compilar Qwen JNI Bridge
         run: |
-          # Baixar header necessário para compilação
-          curl -L https://raw.githubusercontent.com/ggerganov/llama.cpp/master/include/llama.h -o llama.h
-          
-          # Compilar a bridge JNI usando o NDK do sistema
-          # ANDROID_NDK_LATEST_HOME é o padrão em runners GitHub Ubuntu 22.04
+
           $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ \
-            -shared -fPIC \
-            -I. \
+            -shared \
+            -fPIC \
+            -Illama_release/include \
+            -Illama_release/ggml/include \
             -I$JAVA_HOME/include \
             -I$JAVA_HOME/include/linux \
             -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
             -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
             domains/conversas/llama_jni.cpp \
             -Ldomains/conversas/libs/arm64-v8a \
+            -Wl,-rpath,'$ORIGIN' \
             -lllama \
             -llog \
             -o domains/conversas/libs/arm64-v8a/libllama_jni.so
 
-            echo "VALIDANDO JNI"
+          echo "VALIDANDO JNI"
 
-            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_loadModel
+          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_loadModel
 
-            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String_2I
+          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String_2I
 
-            nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
+          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
+
+      - name: Validar bibliotecas
+        run: |
+          ls -lh domains/conversas/libs/arm64-v8a
+
+          file domains/conversas/libs/arm64-v8a/libllama.so
+
+          file domains/conversas/libs/arm64-v8a/libllama_jni.so
 
       - name: Baixar modelo Qwen da Release
         env:
