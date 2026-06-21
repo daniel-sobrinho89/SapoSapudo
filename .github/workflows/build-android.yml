@@ -127,13 +127,15 @@ jobs:
 
           nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
 
-      - name: Verificar dependências do llama
+      - name: Procurar libc++_shared.so
         run: |
-          readelf -d domains/conversas/libs/arm64-v8a/libllama.so | grep NEEDED
+          find $ANDROID_NDK_LATEST_HOME -name libc++_shared.so
 
-      - name: Listar libs finais
+      - name: Copiar libc++_shared.so
         run: |
-          find domains/conversas/libs/arm64-v8a -name "*.so"
+          cp \
+            $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so \
+            domains/conversas/libs/arm64-v8a/
 
       - name: Baixar modelo Qwen da Release
         env:
@@ -148,6 +150,14 @@ jobs:
             -o domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
 
           ls -lh domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
+      
+      - name: Listar libs finais
+        run: |
+          ls -lh domains/conversas/libs/arm64-v8a
+
+      - name: Ver dependências JNI
+        run: |
+          readelf -d domains/conversas/libs/arm64-v8a/libllama_jni.so | grep NEEDED
 
       - name: Gerar APK
         run: |
