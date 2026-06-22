@@ -184,7 +184,7 @@ class ControladorVozMusical:
 
             resposta = self.conversa_sapudo.conversar(texto)
 
-            Clock.schedule_once(lambda dt: self._mostrar_resposta(resposta))
+            Clock.schedule_once(lambda dt: self._mostrar_resposta(resposta["texto"]))
         except Exception as ex:
             print(f"[GEMINI] Erro: {ex}")
 
