@@ -141,9 +141,38 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
     if (!state)
         return env->NewStringUTF("");
 
-    LOGI("GENERATE INICIO");
+    llama_sampler_free(
+        state->sampler
+    );
 
-    llama_kv_cache_clear(state->ctx);
+    llama_free(
+        state->ctx
+    );
+
+    llama_context_params ctxParams =
+        llama_context_default_params();
+
+    ctxParams.n_ctx = 2048;
+    ctxParams.n_threads = 4;
+
+    state->ctx =
+        llama_init_from_model(
+            state->model,
+            ctxParams
+        );
+
+    if (!state->ctx)
+        return env->NewStringUTF("ctx error");
+
+    state->sampler =
+        llama_sampler_init_greedy();
+
+    if (!state->sampler)
+        return env->NewStringUTF("sampler error");
+
+    LOGI("ctx=%p sampler=%p",
+        state->ctx,
+        state->sampler);
 
     const char* sys =
         env->GetStringUTFChars(
