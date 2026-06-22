@@ -52,6 +52,21 @@ Java_domains_voz_java_QwenBridge_loadModel(
 
     llama_backend_init();
 
+    llama_log_set(
+        [](ggml_log_level level,
+        const char * text,
+        void * user_data) {
+
+            __android_log_print(
+                ANDROID_LOG_INFO,
+                "LLAMA_CPP",
+                "%s",
+                text
+            );
+        },
+        nullptr
+    );
+
     llama_model_params modelParams =
         llama_model_default_params();
 
