@@ -9,7 +9,10 @@ class ConversaSapudo:
 
     def conversar(self, mensagem_usuario, contexto_extra=""):
         if self.processando:
-            return "Estou pensando na pergunta anterior."
+            return {
+                "texto": "Estou pensando na pergunta anterior.",
+                "arquivo_audio": None,
+            }
 
         self.processando = True
 
