@@ -35,11 +35,63 @@ jobs:
             cmake libffi-dev libssl-dev \
             build-essential ccache libltdl-dev
 
+      - name: Gerar módulo Gemini
+        env:
+          APP_GEMINI_API_KEY: ${{ secrets.APP_GEMINI_API_KEY }}
+        run: |
+          python << 'EOF'
+          import os
+
+          chave = os.environ.get("APP_GEMINI_API_KEY")
+
+          if not chave:
+              raise RuntimeError(
+                  "APP_GEMINI_API_KEY não definida no GitHub Secrets"
+              )
+
+          with open("config_gemini.py", "w", encoding="utf-8") as f:
+              f.write(f"GEMINI_API_KEY = {chave!r}\n")
+
+          print("config_gemini.py criado")
+          EOF
+
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
+      - name: Baixar libs llama
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: build-llama.yml
+          workflow_conclusion: success
+          name: llama-android-b9752
+          path: .
+
+      - name: Extrair libs llama
+        run: |
+
+          mkdir -p domains/conversas/libs
+
+          unzip -o llama-android-b9752.zip
+
+          cp -r arm64-v8a domains/conversas/libs/
+
+          ls -lh domains/conversas/libs/arm64-v8a
+
+          find domains/conversas/libs -name "*.so"
+
+      - name: Baixar modelo Qwen oficial
+        run: |
+          mkdir -p domains/conversas
+
+          curl -L \
+            https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q8_0.gguf \
+            -o domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
+
+          ls -lh domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
+      
       - name: Gerar APK
         run: |
           buildozer android debug

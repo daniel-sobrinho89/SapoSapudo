@@ -3,28 +3,34 @@ Note: implements a narrow subset used by the project: Surface, Rect,
 transform (scale/rotate), image.load, display.set_mode/Info, time.Clock,
 and a minimal mixer.music using Kivy SoundLoader.
 """
-from PIL import Image, ImageOps, ImageDraw
-from io import BytesIO
-from kivy.core.image import Image as CoreImage
+
 import time as pytime
+from contextlib import suppress
+from io import BytesIO
+
+from kivy.core.image import Image as CoreImage
+from PIL import Image, ImageDraw, ImageOps
 
 # mouse compatibility
 
 _window_cache = None
+
 
 def obter_window():
     global _window_cache
 
     if _window_cache is None:
         from kivy.core.window import Window
+
         _window_cache = Window
 
     return _window_cache
 
+
 _soundloader_cache = None
 
-def obter_soundloader():
 
+def obter_soundloader():
     global _soundloader_cache
 
     if _soundloader_cache is None:
@@ -34,8 +40,8 @@ def obter_soundloader():
 
     return _soundloader_cache
 
-class mouse:
 
+class mouse:
     @staticmethod
     def get_pos():
         try:
@@ -113,20 +119,16 @@ class Rect:
     @property
     def height(self):
         return int(self.h)
-    
+
     def collidepoint(self, *args):
         if len(args) == 1:
             x, y = args[0]
         else:
             x, y = args
 
-        return (
-            self.left <= x < self.right
-            and self.top <= y < self.bottom
-        )
+        return self.left <= x < self.right and self.top <= y < self.bottom
 
     def update(self, *args):
-
         if len(args) == 1:
             x, y, w, h = args[0]
         else:
@@ -136,6 +138,7 @@ class Rect:
         self.y = int(y)
         self.w = int(w)
         self.h = int(h)
+
 
 class Surface:
     def __init__(self, size, flags=None):
@@ -200,28 +203,20 @@ class Surface:
         return self
 
     def set_alpha(self, a):
-
-        self._alpha = max(
-            0,
-            min(255, int(a))
-        )
+        self._alpha = max(0, min(255, int(a)))
 
         img = self._img.copy()
         alpha = img.getchannel("A")
 
-        alpha = alpha.point(
-            lambda p: int(
-                p * self._alpha / 255
-            )
-        )
+        alpha = alpha.point(lambda p: int(p * self._alpha / 255))
 
         img.putalpha(alpha)
         self._img = img
 
     def get_rect(self, **kwargs):
         # support center=(x,y)
-        if 'center' in kwargs:
-            cx, cy = kwargs['center']
+        if "center" in kwargs:
+            cx, cy = kwargs["center"]
             w, h = self.get_size()
             return Rect(int(cx - w // 2), int(cy - h // 2), w, h)
         return Rect(0, 0, self.get_width(), self.get_height())
@@ -238,45 +233,31 @@ class image:
         core = CoreImage(path)
 
         if core.texture is None:
-            raise RuntimeError(
-                f"Falha ao carregar textura: {path}"
-            )
+            raise RuntimeError(f"Falha ao carregar textura: {path}")
 
         largura, altura = core.texture.size
         pixels = core.texture.pixels
 
-        img = Image.frombytes(
-            "RGBA",
-            (largura, altura),
-            pixels
-        )
+        img = Image.frombytes("RGBA", (largura, altura), pixels)
 
         s = Surface(img.size)
         s._img = img
 
         return s
-    
+
     @staticmethod
     def load_raw(path):
         with open(path, "rb") as f:
             return f.read()
-        
+
     @staticmethod
     def from_raw(raw_data, ext="webp"):
-
-        core = CoreImage(
-            BytesIO(raw_data),
-            ext=ext
-        )
+        core = CoreImage(BytesIO(raw_data), ext=ext)
 
         largura, altura = core.texture.size
         pixels = core.texture.pixels
 
-        img = Image.frombytes(
-            "RGBA",
-            (largura, altura),
-            pixels
-        )
+        img = Image.frombytes("RGBA", (largura, altura), pixels)
 
         s = Surface(img.size)
         s._img = img
@@ -286,20 +267,15 @@ class image:
 
 # transform functions
 class transform:
-
     @staticmethod
     def smoothscale(surf, size):
-
         if not isinstance(surf, Surface):
             raise TypeError("smoothscale requires Surface")
 
         w = int(size[0])
         h = int(size[1])
 
-        resized = surf._img.resize(
-            (w, h),
-            resample=Image.BILINEAR
-        )
+        resized = surf._img.resize((w, h), resample=Image.BILINEAR)
 
         s = Surface((w, h))
         s._img = resized
@@ -308,22 +284,14 @@ class transform:
 
     @staticmethod
     def scale(surf, size):
-        return transform.smoothscale(
-            surf,
-            size
-        )
+        return transform.smoothscale(surf, size)
 
     @staticmethod
     def rotate(surf, angle):
-
         if not isinstance(surf, Surface):
             raise TypeError("rotate requires Surface")
 
-        rotated = surf._img.rotate(
-            -angle,
-            resample=Image.BILINEAR,
-            expand=True
-        )
+        rotated = surf._img.rotate(-angle, resample=Image.BILINEAR, expand=True)
 
         s = Surface(rotated.size)
         s._img = rotated
@@ -332,7 +300,6 @@ class transform:
 
     @staticmethod
     def flip(surf, flip_x, flip_y):
-
         if not isinstance(surf, Surface):
             raise TypeError("flip requires Surface")
 
@@ -349,65 +316,34 @@ class transform:
 
         return s
 
-class draw:
 
+class draw:
     @staticmethod
     def circle(surface, color, center, radius):
-
         draw_ctx = ImageDraw.Draw(surface._img)
 
         x, y = center
 
-        draw_ctx.ellipse(
-            (
-                x - radius,
-                y - radius,
-                x + radius,
-                y + radius
-            ),
-            fill=color
-        )
+        draw_ctx.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
 
     @staticmethod
     def ellipse(surface, color, rect):
-
         draw_ctx = ImageDraw.Draw(surface._img)
 
         if isinstance(rect, Rect):
-            bbox = (
-                rect.left,
-                rect.top,
-                rect.right,
-                rect.bottom
-            )
+            bbox = (rect.left, rect.top, rect.right, rect.bottom)
         else:
             x, y, w, h = rect
-            bbox = (
-                x,
-                y,
-                x + w,
-                y + h
-            )
+            bbox = (x, y, x + w, y + h)
 
-        draw_ctx.ellipse(
-            bbox,
-            fill=color
-        )
+        draw_ctx.ellipse(bbox, fill=color)
 
     @staticmethod
     def rect(surface, color, rect):
-
         draw_ctx = ImageDraw.Draw(surface._img)
 
-        draw_ctx.rectangle(
-            (
-                rect.left,
-                rect.top,
-                rect.right,
-                rect.bottom
-            ),
-            fill=color
-        )
+        draw_ctx.rectangle((rect.left, rect.top, rect.right, rect.bottom), fill=color)
+
 
 # display module
 class display:
@@ -415,7 +351,6 @@ class display:
 
     class InfoObj:
         def __init__(self):
-
             window = obter_window()
 
             self.current_w = int(window.width)
@@ -457,6 +392,7 @@ class time:
                     elapsed += sleep
             return int(elapsed * 1000)
 
+
 # mixer (minimal using Kivy SoundLoader)
 class mixer:
     @staticmethod
@@ -470,18 +406,15 @@ class mixer:
 
         def load(self, path):
             try:
-
                 if self._sound:
-                    try:
+                    with suppress(Exception):
                         self._sound.stop()
-                    except Exception:
-                        pass
 
                 self._sound = obter_soundloader().load(path)
 
             except Exception as ex:
-
                 import traceback
+
                 traceback.print_exc()
 
                 print(ex)
@@ -495,20 +428,16 @@ class mixer:
             if not self._sound:
                 return
             # loops < 0 => infinite
-            try:
+            with suppress(Exception):
                 self._sound.loop = loops < 0
-            except Exception:
-                pass
 
             self._sound.volume = self._volume
             self._sound.play()
 
         def pause(self):
             if self._sound:
-                try:
+                with suppress(Exception):
                     self._sound.stop()
-                except Exception:
-                    pass
 
         def unpause(self):
             if self._sound:

@@ -47,3 +47,5 @@ Thumbs.db
 .env.local
 data/config.json
 data/clima_cache.json
+config_gemini.py
+domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf

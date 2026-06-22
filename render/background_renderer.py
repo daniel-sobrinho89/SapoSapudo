@@ -1,98 +1,69 @@
-from datetime import datetime
 from render.asset_manager import asset_manager
 
 
 class BackgroundRenderer:
-
-    def __init__(
-        self,
-        tela,
-        largura,
-        altura,
-        transform,
-        clima_service
-    ):
-
+    def __init__(self, tela, largura, altura, transform, clima_service, ambiente):
         self.tela = tela
         self.transform = transform
         self.clima_service = clima_service
+        self.ambiente = ambiente
 
         # =====================================
         # BACKGROUND MANHÃ
         # =====================================
 
-        background_manha = asset_manager.carregar(
-            "background_manha.webp"
-        )
+        background_manha = asset_manager.carregar("background_manha.webp")
 
         self.background_manha = self.transform.escalar(
-            background_manha,
-            (largura, altura)
+            background_manha, (largura, altura)
         )
 
         # =====================================
         # BACKGROUND DIA
         # =====================================
 
-        background_day = asset_manager.carregar(
-            "background.webp"
-        )
+        background_day = asset_manager.carregar("background.webp")
 
-        self.background_day = self.transform.escalar(
-            background_day,
-            (largura, altura)
-        )
+        self.background_day = self.transform.escalar(background_day, (largura, altura))
 
         # =====================================
         # BACKGROUND FINAL TARDE
         # =====================================
 
-        background_final_tarde = asset_manager.carregar(
-            "background_final_tarde.webp"
-        )
+        background_final_tarde = asset_manager.carregar("background_final_tarde.webp")
 
         self.background_final_tarde = self.transform.escalar(
-            background_final_tarde ,
-            (largura, altura)
+            background_final_tarde, (largura, altura)
         )
 
         # =====================================
         # BACKGROUND NOITE
         # =====================================
 
-        background_night = asset_manager.carregar(
-            "background_night_19h.webp"
-        )
+        background_night = asset_manager.carregar("background_night_19h.webp")
 
         self.background_night = self.transform.escalar(
-            background_night,
-            (largura, altura)
+            background_night, (largura, altura)
         )
 
         # =====================================
         # FEIRA MANHÃ
         # =====================================
 
-        background_feira_manha = asset_manager.carregar(
-            "background_feira_manha.webp"
-        )
+        background_feira_manha = asset_manager.carregar("background_feira_manha.webp")
 
         self.background_feira_manha = self.transform.escalar(
-            background_feira_manha,
-            (largura, altura)
+            background_feira_manha, (largura, altura)
         )
 
         # =====================================
         # FEIRA DIA
         # =====================================
 
-        background_feira = asset_manager.carregar(
-            "background_feira.webp"
-        )
+        background_feira = asset_manager.carregar("background_feira.webp")
 
         self.background_feira = self.transform.escalar(
-            background_feira,
-            (largura, altura)
+            background_feira, (largura, altura)
         )
 
         # =====================================
@@ -104,8 +75,7 @@ class BackgroundRenderer:
         )
 
         self.background_feira_final_tarde = self.transform.escalar(
-            background_feira_final_tarde,
-            (largura, altura)
+            background_feira_final_tarde, (largura, altura)
         )
 
         # =====================================
@@ -117,47 +87,35 @@ class BackgroundRenderer:
         )
 
         self.background_feira_night = self.transform.escalar(
-            background_feira_night,
-            (largura, altura)
+            background_feira_night, (largura, altura)
         )
 
         # =====================================
         # CHUVA
         # =====================================
 
-        background_chuva = asset_manager.carregar(
-            "background_chuva.webp"
-        )
+        background_chuva = asset_manager.carregar("background_chuva.webp")
 
         self.background_chuva = self.transform.escalar(
-            background_chuva,
-            (largura, altura)
+            background_chuva, (largura, altura)
         )
 
-        background_feira_chuva = asset_manager.carregar(
-            "background_feira_chuva.webp"
-        )
+        background_feira_chuva = asset_manager.carregar("background_feira_chuva.webp")
 
         self.background_feira_chuva = self.transform.escalar(
-            background_feira_chuva,
-            (largura, altura)
+            background_feira_chuva, (largura, altura)
         )
 
         self.cenario_feira = False
 
-
     def obter_background_atual(self):
         if self.cenario_feira:
             return self.obter_background_feira()
-        
+
         if self.esta_chovendo():
             return self.background_chuva
 
-        agora = datetime.now()
-        hora_atual = (
-            agora.hour
-            + (agora.minute / 60)
-        )
+        hora_atual = self.ambiente.obter_hora_decimal()
 
         # =====================================
         # MANHÃ
@@ -190,12 +148,7 @@ class BackgroundRenderer:
         if self.esta_chovendo():
             return self.background_feira_chuva
 
-        agora = datetime.now()
-
-        hora_atual = (
-            agora.hour
-            + (agora.minute / 60)
-        )
+        hora_atual = self.ambiente.obter_hora_decimal()
 
         if 6 <= hora_atual < 12:
             return self.background_feira_manha
@@ -209,27 +162,12 @@ class BackgroundRenderer:
         return self.background_feira
 
     def eh_dia(self):
-
-        hora_atual = datetime.now().hour
-
-        return not (
-            hora_atual >= 19
-            or hora_atual < 6
-        )
+        return self.ambiente.eh_dia()
 
     def esta_chovendo(self):
-        if not self.clima_service:
-            return False
-
-        return (
-            self.clima_service.cloudiness >= 70
-        )
+        return self.ambiente.esta_chovendo(self.clima_service)
 
     def desenhar(self):
-
         background = self.obter_background_atual()
 
-        self.tela.blit(
-            background,
-            (0, 0)
-        )
+        self.tela.blit(background, (0, 0))
