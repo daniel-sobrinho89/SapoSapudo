@@ -74,11 +74,12 @@ jobs:
           cd llama_src
 
           cmake -S . -B build-android \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-34 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_SHARED_LIBS=ON
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_CPU=ON \
+            -DGGML_OPENMP=OFF
 
           cmake --build build-android -j4
 
@@ -154,6 +155,15 @@ jobs:
       - name: Ver dependências JNI
         run: |
           readelf -d domains/conversas/libs/arm64-v8a/libllama_jni.so | grep NEEDED
+
+      - name: Ver dependências todas libs
+        run: |
+          for f in domains/conversas/libs/arm64-v8a/*.so
+          do
+            echo "=============="
+            echo $f
+            readelf -d $f | grep NEEDED
+          done
 
       - name: Gerar APK
         run: |
