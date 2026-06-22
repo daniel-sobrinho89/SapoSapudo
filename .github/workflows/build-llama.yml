@@ -1,0 +1,115 @@
+name: Build Llama Android
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-llama:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar Buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer==1.5.0 cython==0.29.36
+
+      - name: Instalar SDK/NDK Android
+        run: |
+          buildozer android debug || true
+
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            cmake \
+            build-essential
+
+      - name: Baixar llama.cpp b9752
+        run: |
+          git clone https://github.com/ggml-org/llama.cpp.git llama_src
+
+          cd llama_src
+
+          git checkout b9752
+
+      - name: Compilar llama.cpp Android
+        run: |
+
+          cd llama_src
+
+          cmake -S . -B build-android \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-34 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_CPU=ON \
+            -DGGML_OPENMP=OFF
+
+          cmake --build build-android -j4
+
+      - name: Preparar artifact
+        run: |
+
+          mkdir -p artifact/arm64-v8a
+
+          find llama_src/build-android \
+            -name "libllama.so" \
+            -exec cp {} artifact/arm64-v8a/ \;
+
+          find llama_src/build-android \
+            -name "libggml*.so" \
+            -exec cp {} artifact/arm64-v8a/ \;
+
+          cp \
+            $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so \
+            artifact/arm64-v8a/
+
+          ls -lh artifact/arm64-v8a
+
+      - name: Compilar Qwen JNI Bridge
+        run: |
+
+          mkdir -p artifact/arm64-v8a
+
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ \
+            -shared \
+            -fPIC \
+            -Illama_src/include \
+            -Illama_src/ggml/include \
+            -I$JAVA_HOME/include \
+            -I$JAVA_HOME/include/linux \
+            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
+            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+            domains/conversas/llama_jni.cpp \
+            -Lartifact/arm64-v8a \
+            -Wl,-rpath,'$ORIGIN' \
+            -lllama \
+            -llog \
+            -o artifact/arm64-v8a/libllama_jni.so
+
+      - name: Gerar ZIP
+        run: |
+
+          cd artifact
+
+          zip -r ../llama-android-b9752.zip .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-android-b9752
+          path: llama-android-b9752.zip

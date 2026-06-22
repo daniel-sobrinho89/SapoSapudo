@@ -60,83 +60,27 @@ jobs:
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Baixar fontes b9752
-        run: |
-          git clone https://github.com/ggml-org/llama.cpp.git llama_src
+      - name: Baixar libs llama
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: build-llama.yml
+          workflow_conclusion: success
+          name: llama-android-b9752
+          path: .
 
-          cd llama_src
-
-          git checkout b9752
-
-      - name: Compilar llama.cpp Android
-        run: |
-
-          cd llama_src
-
-          cmake -S . -B build-android \
-            -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-34 \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
-            -DBUILD_SHARED_LIBS=ON \
-            -DGGML_CPU=ON \
-            -DGGML_OPENMP=OFF
-
-          cmake --build build-android -j4
-
-          echo "LIBS GERADAS:"
-          find build-android -name "*.so" | sort
-
-      - name: Copiar libs compiladas
+      - name: Extrair libs llama
         run: |
 
-          mkdir -p domains/conversas/libs/arm64-v8a
+          mkdir -p domains/conversas/libs
 
-          find llama_src/build-android -name "libllama.so" -exec cp {} domains/conversas/libs/arm64-v8a/ \;
+          unzip -o llama-android-b9752.zip
 
-          find llama_src/build-android -name "libggml*.so" -exec cp {} domains/conversas/libs/arm64-v8a/ \;
+          cp -r arm64-v8a domains/conversas/libs/
 
           ls -lh domains/conversas/libs/arm64-v8a
 
-      - name: Compilar Qwen JNI Bridge
-        run: |
-
-          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ \
-            -shared \
-            -fPIC \
-            -Illama_src/include \
-            -Illama_src/ggml/include \
-            -I$JAVA_HOME/include \
-            -I$JAVA_HOME/include/linux \
-            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include \
-            -I$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
-            domains/conversas/llama_jni.cpp \
-            -Ldomains/conversas/libs/arm64-v8a \
-            -Wl,-rpath,'$ORIGIN' \
-            -lllama \
-            -llog \
-            -o domains/conversas/libs/arm64-v8a/libllama_jni.so
-
-          echo "VALIDANDO JNI"
-
-          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_loadModel
-
-          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String_2I
-
-          nm -D domains/conversas/libs/arm64-v8a/libllama_jni.so | grep Java_domains_voz_java_QwenBridge_release
-
-      - name: Limpar fontes llama
-        run: |
-          rm -rf llama_src
-
-      - name: Procurar libc++_shared.so
-        run: |
-          find $ANDROID_NDK_LATEST_HOME -name libc++_shared.so
-
-      - name: Copiar libc++_shared.so
-        run: |
-          cp \
-            $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so \
-            domains/conversas/libs/arm64-v8a/
+          find domains/conversas/libs -name "*.so"
 
       - name: Baixar modelo Qwen oficial
         run: |
