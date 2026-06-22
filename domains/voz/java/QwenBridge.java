@@ -3,7 +3,8 @@ package domains.voz.java;
 public class QwenBridge {
 
     static {
-        // Carrega a biblioteca core e a ponte JNI
+        System.loadLibrary("ggml");
+        System.loadLibrary("ggml-base");
         System.loadLibrary("llama");
         System.loadLibrary("llama_jni");
     }

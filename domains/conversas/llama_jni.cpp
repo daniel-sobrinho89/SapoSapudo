@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <android/log.h>
-#include "ggml-backend.h"
 #include "llama.h"
 
 #define TAG "LLAMA_JNI"
@@ -48,25 +47,6 @@ Java_domains_voz_java_QwenBridge_loadModel(
 
     llama_backend_init();
 
-    llama_log_set(
-        [](ggml_log_level level,
-        const char * text,
-        void * user_data) {
-
-            __android_log_print(
-                ANDROID_LOG_INFO,
-                "LLAMA_CPP",
-                "%s",
-                text
-            );
-        },
-        nullptr
-    );
-
-    LOGI("Carregando backends");
-    ggml_backend_load_all();
-    LOGI("Backends carregados");
-
     llama_model_params modelParams =
         llama_model_default_params();
 
@@ -75,7 +55,7 @@ Java_domains_voz_java_QwenBridge_loadModel(
             path,
             modelParams
         );
-        
+
     LOGI("Retornou de llama_model_load_from_file");
 
     env->ReleaseStringUTFChars(

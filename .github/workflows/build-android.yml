@@ -60,38 +60,6 @@ jobs:
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Baixar llama.cpp b9752
-        run: |
-          mkdir -p llama_release
-
-          cd llama_release
-
-          curl -L \
-            https://github.com/ggml-org/llama.cpp/releases/download/b9752/llama-b9752-bin-android-arm64.tar.gz \
-            -o llama.tar.gz
-
-          tar -xzf llama.tar.gz
-
-          find .
-
-      - name: Preparar bibliotecas llama.cpp
-        run: |
-          mkdir -p domains/conversas/libs/arm64-v8a
-
-          cp llama_release/llama-b9752/libllama.so \
-            domains/conversas/libs/arm64-v8a/
-
-          cp llama_release/llama-b9752/libggml.so \
-            domains/conversas/libs/arm64-v8a/
-
-          cp llama_release/llama-b9752/libggml-base.so \
-            domains/conversas/libs/arm64-v8a/
-
-          cp llama_release/llama-b9752/libggml-cpu-*.so \
-            domains/conversas/libs/arm64-v8a/
-
-          ls -lh domains/conversas/libs/arm64-v8a
-
       - name: Baixar fontes b9752
         run: |
           git clone https://github.com/ggml-org/llama.cpp.git llama_src
@@ -99,6 +67,34 @@ jobs:
           cd llama_src
 
           git checkout b9752
+
+      - name: Compilar llama.cpp Android
+        run: |
+
+          cd llama_src
+
+          cmake -S . -B build-android \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-34 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON
+
+          cmake --build build-android -j4
+
+          echo "LIBS GERADAS:"
+          find build-android -name "*.so" | sort
+
+      - name: Copiar libs compiladas
+        run: |
+
+          mkdir -p domains/conversas/libs/arm64-v8a
+
+          find llama_src/build-android -name "libllama.so" -exec cp {} domains/conversas/libs/arm64-v8a/ \;
+
+          find llama_src/build-android -name "libggml*.so" -exec cp {} domains/conversas/libs/arm64-v8a/ \;
+
+          ls -lh domains/conversas/libs/arm64-v8a
 
       - name: Compilar Qwen JNI Bridge
         run: |
