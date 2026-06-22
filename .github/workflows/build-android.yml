@@ -148,23 +148,6 @@ jobs:
 
           ls -lh domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
       
-      - name: Listar libs finais
-        run: |
-          ls -lh domains/conversas/libs/arm64-v8a
-
-      - name: Ver dependências JNI
-        run: |
-          readelf -d domains/conversas/libs/arm64-v8a/libllama_jni.so | grep NEEDED
-
-      - name: Ver dependências todas libs
-        run: |
-          for f in domains/conversas/libs/arm64-v8a/*.so
-          do
-            echo "=============="
-            echo $f
-            readelf -d $f | grep NEEDED
-          done
-
       - name: Gerar APK
         run: |
           buildozer android debug

@@ -141,6 +141,10 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
     if (!state)
         return env->NewStringUTF("");
 
+    LOGI("GENERATE INICIO");
+
+    llama_kv_cache_clear(state->ctx);
+
     const char* sys =
         env->GetStringUTFChars(
             system,
@@ -215,13 +219,22 @@ Java_domains_voz_java_QwenBridge_generate__JLjava_lang_String_2Ljava_lang_String
         );
     }
 
-    if (
+    int rc =
         llama_decode(
             state->ctx,
             batch
-        ) != 0
-    ) {
+        );
+
+    if (rc != 0) {
+
+        LOGE(
+            "llama_decode falhou rc=%d nTokens=%d",
+            rc,
+            nTokens
+        );
+
         llama_batch_free(batch);
+
         return env->NewStringUTF(
             "decode error"
         );
