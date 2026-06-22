@@ -167,19 +167,6 @@ jobs:
         run: |
           buildozer android debug
 
-      - name: Verificar conteúdo do APK
-        run: |
-          APK=$(ls bin/*.apk | head -1)
-
-          echo "GGUF:"
-          unzip -l "$APK" | grep gguf || true
-
-          echo "SO:"
-          unzip -l "$APK" | grep libllama || true
-
-          echo "JNI:"
-          unzip -l "$APK" | grep libllama_jni || true
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

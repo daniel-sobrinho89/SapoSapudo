@@ -46,10 +46,16 @@ Java_domains_voz_java_QwenBridge_loadModel(
             nullptr
         );
 
+    LOGI("INICIO loadModel");
+    LOGI("PATH=%s", path);
+    LOGI("N_CTX=%d", nCtx);
+
     llama_backend_init();
 
     llama_model_params modelParams =
         llama_model_default_params();
+
+    LOGI("Carregando GGUF...");
 
     llama_model* model =
         llama_model_load_from_file(
@@ -62,14 +68,20 @@ Java_domains_voz_java_QwenBridge_loadModel(
         path
     );
 
-    if (!model)
+    if (!model) {
+        LOGE("llama_model_load_from_file retornou NULL");
         return 0;
+    }
+
+    LOGI("Modelo carregado");
 
     llama_context_params ctxParams =
         llama_context_default_params();
 
     ctxParams.n_ctx = nCtx;
     ctxParams.n_threads = 4;
+
+    LOGI("Criando contexto");
 
     llama_context* ctx =
         llama_init_from_model(
@@ -78,12 +90,30 @@ Java_domains_voz_java_QwenBridge_loadModel(
         );
 
     if (!ctx) {
+
+        LOGE("llama_init_from_model retornou NULL");
+
         llama_model_free(model);
+
         return 0;
     }
 
+    LOGI("Contexto criado");
+
     llama_sampler* sampler =
         llama_sampler_init_greedy();
+
+    if (!sampler) {
+
+        LOGE("llama_sampler_init_greedy retornou NULL");
+
+        llama_free(ctx);
+        llama_model_free(model);
+
+        return 0;
+    }
+
+    LOGI("Sampler criado");
 
     auto* state =
         new LlamaContext{
@@ -91,6 +121,8 @@ Java_domains_voz_java_QwenBridge_loadModel(
             ctx,
             sampler
         };
+
+    LOGI("LOAD OK");
 
     return reinterpret_cast<jlong>(
         state
