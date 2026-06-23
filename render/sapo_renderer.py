@@ -149,7 +149,7 @@ class PensamentoSapoRenderer:
         self.padding_x = 12
         self.padding_y = 8
 
-        self.largura_maxima = 260
+        self.largura_maxima = 290
 
     # =====================================
     # MEDIR TEXTO

@@ -2,6 +2,7 @@ import threading
 
 from kivy.clock import Clock
 
+from core.platform import IS_ANDROID
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
 
@@ -194,6 +195,9 @@ class ControladorVozMusical:
         ).start()
 
     def _atualizar_status_modelo(self, dt):
+        if not IS_ANDROID:
+            return False
+
         manager = self.conversa_sapudo.model_manager
 
         if manager.pronto:

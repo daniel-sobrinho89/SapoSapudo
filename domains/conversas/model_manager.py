@@ -67,7 +67,7 @@ if IS_ANDROID:
         def iniciar_download(self):
             if self._modelo_valido():
                 self.pronto = True
-                self.status = "🐸 A lagoa está pronta para conversar."
+                self.status = "A lagoa está pronta para conversar."
 
                 for callback in self._callbacks_pronto:
                     Clock.schedule_once(lambda dt, cb=callback: cb())
@@ -86,7 +86,7 @@ if IS_ANDROID:
                 if TEMP_MODEL_FILE.exists():
                     TEMP_MODEL_FILE.unlink()
 
-                self.status = "🐸 Baixando sabedoria dos sapos..."
+                self.status = "Baixando sabedoria dos sapos..."
 
                 resposta = requests.get(MODEL_URL, stream=True, timeout=(30, 7200))
 
@@ -109,7 +109,7 @@ if IS_ANDROID:
                             self.progresso = int(baixado * 100 / total)
 
                             self.status = (
-                                f"🐸 Baixando sabedoria dos sapos... {self.progresso}%"
+                                f"Baixando sabedoria dos sapos... {self.progresso}%"
                             )
 
                 TEMP_MODEL_FILE.replace(MODEL_FILE)
@@ -118,7 +118,7 @@ if IS_ANDROID:
 
                 self.pronto = True
 
-                self.status = "🐸 A lagoa está pronta para conversar."
+                self.status = "A lagoa está pronta para conversar."
 
                 for callback in self._callbacks_pronto:
                     Clock.schedule_once(lambda dt, cb=callback: cb())
@@ -129,7 +129,7 @@ if IS_ANDROID:
                 if TEMP_MODEL_FILE.exists():
                     TEMP_MODEL_FILE.unlink()
 
-                self.status = "🐸 Não consegui reunir a sabedoria dos sapos."
+                self.status = "Não consegui reunir a sabedoria dos sapos."
 
             finally:
                 self.baixando = False

@@ -20,7 +20,7 @@ if IS_ANDROID:
         def gerar(self, prompt, system):
             if not self.inicializado:
                 return {
-                    "texto": "🐸 Ainda estou reunindo a sabedoria ancestral dos sapos.",
+                    "texto": "Ainda estou reunindo a sabedoria ancestral dos sapos.",
                     "arquivo_audio": None,
                 }
 
