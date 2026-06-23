@@ -5,41 +5,37 @@ IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 if IS_ANDROID:
     from jnius import autoclass
 
-    from android.storage import app_storage_path
+    from domains.conversas.model_manager import ModelManager
 
     QwenBridge = autoclass("domains.voz.java.QwenBridge")
 
     class QwenLocalClient:
         def __init__(self):
             self.bridge = QwenBridge()
-
-            base_path = app_storage_path()
-
-            model_path = os.path.join(
-                base_path,
-                "app",
-                "domains",
-                "conversas",
-                "qwen2.5-1.5b-instruct-q8_0.gguf",
-            )
-
-            print("APP_STORAGE =", base_path)
-            print("QWEN_PATH =", model_path)
-            print("QWEN_EXISTS =", os.path.exists(model_path))
-
-            if not os.path.exists(model_path):
-                raise RuntimeError(f"Modelo não encontrado: {model_path}")
-
-            sucesso = self.bridge.inicializar(model_path)
-
-            if not sucesso:
-                raise RuntimeError(f"Falha ao carregar modelo: {model_path}")
+            self.model_manager = ModelManager()
+            self.inicializado = False
+            self.model_manager.ao_ficar_pronto(self._inicializar_modelo)
+            self.model_manager.iniciar_download()
 
         def gerar(self, prompt, system):
+            if not self.inicializado:
+                return {
+                    "texto": "Ainda estou reunindo a sabedoria ancestral dos sapos.",
+                    "arquivo_audio": None,
+                }
+
             texto = self.bridge.generate(system, prompt)
 
-            return {"texto": texto.strip() if texto else "", "arquivo_audio": None}
+            return {
+                "texto": texto.strip() if texto else "",
+                "arquivo_audio": None,
+            }
 
+        def _inicializar_modelo(self):
+            sucesso = self.bridge.inicializar(self.model_manager.caminho_modelo)
+            if not sucesso:
+                raise RuntimeError("Falha ao inicializar modelo Qwen.")
+            self.inicializado = True
 else:
 
     class QwenLocalClient:

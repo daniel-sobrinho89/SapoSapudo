@@ -28,7 +28,7 @@ class SistemaNuvens:
     def atualizar_area_interna(self):
         from config import LARGURA
 
-        self.area_interna = kivy_adapter.Rect(0, 0, LARGURA, 270)
+        self.area_interna = kivy_adapter.Rect(0, -75, LARGURA, 490)
 
     # ==========================================
     # CALCULAR INTENSIDADE
@@ -72,7 +72,7 @@ class SistemaNuvens:
         )
 
         # quantidade de nuvens
-        alvo = 2 if self.intensidade <= 5 else max(1, round(self.intensidade / 16))
+        alvo = 2 if self.intensidade <= 5 else max(1, round(self.intensidade / 20))
 
         # escala geral
         escala = max(0.7, self.intensidade / 100)

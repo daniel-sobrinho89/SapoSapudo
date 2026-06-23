@@ -2,6 +2,7 @@ import threading
 
 from kivy.clock import Clock
 
+from core.platform import IS_ANDROID
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
 
@@ -33,9 +34,19 @@ class ControladorVozMusical:
         self.gerenciador_cenarios = gerenciador_cenarios
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
+        self._pensamento_event = None
+        self._pensamentos_aguardo = [
+            "Escutando os ecos da lagoa...",
+            "As ideias ainda estão borbulhando...",
+            "Conversando com os sapos filósofos...",
+            "Organizando os girinos do pensamento...",
+            "Procurando uma resposta no fundo da lagoa...",
+        ]
 
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
+
+        Clock.schedule_interval(self._atualizar_status_modelo, 1)
 
     def desligar_microfone(self):
         self.controle_renderer.microfone_ligado = False
@@ -156,6 +167,18 @@ class ControladorVozMusical:
         self.sapo.ir_para_feira()
 
     def _processar_conversa(self, texto):
+        if not self.conversa_sapudo.modelo_pronto:
+            self.sapo.pensamentos.texto = self.conversa_sapudo.model_manager.status
+
+            self.sapo.pensamentos.tempo_restante = 5
+
+            return
+
+        if self.conversa_sapudo.processando:
+            self.sapo.pensamentos.texto = "Ainda estou pensando na pergunta anterior."
+            self.sapo.pensamentos.tempo_restante = 5
+            return
+
         self.desligar_microfone()
 
         self.sapo.pensamentos.texto = "Escutando os ecos da lagoa..."
@@ -163,13 +186,30 @@ class ControladorVozMusical:
 
         print(f"[CONVERSA] pensamento atual: {self.sapo.pensamentos.texto}")
 
+        self._iniciar_pensamentos_aguardo()
+
         threading.Thread(
-            target=self._executar_gemini,
+            target=self._executar_client,
             args=(texto,),
             daemon=True,
         ).start()
 
-    def _executar_gemini(self, texto):
+    def _atualizar_status_modelo(self, dt):
+        if not IS_ANDROID:
+            return False
+
+        manager = self.conversa_sapudo.model_manager
+
+        if manager.pronto:
+            return False
+
+        self.sapo.pensamentos.texto = manager.status
+
+        self.sapo.pensamentos.tempo_restante = 2
+
+        return True
+
+    def _executar_client(self, texto):
         try:
             texto = texto.lower()
 
@@ -191,8 +231,11 @@ class ControladorVozMusical:
             Clock.schedule_once(
                 lambda dt: self._mostrar_resposta("A lagoa ficou silenciosa.")
             )
+            Clock.schedule_once(lambda dt: self._parar_pensamentos_aguardo())
 
     def _mostrar_resposta(self, resposta):
+        self._parar_pensamentos_aguardo()
+
         if not resposta:
             return
 
@@ -201,3 +244,33 @@ class ControladorVozMusical:
 
         if self.tts:
             self.tts.falar(resposta)
+
+    def _iniciar_pensamentos_aguardo(self):
+        self._parar_pensamentos_aguardo()
+        self._indice_pensamento = 0
+
+        def atualizar(dt):
+            if not self.conversa_sapudo.processando:
+                return False
+
+            self._indice_pensamento = (self._indice_pensamento + 1) % len(
+                self._pensamentos_aguardo
+            )
+
+            self.sapo.pensamentos.texto = self._pensamentos_aguardo[
+                self._indice_pensamento
+            ]
+
+            self.sapo.pensamentos.tempo_restante = 12
+
+            return True
+
+        self._pensamento_event = Clock.schedule_interval(
+            atualizar,
+            10,
+        )
+
+    def _parar_pensamentos_aguardo(self):
+        if self._pensamento_event:
+            self._pensamento_event.cancel()
+            self._pensamento_event = None

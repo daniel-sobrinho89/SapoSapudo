@@ -26,6 +26,7 @@ from core.event_bus import (
 from core.fisica import sistema_fisica
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
+from domains.clima.clima_placeholder import ClimaPlaceholder
 from domains.clima.clima_service import ClimaService
 from domains.clima.evento_livro import EventoLivro
 from domains.clima.frasco import FrascoClimatico
@@ -33,7 +34,7 @@ from domains.clima.nuvem import Nuvem
 from domains.clima.particulas.poeira import ParticulaPoeira
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
-from domains.conversas.qwen_local_client import QwenLocalClient
+from domains.conversas.qwen_proxy import QwenProxy
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
@@ -171,25 +172,45 @@ class GameWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        Clock.schedule_once(
-            lambda dt: self.tts.falar("A lagoa continua a mesma, mas o dia nunca é..."),
-            10,
-        )
+        self.graficos_prontos = False
+        self.interacao_pronta = False
+        self.jogo_pronto = False
 
-        self._inicializar_audio_spotify()
-        self._inicializar_controles()
-        self._inicializar_sistemas_base()
-        self._inicializar_clima_e_ambiente()
-        self._inicializar_cenario()
-        self._inicializar_interacao()
-        self._configurar_graficos()
+        self._bootstrap_fases = [
+            self._configurar_graficos,
+            self._inicializar_controles,
+            self._inicializar_sistemas_base,
+            self._inicializar_audio_spotify,
+            self._inicializar_clima_e_ambiente,
+            self._inicializar_cenario,
+            self._inicializar_interacao,
+        ]
 
-        # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
+        Clock.schedule_once(self._executar_bootstrap, 0)
+
+    def _executar_bootstrap(self, dt):
+        if not self._bootstrap_fases:
+            self.jogo_pronto = True
+            return
+
+        fase = self._bootstrap_fases.pop(0)
+
+        try:
+            fase()
+
+        except Exception as ex:
+            print(f"[BOOTSTRAP] falha em {fase.__name__}: {ex}")
+            self.jogo_pronto = False
+
+            return
+
+        Clock.schedule_once(self._executar_bootstrap, 0)
 
     def _inicializar_audio_spotify(self):
         self.spotify = SpotifyManager()
-        self.spotify.iniciar()
+
+        threading.Thread(target=self.spotify.iniciar, daemon=True).start()
 
         self.audio = AudioManager()
         self.audio.callback_spotify_tocando = self.spotify.spotify_esta_tocando
@@ -226,7 +247,9 @@ class GameWidget(Widget):
             p.area_protegida = self.frasco_climatico.area_pote
             p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
 
-        self.clima_service = ClimaService()
+        self.clima_service = ClimaPlaceholder()
+
+        threading.Thread(target=self._carregar_clima_real, daemon=True).start()
 
         self.background_renderer = BackgroundRenderer(
             tela, LARGURA, ALTURA, self.transform, self.clima_service, self.ambiente
@@ -262,7 +285,7 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
 
-        self.client = QwenLocalClient()
+        self.client = QwenProxy()
 
         self.conversa_sapudo = ConversaSapudo(self.client)
 
@@ -278,11 +301,17 @@ class GameWidget(Widget):
             self.tts,
         )
 
+        self.interacao_pronta = True
+
     def _configurar_graficos(self):
         with self.canvas:
             self.texture = Texture.create(size=(LARGURA, ALTURA), colorfmt="rgba")
+
             self.texture.flip_vertical()
+
             self.rect = Rectangle(texture=self.texture, pos=(0, 0), size=Window.size)
+
+        self.graficos_prontos = True
 
     def desligar_microfone(self):
         self.controlador_voz_musical.desligar_microfone()
@@ -308,15 +337,29 @@ class GameWidget(Widget):
     def descarregar_cenario_principal(self):
         self.gerenciador_cenarios.descarregar_cenario_principal()
 
-    def on_size(self, *args):
-        self.rect.size = (self.width, self.height)
+    def _carregar_clima_real(self):
+        clima_real = ClimaService()
 
+        Clock.schedule_once(lambda dt: setattr(self, "clima_service", clima_real))
+
+    def on_size(self, *args):
         init_scaling(self.width, self.height, LARGURA, ALTURA)
 
+        if not hasattr(self, "rect"):
+            return
+
+        self.rect.size = (self.width, self.height)
+
     def on_pos(self, *args):
+        if not hasattr(self, "rect"):
+            return
+
         self.rect.pos = self.pos
 
     def on_touch_down(self, touch):
+        if not self.jogo_pronto:
+            return True
+
         pos_virtual = real_to_virtual(touch.pos)
 
         # Microfone e Comandos Musicais
@@ -351,6 +394,9 @@ class GameWidget(Widget):
         return super().on_touch_down(touch)
 
     def on_touch_move(self, touch):
+        if not self.jogo_pronto:
+            return
+
         pos_virtual = real_to_virtual(touch.pos)
 
         # Atualizar Arrastes
@@ -368,6 +414,9 @@ class GameWidget(Widget):
             self.controle_renderer.botao_direita_pressionado = False
 
     def on_touch_up(self, touch):
+        if not self.jogo_pronto:
+            return
+
         # Resetar Controles do Sapo
         self.controle_renderer.botao_esquerda_pressionado = False
         self.controle_renderer.botao_direita_pressionado = False
@@ -385,6 +434,8 @@ class GameWidget(Widget):
             return True
 
     def on_key_down(self, window, key, scancode, codepoint, modifiers):
+        if not self.jogo_pronto:
+            return
         # seta esquerda
         if key == 276:
             self.tecla_esquerda_pressionada = True
@@ -398,6 +449,8 @@ class GameWidget(Widget):
         return True
 
     def on_key_up(self, window, key, scancode):
+        if not self.jogo_pronto:
+            return
         if key == 276:
             self.tecla_esquerda_pressionada = False
             self.sapo.parar_controle_esquerda()
@@ -431,6 +484,14 @@ class GameWidget(Widget):
             self.animacoes_folha.intensidade_vento = 1.8
 
     def update(self, dt):
+        if not self.graficos_prontos:
+            return
+
+        if not self.interacao_pronta:
+            self.canvas.ask_update()
+
+            return
+
         dt = min(dt, 0.05)
 
         self._atualizar_clima(dt)
