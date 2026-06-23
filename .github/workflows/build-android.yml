@@ -82,16 +82,15 @@ jobs:
 
           find domains/conversas/libs -name "*.so"
 
-      - name: Baixar modelo Qwen oficial
+      - name: Atualizar versionCode Android
         run: |
-          mkdir -p domains/conversas
+          sed -i \
+            "s/^android.numeric_version *= *.*/android.numeric_version = $GITHUB_RUN_NUMBER/" \
+            buildozer.spec
 
-          curl -L \
-            https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q8_0.gguf \
-            -o domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
+          echo "VersionCode configurado:"
+          grep "^android.numeric_version" buildozer.spec
 
-          ls -lh domains/conversas/qwen2.5-1.5b-instruct-q8_0.gguf
-      
       - name: Gerar APK
         run: |
           buildozer android debug

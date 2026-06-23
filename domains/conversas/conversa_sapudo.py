@@ -4,8 +4,15 @@ from .personalidade_sapudo import PERSONALIDADE_SAPUDO
 class ConversaSapudo:
     def __init__(self, client):
         self.client = client
-
         self.processando = False
+
+    @property
+    def model_manager(self):
+        return self.client.model_manager
+
+    @property
+    def modelo_pronto(self):
+        return self.client.inicializado
 
     def conversar(self, mensagem_usuario, contexto_extra=""):
         if self.processando:

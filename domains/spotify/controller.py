@@ -45,6 +45,8 @@ class ControladorVozMusical:
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
 
+        Clock.schedule_interval(self._atualizar_status_modelo, 1)
+
     def desligar_microfone(self):
         self.controle_renderer.microfone_ligado = False
         self.tempo_sem_audio = 0
@@ -164,6 +166,13 @@ class ControladorVozMusical:
         self.sapo.ir_para_feira()
 
     def _processar_conversa(self, texto):
+        if not self.conversa_sapudo.modelo_pronto:
+            self.sapo.pensamentos.texto = self.conversa_sapudo.model_manager.status
+
+            self.sapo.pensamentos.tempo_restante = 5
+
+            return
+
         if self.conversa_sapudo.processando:
             self.sapo.pensamentos.texto = "Ainda estou pensando na pergunta anterior."
             self.sapo.pensamentos.tempo_restante = 5
@@ -183,6 +192,18 @@ class ControladorVozMusical:
             args=(texto,),
             daemon=True,
         ).start()
+
+    def _atualizar_status_modelo(self, dt):
+        manager = self.conversa_sapudo.model_manager
+
+        if manager.pronto:
+            return False
+
+        self.sapo.pensamentos.texto = manager.status
+
+        self.sapo.pensamentos.tempo_restante = 2
+
+        return True
 
     def _executar_client(self, texto):
         try:
