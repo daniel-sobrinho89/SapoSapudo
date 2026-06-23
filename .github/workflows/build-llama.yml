@@ -27,7 +27,7 @@ jobs:
 
       - name: Instalar SDK/NDK Android
         run: |
-          buildozer android debug || true
+          buildozer android release || true
 
       - name: Instalar dependências
         run: |
