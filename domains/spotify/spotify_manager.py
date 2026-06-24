@@ -1,5 +1,6 @@
 import threading
 
+from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.spotify.spotify_android import SpotifyAndroid
 from domains.spotify.spotify_api import SpotifyApi
 from domains.spotify.spotify_auth import SpotifyAuth
@@ -165,15 +166,16 @@ class SpotifyManager:
             sucesso = True
         return sucesso
 
-    def buscar_e_tocar(self, pesquisa, sapo, desligar_microfone_callback):
+    def buscar_e_tocar(self, pesquisa, desligar_microfone_callback):
         """Busca uma faixa e inicia a reprodução."""
         if not self.spotify_token:
             self.spotify_pendente = pesquisa
             self.spotify_pendente_timer = 5
             self.spotify_tentativas = 5
             self.iniciar_login_spotify()
-            sapo.pensamentos.texto = "Preciso conhecer seu Spotify primeiro."
-            sapo.pensamentos.tempo_restante = 5
+
+            PensamentosSapo.publicar("Preciso conhecer seu Spotify primeiro.", 5)
+
             desligar_microfone_callback()
             return False
 
@@ -187,8 +189,9 @@ class SpotifyManager:
                 self.spotify_pendente = pesquisa
                 self.spotify_pendente_timer = 3
                 self.spotify_tentativas = 5
-                sapo.pensamentos.texto = "Abrindo seu Spotify..."
-                sapo.pensamentos.tempo_restante = 3
+
+                PensamentosSapo.publicar("Abrindo seu Spotify...", 3)
+
                 desligar_microfone_callback()
                 return False
 
@@ -287,15 +290,13 @@ class SpotifyManager:
             if self.spotify_pensamento_timer <= 0:
                 self.spotify_pensamento_timer = 10
 
+                novoPensamento = f"Lá lá lá... {self.spotify_musica_atual}"
                 if self.spotify_mostrar_artista:
-                    sapo.pensamentos.texto = (
+                    novoPensamento = (
                         f"Ihuuu! Estou ouvindo {self.spotify_artista_atual}"
                     )
 
-                else:
-                    sapo.pensamentos.texto = f"Lá lá lá... {self.spotify_musica_atual}"
-
-                sapo.pensamentos.tempo_restante = 10
+                PensamentosSapo.publicar(novoPensamento, 10)
 
                 self.spotify_mostrar_artista = not self.spotify_mostrar_artista
 
@@ -328,14 +329,14 @@ class SpotifyManager:
             threading.Thread(target=self.atualizar_estado_spotify, daemon=True).start()
 
         if self.spotify_pendente:
-            self._processar_busca_pendente(main, dt, sapo)
+            self._processar_busca_pendente(main, dt)
 
         if not self.spotify_token and self.spotify_code_verifier:
             self._processar_finalizacao_autenticacao()
 
         self.atualizar_animacao_spotify(main, dt, sapo, violao)
 
-    def _processar_busca_pendente(self, main, dt, sapo):
+    def _processar_busca_pendente(self, main, dt):
         self.spotify_pendente_timer -= dt
         if self.spotify_pendente_timer <= 0:
             device_id = self.obter_dispositivo_ativo_com_renovacao()
@@ -343,8 +344,9 @@ class SpotifyManager:
                 self.spotify_tentativas -= 1
                 if self.spotify_tentativas <= 0:
                     self.spotify_pendente = None
-                    sapo.pensamentos.texto = "Não encontrei um Spotify ativo."
-                    sapo.pensamentos.tempo_restante = 5
+
+                    PensamentosSapo.publicar("Não encontrei um Spotify ativo.", 5)
+
                     self.spotify_pendente_timer = 0
                     self.spotify_tentativas = 0
                 else:

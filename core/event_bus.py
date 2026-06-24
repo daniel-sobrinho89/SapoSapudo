@@ -178,19 +178,9 @@ class TTSFinalizadoEvent(Event):
     pass
 
 
-class AvatarPensandoEvent(Event):
-    def __init__(self, texto: str):
-        super().__init__(texto=texto)
-
-
-class AvatarSpotifyEvent(Event):
-    def __init__(self, texto: str):
-        super().__init__(texto=texto)
-
-
-class AvatarMicrofoneEvent(Event):
-    def __init__(self, ligado: bool):
-        super().__init__(ligado=ligado)
+class PensamentoSapoEvent(Event):
+    def __init__(self, texto: str, duracao: float = 6):
+        super().__init__(texto=texto, duracao=duracao)
 
 
 # Aliases em português para as classes de eventos
@@ -219,6 +209,7 @@ _MAPA_EVENTOS = {
     "climaatualizadoevento": ClimaAtualizadoEvent,
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
+    "pensamento_sapo": PensamentoSapoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

@@ -3,6 +3,7 @@ import threading
 from kivy.clock import Clock
 
 from core.platform import IS_ANDROID
+from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
 
@@ -61,10 +62,9 @@ class ControladorVozMusical:
         self.reconhecedor_voz = ReconhecedorAndroid()
 
     def mostrar_pensamento_spotify_erro(self):
-        self.sapo.pensamentos.texto = (
-            "Não estou conseguindo visitar este universo musical agora."
+        PensamentosSapo.publicar(
+            "Não estou conseguindo visitar este universo musical agora.", 6
         )
-        self.sapo.pensamentos.tempo_restante = 6
 
     def iniciar_sequencia_spotify(self):
         self.sapo.buscar_violao(self.violao, self.spotify, self.distancia_violao)
@@ -149,7 +149,7 @@ class ControladorVozMusical:
 
         elif acao == "buscar":
             sucesso = self.spotify.buscar_e_tocar(
-                comando_spotify.get("pesquisa"), self.sapo, self.desligar_microfone
+                comando_spotify.get("pesquisa"), self.desligar_microfone
             )
             # Se for buscar e ainda estiver pendente/aberto, retornamos cedo
             if not sucesso and self.spotify.spotify_pendente:
@@ -168,23 +168,16 @@ class ControladorVozMusical:
 
     def _processar_conversa(self, texto):
         if not self.conversa_sapudo.modelo_pronto:
-            self.sapo.pensamentos.texto = self.conversa_sapudo.model_manager.status
-
-            self.sapo.pensamentos.tempo_restante = 5
-
+            PensamentosSapo.publicar(self.conversa_sapudo.model_manager.status, 5)
             return
 
         if self.conversa_sapudo.processando:
-            self.sapo.pensamentos.texto = "Ainda estou pensando na pergunta anterior."
-            self.sapo.pensamentos.tempo_restante = 5
+            PensamentosSapo.publicar("Ainda estou pensando na pergunta anterior.", 5)
             return
 
         self.desligar_microfone()
 
-        self.sapo.pensamentos.texto = "Escutando os ecos da lagoa..."
-        self.sapo.pensamentos.tempo_restante = 10
-
-        print(f"[CONVERSA] pensamento atual: {self.sapo.pensamentos.texto}")
+        PensamentosSapo.publicar("Escutando os ecos da lagoa...", 10)
 
         self._iniciar_pensamentos_aguardo()
 
@@ -203,9 +196,7 @@ class ControladorVozMusical:
         if manager.pronto:
             return False
 
-        self.sapo.pensamentos.texto = manager.status
-
-        self.sapo.pensamentos.tempo_restante = 2
+        PensamentosSapo.publicar(manager.status, 2)
 
         return True
 
@@ -239,8 +230,7 @@ class ControladorVozMusical:
         if not resposta:
             return
 
-        self.sapo.pensamentos.texto = resposta
-        self.sapo.pensamentos.tempo_restante = 30
+        PensamentosSapo.publicar(resposta, 30)
 
         if self.tts:
             self.tts.falar(resposta)
@@ -257,11 +247,9 @@ class ControladorVozMusical:
                 self._pensamentos_aguardo
             )
 
-            self.sapo.pensamentos.texto = self._pensamentos_aguardo[
-                self._indice_pensamento
-            ]
-
-            self.sapo.pensamentos.tempo_restante = 12
+            PensamentosSapo.publicar(
+                self._pensamentos_aguardo[self._indice_pensamento], 12
+            )
 
             return True
 

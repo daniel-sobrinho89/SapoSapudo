@@ -1,11 +1,11 @@
 import json
 import random
 
+from core.event_bus import PensamentoSapoEvent, event_bus
+
 
 class PensamentosSapo:
     def __init__(self):
-        self.texto = None
-        self.tempo_restante = 0
         self.ultimo_texto = None
 
         with open("data/pensamentos_sapo.json", encoding="utf-8") as arquivo:
@@ -14,9 +14,6 @@ class PensamentosSapo:
         self.proxima_tentativa = random.uniform(120, 300)
 
     def executar(self, categoria):
-        if self.texto:
-            return
-
         frases = self.frases.get(categoria, [])
 
         if not frases:
@@ -27,15 +24,26 @@ class PensamentosSapo:
         if not disponiveis:
             disponiveis = frases
 
-        self.texto = random.choice(disponiveis)
+        texto = random.choice(disponiveis)
+        self.ultimo_texto = texto
 
-        self.ultimo_texto = self.texto
-        self.tempo_restante = 6
+        PensamentosSapo.publicar(texto=texto, duracao=6)
 
-        return self.texto
+        return texto
+
+    @staticmethod
+    def publicar(texto: str, duracao: float = 6):
+        event_bus.publicar(PensamentoSapoEvent(texto=texto, duracao=duracao))
+
+
+class PensamentoViewModel:
+    def __init__(self):
+        self.texto = None
+        self.tempo_restante = 0
 
     def atualizar(self, dt):
         if self.tempo_restante > 0:
             self.tempo_restante -= dt
+
             if self.tempo_restante <= 0:
                 self.texto = None

@@ -186,8 +186,6 @@ class Sapo:
             if texto:
                 events["novo_pensamento"] = texto
 
-        self.pensamentos.atualizar(dt)
-
         # =====================================
         # AGENDAMENTO CAMINHADA
         # =====================================

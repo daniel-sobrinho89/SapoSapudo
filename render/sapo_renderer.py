@@ -1,7 +1,9 @@
 from PIL import ImageDraw, ImageFont
 
 import kivy_adapter
+from core.event_bus import PensamentoSapoEvent, event_bus
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
+from domains.sapudo.pensamentos_sapo import PensamentoViewModel
 
 
 class SapoRenderer:
@@ -150,6 +152,16 @@ class PensamentoSapoRenderer:
         self.padding_y = 8
 
         self.largura_maxima = 290
+        self.view_model = PensamentoViewModel()
+
+        event_bus.assinar(PensamentoSapoEvent, self.receber_pensamento)
+
+    def receber_pensamento(self, evento):
+        if self.view_model.texto:
+            return
+
+        self.view_model.texto = evento.texto
+        self.view_model.tempo_restante = evento.duracao
 
     # =====================================
     # MEDIR TEXTO
@@ -213,9 +225,8 @@ class PensamentoSapoRenderer:
     # =====================================
     # RENDER
     # =====================================
-
-    def renderizar(self, tela, sapo):
-        pensamento = sapo.pensamentos
+    def renderizar(self, tela, sapo, dt):
+        pensamento = self.view_model
 
         if not pensamento.texto:
             return
@@ -284,3 +295,5 @@ class PensamentoSapoRenderer:
             pos_y += altura_linha
 
         tela.blit(surface, (int(x), int(y)))
+
+        self.view_model.atualizar(dt)

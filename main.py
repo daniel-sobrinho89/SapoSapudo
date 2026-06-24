@@ -480,7 +480,7 @@ class GameWidget(Widget):
         )
 
         self.gerenciador_cenarios.renderizar(dt, ESCALA, self.sapo_renderer)
-        self.pensamento_renderer.renderizar(tela, self.sapo)
+        self.pensamento_renderer.renderizar(tela, self.sapo, dt)
 
         if not self.violao.acoplado:
             self.renderer_violao.renderizar(self.violao)
