@@ -178,6 +178,21 @@ class TTSFinalizadoEvent(Event):
     pass
 
 
+class AvatarPensandoEvent(Event):
+    def __init__(self, texto: str):
+        super().__init__(texto=texto)
+
+
+class AvatarSpotifyEvent(Event):
+    def __init__(self, texto: str):
+        super().__init__(texto=texto)
+
+
+class AvatarMicrofoneEvent(Event):
+    def __init__(self, ligado: bool):
+        super().__init__(ligado=ligado)
+
+
 # Aliases em português para as classes de eventos
 VozDetectadaEvento = VozDetectadaEvent
 MusicaIniciadaEvento = MusicaIniciadaEvent
