@@ -39,6 +39,8 @@ class AnimacoesSapo:
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
+        event_bus.assinar("parar_violao", self.parar_violao)
+        event_bus.assinar("iniciar_levantar_violao", self.iniciar_levantar_violao)
 
     # ====================================
     # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)
@@ -210,12 +212,14 @@ class AnimacoesSapo:
         self.pegar_violao.reset()
         self.violao_logic.resetar()
 
-    def parar_violao(self):
+    def parar_violao(self, _evento=None):
         self.maquina.trocar(EstadoSapo.PARADO)
         self.violao_logic.resetar()
 
-    def iniciar_levantar_violao(self):
-        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
+    def iniciar_levantar_violao(self, _evento=None):
+        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO) or not self.maquina.eh(
+            EstadoSapo.TOCANDO_VIOLAO
+        ):
             return
 
         self.maquina.trocar(EstadoSapo.LEVANTANDO_VIOLAO)

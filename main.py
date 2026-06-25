@@ -19,10 +19,7 @@ from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
 from constants import CENTRO_OFFSET_Y, ESCALA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
-from core.event_bus import (
-    PensamentoExibidoEvent,
-    event_bus,
-)
+from core.event_bus import event_bus
 from core.fisica import sistema_fisica
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
@@ -207,7 +204,6 @@ class GameWidget(Widget):
         self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
         self.pensamento_renderer = PensamentoSapoRenderer()
         self.animacoes_folha = AnimacoesFolha()
-        self.violao = Violao()
         self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
         self.tts = TTSService()
 
@@ -242,7 +238,7 @@ class GameWidget(Widget):
             self.background_renderer,
             self.sistema_nuvens,
             None,  # sapo ainda não criado
-            self.violao,
+            None,  # violão ainda não criado
             self.frasco_climatico,
             self.ambiente,
             self.evento_livro,
@@ -255,12 +251,21 @@ class GameWidget(Widget):
             self.gerenciador_cenarios.carregar_cenario_principal()
 
     def _inicializar_interacao(self):
-        self.sapo = Sapo(centro_x, centro_y, self.clima_service)
+        self.violao = Violao(self.spotify, self.gerenciador_cenarios)
+        self.sapo = Sapo(
+            centro_x,
+            centro_y,
+            self.violao,
+            self.spotify,
+            DISTANCIA_VIOLAO,
+            self.clima_service,
+        )
         self.sapo.background_renderer = self.background_renderer
         self.sapo.animacoes.callback_verificar_spotify = (
             self.spotify.spotify_esta_tocando
         )
         self.gerenciador_cenarios.sapo = self.sapo
+        self.gerenciador_cenarios.violao = self.violao
 
         self.client = QwenLocalClient()
 
@@ -272,7 +277,6 @@ class GameWidget(Widget):
             self.spotify,
             self.audio,
             self.controle_renderer,
-            DISTANCIA_VIOLAO,
             self.gerenciador_cenarios,
             self.conversa_sapudo,
             self.tts,
@@ -291,12 +295,6 @@ class GameWidget(Widget):
 
     def mostrar_pensamento_spotify_erro(self):
         self.controlador_voz_musical.mostrar_pensamento_spotify_erro()
-
-    def iniciar_sequencia_spotify(self):
-        self.controlador_voz_musical.iniciar_sequencia_spotify()
-
-    def iniciar_sequencia_spotify_com_violao(self):
-        self.controlador_voz_musical.iniciar_sequencia_spotify_com_violao()
 
     def carregar_cenario_feira(self):
         self.gerenciador_cenarios.carregar_cenario_feira()
@@ -437,9 +435,7 @@ class GameWidget(Widget):
 
         self._atualizar_clima(dt)
 
-        events = self.sapo.atualizar(
-            dt, self.ambiente, self.animacoes_folha, self.violao
-        )
+        events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha)
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
             event_bus.publicar("musica_iniciada", musica_info="O Passeio do Sapudo")
@@ -447,12 +443,13 @@ class GameWidget(Widget):
         texto = events.get("novo_pensamento")
         if texto:
             self.tts.falar(texto)
-            event_bus.publicar(PensamentoExibidoEvent(pensamento_texto=texto))
 
         if self.clima_service.precisa_atualizar():
             event_bus.publicar("clima_atualizado", clima_data=self.clima_service)
 
-        self.spotify.atualizar_spotify(self, dt, self.sapo, self.violao)
+        self.spotify.atualizar_spotify(dt)
+        if self.violao and self.sapo.pode_receber_violao():
+            self.spotify.atualizar_animacao_spotify(dt)
 
         self.controlador_voz_musical.atualizar(dt)
         self._atualizar_ambiente_fisica(dt)

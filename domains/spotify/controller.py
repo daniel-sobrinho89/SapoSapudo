@@ -2,6 +2,7 @@ import threading
 
 from kivy.clock import Clock
 
+from core.event_bus import event_bus
 from core.platform import IS_ANDROID
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
@@ -21,7 +22,6 @@ class ControladorVozMusical:
         spotify,
         audio,
         controle_renderer,
-        distancia_violao,
         gerenciador_cenarios=None,
         conversa_sapudo=None,
         tts=None,
@@ -31,7 +31,6 @@ class ControladorVozMusical:
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
-        self.distancia_violao = distancia_violao
         self.gerenciador_cenarios = gerenciador_cenarios
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
@@ -66,12 +65,6 @@ class ControladorVozMusical:
             "Não estou conseguindo visitar este universo musical agora.", 6
         )
 
-    def iniciar_sequencia_spotify(self):
-        self.sapo.buscar_violao(self.violao, self.spotify, self.distancia_violao)
-
-    def iniciar_sequencia_spotify_com_violao(self):
-        self.sapo.iniciar_sequencia_spotify_com_violao(self.violao, self.spotify)
-
     def processar_toque_microfone(self, pos_virtual):
         if self.controle_renderer.rect_microfone.collidepoint(pos_virtual):
             self.controle_renderer.microfone_ligado = (
@@ -91,7 +84,7 @@ class ControladorVozMusical:
 
     def processar_toque_down_violao(self, pos_virtual, renderer_violao):
         if self.violao.acoplado and self.violao.tentar_desacoplar(
-            pos_virtual, self.sapo, self.spotify
+            pos_virtual, self.sapo
         ):
             return True
 
@@ -102,9 +95,7 @@ class ControladorVozMusical:
         return False
 
     def processar_toque_up_violao(self):
-        return self.violao.finalizar_interacao(
-            self.sapo, self.spotify, self.gerenciador_cenarios
-        )
+        return self.violao.finalizar_interacao(self.sapo)
 
     def atualizar(self, dt):
         if self.controle_renderer.microfone_ligado:
@@ -135,8 +126,8 @@ class ControladorVozMusical:
         sucesso = False
 
         if acao == "pause":
-            sucesso = self.spotify.pausar()
-            self.sapo.parar_violao()
+            sucesso = True
+            event_bus.publicar("parar_violao")
 
         elif acao == "play":
             sucesso = self.spotify.tocar()
@@ -158,7 +149,7 @@ class ControladorVozMusical:
         self.desligar_microfone()
 
         if acao != "pause" and sucesso:
-            self.iniciar_sequencia_spotify()
+            event_bus.publicar("buscar_violao")
         elif not sucesso and acao != "buscar":
             self.mostrar_pensamento_spotify_erro()
 

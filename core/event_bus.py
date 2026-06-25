@@ -66,12 +66,6 @@ class EventBus:
                 self._subscribers[event_type].remove(handler)
 
     def publish(self, event: Any, **kwargs):
-        """Publica um evento para todos os ouvintes inscritos.
-        Aceita tanto uma instância de evento quanto uma string
-        identificadora (ex: 'voz_detectada').
-        Se uma string for fornecida, os kwargs serão passados para construir
-        a classe de evento correspondente.
-        """
         if isinstance(event, str):
             event_lower = event.lower()
             classe_evento = _MAPA_EVENTOS.get(event_lower)
@@ -135,32 +129,11 @@ class EventBus:
 # --- Definições de Eventos Específicos do Sistema ---
 
 
-class VozDetectadaEvent(Event):
-    """Disparado quando a voz do usuário é detectada e convertida em texto."""
-
-    def __init__(self, texto: str):
-        super().__init__(texto=texto)
-
-
 class MusicaIniciadaEvent(Event):
     """Disparado quando uma música ou playlist é iniciada."""
 
     def __init__(self, musica_info: Any):
         super().__init__(musica_info=musica_info)
-
-
-class MusicaPausadaEvent(Event):
-    """Disparado quando a reprodução da música é pausada."""
-
-    def __init__(self):
-        super().__init__()
-
-
-class PensamentoExibidoEvent(Event):
-    """Disparado quando um pensamento do Sapo é exibido na tela."""
-
-    def __init__(self, pensamento_texto: str):
-        super().__init__(pensamento_texto=pensamento_texto)
 
 
 class ClimaAtualizadoEvent(Event):
@@ -183,33 +156,32 @@ class PensamentoSapoEvent(Event):
         super().__init__(texto=texto, duracao=duracao)
 
 
+class PararViolaoEvent(Event):
+    pass
+
+
+class BuscarViolaoEvent(Event):
+    pass
+
+
+class IniciarLevantarViolaoEvent(Event):
+    pass
+
+
 # Aliases em português para as classes de eventos
-VozDetectadaEvento = VozDetectadaEvent
 MusicaIniciadaEvento = MusicaIniciadaEvent
-MusicaPausadaEvento = MusicaPausadaEvent
-PensamentoExibidoEvento = PensamentoExibidoEvent
 ClimaAtualizadoEvento = ClimaAtualizadoEvent
 
 # Mapa para resolução dinâmica a partir de strings
 _MAPA_EVENTOS = {
-    "voz_detectada": VozDetectadaEvent,
     "musica_iniciada": MusicaIniciadaEvent,
-    "musica_pausada": MusicaPausadaEvent,
-    "pensamento_exibido": PensamentoExibidoEvent,
     "clima_atualizado": ClimaAtualizadoEvent,
-    "vozdetectadaevent": VozDetectadaEvent,
-    "musicainiciadaevent": MusicaIniciadaEvent,
-    "musicapausadaevent": MusicaPausadaEvent,
-    "pensamentoexibidoevent": PensamentoExibidoEvent,
-    "climaatualizadoevent": ClimaAtualizadoEvent,
-    "vozdetectadaevento": VozDetectadaEvent,
-    "musicainiciadaevento": MusicaIniciadaEvent,
-    "musicapausadaevento": MusicaPausadaEvent,
-    "pensamentoexibidoevento": PensamentoExibidoEvent,
-    "climaatualizadoevento": ClimaAtualizadoEvent,
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
     "pensamento_sapo": PensamentoSapoEvent,
+    "parar_violao": PararViolaoEvent,
+    "buscar_violao": BuscarViolaoEvent,
+    "iniciar_levantar_violao": IniciarLevantarViolaoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

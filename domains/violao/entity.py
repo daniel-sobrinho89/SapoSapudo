@@ -1,8 +1,9 @@
+from core.event_bus import event_bus
 from utils.drag import iniciar_drag, mover_com_offset
 
 
 class Violao:
-    def __init__(self):
+    def __init__(self, spotify, gerenciador_cenarios):
         self.x = 805
         self.y = 500
 
@@ -23,6 +24,9 @@ class Violao:
 
         self.no_chao = False
         self.acoplado = False
+
+        self.spotify = spotify
+        self.gerenciador_cenarios = gerenciador_cenarios
 
     def iniciar_arraste(self, mouse_x, mouse_y):
         self.arrastando = True
@@ -58,26 +62,23 @@ class Violao:
 
         self.acoplado = False
 
-    def tentar_desacoplar(self, mouse_pos, sapo, spotify):
-        """Tenta desacoplar o violão se o toque for próximo ao sapo."""
+    def tentar_desacoplar(self, mouse_pos, sapo):
         distancia = ((mouse_pos[0] - sapo.x) ** 2 + (mouse_pos[1] - sapo.y) ** 2) ** 0.5
 
         if distancia < 120:
             self.acoplado = False
-            spotify.pausar()
-            sapo.parar_violao()
+            event_bus.publicar("parar_violao")
             self.iniciar_arraste(*mouse_pos)
             return True
         return False
 
-    def finalizar_interacao(self, sapo, spotify, gerenciador_cenarios):
+    def finalizar_interacao(self, sapo):
         """Finaliza o arraste e decide se acopla ao sapo ou cai."""
         if not self.arrastando:
             return False
 
         self.finalizar_arraste()
 
-        # Área de acoplamento simplificada (substituindo Rect do Kivy)
         dentro_area = abs(self.x - sapo.x) < 80 and abs(self.y - sapo.y) < 80
 
         if dentro_area and sapo.pode_receber_violao():
@@ -85,12 +86,12 @@ class Violao:
             self.x = sapo.x + 5
             self.y = sapo.y + 20
 
-            spotify.tocar()
+            self.spotify.tocar()
             # O Sapo já cuida de iniciar as animações necessárias ao detectar o toque
         else:
             self.iniciar_queda()
-            if gerenciador_cenarios and gerenciador_cenarios.tem_duende:
-                duende = gerenciador_cenarios.duende
+            if self.gerenciador_cenarios and self.gerenciador_cenarios.tem_duende:
+                duende = self.gerenciador_cenarios.duende
                 if duende.pode_resgatar_violao():
                     distancia_violao = abs(self.x - duende.x)
                     MIN_TELEPORT_DIST = 120

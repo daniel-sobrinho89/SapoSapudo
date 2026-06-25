@@ -6,6 +6,7 @@
 from datetime import datetime, timedelta
 
 from config import LARGURA
+from core.event_bus import event_bus
 from core.system_utils import atualizar_sistemas_basicos
 from domains.sapudo.animacoes_sapo import AnimacoesSapo
 from domains.sapudo.ia_sapo import IASapo
@@ -15,7 +16,7 @@ from domains.sapudo.respiracao_sapo import RespiracaoSapo
 
 
 class Sapo:
-    def __init__(self, x, y, clima_service):
+    def __init__(self, x, y, violao, spotify, distancia_violao, clima_service):
         # POSIÇÃO CENTRAL (coordenadas usadas pelo renderer)
         self.x = x
         self.y = y
@@ -44,8 +45,12 @@ class Sapo:
         self.indo_para_feira = False
         self.retornando_da_feira = False
         self.comando_ir_feira = False
+        self.violao = violao
+        self.spotify = spotify
+        self.distancia_violao = distancia_violao
         self.clima = clima_service
         self.andando_para_violao = False
+        event_bus.assinar("buscar_violao", self.buscar_violao)
 
     def ir_para_feira(self):
         """Inicia o deslocamento para a feira."""
@@ -56,26 +61,22 @@ class Sapo:
             self.animacoes._ultimo_frame_andar = -1
             self.animacoes.iniciar_andar_esquerda()
 
-    def buscar_violao(self, violao, spotify, distancia_violao):
-        """Inicia a sequência de busca e acoplamento do violão."""
+    def buscar_violao(self, _evento=None):
         animacoes = self.animacoes
 
-        if violao.acoplado and animacoes.maquina.em_estado(
-            EstadoSapo.PEGANDO_VIOLAO,
-            EstadoSapo.TOCANDO_VIOLAO,
-        ):
+        if self.violao.acoplado and animacoes.maquina.esta_com_violao():
             return
 
         sapo_x = self.x
-        violao_x = violao.x
+        violao_x = self.violao.x
 
-        if abs(sapo_x - violao_x) < distancia_violao:
+        if abs(sapo_x - violao_x) < self.distancia_violao:
             self.andando_para_violao = False
-            if not violao.acoplado:
-                violao.acoplado = True
+            if not self.violao.acoplado:
+                self.violao.acoplado = True
 
             if (
-                spotify.spotify_tocando_cache
+                self.spotify.spotify_tocando_cache
                 and not animacoes.maquina.esta_com_violao()
             ):
                 self.iniciar_violao()
@@ -100,24 +101,9 @@ class Sapo:
         else:
             self.animacoes.iniciar_andar_esquerda()
 
-    def iniciar_sequencia_spotify_com_violao(self, violao, spotify):
-        """Inicia a animação de violão se estiver acoplado."""
-        animacoes = self.animacoes
-        if animacoes.maquina.esta_com_violao():
-            return
-
-        violao.acoplado = True
-        if spotify.spotify_tocando_cache:
-            self.iniciar_violao()
-        else:
-            animacoes.iniciar_levantar_violao()
-
     # métodos de delegação / API pública
     def iniciar_violao(self):
         self.animacoes.iniciar_violao()
-
-    def parar_violao(self):
-        self.animacoes.parar_violao()
 
     def pode_receber_violao(self):
         return not self.animacoes.maquina.em_estado(
@@ -165,7 +151,7 @@ class Sapo:
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
-    def atualizar(self, dt, ambiente, animacao_folha=None, violao=None):
+    def atualizar(self, dt, ambiente, animacao_folha=None):
         atualizar_sistemas_basicos(
             self.animacoes,
             self.respiracao,
@@ -285,9 +271,9 @@ class Sapo:
 
                 self.x += 4
 
-        if violao is not None:
+        if self.violao is not None:
             if a.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
-                destino_x = getattr(violao, "x_inicial", None) - 65
+                destino_x = getattr(self.violao, "x_inicial", None) - 65
 
                 frame_atual = a.guardar_violao.frame
 
@@ -297,16 +283,16 @@ class Sapo:
                     if self.x < destino_x:
                         self.x = min(destino_x, self.x + 3.5)
 
-                        violao.x = self.x + 5
-                        violao.y = self.y + 20
+                        self.violao.x = self.x + 5
+                        self.violao.y = self.y + 20
 
                     else:
                         a.maquina.trocar(EstadoSapo.SOLTANDO_VIOLAO)
 
                         a.soltar_violao.reset()
 
-                        violao.x = violao.x_inicial
-                        violao.y = violao.y_inicial
+                        self.violao.x = self.violao.x_inicial
+                        self.violao.y = self.violao.y_inicial
 
             # eventos de áudio gerados pelos systems de animação
             if getattr(a, "iniciou_tocar_violao", False):
@@ -319,10 +305,10 @@ class Sapo:
 
             # quando finaliza soltar violao, encapsular ação sobre o violao
             if getattr(a, "finalizou_soltar_violao", False):
-                violao.acoplado = False
+                self.violao.acoplado = False
 
-                violao.x = violao.x_inicial
-                violao.y = violao.y_inicial
+                self.violao.x = self.violao.x_inicial
+                self.violao.y = self.violao.y_inicial
 
                 a.finalizou_soltar_violao = False
 
