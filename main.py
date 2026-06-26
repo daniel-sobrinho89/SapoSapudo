@@ -251,7 +251,7 @@ class GameWidget(Widget):
             self.gerenciador_cenarios.carregar_cenario_principal()
 
     def _inicializar_interacao(self):
-        self.violao = Violao(self.spotify, self.gerenciador_cenarios)
+        self.violao = Violao(self.gerenciador_cenarios)
         self.sapo = Sapo(
             centro_x,
             centro_y,
@@ -448,8 +448,6 @@ class GameWidget(Widget):
             event_bus.publicar("clima_atualizado", clima_data=self.clima_service)
 
         self.spotify.atualizar_spotify(dt)
-        if self.violao and self.sapo.pode_receber_violao():
-            self.spotify.atualizar_animacao_spotify(dt)
 
         self.controlador_voz_musical.atualizar(dt)
         self._atualizar_ambiente_fisica(dt)

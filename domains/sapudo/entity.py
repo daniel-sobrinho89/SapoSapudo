@@ -50,7 +50,7 @@ class Sapo:
         self.distancia_violao = distancia_violao
         self.clima = clima_service
         self.andando_para_violao = False
-        event_bus.assinar("buscar_violao", self.buscar_violao)
+        event_bus.assinar("spotify_iniciado", self.buscar_violao)
 
     def ir_para_feira(self):
         """Inicia o deslocamento para a feira."""
@@ -64,7 +64,9 @@ class Sapo:
     def buscar_violao(self, _evento=None):
         animacoes = self.animacoes
 
-        if self.violao.acoplado and animacoes.maquina.esta_com_violao():
+        if self.violao.acoplado and (
+            animacoes.maquina.esta_com_violao() or not self.pode_receber_violao()
+        ):
             return
 
         sapo_x = self.x

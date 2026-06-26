@@ -3,7 +3,7 @@ from utils.drag import iniciar_drag, mover_com_offset
 
 
 class Violao:
-    def __init__(self, spotify, gerenciador_cenarios):
+    def __init__(self, gerenciador_cenarios):
         self.x = 805
         self.y = 500
 
@@ -25,7 +25,6 @@ class Violao:
         self.no_chao = False
         self.acoplado = False
 
-        self.spotify = spotify
         self.gerenciador_cenarios = gerenciador_cenarios
 
     def iniciar_arraste(self, mouse_x, mouse_y):
@@ -67,7 +66,7 @@ class Violao:
 
         if distancia < 120:
             self.acoplado = False
-            event_bus.publicar("parar_violao")
+            event_bus.publicar("violao_desacoplado")
             self.iniciar_arraste(*mouse_pos)
             return True
         return False
@@ -86,8 +85,8 @@ class Violao:
             self.x = sapo.x + 5
             self.y = sapo.y + 20
 
-            self.spotify.tocar()
-            # O Sapo já cuida de iniciar as animações necessárias ao detectar o toque
+            event_bus.publicar("violao_acoplado")
+            event_bus.publicar("spotify_iniciado")
         else:
             self.iniciar_queda()
             if self.gerenciador_cenarios and self.gerenciador_cenarios.tem_duende:

@@ -25,7 +25,9 @@ class SpotifyManager:
         self.spotify_artista_atual = None
         self.spotify_pensamento_timer = 0
         self.spotify_mostrar_artista = True
-        event_bus.assinar("parar_violao", self.pausar)
+        self.spotify_tocando_anterior = False
+        event_bus.assinar("violao_acoplado", self.tocar)
+        event_bus.assinar("violao_desacoplado", self.pausar)
 
     # =====================================
     # AUTENTICAÇÃO E DISPOSITIVOS
@@ -126,7 +128,7 @@ class SpotifyManager:
 
         return sucesso
 
-    def tocar(self):
+    def tocar(self, _evento=None):
         """Inicia/Retoma a reprodução (Spotify ou MediaSession)."""
         sucesso = False
         if self.spotify_token:
@@ -231,7 +233,7 @@ class SpotifyManager:
 
         return False
 
-    def atualizar_estado_spotify(self):
+    def atualizar_estado_spotify(self, dt):
         try:
             self.spotify_tocando_cache = self.spotify_esta_tocando()
 
@@ -253,6 +255,8 @@ class SpotifyManager:
             else:
                 self.spotify_musica_atual = None
                 self.spotify_artista_atual = None
+
+            self.atualizar_animacao_spotify(dt)
 
         except Exception:
             pass
@@ -306,18 +310,15 @@ class SpotifyManager:
         # =====================================
         # SPOTIFY TOCANDO
         # =====================================
+        spotify_tocando = self.spotify_tocando_cache
 
-        if spotify_tocando:
-            event_bus.publicar("buscar_violao")
+        if spotify_tocando != self.spotify_tocando_anterior:
+            self.spotify_tocando_anterior = spotify_tocando
 
-            return
-
-        # =====================================
-        # SPOTIFY PAROU
-        # =====================================
-
-        if not spotify_tocando:
-            event_bus.publicar("iniciar_levantar_violao")
+            if spotify_tocando:
+                event_bus.publicar("spotify_iniciado")
+            else:
+                event_bus.publicar("spotify_pausado")
 
     # =====================================
     # LOOP PRINCIPAL E PROCESSAMENTO ASSÍNCRONO
@@ -328,7 +329,9 @@ class SpotifyManager:
         if self.spotify_cache_timer <= 0 and not self.spotify_consulta_em_andamento:
             self.spotify_consulta_em_andamento = True
             self.spotify_cache_timer = float("inf")
-            threading.Thread(target=self.atualizar_estado_spotify, daemon=True).start()
+            threading.Thread(
+                target=self.atualizar_estado_spotify, args=(dt,), daemon=True
+            ).start()
 
         if self.spotify_pendente:
             self._processar_busca_pendente(dt)
@@ -358,7 +361,6 @@ class SpotifyManager:
                     SpotifyAndroid.abrir_spotify()
                     sucesso = SpotifyApi.tocar_faixa(self.spotify_token, device_id, uri)
                     if sucesso:
-                        event_bus.publicar("buscar_violao")
                         self.atualizar_dados_musica_atual()
                         self.spotify_tocando_cache = True
 

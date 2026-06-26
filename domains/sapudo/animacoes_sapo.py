@@ -39,8 +39,8 @@ class AnimacoesSapo:
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
-        event_bus.assinar("parar_violao", self.parar_violao)
-        event_bus.assinar("iniciar_levantar_violao", self.iniciar_levantar_violao)
+        event_bus.assinar("violao_desacoplado", self.parar_violao)
+        event_bus.assinar("spotify_pausado", self.iniciar_levantar_violao)
 
     # ====================================
     # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)

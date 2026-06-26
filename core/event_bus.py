@@ -156,15 +156,19 @@ class PensamentoSapoEvent(Event):
         super().__init__(texto=texto, duracao=duracao)
 
 
-class PararViolaoEvent(Event):
+class ViolaoAcopladoEvent(Event):
     pass
 
 
-class BuscarViolaoEvent(Event):
+class ViolaoDesacopladoEvent(Event):
     pass
 
 
-class IniciarLevantarViolaoEvent(Event):
+class SpotifyIniciadoEvent(Event):
+    pass
+
+
+class SpotifyPausadoEvent(Event):
     pass
 
 
@@ -179,9 +183,10 @@ _MAPA_EVENTOS = {
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
     "pensamento_sapo": PensamentoSapoEvent,
-    "parar_violao": PararViolaoEvent,
-    "buscar_violao": BuscarViolaoEvent,
-    "iniciar_levantar_violao": IniciarLevantarViolaoEvent,
+    "violao_acoplado": ViolaoAcopladoEvent,
+    "violao_desacoplado": ViolaoDesacopladoEvent,
+    "spotify_iniciado": SpotifyIniciadoEvent,
+    "spotify_pausado": SpotifyPausadoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

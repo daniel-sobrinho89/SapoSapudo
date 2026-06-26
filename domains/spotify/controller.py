@@ -127,7 +127,7 @@ class ControladorVozMusical:
 
         if acao == "pause":
             sucesso = True
-            event_bus.publicar("parar_violao")
+            event_bus.publicar("violao_desacoplado")
 
         elif acao == "play":
             sucesso = self.spotify.tocar()
@@ -149,7 +149,7 @@ class ControladorVozMusical:
         self.desligar_microfone()
 
         if acao != "pause" and sucesso:
-            event_bus.publicar("buscar_violao")
+            event_bus.publicar("spotify_iniciado")
         elif not sucesso and acao != "buscar":
             self.mostrar_pensamento_spotify_erro()
 
