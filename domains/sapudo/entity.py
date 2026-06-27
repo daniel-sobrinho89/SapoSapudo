@@ -3,6 +3,7 @@
 # =====================================
 
 
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from config import LARGURA
@@ -61,8 +62,18 @@ class Sapo:
             self.animacoes._ultimo_frame_andar = -1
             self.animacoes.iniciar_andar_esquerda()
 
+    def area_violao(self):
+        return AreaAcoplamento(
+            x=self.x,
+            y=self.y,
+            raio=80,
+        )
+
     def buscar_violao(self, _evento=None):
         animacoes = self.animacoes
+
+        if self.andando_para_violao or animacoes.maquina.esta_com_violao():
+            return
 
         if self.violao.acoplado and (
             animacoes.maquina.esta_com_violao() or not self.pode_receber_violao()
@@ -71,21 +82,6 @@ class Sapo:
 
         sapo_x = self.x
         violao_x = self.violao.x
-
-        if abs(sapo_x - violao_x) < self.distancia_violao:
-            self.andando_para_violao = False
-            if not self.violao.acoplado:
-                self.violao.acoplado = True
-
-            if (
-                self.spotify.spotify_tocando_cache
-                and not animacoes.maquina.esta_com_violao()
-            ):
-                self.iniciar_violao()
-            else:
-                self.animacoes.iniciar_levantar_violao()
-
-            return
 
         if self.andando_para_violao and not animacoes.maquina.em_estado(
             EstadoSapo.ANDANDO_DIREITA,
@@ -273,6 +269,24 @@ class Sapo:
 
                 self.x += 4
 
+        if (
+            self.andando_para_violao
+            and self.violao is not None
+            and abs(self.x - self.violao.x) <= self.distancia_violao
+        ):
+            self.andando_para_violao = False
+
+            a.maquina.trocar(EstadoSapo.PARADO)
+
+            if self.spotify.spotify_tocando_cache:
+                self.violao.acoplado = True
+                self.iniciar_violao()
+            elif a.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
+                self.violao.acoplado = True
+                self.animacoes.iniciar_levantar_violao()
+
+            return events
+
         if self.violao is not None:
             if a.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
                 destino_x = getattr(self.violao, "x_inicial", None) - 65
@@ -307,10 +321,7 @@ class Sapo:
 
             # quando finaliza soltar violao, encapsular ação sobre o violao
             if getattr(a, "finalizou_soltar_violao", False):
-                self.violao.acoplado = False
-
-                self.violao.x = self.violao.x_inicial
-                self.violao.y = self.violao.y_inicial
+                self.violao.voltar_origem()
 
                 a.finalizou_soltar_violao = False
 
@@ -324,3 +335,22 @@ class Sapo:
             a.iniciou_andar_esquerda = False
 
         return events
+
+
+@dataclass
+class AreaAcoplamento:
+    x: float
+    y: float
+    raio: float
+
+    offset_x: float = 5
+    offset_y: float = 20
+
+    def contem(self, x, y):
+        return abs(x - self.x) < self.raio and abs(y - self.y) < self.raio
+
+    def posicao_violao(self):
+        return (
+            self.x + self.offset_x,
+            self.y + self.offset_y,
+        )

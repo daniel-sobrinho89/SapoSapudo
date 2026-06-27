@@ -113,7 +113,6 @@ class SpotifyManager:
         sucesso = False
         if self.spotify_token:
             sucesso = SpotifyApi.pause(self.spotify_token)
-            self.spotify_tocando_cache = False
             self.spotify_cache_timer = 240
         else:
             MediaSessionAndroid.pause()
@@ -353,7 +352,7 @@ class SpotifyManager:
                     self.spotify_pendente_timer = 0
                     self.spotify_tentativas = 0
                 else:
-                    self.spotify_pendente_timer = 5
+                    self.spotify_pendente_timer = 2
             else:
                 uri = SpotifyApi.buscar_faixa(self.spotify_token, self.spotify_pendente)
                 if uri:
@@ -376,12 +375,14 @@ class SpotifyManager:
             if resposta:
                 self.spotify_token = resposta["access_token"]
                 self.spotify_refresh_token = resposta["refresh_token"]
+
                 SpotifyTokenStorage.salvar(
                     self.spotify_token,
                     self.spotify_refresh_token,
                     self.spotify_code_verifier,
                 )
+                self.spotify_cache_timer = 0
+                self.spotify_tocando_anterior = False
                 if self.spotify_pendente:
-                    SpotifyAndroid.abrir_spotify()
-                    self.spotify_pendente_timer = 7
-                    self.spotify_tentativas = 5
+                    self.spotify_pendente_timer = 2
+                    self.spotify_tentativas = 10

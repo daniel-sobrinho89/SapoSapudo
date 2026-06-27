@@ -245,13 +245,8 @@ class GameWidget(Widget):
             self.particulas,
         )
 
-        if self.background_renderer.cenario_feira:
-            self.gerenciador_cenarios.carregar_cenario_feira()
-        else:
-            self.gerenciador_cenarios.carregar_cenario_principal()
-
     def _inicializar_interacao(self):
-        self.violao = Violao(self.gerenciador_cenarios)
+        self.violao = Violao()
         self.sapo = Sapo(
             centro_x,
             centro_y,
@@ -266,6 +261,11 @@ class GameWidget(Widget):
         )
         self.gerenciador_cenarios.sapo = self.sapo
         self.gerenciador_cenarios.violao = self.violao
+
+        if self.background_renderer.cenario_feira:
+            self.gerenciador_cenarios.carregar_cenario_feira()
+        else:
+            self.gerenciador_cenarios.carregar_cenario_principal()
 
         self.client = QwenLocalClient()
 

@@ -6,6 +6,7 @@ import math
 import random
 
 import kivy_adapter
+from core.event_bus import event_bus
 from core.system_utils import atualizar_sistemas_basicos
 from domains.duende.animacoes import AnimacoesDuende
 from domains.duende.arraste_duende import ArrasteDuende
@@ -55,6 +56,7 @@ class DuendeNeblina:
         self.cabeca_rect = kivy_adapter.Rect(0, 0, 0, 0)
 
         self.escolher_novo_destino()
+        event_bus.assinar("violao_solto", self.decidir_forma_resgatar_violao)
 
     @property
     def arrastando(self):
@@ -132,17 +134,53 @@ class DuendeNeblina:
     # =====================================
     # RESGATE (Delegação)
     # =====================================
+    def decidir_forma_resgatar_violao(self, evento):
+        if self.teleportando or self.resgatando_violao:
+            return
+
+        estado = evento.estado
+
+        if not self.pode_resgatar_violao():
+            return
+
+        distancia = abs(estado.x - self.x)
+
+        MIN_TELEPORT_DIST = 120
+
+        if (
+            not self.consegue_alcancar_antes_da_queda(estado)
+            and distancia > MIN_TELEPORT_DIST
+        ):
+            self.teleportar_para_violao(estado)
+            return
+
+        self.iniciar_resgate_violao(estado)
+
     def pode_resgatar_violao(self):
-        return self.resgate.pode_resgatar(self.animacoes, self.arrastando)
+        return (
+            self.resgate.pode_resgatar(
+                self.animacoes,
+                self.arrastando,
+            )
+            and not self.teleportando
+        )
 
-    def iniciar_resgate_violao(self, violao):
-        self.resgate.iniciar(violao)
+    def iniciar_resgate_violao(self, _estado_violao):
+        self.resgate.iniciar()
 
-    def consegue_alcancar_antes_da_queda(self, violao):
-        return self.resgate.consegue_alcancar(self.x, self.y, violao)
+    def consegue_alcancar_antes_da_queda(self, estado_violao):
+        return self.resgate.consegue_alcancar(
+            self.x,
+            self.y,
+            estado_violao,
+        )
 
-    def teleportar_para_violao(self, violao):
-        self.teleporte.iniciar(violao.x, violao.y, violao)
+    def teleportar_para_violao(self, estado_violao):
+        self.teleporte.iniciar(
+            estado_violao.x,
+            estado_violao.y,
+            self.resgate.violao_monitorado,
+        )
 
     # =====================================
     # MÉTODOS PRIVADOS DE ATUALIZAÇÃO

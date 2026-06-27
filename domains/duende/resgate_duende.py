@@ -13,8 +13,7 @@ class ResgateDuende:
     def __init__(self):
         self.ativo = False
         self.violao_em_maos = False
-        self.alvo_violao = None
-        self.velocidade = 350
+        self.velocidade = 450
         self.offset_x = 0
         self.offset_y = 15
 
@@ -30,10 +29,9 @@ class ResgateDuende:
             and not self.ativo
         )
 
-    def iniciar(self, violao):
+    def iniciar(self):
         self.ativo = True
         self.violao_em_maos = False
-        self.alvo_violao = violao
 
     def consegue_alcancar(self, duende_x, duende_y, violao):
         distancia = math.hypot(violao.x - duende_x, violao.y - duende_y)
@@ -58,18 +56,26 @@ class ResgateDuende:
         if not self.ativo:
             return False
 
-        violao = self.alvo_violao
+        violao = self.violao_monitorado
+
         if violao is None:
             return False
 
         if not self.violao_em_maos:
-            dx = violao.x - entity.x
-            dy = violao.y - entity.y
-            distancia = math.hypot(dx, dy)
+            alvo_x = violao.x
+            alvo_y = violao.y
 
-            if distancia < 80:
+            dx = alvo_x - entity.x
+            dy = alvo_y - entity.y
+            distancia = math.hypot(alvo_x - entity.x, alvo_y - entity.y)
+
+            DISTANCIA_PEGAR = 18
+            if distancia <= DISTANCIA_PEGAR:
                 self.violao_em_maos = True
                 violao.caindo = False
+                violao.x = entity.x + self.offset_x
+                violao.y = entity.y + self.offset_y
+
                 return True
 
             entity.x += (dx / max(1, distancia)) * self.velocidade * dt
@@ -90,7 +96,6 @@ class ResgateDuende:
             violao.voltar_origem()
             self.ativo = False
             self.violao_em_maos = False
-            self.alvo_violao = None
             return True
 
         entity.x += (dx / max(1, distancia)) * self.velocidade * dt
@@ -109,4 +114,4 @@ class ResgateDuende:
         )
 
         if fora_do_lugar:
-            self.iniciar(violao)
+            self.iniciar()

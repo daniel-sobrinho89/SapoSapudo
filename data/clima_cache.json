@@ -1,13 +1,13 @@
 {
     "cloudiness": 100,
-    "wind_speed": 9.0,
-    "wind_direction": 140,
-    "future_cloudiness_1h": 100,
-    "future_cloudiness_2h": 100,
-    "future_cloudiness_3h": 100,
-    "is_day": 0,
-    "condition_code": 1009,
-    "condition_text": "Overcast",
-    "temperature": 11.0,
+    "wind_speed": 5.0,
+    "wind_direction": 58,
+    "future_cloudiness_1h": 12,
+    "future_cloudiness_2h": 11,
+    "future_cloudiness_3h": 9,
+    "is_day": 1,
+    "condition_code": 1030,
+    "condition_text": "Mist",
+    "temperature": 16.3,
     "humidity": 100
 }

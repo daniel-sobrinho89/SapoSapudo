@@ -84,7 +84,7 @@ class ControladorVozMusical:
 
     def processar_toque_down_violao(self, pos_virtual, renderer_violao):
         if self.violao.acoplado and self.violao.tentar_desacoplar(
-            pos_virtual, self.sapo
+            pos_virtual, self.sapo.area_violao()
         ):
             return True
 
@@ -95,7 +95,7 @@ class ControladorVozMusical:
         return False
 
     def processar_toque_up_violao(self):
-        return self.violao.finalizar_interacao(self.sapo)
+        return self.violao.finalizar_interacao(self.sapo.area_violao())
 
     def atualizar(self, dt):
         if self.controle_renderer.microfone_ligado:

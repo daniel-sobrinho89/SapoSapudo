@@ -65,12 +65,13 @@ class EventBus:
             if handler in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(handler)
 
-    def publish(self, event: Any, **kwargs):
+    def publish(self, event: Any, *args, **kwargs):
         if isinstance(event, str):
             event_lower = event.lower()
             classe_evento = _MAPA_EVENTOS.get(event_lower)
+
             if classe_evento:
-                event_obj = classe_evento(**kwargs)
+                event_obj = classe_evento(*args, **kwargs)
             else:
                 event_obj = Event(**kwargs)
                 event_obj._event_name = event
@@ -116,9 +117,8 @@ class EventBus:
         """Alias em português para unsubscribe."""
         self.unsubscribe(tipo_evento, manipulador)
 
-    def publicar(self, evento: Any, **kwargs):
-        """Alias em português para publish."""
-        self.publish(evento, **kwargs)
+    def publicar(self, evento: Any, *args, **kwargs):
+        self.publish(evento, *args, **kwargs)
 
     def limpar(self):
         """Remove todas as inscrições do barramento (útil para resets e testes)."""
@@ -164,6 +164,11 @@ class ViolaoDesacopladoEvent(Event):
     pass
 
 
+class ViolaoSoltoEvent(Event):
+    def __init__(self, estado):
+        super().__init__(estado=estado)
+
+
 class SpotifyIniciadoEvent(Event):
     pass
 
@@ -185,6 +190,7 @@ _MAPA_EVENTOS = {
     "pensamento_sapo": PensamentoSapoEvent,
     "violao_acoplado": ViolaoAcopladoEvent,
     "violao_desacoplado": ViolaoDesacopladoEvent,
+    "violao_solto": ViolaoSoltoEvent,
     "spotify_iniciado": SpotifyIniciadoEvent,
     "spotify_pausado": SpotifyPausadoEvent,
 }

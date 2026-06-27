@@ -82,8 +82,7 @@ class GerenciadorCenarios:
     def carregar_cenario_principal(self):
         self.duende = DuendeNeblina()
         self.renderer_duende = DuendeRenderer(self.tela, asset_manager, self.transform)
-        self.duende.violao_monitorado = self.violao
-
+        self.duende.resgate.violao_monitorado = self.violao
         self.semente = Semente()
         self.renderer_semente = SementeRenderer(
             self.tela, asset_manager, self.transform

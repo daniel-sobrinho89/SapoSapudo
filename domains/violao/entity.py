@@ -1,9 +1,11 @@
+from dataclasses import dataclass
+
 from core.event_bus import event_bus
 from utils.drag import iniciar_drag, mover_com_offset
 
 
 class Violao:
-    def __init__(self, gerenciador_cenarios):
+    def __init__(self):
         self.x = 805
         self.y = 500
 
@@ -24,8 +26,6 @@ class Violao:
 
         self.no_chao = False
         self.acoplado = False
-
-        self.gerenciador_cenarios = gerenciador_cenarios
 
     def iniciar_arraste(self, mouse_x, mouse_y):
         self.arrastando = True
@@ -56,52 +56,55 @@ class Violao:
         self.y = self.y_inicial
 
         self.caindo = False
-
         self.no_chao = False
+
+        self.velocidade_queda = 0
+        self.vel_x = 0.0
+
+        self.arrastando = False
 
         self.acoplado = False
 
-    def tentar_desacoplar(self, mouse_pos, sapo):
-        distancia = ((mouse_pos[0] - sapo.x) ** 2 + (mouse_pos[1] - sapo.y) ** 2) ** 0.5
-
-        if distancia < 120:
+    def tentar_desacoplar(self, mouse_pos, area):
+        if area.contem(*mouse_pos):
             self.acoplado = False
             event_bus.publicar("violao_desacoplado")
             self.iniciar_arraste(*mouse_pos)
             return True
         return False
 
-    def finalizar_interacao(self, sapo):
-        """Finaliza o arraste e decide se acopla ao sapo ou cai."""
+    def finalizar_interacao(self, area):
         if not self.arrastando:
             return False
 
         self.finalizar_arraste()
 
-        dentro_area = abs(self.x - sapo.x) < 80 and abs(self.y - sapo.y) < 80
-
-        if dentro_area and sapo.pode_receber_violao():
+        if area.contem(self.x, self.y):
             self.acoplado = True
-            self.x = sapo.x + 5
-            self.y = sapo.y + 20
+
+            self.x, self.y = area.posicao_violao()
 
             event_bus.publicar("violao_acoplado")
             event_bus.publicar("spotify_iniciado")
         else:
             self.iniciar_queda()
-            if self.gerenciador_cenarios and self.gerenciador_cenarios.tem_duende:
-                duende = self.gerenciador_cenarios.duende
-                if duende.pode_resgatar_violao():
-                    distancia_violao = abs(self.x - duende.x)
-                    MIN_TELEPORT_DIST = 120
-                    if (
-                        not duende.consegue_alcancar_antes_da_queda(self)
-                        and distancia_violao > MIN_TELEPORT_DIST
-                    ):
-                        duende.teleportar_para_violao(self)
-                    duende.iniciar_resgate_violao(self)
+            event_bus.publicar("violao_solto", self.estado())
 
         return True
+
+    def estado(self):
+        return EstadoViolao(
+            x=self.x,
+            y=self.y,
+            x_inicial=self.x_inicial,
+            y_inicial=self.y_inicial,
+            caindo=self.caindo,
+            acoplado=self.acoplado,
+            chao_y=self.chao_y,
+            no_chao=self.no_chao,
+            velocidade_queda=self.velocidade_queda,
+            vel_x=self.vel_x,
+        )
 
     def atualizar(self, dt):
         if not self.caindo:
@@ -129,3 +132,18 @@ class Violao:
             self.vel_x *= 0.3
             if abs(self.vel_x) < 2:
                 self.vel_x = 0
+
+
+@dataclass
+@dataclass
+class EstadoViolao:
+    x: float
+    y: float
+    x_inicial: float
+    y_inicial: float
+    caindo: bool
+    acoplado: bool
+    no_chao: bool
+    chao_y: float
+    velocidade_queda: float
+    vel_x: float

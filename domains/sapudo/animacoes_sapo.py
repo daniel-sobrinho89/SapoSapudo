@@ -208,6 +208,7 @@ class AnimacoesSapo:
     def iniciar_violao(self):
         if self.maquina.em_estado(EstadoSapo.TOCANDO_VIOLAO, EstadoSapo.PEGANDO_VIOLAO):
             return
+
         self.maquina.trocar(EstadoSapo.PEGANDO_VIOLAO)
         self.pegar_violao.reset()
         self.violao_logic.resetar()

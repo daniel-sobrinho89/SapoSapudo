@@ -42,14 +42,19 @@ class TeleporteDuende:
             if progresso >= 1:
                 if self.violao_alvo and self.violao_alvo.caindo:
                     violao = self.violao_alvo
-                    queda_prevista = violao.velocidade_queda * self.duracao
-                    destino_y = min(violao.chao_y - 90, violao.y + queda_prevista + 70)
+
+                    deslocamento = (violao.velocidade_queda * self.duracao) + 90
+
                     entity.x = violao.x
-                    entity.y = destino_y
+                    entity.y = min(
+                        violao.chao_y - 35,
+                        violao.y + deslocamento,
+                    )
                 else:
                     entity.x = self.destino_x
                     entity.y = self.destino_y
 
+                entity.resgate.iniciar()
                 self.fase = "aparecendo"
                 self.tempo = 0
         else:
