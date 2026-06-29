@@ -67,51 +67,50 @@ class ResgateDuende:
 
             dx = alvo_x - entity.x
             dy = alvo_y - entity.y
-            distancia = math.hypot(alvo_x - entity.x, alvo_y - entity.y)
+            distancia = math.hypot(
+                alvo_x - entity.x,
+                alvo_y - entity.y,
+            )
 
             DISTANCIA_PEGAR = 18
+
             if distancia <= DISTANCIA_PEGAR:
                 self.violao_em_maos = True
+
                 violao.caindo = False
+
                 violao.x = entity.x + self.offset_x
                 violao.y = entity.y + self.offset_y
 
-                return True
+                return False
 
             entity.x += (dx / max(1, distancia)) * self.velocidade * dt
+
             entity.y += (dy / max(1, distancia)) * self.velocidade * dt
-            return True
+            entity.base_y = entity.y
+            return False
 
         # LEVANDO PARA CASA
         destino_x = violao.x_inicial
         destino_y = violao.y_inicial
+
         dx = destino_x - entity.x
         dy = destino_y - entity.y
         distancia = math.hypot(dx, dy)
 
+        if distancia < 15:
+            violao.x = destino_x
+            violao.y = destino_y
+            return True
+
+        velocidade = self.velocidade * dt
+
+        entity.x += (dx / distancia) * velocidade
+        entity.y += (dy / distancia) * velocidade
+        entity.base_y = entity.y
+
+        # mantém o violão preso ao duende APÓS mover o duende
         violao.x = entity.x + self.offset_x
         violao.y = entity.y + self.offset_y
 
-        if distancia < 15:
-            violao.voltar_origem()
-            self.ativo = False
-            self.violao_em_maos = False
-            return True
-
-        entity.x += (dx / max(1, distancia)) * self.velocidade * dt
-        entity.y += (dy / max(1, distancia)) * self.velocidade * dt
-        return True
-
-    def verificar_apos_acordar(self, sapo):
-        violao = self.violao_monitorado
-        if violao is None or sapo.esta_tocando_violao():
-            return
-
-        tolerancia = 10
-        fora_do_lugar = (
-            abs(violao.x - violao.x_inicial) > tolerancia
-            or abs(violao.y - violao.y_inicial) > tolerancia
-        )
-
-        if fora_do_lugar:
-            self.iniciar()
+        return False

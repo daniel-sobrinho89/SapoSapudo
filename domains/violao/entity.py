@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from core.event_bus import event_bus
 from utils.drag import iniciar_drag, mover_com_offset
 
 
@@ -45,9 +44,7 @@ class Violao:
 
     def iniciar_queda(self):
         self.caindo = True
-
         self.no_chao = False
-
         self.velocidade_queda = 0
         self.vel_x = 0.0
 
@@ -62,34 +59,13 @@ class Violao:
         self.vel_x = 0.0
 
         self.arrastando = False
-
         self.acoplado = False
-
-    def tentar_desacoplar(self, mouse_pos, area):
-        if area.contem(*mouse_pos):
-            self.acoplado = False
-            event_bus.publicar("violao_desacoplado")
-            self.iniciar_arraste(*mouse_pos)
-            return True
-        return False
 
     def finalizar_interacao(self, area):
         if not self.arrastando:
             return False
 
         self.finalizar_arraste()
-
-        if area.contem(self.x, self.y):
-            self.acoplado = True
-
-            self.x, self.y = area.posicao_violao()
-
-            event_bus.publicar("violao_acoplado")
-            event_bus.publicar("spotify_iniciado")
-        else:
-            self.iniciar_queda()
-            event_bus.publicar("violao_solto", self.estado())
-
         return True
 
     def estado(self):

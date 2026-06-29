@@ -2,7 +2,13 @@ import threading
 
 from kivy.clock import Clock
 
-from core.event_bus import event_bus
+from application.usecases import (
+    AcoplarViolaoUseCase,
+    AtualizarFluxoViolaoUseCase,
+    BuscarViolaoUseCase,
+    DesacoplarViolaoUseCase,
+    ResgatarViolaoUseCase,
+)
 from core.platform import IS_ANDROID
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
@@ -18,20 +24,26 @@ class ControladorVozMusical:
     def __init__(
         self,
         sapo,
+        duende,
         violao,
         spotify,
         audio,
         controle_renderer,
-        gerenciador_cenarios=None,
+        gerenciador_cenarios,
+        clima_service,
+        frasco_rect,
         conversa_sapudo=None,
         tts=None,
     ):
         self.sapo = sapo
+        self.duende = duende
         self.violao = violao
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
+        self.clima_service = clima_service
+        self.frasco_rect = frasco_rect
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
         self._pensamento_event = None
@@ -42,9 +54,26 @@ class ControladorVozMusical:
             "Organizando os girinos do pensamento...",
             "Procurando uma resposta no fundo da lagoa...",
         ]
-
+        self.spotify_tocando_anterior = False
+        self.spotify_abertura_anterior = False
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
+
+        self.acoplar_violao = AcoplarViolaoUseCase(
+            self.violao, self.sapo, self.duende, self.spotify
+        )
+        self.desacoplar_violao = DesacoplarViolaoUseCase(
+            self.violao,
+            self.sapo,
+            self.spotify,
+        )
+        self.buscar_violao = BuscarViolaoUseCase(self.violao, self.sapo)
+        self.atualizar_fluxo_violao = AtualizarFluxoViolaoUseCase(
+            self.sapo, self.violao, self.spotify
+        )
+        self.resgatar_violao = ResgatarViolaoUseCase(
+            self.sapo, self.duende, self.clima_service, self.frasco_rect
+        )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
 
@@ -83,8 +112,9 @@ class ControladorVozMusical:
         return False
 
     def processar_toque_down_violao(self, pos_virtual, renderer_violao):
-        if self.violao.acoplado and self.violao.tentar_desacoplar(
-            pos_virtual, self.sapo.area_violao()
+        if self.desacoplar_violao.executar(
+            mouse_pos=pos_virtual,
+            iniciar_arraste=True,
         ):
             return True
 
@@ -95,7 +125,10 @@ class ControladorVozMusical:
         return False
 
     def processar_toque_up_violao(self):
-        return self.violao.finalizar_interacao(self.sapo.area_violao())
+        violao_acoplado = self.acoplar_violao.executar(self.sapo.area_violao())
+        if violao_acoplado:
+            self.resgatar_violao.executar(self.violao.estado())
+        return violao_acoplado
 
     def atualizar(self, dt):
         if self.controle_renderer.microfone_ligado:
@@ -121,13 +154,37 @@ class ControladorVozMusical:
                 if self.tempo_sem_audio > 10:
                     self.desligar_microfone()
 
+        self.spotify.atualizar_estado_spotify(dt)
+        self.spotify_tocando = self.spotify.spotify_tocando_cache
+
+        if self.spotify_tocando != self.spotify_tocando_anterior:
+            self.spotify_tocando_anterior = self.spotify_tocando
+
+            if self.spotify_tocando:
+                self.buscar_violao.executar()
+
+        spotify_pronto = self.spotify.dispositivo_spotify_pronto
+
+        if spotify_pronto != self.spotify_abertura_anterior:
+            self.spotify_abertura_anterior = spotify_pronto
+
+            if (
+                spotify_pronto
+                and self.spotify.spotify_pendente
+                and not self.spotify.spotify_tocando_cache
+            ):
+                self.buscar_violao.executar()
+
+        self.buscar_violao.atualizar()
+        self.atualizar_fluxo_violao.executar(dt)
+        self.resgatar_violao.atualizar(dt)
+
     def _processar_comando_spotify(self, comando_spotify):
         acao = comando_spotify["acao"]
         sucesso = False
 
         if acao == "pause":
-            sucesso = True
-            event_bus.publicar("violao_desacoplado")
+            sucesso = self.desacoplar_violao.executar()
 
         elif acao == "play":
             sucesso = self.spotify.tocar()
@@ -148,9 +205,7 @@ class ControladorVozMusical:
 
         self.desligar_microfone()
 
-        if acao != "pause" and sucesso:
-            event_bus.publicar("spotify_iniciado")
-        elif not sucesso and acao != "buscar":
+        if not sucesso and acao != "buscar":
             self.mostrar_pensamento_spotify_erro()
 
     def _processar_comando_feira(self):

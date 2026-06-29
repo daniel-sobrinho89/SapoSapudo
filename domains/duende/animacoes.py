@@ -38,6 +38,7 @@ class AnimacoesDuende:
         self.ciclo_sono = CicloSono()
 
         self.estado = self.VOANDO
+        self.acabou_de_acordar = False
 
     # =====================================
     # ESTADO
@@ -71,6 +72,7 @@ class AnimacoesDuende:
         self.estado = self.DORMINDO
 
     def iniciar_acordar(self):
+        self.acabou_de_acordar = False
         self.estado = self.ACORDANDO
 
     def iniciar_descida(self):
@@ -124,30 +126,8 @@ class AnimacoesDuende:
 
     def cancelar_sono_programado(self):
         self.ciclo_sono.dormir_por_tempo = False
-
+        self.acabou_de_acordar = True
         self.ciclo_sono.resetar_tempos()
-
-    def atualizar_sono_programado(self, dt, duende, clima_disponivel, frasco_rect):
-        if self.ciclo_sono.dormir_por_tempo:
-            self.ciclo_sono.tempo_dormindo += dt
-
-            if self.ciclo_sono.tempo_dormindo >= self.ciclo_sono.tempo_maximo_dormindo:
-                self.ciclo_sono.tempo_dormindo = 0
-                self.ciclo_sono.dormir_por_tempo = False
-
-                if clima_disponivel:
-                    self.ciclo_sono.resetar_tempos()
-
-                    self.iniciar_acordar()
-
-                    duende.y = frasco_rect.top - 50
-
-                    duende.escolher_novo_destino()
-
-                else:
-                    self.ciclo_sono.tempo_dormindo = 0
-
-                    self.ciclo_sono.dormir_por_tempo = True
 
     # =====================================
     # UPDATE

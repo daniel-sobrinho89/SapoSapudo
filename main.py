@@ -177,7 +177,6 @@ class GameWidget(Widget):
         self._inicializar_controles()
         self._inicializar_sistemas_base()
         self._inicializar_clima_e_ambiente()
-        self._inicializar_cenario()
         self._inicializar_interacao()
         self._configurar_graficos()
 
@@ -230,21 +229,6 @@ class GameWidget(Widget):
         self.controle_renderer = ControleRenderer(tela, asset_manager, self.transform)
         self.sistema_nuvens = SistemaNuvens(self.transform)
 
-    def _inicializar_cenario(self):
-        self.gerenciador_cenarios = GerenciadorCenarios(
-            tela,
-            self.transform,
-            self.clima_service,
-            self.background_renderer,
-            self.sistema_nuvens,
-            None,  # sapo ainda não criado
-            None,  # violão ainda não criado
-            self.frasco_climatico,
-            self.ambiente,
-            self.evento_livro,
-            self.particulas,
-        )
-
     def _inicializar_interacao(self):
         self.violao = Violao()
         self.sapo = Sapo(
@@ -256,11 +240,20 @@ class GameWidget(Widget):
             self.clima_service,
         )
         self.sapo.background_renderer = self.background_renderer
-        self.sapo.animacoes.callback_verificar_spotify = (
-            self.spotify.spotify_esta_tocando
+
+        self.gerenciador_cenarios = GerenciadorCenarios(
+            tela,
+            self.transform,
+            self.clima_service,
+            self.background_renderer,
+            self.sistema_nuvens,
+            self.sapo,
+            self.violao,
+            self.frasco_climatico,
+            self.ambiente,
+            self.evento_livro,
+            self.particulas,
         )
-        self.gerenciador_cenarios.sapo = self.sapo
-        self.gerenciador_cenarios.violao = self.violao
 
         if self.background_renderer.cenario_feira:
             self.gerenciador_cenarios.carregar_cenario_feira()
@@ -268,16 +261,18 @@ class GameWidget(Widget):
             self.gerenciador_cenarios.carregar_cenario_principal()
 
         self.client = QwenLocalClient()
-
         self.conversa_sapudo = ConversaSapudo(self.client)
 
         self.controlador_voz_musical = ControladorVozMusical(
             self.sapo,
+            self.duende,
             self.violao,
             self.spotify,
             self.audio,
             self.controle_renderer,
             self.gerenciador_cenarios,
+            self.clima_service,
+            self.frasco_climatico.area_interna,
             self.conversa_sapudo,
             self.tts,
         )

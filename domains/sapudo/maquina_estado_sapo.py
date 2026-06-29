@@ -12,6 +12,7 @@ class EstadoSapo(Enum):
     TOCANDO_VIOLAO = "tocando_violao"
     LEVANTANDO_VIOLAO = "levantando_violao"
     GUARDANDO_VIOLAO = "guardando_violao"
+    CHEGOU_AO_VIOLAO = "chegou_ao_violao"
     SOLTANDO_VIOLAO = "soltando_violao"
 
     ANDANDO_ESQUERDA = "andando_esquerda"
@@ -34,6 +35,7 @@ class MaquinaEstadoSapo:
 
     def esta_com_violao(self):
         return self.em_estado(
+            EstadoSapo.CHEGOU_AO_VIOLAO,
             EstadoSapo.PEGANDO_VIOLAO,
             EstadoSapo.TOCANDO_VIOLAO,
             EstadoSapo.LEVANTANDO_VIOLAO,

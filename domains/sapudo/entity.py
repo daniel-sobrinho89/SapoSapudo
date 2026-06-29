@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from config import LARGURA
-from core.event_bus import event_bus
 from core.system_utils import atualizar_sistemas_basicos
 from domains.sapudo.animacoes_sapo import AnimacoesSapo
 from domains.sapudo.ia_sapo import IASapo
@@ -50,8 +49,6 @@ class Sapo:
         self.spotify = spotify
         self.distancia_violao = distancia_violao
         self.clima = clima_service
-        self.andando_para_violao = False
-        event_bus.assinar("spotify_iniciado", self.buscar_violao)
 
     def ir_para_feira(self):
         """Inicia o deslocamento para a feira."""
@@ -69,40 +66,7 @@ class Sapo:
             raio=80,
         )
 
-    def buscar_violao(self, _evento=None):
-        animacoes = self.animacoes
-
-        if self.andando_para_violao or animacoes.maquina.esta_com_violao():
-            return
-
-        if self.violao.acoplado and (
-            animacoes.maquina.esta_com_violao() or not self.pode_receber_violao()
-        ):
-            return
-
-        sapo_x = self.x
-        violao_x = self.violao.x
-
-        if self.andando_para_violao and not animacoes.maquina.em_estado(
-            EstadoSapo.ANDANDO_DIREITA,
-            EstadoSapo.ANDANDO_ESQUERDA,
-        ):
-            self.andando_para_violao = False
-
-        if not self.pode_caminhar() or self.andando_para_violao:
-            return
-
-        self.andando_para_violao = True
-
-        if sapo_x < violao_x:
-            self.animacoes.iniciar_andar_direita()
-        else:
-            self.animacoes.iniciar_andar_esquerda()
-
     # métodos de delegação / API pública
-    def iniciar_violao(self):
-        self.animacoes.iniciar_violao()
-
     def pode_receber_violao(self):
         return not self.animacoes.maquina.em_estado(
             EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO
@@ -268,47 +232,6 @@ class Sapo:
                 a._ultimo_frame_andar_direita = frame_atual
 
                 self.x += 4
-
-        if (
-            self.andando_para_violao
-            and self.violao is not None
-            and abs(self.x - self.violao.x) <= self.distancia_violao
-        ):
-            self.andando_para_violao = False
-
-            a.maquina.trocar(EstadoSapo.PARADO)
-
-            if self.spotify.spotify_tocando_cache:
-                self.violao.acoplado = True
-                self.iniciar_violao()
-            elif a.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
-                self.violao.acoplado = True
-                self.animacoes.iniciar_levantar_violao()
-
-            return events
-
-        if self.violao is not None:
-            if a.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
-                destino_x = getattr(self.violao, "x_inicial", None) - 65
-
-                frame_atual = a.guardar_violao.frame
-
-                if frame_atual != a.ultimo_frame_guardar:
-                    a.ultimo_frame_guardar = frame_atual
-
-                    if self.x < destino_x:
-                        self.x = min(destino_x, self.x + 3.5)
-
-                        self.violao.x = self.x + 5
-                        self.violao.y = self.y + 20
-
-                    else:
-                        a.maquina.trocar(EstadoSapo.SOLTANDO_VIOLAO)
-
-                        a.soltar_violao.reset()
-
-                        self.violao.x = self.violao.x_inicial
-                        self.violao.y = self.violao.y_inicial
 
             # eventos de áudio gerados pelos systems de animação
             if getattr(a, "iniciou_tocar_violao", False):

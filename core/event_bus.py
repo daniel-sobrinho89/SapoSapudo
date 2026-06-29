@@ -156,27 +156,6 @@ class PensamentoSapoEvent(Event):
         super().__init__(texto=texto, duracao=duracao)
 
 
-class ViolaoAcopladoEvent(Event):
-    pass
-
-
-class ViolaoDesacopladoEvent(Event):
-    pass
-
-
-class ViolaoSoltoEvent(Event):
-    def __init__(self, estado):
-        super().__init__(estado=estado)
-
-
-class SpotifyIniciadoEvent(Event):
-    pass
-
-
-class SpotifyPausadoEvent(Event):
-    pass
-
-
 # Aliases em português para as classes de eventos
 MusicaIniciadaEvento = MusicaIniciadaEvent
 ClimaAtualizadoEvento = ClimaAtualizadoEvent
@@ -188,11 +167,6 @@ _MAPA_EVENTOS = {
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
     "pensamento_sapo": PensamentoSapoEvent,
-    "violao_acoplado": ViolaoAcopladoEvent,
-    "violao_desacoplado": ViolaoDesacopladoEvent,
-    "violao_solto": ViolaoSoltoEvent,
-    "spotify_iniciado": SpotifyIniciadoEvent,
-    "spotify_pausado": SpotifyPausadoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

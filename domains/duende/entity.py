@@ -6,7 +6,6 @@ import math
 import random
 
 import kivy_adapter
-from core.event_bus import event_bus
 from core.system_utils import atualizar_sistemas_basicos
 from domains.duende.animacoes import AnimacoesDuende
 from domains.duende.arraste_duende import ArrasteDuende
@@ -56,7 +55,6 @@ class DuendeNeblina:
         self.cabeca_rect = kivy_adapter.Rect(0, 0, 0, 0)
 
         self.escolher_novo_destino()
-        event_bus.assinar("violao_solto", self.decidir_forma_resgatar_violao)
 
     @property
     def arrastando(self):
@@ -75,6 +73,9 @@ class DuendeNeblina:
         self.alvo_y = random.randint(120, 340)
 
     def atualizar_movimento(self, dt):
+        if self.resgate.ativo or self.teleporte.ativo or self.arraste.ativo:
+            return
+
         dx = self.alvo_x - self.x
         dy = self.alvo_y - self.y
         distancia = math.hypot(dx, dy)
@@ -82,10 +83,13 @@ class DuendeNeblina:
         if distancia > 1:
             dir_x = dx / distancia
             dir_y = dy / distancia
+
             aceleracao = 2.2
+
             self.velocidade_x += (
                 ((dir_x * self.velocidade) - self.velocidade_x) * aceleracao * dt
             )
+
             self.velocidade_y += (
                 ((dir_y * self.velocidade) - self.velocidade_y) * aceleracao * dt
             )
@@ -130,31 +134,6 @@ class DuendeNeblina:
         self.corpo_rect.update(
             body_x - body_width // 2, body_y - body_height // 2, body_width, body_height
         )
-
-    # =====================================
-    # RESGATE (Delegação)
-    # =====================================
-    def decidir_forma_resgatar_violao(self, evento):
-        if self.teleportando or self.resgatando_violao:
-            return
-
-        estado = evento.estado
-
-        if not self.pode_resgatar_violao():
-            return
-
-        distancia = abs(estado.x - self.x)
-
-        MIN_TELEPORT_DIST = 120
-
-        if (
-            not self.consegue_alcancar_antes_da_queda(estado)
-            and distancia > MIN_TELEPORT_DIST
-        ):
-            self.teleportar_para_violao(estado)
-            return
-
-        self.iniciar_resgate_violao(estado)
 
     def pode_resgatar_violao(self):
         return (
@@ -231,16 +210,6 @@ class DuendeNeblina:
     def atualizar(self, dt, sapo, pote_x, pote_y, clima_service, frasco_rect, ambiente):
         self.tempo += dt
 
-        # 1. Teleporte (bloqueia o resto)
-        if self.teleporte.atualizar(dt, self):
-            self.alpha_visual = self.teleporte.alpha_visual
-            self.escala_visual = self.teleporte.escala_visual
-            return
-
-        # 2. Resgate (bloqueia o resto)
-        if self.resgate.atualizar(dt, self):
-            return
-
         # 3. Arraste (bloqueia movimento livre)
         if self.arrastando:
             self.velocidade_x = 0
@@ -271,37 +240,31 @@ class DuendeNeblina:
             self.y = self.sono.y_sono
             self.velocidade_x = 0
             self.velocidade_y = 0
-            self.animacoes.atualizar_sono_programado(
-                dt, self, clima_service.clima_disponivel, frasco_rect
-            )
-            self.resgate.verificado_apos_acordar = False
             return
+
+        # Durante teleporte/resgate o GestorSono não controla mais a posição
+        if not self.teleporte.ativo and not self.resgate.ativo:
+            self.sono.x_entrada_frasco = frasco_rect.centerx
+            self.sono.y_entrada_frasco = frasco_rect.top - 30
+
+            if self.sono.atualizar_entrada_frasco(dt, self, self.animacoes):
+                return
+
+            if self.sono.atualizar_descida_sono(
+                dt,
+                self,
+                self.animacoes,
+                self.tempo,
+            ):
+                return
 
         # 5. IA e Movimento Livre
-        self._atualizar_ia(dt, sapo.x, sapo.y, pote_x, pote_y)
+        if not self.resgate.ativo and not self.teleporte.ativo:
+            self._atualizar_ia(dt, sapo.x, sapo.y, pote_x, pote_y)
 
-        # Transições de sono
-        self.sono.x_entrada_frasco = frasco_rect.centerx
-        self.sono.y_entrada_frasco = frasco_rect.top - 30
-
-        if self.sono.atualizar_entrada_frasco(dt, self, self.animacoes):
-            return
-
-        if self.sono.atualizar_descida_sono(dt, self, self.animacoes, self.tempo):
-            return
-
-        self._atualizar_destino_livre(dt)
-        self.atualizar_movimento(dt)
-        self._atualizar_flutuacao(dt)
-
-        # Verificação pós-sono
-        if (
-            not self.resgate.verificado_apos_acordar
-            and not self.animacoes.dormindo
-            and self.animacoes.fator_sono_visual <= 0.05
-        ):
-            self.resgate.verificado_apos_acordar = True
-            self.resgate.verificar_apos_acordar(sapo)
+            self._atualizar_destino_livre(dt)
+            self.atualizar_movimento(dt)
+            self._atualizar_flutuacao(dt)
 
         # Escala visual final perto do frasco
         if self.esta_dentro_do_frasco(frasco_rect) and (

@@ -5,11 +5,6 @@ from domains.violao.logic import LogicaViolaoSapo
 
 
 class AnimacoesSapo:
-    """
-    Motor técnico de animação e orquestrador de estados do Sapo.
-    Delega regras de comportamento para AgendaSapo e LogicaViolaoSapo.
-    """
-
     def __init__(self):
         # ====================================
         # COMPONENTES DE COMPORTAMENTO
@@ -35,12 +30,10 @@ class AnimacoesSapo:
 
         self.ultimo_frame_guardar = -1
         self.parar_audio_violao = False
-        self.callback_verificar_spotify = None
+        self.finalizou_soltar_violao = False
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
-        event_bus.assinar("violao_desacoplado", self.parar_violao)
-        event_bus.assinar("spotify_pausado", self.iniciar_levantar_violao)
 
     # ====================================
     # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)
@@ -160,43 +153,6 @@ class AnimacoesSapo:
             self.iniciar_dormir()
             return
 
-        # VIOLÃO (Delegado)
-        if m.eh(EstadoSapo.PEGANDO_VIOLAO) and (
-            self.pegar_violao.frame >= self.pegar_violao.total_frames - 1
-        ):  # Checa se acabou
-            m.trocar(EstadoSapo.TOCANDO_VIOLAO)
-            self.violao_logic.resetar()
-
-        if (
-            m.eh(EstadoSapo.TOCANDO_VIOLAO)
-            and self.violao_logic.atualizar_frames(dt) == "levantar"
-        ):
-            self.iniciar_levantar_violao()
-
-        if (
-            m.eh(EstadoSapo.LEVANTANDO_VIOLAO)
-            and self.levantar_violao.frame >= self.levantar_violao.total_frames - 1
-        ):
-            spotify_tocando = (
-                self.callback_verificar_spotify()
-                if self.callback_verificar_spotify
-                else False
-            )
-            if spotify_tocando:
-                m.trocar(EstadoSapo.TOCANDO_VIOLAO)
-                self.violao_logic.resetar()
-            else:
-                m.trocar(EstadoSapo.GUARDANDO_VIOLAO)
-                self.guardar_violao.reset()
-                self.ultimo_frame_guardar = -1
-
-        if (
-            m.eh(EstadoSapo.SOLTANDO_VIOLAO)
-            and self.soltar_violao.frame >= self.soltar_violao.total_frames - 1
-        ):
-            m.trocar(EstadoSapo.PARADO)
-            self.violao_logic.tempo_tocando = 0
-
     def iniciar_dormir(self):
         self.dormir.reset()
         self.maquina.trocar(EstadoSapo.ADORMECENDO)
@@ -205,26 +161,9 @@ class AnimacoesSapo:
         self.acordar.reset()
         self.maquina.trocar(EstadoSapo.ACORDANDO)
 
-    def iniciar_violao(self):
-        if self.maquina.em_estado(EstadoSapo.TOCANDO_VIOLAO, EstadoSapo.PEGANDO_VIOLAO):
-            return
-
-        self.maquina.trocar(EstadoSapo.PEGANDO_VIOLAO)
-        self.pegar_violao.reset()
-        self.violao_logic.resetar()
-
     def parar_violao(self, _evento=None):
         self.maquina.trocar(EstadoSapo.PARADO)
         self.violao_logic.resetar()
-
-    def iniciar_levantar_violao(self, _evento=None):
-        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO) or not self.maquina.eh(
-            EstadoSapo.TOCANDO_VIOLAO
-        ):
-            return
-
-        self.maquina.trocar(EstadoSapo.LEVANTANDO_VIOLAO)
-        self.levantar_violao.reset()
 
     def iniciar_andar_esquerda(self):
         if self.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
