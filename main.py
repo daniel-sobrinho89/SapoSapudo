@@ -374,9 +374,7 @@ class GameWidget(Widget):
             return True
 
         # Finalizar Arraste Duende
-        if self.tem_duende and self.duende.processar_toque_up(
-            self.frasco_climatico.area_interna
-        ):
+        if self.tem_duende and self.controlador_voz_musical.processar_toque_up_duende():
             return True
 
     def on_key_down(self, window, key, scancode, codepoint, modifiers):
@@ -430,7 +428,7 @@ class GameWidget(Widget):
 
         self._atualizar_clima(dt)
 
-        events = self.sapo.atualizar(dt, self.ambiente, self.animacoes_folha)
+        events = self.sapo.atualizar(dt)
         if events.get("start_audio_passeio"):
             self.audio.tocar_passeio_sapudo()
             event_bus.publicar("musica_iniciada", musica_info="O Passeio do Sapudo")

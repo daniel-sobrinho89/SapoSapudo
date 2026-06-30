@@ -18,15 +18,10 @@ class IADuende:
 
     def __init__(self):
         self.estado = self.EXPLORANDO
-
         self.tempo_estado = 0.0
-
         self.tempo_decisao = 0.0
-
         self.proxima_decisao = random.uniform(4.0, 8.0)
-
         self.orbita_angulo = 0.0
-
         self.orbita_raio = 80
 
     # =====================================
@@ -35,7 +30,6 @@ class IADuende:
 
     def obter_acao(self, dt):
         self.tempo_estado += dt
-
         self.tempo_decisao += dt
 
         # =============================

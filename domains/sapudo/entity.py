@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from config import LARGURA
-from core.system_utils import atualizar_sistemas_basicos
 from domains.sapudo.animacoes_sapo import AnimacoesSapo
 from domains.sapudo.ia_sapo import IASapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
@@ -113,15 +112,8 @@ class Sapo:
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)
 
     # ponto central de atualização — coordena os systems relacionados ao sapo
-    def atualizar(self, dt, ambiente, animacao_folha=None):
-        atualizar_sistemas_basicos(
-            self.animacoes,
-            self.respiracao,
-            dt,
-            ambiente,
-            animacao_folha,
-            entity=self,
-        )
+    def atualizar(self, dt):
+        self.animacoes.atualizar(dt)
 
         events = {}
         a = self.animacoes

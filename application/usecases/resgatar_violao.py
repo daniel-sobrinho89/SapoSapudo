@@ -1,60 +1,85 @@
+import math
+
+
 class ResgatarViolaoUseCase:
     MIN_TELEPORT_DIST = 120
+    VELOCIDADE = 450
+    OFFSET_X = 0
+    OFFSET_Y = 15
 
-    def __init__(self, sapo, duende, clima_service, frasco_rect):
-        self.sapo = sapo
+    def __init__(self, duende, violao):
         self.duende = duende
-        self.clima_service = clima_service
-        self.frasco_rect = frasco_rect
+        self.violao = violao
+        self.ativo = False
+        self.violao_em_maos = False
 
     def executar(self, estado_violao):
         if (
             self.duende.teleportando
-            or self.duende.resgatando_violao
+            or self.ativo
             or estado_violao.acoplado
-            or not self.duende.pode_resgatar_violao()
+            or not self._pode_resgatar_violao()
+            or self.duende.animacoes.ciclo_sono.dormir_por_tempo
         ):
             return
 
+        self.ativo = True
+        self.violao_em_maos = False
         distancia = abs(estado_violao.x - self.duende.x)
+        self.duende.movimento_bloqueado = True
 
         if (
-            not self.duende.consegue_alcancar_antes_da_queda(estado_violao)
+            not self._consegue_alcancar_antes_da_queda(estado_violao)
             and distancia > self.MIN_TELEPORT_DIST
         ):
-            self.duende.teleportar_para_violao(estado_violao)
+            self._teleportar_para_violao(estado_violao)
             return
 
-        self.duende.iniciar_resgate_violao(estado_violao)
+    def _consegue_alcancar_antes_da_queda(self, estado_violao):
+        return self._consegue_alcancar(
+            self.duende.x,
+            self.duende.y,
+            estado_violao,
+        )
+
+    def _teleportar_para_violao(self, estado_violao):
+        self.duende.teleporte.iniciar(
+            estado_violao.x,
+            estado_violao.y,
+            self.violao,
+        )
+
+    def _iniciar_resgate_monitorado(self):
+        if self.violao is not None:
+            estado = self.violao.estado()
+
+            self.ativo = True
+            self.violao_em_maos = False
+
+            self.duende.alvo_x = estado.x
+            self.duende.alvo_y = estado.y
+
+    def _pode_resgatar_violao(self):
+        return (
+            not self.duende.animacoes.dormindo
+            and not self.duende.animacoes.descendo_para_dormir
+            and not self.duende.arrastando
+            and not self.ativo
+            and not self.duende.teleportando
+        )
 
     def atualizar(self, dt):
-        self._atualizar_sono_programado(dt)
-
-        if self.duende.animacoes.acabou_de_acordar:
-            self.duende.animacoes.acabou_de_acordar = False
-            self._verificar_apos_acordar()
+        if self.duende.iniciar_resgate_monitorado:
+            self.duende.iniciar_resgate_monitorado = False
+            self._iniciar_resgate_monitorado()
 
         if self.duende.teleportando:
             self._atualizar_teleporte(dt)
             return
 
-        if self.duende.resgatando_violao:
+        if self.ativo:
             self._atualizar_resgate(dt)
             return
-
-    def _verificar_apos_acordar(self):
-        if not self._precisa_resgatar_apos_acordar():
-            return
-
-        self._iniciar_resgate()
-
-    def _iniciar_resgate(self):
-        violao = self.duende.resgate.violao_monitorado
-
-        if violao is None:
-            return
-
-        self.duende.iniciar_resgate_violao(violao.estado())
 
     def _atualizar_teleporte(self, dt):
         teleporte_concluido = self.duende.teleporte.atualizar(dt, self.duende)
@@ -64,60 +89,108 @@ class ResgatarViolaoUseCase:
         self.duende.escala_visual = self.duende.teleporte.escala_visual
 
         if teleporte_concluido:
-            self._iniciar_resgate()
+            self._iniciar_resgate_monitorado()
 
     def _atualizar_resgate(self, dt):
-        resgate_concluido = self.duende.resgate.atualizar(dt, self.duende)
+        resgate_concluido = self._atualizar_resgates(dt)
 
         if resgate_concluido:
+            self._devolver_violao()
             self._finalizar_resgate()
 
-    def _atualizar_sono_programado(self, dt):
-        if not self.duende.animacoes.ciclo_sono.dormir_por_tempo:
-            return
-
-        self.duende.animacoes.ciclo_sono.tempo_dormindo += dt
-
-        if (
-            self.duende.animacoes.ciclo_sono.tempo_dormindo
-            < self.duende.animacoes.ciclo_sono.tempo_maximo_dormindo
-        ):
-            return
-
-        self.duende.animacoes.ciclo_sono.tempo_dormindo = 0
-        self.duende.animacoes.ciclo_sono.dormir_por_tempo = False
-
-        if not self.clima_service.clima_disponivel:
-            self.duende.animacoes.ciclo_sono.dormir_por_tempo = True
-            return
-
-        self.duende.animacoes.ciclo_sono.resetar_tempos()
-
-        self.duende.iniciar_acordar()
-        self.duende.y = self.frasco_rect.top - 50
-        self.duende.escolher_novo_destino()
-
-    def _precisa_resgatar_apos_acordar(self):
-        violao = self.duende.resgate.violao_monitorado
-
-        if violao is None or violao.acoplado or self.sapo.esta_tocando_violao():
+    def _atualizar_resgates(self, dt):
+        if not self.ativo:
             return False
 
-        tolerancia = 10
+        if self.violao is None:
+            return False
 
-        return (
-            abs(violao.x - violao.x_inicial) > tolerancia
-            or abs(violao.y - violao.y_inicial) > tolerancia
-        )
+        if not self.violao_em_maos:
+            alvo_x = self.violao.x
+            alvo_y = self.violao.y
+
+            dx = alvo_x - self.duende.x
+            dy = alvo_y - self.duende.y
+            distancia = math.hypot(
+                alvo_x - self.duende.x,
+                alvo_y - self.duende.y,
+            )
+
+            DISTANCIA_PEGAR = 18
+
+            if distancia <= DISTANCIA_PEGAR:
+                self.violao_em_maos = True
+
+                self.violao.caindo = False
+
+                self.violao.x = self.duende.x + self.OFFSET_X
+                self.violao.y = self.duende.y + self.OFFSET_Y
+
+                return False
+
+            self._mover_duende(dx, dy, distancia, dt)
+            return False
+
+        # LEVANDO PARA CASA
+        destino_x = self.violao.x_inicial
+        destino_y = self.violao.y_inicial
+
+        dx = destino_x - self.duende.x
+        dy = destino_y - self.duende.y
+        distancia = math.hypot(dx, dy)
+
+        if distancia < 15:
+            self.violao.x = destino_x
+            self.violao.y = destino_y
+            return True
+
+        velocidade = self.VELOCIDADE * dt
+
+        self.duende.x += (dx / distancia) * velocidade
+        self.duende.y += (dy / distancia) * velocidade
+        self.duende.base_y = self.duende.y
+
+        # mantém o violão preso ao duende APÓS mover o duende
+        self.violao.x = self.duende.x + self.OFFSET_X
+        self.violao.y = self.duende.y + self.OFFSET_Y
+
+        return False
+
+    def _mover_duende(self, dx, dy, distancia, dt):
+        velocidade = self.VELOCIDADE * dt
+
+        self.duende.x += (dx / max(1, distancia)) * velocidade
+        self.duende.y += (dy / max(1, distancia)) * velocidade
+        self.duende.base_y = self.duende.y
+
+    def _consegue_alcancar(self, duende_x, duende_y, violao):
+        distancia = math.hypot(violao.x - duende_x, violao.y - duende_y)
+        tempo_voo = distancia / self.VELOCIDADE
+
+        gravidade = 900
+        altura_restante = max(1, violao.chao_y - violao.y)
+        velocidade_queda = max(0, violao.velocidade_queda)
+
+        if velocidade_queda > 0:
+            tempo_queda = altura_restante / velocidade_queda
+        else:
+            tempo_queda = math.sqrt((2 * altura_restante) / gravidade)
+
+        tempo_queda *= 0.75
+        if velocidade_queda > 250:
+            tempo_queda *= 0.6
+
+        return tempo_voo < tempo_queda
+
+    def _devolver_violao(self):
+        if self.violao is not None:
+            self.violao.voltar_origem()
 
     def _finalizar_resgate(self):
-        violao = self.duende.resgate.violao_monitorado
-
-        if violao is not None:
-            violao.voltar_origem()
-
-        self.duende.resgate.ativo = False
-        self.duende.resgate.violao_em_maos = False
+        self.ativo = False
+        self.violao_em_maos = False
+        self.duende.movimento_bloqueado = False
+        self.duende.iniciar_resgate_monitorado = False
 
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0

@@ -4,8 +4,10 @@ from kivy.clock import Clock
 
 from application.usecases import (
     AcoplarViolaoUseCase,
+    AtualizarFluxoSpotifyUseCase,
     AtualizarFluxoViolaoUseCase,
     BuscarViolaoUseCase,
+    ControlarSonoDuendeUseCase,
     DesacoplarViolaoUseCase,
     ResgatarViolaoUseCase,
 )
@@ -71,8 +73,12 @@ class ControladorVozMusical:
         self.atualizar_fluxo_violao = AtualizarFluxoViolaoUseCase(
             self.sapo, self.violao, self.spotify
         )
-        self.resgatar_violao = ResgatarViolaoUseCase(
-            self.sapo, self.duende, self.clima_service, self.frasco_rect
+        self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
+        self.controlar_sono_duende = ControlarSonoDuendeUseCase(
+            self.sapo, self.duende, self.violao, self.clima_service, self.frasco_rect
+        )
+        self.atualizar_fluxo_spotify = AtualizarFluxoSpotifyUseCase(
+            self.sapo, self.violao, self.spotify
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
@@ -130,6 +136,15 @@ class ControladorVozMusical:
             self.resgatar_violao.executar(self.violao.estado())
         return violao_acoplado
 
+    def processar_toque_up_duende(self):
+        duende_sendo_arrastado = self.duende.arraste.ativo
+        if duende_sendo_arrastado:
+            self.controlar_sono_duende.processar_soltou_duende(
+                self.duende.arraste,
+            )
+
+        return duende_sendo_arrastado
+
     def atualizar(self, dt):
         if self.controle_renderer.microfone_ligado:
             texto = self.reconhecedor_voz.obter_texto()
@@ -154,7 +169,7 @@ class ControladorVozMusical:
                 if self.tempo_sem_audio > 10:
                     self.desligar_microfone()
 
-        self.spotify.atualizar_estado_spotify(dt)
+        self.atualizar_fluxo_spotify.executar(dt)
         self.spotify_tocando = self.spotify.spotify_tocando_cache
 
         if self.spotify_tocando != self.spotify_tocando_anterior:
@@ -177,6 +192,7 @@ class ControladorVozMusical:
 
         self.buscar_violao.atualizar()
         self.atualizar_fluxo_violao.executar(dt)
+        self.controlar_sono_duende.executar(dt)
         self.resgatar_violao.atualizar(dt)
 
     def _processar_comando_spotify(self, comando_spotify):

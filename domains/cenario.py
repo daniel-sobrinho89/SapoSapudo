@@ -82,7 +82,6 @@ class GerenciadorCenarios:
     def carregar_cenario_principal(self):
         self.duende = DuendeNeblina()
         self.renderer_duende = DuendeRenderer(self.tela, asset_manager, self.transform)
-        self.duende.resgate.violao_monitorado = self.violao
         self.semente = Semente()
         self.renderer_semente = SementeRenderer(
             self.tela, asset_manager, self.transform
@@ -122,7 +121,6 @@ class GerenciadorCenarios:
                     pote_y,
                     self.clima_service,
                     self.frasco_climatico.area_interna,
-                    self.ambiente,
                 )
                 sistema_fisica.aplicar_forca_vento(
                     self.duende, self.clima_service, dt, sensibilidade=0.5

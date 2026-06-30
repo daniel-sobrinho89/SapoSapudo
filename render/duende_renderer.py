@@ -80,7 +80,6 @@ class DuendeRenderer:
         # =================================
 
         body_x = duende.x
-
         body_y = duende.y
 
         imagem_corpo = self.nuvem1
@@ -108,7 +107,7 @@ class DuendeRenderer:
         # BRILHO MÁGICO
         # =================================
 
-        transicao_luz = (math.sin(duende.respiracao.tempo * 1.9) + 1) / 2
+        transicao_luz = (math.sin(1 * 1.9) + 1) / 2
 
         transicao_luz = transicao_luz**2
 
@@ -130,5 +129,4 @@ class DuendeRenderer:
             and duende.escala_visual >= 0.98
         ):
             self.draw(self.olho_esquerdo, olho_esq_x, olho_esq_y, eye_scale)
-
             self.draw(self.olho_direito, olho_dir_x, olho_dir_y, eye_scale)

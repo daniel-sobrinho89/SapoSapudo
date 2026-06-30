@@ -17,28 +17,17 @@ class AnimacoesDuende:
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
 
     def __init__(self):
-        # ==========================
-        # OLHOS
-        # ==========================
-
         self.piscando = False
-
         self.tempo_piscada = 0.0
-
         self.tempo_espera = 0.0
-
         self.intervalo = random.uniform(2.0, 5.0)
 
         # ==========================
         # SONO
         # ==========================
-
         self.fator_sono_visual = 0.0
-
         self.ciclo_sono = CicloSono()
-
         self.estado = self.VOANDO
-        self.acabou_de_acordar = False
 
     # =====================================
     # ESTADO
@@ -72,7 +61,6 @@ class AnimacoesDuende:
         self.estado = self.DORMINDO
 
     def iniciar_acordar(self):
-        self.acabou_de_acordar = False
         self.estado = self.ACORDANDO
 
     def iniciar_descida(self):
@@ -83,51 +71,6 @@ class AnimacoesDuende:
 
     def iniciar_voo(self):
         self.estado = self.VOANDO
-
-    def atualizar_transicoes(self, dt, duende, clima_disponivel, frasco_rect):
-        if self.acordando:
-            self.ciclo_sono.tempo_acordando += dt
-
-            if self.ciclo_sono.tempo_acordando >= self.ciclo_sono.tempo_maximo_acordado:
-                self.iniciar_voo()
-                self.ciclo_sono.tempo_acordando = 0
-
-                if not clima_disponivel:
-                    duende.x_entrada_frasco = frasco_rect.centerx
-
-                    duende.y_entrada_frasco = frasco_rect.top - 30
-
-                    self.iniciar_entrada_frasco()
-
-        if (
-            not clima_disponivel
-            and not self.dormindo
-            and not self.descendo_para_dormir
-            and not self.indo_para_frasco
-            and not self.acordando
-        ):
-            duende.x_entrada_frasco = frasco_rect.centerx
-
-            duende.y_entrada_frasco = frasco_rect.top - 30
-
-            self.iniciar_entrada_frasco()
-
-        if (
-            clima_disponivel
-            and not self.ciclo_sono.dormir_por_tempo
-            and not self.dormindo
-        ):
-            self.iniciar_voo()
-
-    def iniciar_sono_programado(self):
-        self.ciclo_sono.dormir_por_tempo = True
-
-        self.ciclo_sono.resetar_tempos()
-
-    def cancelar_sono_programado(self):
-        self.ciclo_sono.dormir_por_tempo = False
-        self.acabou_de_acordar = True
-        self.ciclo_sono.resetar_tempos()
 
     # =====================================
     # UPDATE
@@ -177,13 +120,9 @@ class AnimacoesDuende:
 class CicloSono:
     def __init__(self):
         self.tempo_dormindo = 0.0
-
         self.tempo_acordando = 0.0
-
         self.dormir_por_tempo = False
-
         self.tempo_maximo_dormindo = 420  # 7 minutos
-
         self.tempo_maximo_acordado = 180  # 3 minutos
 
     def resetar_tempos(self):
