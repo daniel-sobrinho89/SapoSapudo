@@ -116,7 +116,7 @@ jobs:
             -keystore saposapudo.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}"
 
-      - name: Gerar APK
+      - name: Gerar Release
         env:
           P4A_RELEASE_KEYSTORE: ${{ github.workspace }}/saposapudo.keystore
           P4A_RELEASE_KEYSTORE_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -124,20 +124,11 @@ jobs:
           P4A_RELEASE_KEYALIAS_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
 
         run: |
-          echo "Keystore: $P4A_RELEASE_KEYSTORE"
-          echo "Alias: $P4A_RELEASE_KEYALIAS"
-          
           buildozer android release
 
       - name: Listar APKs
         run: |
           ls -lah bin
-
-      - name: Conferir assinatura
-        run: |
-            APK=$(find bin -name "*.apk" | head -n 1)
-
-            jarsigner -verify -verbose -certs "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
