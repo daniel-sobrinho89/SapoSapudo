@@ -3,6 +3,7 @@ name: Build APK
 on:
   workflow_dispatch:
 
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -82,21 +83,51 @@ jobs:
 
           find domains/conversas/libs -name "*.so"
 
-      - name: Atualizar versionCode Android
+      - name: Atualizar versão Android
         run: |
+
+          VERSION="1.0.$GITHUB_RUN_NUMBER"
+
           sed -i \
             "s/^android.numeric_version *= *.*/android.numeric_version = $GITHUB_RUN_NUMBER/" \
             buildozer.spec
 
-          echo "VersionCode configurado:"
+          sed -i \
+            "s/^version *= *.*/version = $VERSION/" \
+            buildozer.spec
+
+          echo "Version:"
+          grep "^version" buildozer.spec
+
+          echo "VersionCode:"
           grep "^android.numeric_version" buildozer.spec
 
-      - name: Gerar APK
+      - name: Reconstruir Keystore
         run: |
-          buildozer android debug
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/saposapudo.keystore
+
+      - name: Gerar APK
+        env:
+          P4A_RELEASE_KEYSTORE: $RUNNER_TEMP/saposapudo.keystore
+          P4A_RELEASE_KEYSTORE_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
+          P4A_RELEASE_KEYALIAS: saposapudo
+          P4A_RELEASE_KEYALIAS_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
+
+        run: |
+            buildozer android release
+
+      - name: Listar APKs
+        run: |
+          ls -lah bin
+
+      - name: Conferir assinatura
+        run: |
+            APK=$(find bin -name "*.apk" | head -n 1)
+
+            jarsigner -verify -verbose -certs "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk
+          name: SapoSapudo-${{ github.run_number }}
           path: bin/*.apk
