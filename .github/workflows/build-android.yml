@@ -114,7 +114,7 @@ jobs:
             -list \
             -v \
             -keystore saposapudo.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASSWORD }}
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}"
 
       - name: Gerar APK
         env:
