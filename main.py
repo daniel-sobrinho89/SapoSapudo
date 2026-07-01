@@ -280,28 +280,14 @@ class GameWidget(Widget):
     def _configurar_graficos(self):
         with self.canvas:
             self.texture = Texture.create(size=(LARGURA, ALTURA), colorfmt="rgba")
-
             self.texture.flip_vertical()
-
             self.rect = Rectangle(texture=self.texture, pos=(0, 0), size=Window.size)
-
-    def desligar_microfone(self):
-        self.controlador_voz_musical.desligar_microfone()
-
-    def mostrar_pensamento_spotify_erro(self):
-        self.controlador_voz_musical.mostrar_pensamento_spotify_erro()
 
     def carregar_cenario_feira(self):
         self.gerenciador_cenarios.carregar_cenario_feira()
 
-    def descarregar_cenario_feira(self):
-        self.gerenciador_cenarios.descarregar_cenario_feira()
-
     def carregar_cenario_principal(self):
         self.gerenciador_cenarios.carregar_cenario_principal()
-
-    def descarregar_cenario_principal(self):
-        self.gerenciador_cenarios.descarregar_cenario_principal()
 
     def on_size(self, *args):
         self.rect.size = (self.width, self.height)

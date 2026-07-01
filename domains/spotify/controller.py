@@ -9,6 +9,7 @@ from application.usecases import (
     BuscarViolaoUseCase,
     ControlarSonoDuendeUseCase,
     DesacoplarViolaoUseCase,
+    ProcessarComandoSpotifyUseCase,
     ResgatarViolaoUseCase,
 )
 from core.platform import IS_ANDROID
@@ -56,8 +57,6 @@ class ControladorVozMusical:
             "Organizando os girinos do pensamento...",
             "Procurando uma resposta no fundo da lagoa...",
         ]
-        self.spotify_tocando_anterior = False
-        self.spotify_abertura_anterior = False
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
 
@@ -78,7 +77,10 @@ class ControladorVozMusical:
             self.sapo, self.duende, self.violao, self.clima_service, self.frasco_rect
         )
         self.atualizar_fluxo_spotify = AtualizarFluxoSpotifyUseCase(
-            self.sapo, self.violao, self.spotify
+            self.spotify, self.buscar_violao
+        )
+        self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(
+            self.spotify, self.desacoplar_violao
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
@@ -94,11 +96,6 @@ class ControladorVozMusical:
             print(f"[VOZ] Erro ao desligar: {ex}")
 
         self.reconhecedor_voz = ReconhecedorAndroid()
-
-    def mostrar_pensamento_spotify_erro(self):
-        PensamentosSapo.publicar(
-            "Não estou conseguindo visitar este universo musical agora.", 6
-        )
 
     def processar_toque_microfone(self, pos_virtual):
         if self.controle_renderer.rect_microfone.collidepoint(pos_virtual):
@@ -157,7 +154,9 @@ class ControladorVozMusical:
                 print(f"[ROTA] {rota}")
 
                 if rota["tipo"] == "spotify":
-                    self._processar_comando_spotify(rota["dados"])
+                    self.processar_comando_spotify.executar(
+                        rota["dados"], self.desligar_microfone
+                    )
 
                 elif rota["tipo"] == "feira":
                     self._processar_comando_feira()
@@ -170,59 +169,9 @@ class ControladorVozMusical:
                     self.desligar_microfone()
 
         self.atualizar_fluxo_spotify.executar(dt)
-        self.spotify_tocando = self.spotify.spotify_tocando_cache
-
-        if self.spotify_tocando != self.spotify_tocando_anterior:
-            self.spotify_tocando_anterior = self.spotify_tocando
-
-            if self.spotify_tocando:
-                self.buscar_violao.executar()
-
-        spotify_pronto = self.spotify.dispositivo_spotify_pronto
-
-        if spotify_pronto != self.spotify_abertura_anterior:
-            self.spotify_abertura_anterior = spotify_pronto
-
-            if (
-                spotify_pronto
-                and self.spotify.spotify_pendente
-                and not self.spotify.spotify_tocando_cache
-            ):
-                self.buscar_violao.executar()
-
-        self.buscar_violao.atualizar()
         self.atualizar_fluxo_violao.executar(dt)
         self.controlar_sono_duende.executar(dt)
         self.resgatar_violao.atualizar(dt)
-
-    def _processar_comando_spotify(self, comando_spotify):
-        acao = comando_spotify["acao"]
-        sucesso = False
-
-        if acao == "pause":
-            sucesso = self.desacoplar_violao.executar()
-
-        elif acao == "play":
-            sucesso = self.spotify.tocar()
-
-        elif acao == "next":
-            sucesso = self.spotify.proxima()
-
-        elif acao == "previous":
-            sucesso = self.spotify.anterior()
-
-        elif acao == "buscar":
-            sucesso = self.spotify.buscar_e_tocar(
-                comando_spotify.get("pesquisa"), self.desligar_microfone
-            )
-            # Se for buscar e ainda estiver pendente/aberto, retornamos cedo
-            if not sucesso and self.spotify.spotify_pendente:
-                return
-
-        self.desligar_microfone()
-
-        if not sucesso and acao != "buscar":
-            self.mostrar_pensamento_spotify_erro()
 
     def _processar_comando_feira(self):
         self.desligar_microfone()
