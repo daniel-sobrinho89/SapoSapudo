@@ -1,13 +1,13 @@
 {
-    "cloudiness": 5,
-    "wind_speed": 4.7,
-    "wind_direction": 358,
-    "future_cloudiness_1h": 4,
-    "future_cloudiness_2h": 4,
-    "future_cloudiness_3h": 3,
+    "cloudiness": 0,
+    "wind_speed": 5.0,
+    "wind_direction": 315,
+    "future_cloudiness_1h": 3,
+    "future_cloudiness_2h": 3,
+    "future_cloudiness_3h": 2,
     "is_day": 0,
-    "condition_code": 1036,
-    "condition_text": "Smoky haze",
-    "temperature": 18.3,
-    "humidity": 71
+    "condition_code": 1000,
+    "condition_text": "Clear",
+    "temperature": 16.1,
+    "humidity": 82
 }

@@ -27,10 +27,11 @@ from domains.clima.clima_service import ClimaService
 from domains.clima.evento_livro import EventoLivro
 from domains.clima.frasco import FrascoClimatico
 from domains.clima.nuvem import Nuvem
-from domains.clima.particulas.poeira import ParticulaPoeira
+from domains.clima.particulas.esfera import Esfera
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
 from domains.conversas.qwen_local_client import QwenLocalClient
+from domains.livro.entity import Livro
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical
 from domains.spotify.spotify_manager import SpotifyManager
@@ -209,17 +210,20 @@ class GameWidget(Widget):
     def _inicializar_clima_e_ambiente(self):
         self.frasco_climatico = FrascoClimatico(self.transform)
         self.frasco_climatico.atualizar_posicao(centro_y)
-        self.particulas = [
-            ParticulaPoeira(
-                self.frasco_climatico.area_particulas, self.frasco_climatico.area_pote
+        self.esferas = [
+            Esfera(
+                self.frasco_climatico.area_particulas,
+                self.frasco_climatico.area_pote,
+                asset_manager,
             )
             for _ in range(QUANTIDADE_POEIRA)
         ]
-        self.evento_livro = EventoLivro(asset_manager, self.transform)
-        self.evento_livro.particulas = self.particulas
-        for p in self.particulas:
-            p.area_protegida = self.frasco_climatico.area_pote
-            p.protegido = p.area_protegida.collidepoint(int(p.x), int(p.y))
+        self.livro = Livro()
+        self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro)
+        self.evento_livro.esferas = self.esferas
+        for e in self.esferas:
+            e.area_protegida = self.frasco_climatico.area_pote
+            e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
 
         self.clima_service = ClimaService()
 
@@ -252,7 +256,7 @@ class GameWidget(Widget):
             self.frasco_climatico,
             self.ambiente,
             self.evento_livro,
-            self.particulas,
+            self.esferas,
         )
 
         if self.background_renderer.cenario_feira:
@@ -272,7 +276,9 @@ class GameWidget(Widget):
             self.controle_renderer,
             self.gerenciador_cenarios,
             self.clima_service,
-            self.frasco_climatico.area_interna,
+            self.frasco_climatico,
+            self.esferas,
+            self.evento_livro,
             self.conversa_sapudo,
             self.tts,
         )
@@ -413,15 +419,7 @@ class GameWidget(Widget):
         dt = min(dt, 0.05)
 
         self._atualizar_clima(dt)
-
-        events = self.sapo.atualizar(dt)
-        if events.get("start_audio_passeio"):
-            self.audio.tocar_passeio_sapudo()
-            event_bus.publicar("musica_iniciada", musica_info="O Passeio do Sapudo")
-
-        texto = events.get("novo_pensamento")
-        if texto:
-            self.tts.falar(texto)
+        self.sapo.atualizar(dt)
 
         if self.clima_service.precisa_atualizar():
             event_bus.publicar("clima_atualizado", clima_data=self.clima_service)

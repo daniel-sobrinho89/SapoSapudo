@@ -19,6 +19,8 @@ class AnimacoesDuende:
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
     GUARDANDO_VIOLAO = "guardando_violao"
     ESCONDENDO_ATRAS_VIOLAO = "escondendo_atras_violao"
+    PERSEGUINDO_ESFERA = "perseguindo_esfera"
+    COMENDO_ESFERA = "comendo_esfera"
 
     def __init__(self):
         self.intervalo = random.uniform(2.0, 5.0)
@@ -36,6 +38,7 @@ class AnimacoesDuende:
         self.animacao_dormindo = Animacao(1, 0.20)
         self.animacao_descendo_para_dormir = Animacao(10, 0.20)
         self.animacao_guardando_violao = Animacao(4, 0.40)
+        self.animacao_comendo_esfera = Animacao(60, 0.15)
 
     # =====================================
     # ESTADO
@@ -69,6 +72,10 @@ class AnimacoesDuende:
     def escondendo_atras_violao(self):
         return self.estado == self.ESCONDENDO_ATRAS_VIOLAO
 
+    @property
+    def comendo_esfera(self):
+        return self.estado == self.COMENDO_ESFERA
+
     # =====================================
     # TRANSIÇÕES
     # =====================================
@@ -97,6 +104,13 @@ class AnimacoesDuende:
 
     def iniciar_escondendo_atras_violao(self):
         self.estado = self.ESCONDENDO_ATRAS_VIOLAO
+
+    def iniciar_perseguindo_esfera(self):
+        self.estado = self.PERSEGUINDO_ESFERA
+
+    def iniciar_comer_esfera(self):
+        self.animacao_comendo_esfera.reset()
+        self.estado = self.COMENDO_ESFERA
 
     # =====================================
     # UPDATE

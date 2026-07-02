@@ -138,7 +138,7 @@ class SpotifyManager:
                     self.atualizar_dados_musica_atual()
         else:
             MediaSessionAndroid.play()
-            self.spotify_tocando_cache = True
+            self.spotify_tocando_cache = False
             sucesso = True
         return sucesso
 
@@ -153,7 +153,7 @@ class SpotifyManager:
                 self.atualizar_dados_musica_atual()
         else:
             MediaSessionAndroid.next()
-            self.spotify_tocando_cache = True
+            self.spotify_tocando_cache = False
             sucesso = True
         return sucesso
 

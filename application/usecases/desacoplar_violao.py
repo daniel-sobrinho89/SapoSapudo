@@ -4,10 +4,12 @@ class DesacoplarViolaoUseCase:
         violao,
         sapo,
         spotify,
+        audio,
     ):
         self.violao = violao
         self.sapo = sapo
         self.spotify = spotify
+        self.audio = audio
 
     def executar(
         self,
@@ -22,6 +24,7 @@ class DesacoplarViolaoUseCase:
         self.violao.acoplado = False
         self.spotify.pausar()
         self.sapo.animacoes.parar_violao()
+        self.audio.desligar()
         if iniciar_arraste:
             self.violao.iniciar_arraste(*mouse_pos)
 

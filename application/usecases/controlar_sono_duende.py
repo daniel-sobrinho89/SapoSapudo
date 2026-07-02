@@ -72,6 +72,7 @@ class ControlarSonoDuendeUseCase:
             not self.soltou_frente_pote
             and not self.animacoes.indo_para_frasco
             and not self.animacoes.escondendo_atras_violao
+            and not self.animacoes.comendo_esfera
             and not self.animacoes.descendo_para_dormir
             and not self.animacoes.dormindo
             and not self.duende.esta_dentro_do_frasco(self.frasco_rect)
@@ -197,6 +198,7 @@ class ControlarSonoDuendeUseCase:
             and not animacoes.voando
             and not animacoes.guardando_violao
             and not animacoes.escondendo_atras_violao
+            and not self.animacoes.comendo_esfera
         ):
             self.duende.animacoes.iniciar_voo()
 

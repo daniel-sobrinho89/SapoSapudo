@@ -7,11 +7,14 @@ from application.usecases import (
     AtualizarFluxoSpotifyUseCase,
     AtualizarFluxoViolaoUseCase,
     BuscarViolaoUseCase,
+    ComerEsferaUseCase,
     ControlarComportamentoDuendeUseCase,
+    ControlarComportamentoSapoUseCase,
     ControlarSonoDuendeUseCase,
     DesacoplarViolaoUseCase,
     EsconderAtrasViolaoUseCase,
     ProcessarComandoSpotifyUseCase,
+    ResgatarLivroUseCase,
     ResgatarViolaoUseCase,
 )
 from core.platform import IS_ANDROID
@@ -36,7 +39,9 @@ class ControladorVozMusical:
         controle_renderer,
         gerenciador_cenarios,
         clima_service,
-        frasco_rect,
+        frasco_climatico,
+        esferas,
+        evento_livro,
         conversa_sapudo=None,
         tts=None,
     ):
@@ -48,7 +53,10 @@ class ControladorVozMusical:
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
-        self.frasco_rect = frasco_rect
+        self.frasco_climatico = frasco_climatico
+        self.frasco_rect = frasco_climatico.area_interna
+        self.esferas = esferas
+        self.evento_livro = evento_livro
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
         self._pensamento_event = None
@@ -66,15 +74,14 @@ class ControladorVozMusical:
             self.violao, self.sapo, self.duende, self.spotify
         )
         self.desacoplar_violao = DesacoplarViolaoUseCase(
-            self.violao,
-            self.sapo,
-            self.spotify,
+            self.violao, self.sapo, self.spotify, self.audio
         )
         self.buscar_violao = BuscarViolaoUseCase(self.violao, self.sapo)
         self.atualizar_fluxo_violao = AtualizarFluxoViolaoUseCase(
-            self.sapo, self.violao, self.spotify
+            self.sapo, self.violao, self.spotify, self.audio
         )
         self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
+        self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.violao)
         self.controlar_sono_duende = ControlarSonoDuendeUseCase(
             self.sapo, self.duende, self.violao, self.clima_service, self.frasco_rect
         )
@@ -87,8 +94,18 @@ class ControladorVozMusical:
         self.esconder_atras_violao = EsconderAtrasViolaoUseCase(
             self.duende, self.violao
         )
+        self.comer_esfera = ComerEsferaUseCase(
+            self.duende, self.frasco_climatico, self.esferas, self.evento_livro
+        )
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
-            self.duende, self.sapo, self.esconder_atras_violao
+            self.duende,
+            self.sapo,
+            self.violao,
+            self.esconder_atras_violao,
+            self.comer_esfera,
+        )
+        self.controlar_comportamento_sapo = ControlarComportamentoSapoUseCase(
+            self.sapo, self.violao, self.spotify, self.audio
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
@@ -141,6 +158,12 @@ class ControladorVozMusical:
             self.resgatar_violao.executar(self.violao.estado())
         return violao_acoplado
 
+    def processar_toque_up_livro(self):
+        livro_acoplado = self.acoplar_livro.executar(self.sapo.area_livro())
+        if livro_acoplado:
+            self.resgatar_livro.executar(self.livro.estado())
+        return livro_acoplado
+
     def processar_toque_up_duende(self):
         duende_sendo_arrastado = self.duende.arraste.ativo
         if duende_sendo_arrastado:
@@ -176,10 +199,12 @@ class ControladorVozMusical:
                 if self.tempo_sem_audio > 10:
                     self.desligar_microfone()
 
+        self.controlar_comportamento_sapo.executar(dt)
         self.atualizar_fluxo_spotify.executar(dt)
         self.atualizar_fluxo_violao.executar(dt)
         self.controlar_sono_duende.executar(dt)
         self.resgatar_violao.atualizar(dt)
+        self.resgatar_livro.atualizar(dt)
 
         if not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
             self.controlar_comportamento_duende.executar(dt)
@@ -187,6 +212,7 @@ class ControladorVozMusical:
     def _processar_comando_feira(self):
         self.desligar_microfone()
         self.sapo.ir_para_feira()
+        self.audio.tocar_passeio_sapudo()
 
     def _processar_conversa(self, texto):
         if not self.conversa_sapudo.modelo_pronto:

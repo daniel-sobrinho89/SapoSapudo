@@ -13,15 +13,12 @@ from domains.clima.livro_climatico import LivroClimatico
 
 
 class EventoLivro:
-    def __init__(self, assets, transform):
+    def __init__(self, assets, transform, livro):
         self.assets = assets
+        self.livro = livro
         self.nevoa = 0.0
         self.tempo_sem_clique = 0.0
-        self.livro_visivel = False
-        self.timer_livro = 0.0
         self.tempo = 0.0
-        self.x = 0
-        self.y = 0
         self.rect_livro = None
         self.acumulador_retorno = 0.0
         self.livro_aberto_visivel = False
@@ -29,7 +26,6 @@ class EventoLivro:
         self.pagina_atual = None
 
         self.livro_fechado = assets.carregar("clima/livro_fechado.webp")
-
         self.livro_fechado = transform.escalar(
             self.livro_fechado,
             (
@@ -39,7 +35,6 @@ class EventoLivro:
         )
 
         self.livro_aberto = assets.carregar("clima/livro_aberto.webp")
-
         self.livro_aberto = transform.escalar(
             self.livro_aberto,
             (
@@ -50,11 +45,11 @@ class EventoLivro:
 
         self.texto_livro = TextoLivro()
 
-    def registrar_clique_poeira(self):
+    def registrar_clique_esfera(self):
         self.tempo_sem_clique = 0
         self.acumulador_retorno = 0.0
-        clicadas = sum(1 for p in self.particulas if not p.ativa)
-        total = len(self.particulas)
+        clicadas = sum(1 for e in self.esferas if not e.ativa)
+        total = len(self.esferas)
         self.nevoa = (clicadas / total) * 7
         if clicadas >= total:
             self.mostrar_livro()
@@ -62,9 +57,8 @@ class EventoLivro:
     def atualizar(self, dt):
         self.tempo += dt
 
-        if self.livro_visivel:
-            self.timer_livro -= dt
-            if self.timer_livro <= 0:
+        if self.livro.visivel:
+            if self.livro.atualizar_timer(dt):
                 self.ocultar_livro_por_timeout()
 
             return
@@ -76,7 +70,7 @@ class EventoLivro:
 
             if self.acumulador_retorno >= 1.0:
                 self.acumulador_retorno = 0.0
-                self.restaurar_uma_poeira()
+                self.restaurar_uma_esfera()
 
         self.nevoa = max(0, self.nevoa)
 
@@ -84,61 +78,63 @@ class EventoLivro:
         self.nevoa = 0
         self.tempo_sem_clique = 0
         self.acumulador_retorno = 0.0
-        self.livro_visivel = True
-        self.timer_livro = 420
+        self.livro.mostrar(0, 0)
 
     def ocultar_livro_por_clique(self):
-        self.livro_visivel = False
-        self.livro_aberto_visivel = True
+        self.livro.abrir()
         self.pagina_atual = None
         self.rect_livro = None
         self.nevoa = 0
         self.acumulador_retorno = 0.0
         self.tempo_sem_clique = 0
-        for particula in self.particulas:
-            particula.resetar()
-            particula.ativa = True
+
+        for esfera in self.esferas:
+            esfera.resetar()
+            esfera.ativa = True
 
     def ocultar_livro_por_timeout(self):
-        self.livro_visivel = False
+        self.livro.ocultar()
         self.rect_livro = None
         self.nevoa = 0
         self.acumulador_retorno = 0.0
         self.tempo_sem_clique = 0
-        for particula in self.particulas:
-            particula.resetar()
-            particula.ativa = True
 
-    def restaurar_uma_poeira(self):
-        poeiras_ocultas = [p for p in self.particulas if not p.ativa]
+        for esfera in self.esferas:
+            esfera.resetar()
+            esfera.ativa = True
 
-        if not poeiras_ocultas:
+    def restaurar_uma_esfera(self):
+        esferas_ocultas = [p for p in self.esferas if not p.ativa]
+
+        if not esferas_ocultas:
             return
 
-        particula = random.choice(poeiras_ocultas)
+        esfera = random.choice(esferas_ocultas)
 
-        particula.resetar()
-        particula.ativa = True
+        esfera.resetar()
+        esfera.ativa = True
 
-        clicadas = sum(1 for p in self.particulas if not p.ativa)
+        clicadas = sum(1 for e in self.esferas if not e.ativa)
 
-        total = len(self.particulas)
+        total = len(self.esferas)
 
         self.nevoa = (clicadas / total) * 7
 
     def fechar_livro_aberto(self):
-        self.livro_aberto_visivel = False
+        self.livro.fechar()
+
         self.pagina_atual = None
+
         self.nevoa = 0
         self.acumulador_retorno = 0.0
         self.tempo_sem_clique = 0
 
-        for particula in self.particulas:
-            particula.resetar()
-            particula.ativa = True
+        for esfera in self.esferas:
+            esfera.resetar()
+        esfera.ativa = True
 
     def renderizar_livro_aberto(self, tela, clima_service):
-        if not self.livro_aberto_visivel:
+        if not self.livro.aberto:
             return
 
         largura = self.livro_aberto.get_width()
@@ -209,45 +205,50 @@ class EventoLivro:
         self.rect_livro_aberto = kivy_adapter.Rect(x, y, largura, altura)
 
     def processar_toque(self, pos_virtual):
-        if self.livro_aberto_visivel:
+        if self.livro.aberto:
             self.fechar_livro_aberto()
             return True
 
-        if self.livro_visivel and (
+        if self.livro.visivel and (
             self.rect_livro and self.rect_livro.collidepoint(pos_virtual)
         ):
             self.ocultar_livro_por_clique()
             return True
 
-        if not self.livro_visivel:
-            for particula in self.particulas:
-                if particula.ativa and particula.obter_rect().collidepoint(pos_virtual):
-                    particula.ativa = False
-                    self.registrar_clique_poeira()
+        if not self.livro.visivel:
+            for esfera in self.esferas:
+                if esfera.ativa and esfera.obter_rect().collidepoint(pos_virtual):
+                    esfera.ativa = False
+                    self.registrar_clique_esfera()
                     return True
+
         return False
 
     def renderizar(self, tela, frasco_climatico):
-        if not self.livro_visivel:
+        if not self.livro.visivel:
             return
 
-        self.x = frasco_climatico.area_pote.centerx
-        self.y = frasco_climatico.area_pote.centery
+        self.livro.x = frasco_climatico.area_pote.centerx
+        self.livro.y = frasco_climatico.area_pote.centery
 
-        self.offset_flutuacao = math.sin(self.tempo * 2) * 5
+        offset_flutuacao = math.sin(self.tempo * 2) * 5
 
-        y_final = self.y + self.offset_flutuacao
+        y_final = self.livro.y + offset_flutuacao
 
         largura = self.livro_fechado.get_width()
         altura = self.livro_fechado.get_height()
 
-        x_final = self.x - largura // 2
-
+        x_final = self.livro.x - largura // 2
         y_final = int(y_final - altura // 2)
 
         tela.blit(self.livro_fechado, (x_final, y_final))
 
-        self.rect_livro = kivy_adapter.Rect(x_final, y_final, largura, altura)
+        self.rect_livro = kivy_adapter.Rect(
+            x_final,
+            y_final,
+            largura,
+            altura,
+        )
 
 
 class TextoLivro:

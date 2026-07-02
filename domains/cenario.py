@@ -137,7 +137,7 @@ class GerenciadorCenarios:
         if not self.background_renderer.cenario_feira:
             self.frasco_climatico.renderizar(self.tela, self.centro_y)
 
-            if not self.evento_livro.livro_visivel:
+            if not self.evento_livro.livro.visivel:
                 for particula in self.particulas:
                     particula.desenhar(self.tela)
 

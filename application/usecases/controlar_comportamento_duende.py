@@ -14,11 +14,14 @@ class ControlarComportamentoDuendeUseCase:
     ESCONDIDO_VIOLAO = "escondido_violao"
     ORBITANDO = "orbitando"
     FUGINDO = "fugindo"
+    PERSEGUINDO_ESFERA = "perseguindo_esfera"
 
-    def __init__(self, duende, sapo, esconder_atras_violao):
+    def __init__(self, duende, sapo, violao, esconder_atras_violao, comer_esfera):
         self.duende = duende
         self.sapo = sapo
+        self.violao = violao
         self.esconder_atras_violao = esconder_atras_violao
+        self.comer_esfera = comer_esfera
 
         self.estado = self.EXPLORANDO
         self.tempo_estado = 0
@@ -32,12 +35,26 @@ class ControlarComportamentoDuendeUseCase:
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.pote_x = self.centro_x - 260
         self.pote_y = self.centro_y + 40
+        self.interesses = {
+            self.ESCONDIDO_VIOLAO: 40,
+            self.PERSEGUINDO_ESFERA: 10,
+            self.EXPLORANDO: 30,
+            self.ORBITANDO: 20,
+            self.FUGINDO: 15,
+        }
 
     def executar(self, dt):
         estado = self._decidir_proximo_estado(dt)
 
         if estado == self.ESCONDIDO_VIOLAO:
             terminou = self.esconder_atras_violao.executar(dt)
+            self.tempo_decisao = 0
+            if terminou:
+                self.estado = self.EXPLORANDO
+                self.tempo_estado = 0
+                self.duende.animacoes.iniciar_voo()
+        elif estado == self.PERSEGUINDO_ESFERA:
+            terminou = self.comer_esfera.executar(dt)
             self.tempo_decisao = 0
             if terminou:
                 self.estado = self.EXPLORANDO
@@ -59,23 +76,22 @@ class ControlarComportamentoDuendeUseCase:
         if self.tempo_decisao >= self.proxima_decisao:
             self.tempo_decisao = 0.0
             self.proxima_decisao = random.uniform(4.0, 8.0)
-            escolha = random.random()
 
-            if escolha < 0.35 and not self.duende.animacoes.escondendo_atras_violao:
-                self.estado = self.ESCONDIDO_VIOLAO
+            self.estado = self._escolher_estado()
+            if self.estado == self.ESCONDIDO_VIOLAO:
                 self.esconder_atras_violao.iniciar()
-            elif escolha < 0.65:
-                self.estado = self.EXPLORANDO
+            elif self.estado == self.PERSEGUINDO_ESFERA:
+                self.comer_esfera.iniciar()
+            elif self.estado == self.EXPLORANDO:
                 destino_x, destino_y = self._obter_destino_teleporte()
-
                 self.duende.teleporte.iniciar(
-                    destino_x, destino_y, duracao=0.35, duracao_sumido=1.15
+                    destino_x,
+                    destino_y,
+                    duracao=0.35,
+                    duracao_sumido=1.15,
                 )
-            elif escolha < 0.85:
-                self.estado = self.ORBITANDO
+            elif self.estado == self.ORBITANDO:
                 self.orbita_angulo = 0.0
-            else:
-                self.estado = self.FUGINDO
 
             self.tempo_estado = 0.0
 
@@ -92,14 +108,70 @@ class ControlarComportamentoDuendeUseCase:
 
         return self.estado
 
+    def _escolher_estado(self):
+        pesos = self.interesses.copy()
+
+        if self.violao.acoplado:
+            pesos[self.ESCONDIDO_VIOLAO] = 0
+
+        if self.duende.animacoes.escondendo_atras_violao:
+            pesos[self.ESCONDIDO_VIOLAO] = 0
+
+        # evita repetir o mesmo comportamento
+        pesos[self.estado] *= 0.20
+
+        estados = list(pesos.keys())
+        valores = list(pesos.values())
+
+        escolhido = random.choices(
+            estados,
+            weights=valores,
+            k=1,
+        )[0]
+
+        # reseta o interesse do escolhido
+        self.interesses[escolhido] = 5
+
+        # aumenta o interesse dos demais
+        for estado in self.interesses:
+            if estado != escolhido:
+                self.interesses[estado] += 2
+
+        return escolhido
+
     def _obter_destino_teleporte(self):
         while True:
-            if random.random() < 0.5:
-                destino_x = self.sapo.x + random.randint(-60, 60)
-                destino_y = self.sapo.y - 170
+            escolha = random.randint(0, 5)
+
+            if escolha == 0:
+                # Perto do sapo
+                destino_x = self.sapo.x + random.randint(-80, 80)
+                destino_y = self.sapo.y - random.randint(140, 200)
+
+            elif escolha == 1:
+                # Perto do pote
+                destino_x = self.pote_x + random.randint(-70, 70)
+                destino_y = self.pote_y - random.randint(90, 170)
+
+            elif escolha == 2:
+                # Parte superior da tela
+                destino_x = random.randint(120, LARGURA - 120)
+                destino_y = random.randint(40, 120)
+
+            elif escolha == 3:
+                # Lado esquerdo
+                destino_x = random.randint(60, 220)
+                destino_y = random.randint(80, 260)
+
+            elif escolha == 4:
+                # Lado direito
+                destino_x = random.randint(LARGURA - 220, LARGURA - 60)
+                destino_y = random.randint(80, 260)
+
             else:
-                destino_x = self.pote_x + random.randint(-50, 50)
-                destino_y = self.pote_y - 120
+                # Qualquer lugar da área de voo
+                destino_x = random.randint(100, LARGURA - 100)
+                destino_y = random.randint(60, 260)
 
             distancia = math.hypot(
                 destino_x - self.duende.x,

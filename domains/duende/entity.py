@@ -154,6 +154,7 @@ class DuendeNeblina:
             not self.movimento_bloqueado
             and not self.teleporte.ativo
             and not self.animacoes.escondendo_atras_violao
+            and not self.animacoes.comendo_esfera
         ):
             self._atualizar_destino_livre(dt)
             self.atualizar_movimento(dt)

@@ -129,13 +129,6 @@ class EventBus:
 # --- Definições de Eventos Específicos do Sistema ---
 
 
-class MusicaIniciadaEvent(Event):
-    """Disparado quando uma música ou playlist é iniciada."""
-
-    def __init__(self, musica_info: Any):
-        super().__init__(musica_info=musica_info)
-
-
 class ClimaAtualizadoEvent(Event):
     """Disparado quando as informações de clima/tempo são atualizadas."""
 
@@ -157,12 +150,10 @@ class PensamentoSapoEvent(Event):
 
 
 # Aliases em português para as classes de eventos
-MusicaIniciadaEvento = MusicaIniciadaEvent
 ClimaAtualizadoEvento = ClimaAtualizadoEvent
 
 # Mapa para resolução dinâmica a partir de strings
 _MAPA_EVENTOS = {
-    "musica_iniciada": MusicaIniciadaEvent,
     "clima_atualizado": ClimaAtualizadoEvent,
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,

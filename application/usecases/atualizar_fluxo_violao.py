@@ -1,12 +1,15 @@
+from domains.sapudo.agenda_sapo import AgendaSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 
 
 class AtualizarFluxoViolaoUseCase:
-    def __init__(self, sapo, violao, spotify):
+    def __init__(self, sapo, violao, spotify, audio):
         self.sapo = sapo
         self.violao = violao
         self.animacoes = sapo.animacoes
         self.spotify = spotify
+        self.audio = audio
+        self.agenda = AgendaSapo()
 
     def executar(self, dt):
         maquina = self.animacoes.maquina
@@ -31,6 +34,10 @@ class AtualizarFluxoViolaoUseCase:
             self.violao.acoplado = True
             self.animacoes.violao_logic.resetar()
             maquina.trocar(EstadoSapo.TOCANDO_VIOLAO)
+
+            if not self.spotify.spotify_tocando_cache:
+                self.audio.voltar_musica_fundo()
+
             return
 
         #
@@ -42,6 +49,8 @@ class AtualizarFluxoViolaoUseCase:
         ):
             self.animacoes.levantar_violao.reset()
             maquina.trocar(EstadoSapo.LEVANTANDO_VIOLAO)
+            self.audio.desligar()
+
             return
 
         #

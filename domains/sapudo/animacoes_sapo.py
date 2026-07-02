@@ -1,5 +1,4 @@
 from core.event_bus import event_bus
-from domains.sapudo.agenda_sapo import AgendaSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
 from domains.violao.logic import LogicaViolaoSapo
 
@@ -10,7 +9,6 @@ class AnimacoesSapo:
         # COMPONENTES DE COMPORTAMENTO
         # ====================================
         self.maquina = MaquinaEstadoSapo()
-        self.agenda = AgendaSapo()
         self.violao_logic = LogicaViolaoSapo()
 
         # ====================================
@@ -29,50 +27,10 @@ class AnimacoesSapo:
         self.conversar = Animacao(60, 0.17)
 
         self.ultimo_frame_guardar = -1
-        self.parar_audio_violao = False
         self.finalizou_soltar_violao = False
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
-
-    # ====================================
-    # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)
-    # ====================================
-    @property
-    def horarios_caminhada(self):
-        return self.agenda.horarios_caminhada
-
-    @property
-    def proxima_tentativa_caminhada(self):
-        return self.agenda.proxima_tentativa_caminhada
-
-    @proxima_tentativa_caminhada.setter
-    def proxima_tentativa_caminhada(self, v):
-        self.agenda.proxima_tentativa_caminhada = v
-
-    @property
-    def ultima_execucao_caminhada(self):
-        return self.agenda.ultima_execucao_caminhada
-
-    @ultima_execucao_caminhada.setter
-    def ultima_execucao_caminhada(self, v):
-        self.agenda.ultima_execucao_caminhada = v
-
-    @property
-    def iniciou_sono_hoje(self):
-        return self.agenda.iniciou_sono_hoje
-
-    @iniciou_sono_hoje.setter
-    def iniciou_sono_hoje(self, v):
-        self.agenda.iniciou_sono_hoje = v
-
-    @property
-    def executou_acordar_hoje(self):
-        return self.agenda.executou_acordar_hoje
-
-    @executou_acordar_hoje.setter
-    def executou_acordar_hoje(self, v):
-        self.agenda.executou_acordar_hoje = v
 
     @property
     def frame_violao(self):
@@ -88,7 +46,6 @@ class AnimacoesSapo:
 
     def atualizar(self, dt):
         self._atualizar_animacoes(dt)
-        self._atualizar_fluxo_estado(dt)
 
     def _atualizar_animacoes(self, dt):
         self.pegar_violao.atualizar(dt) if self.maquina.eh(
@@ -112,46 +69,6 @@ class AnimacoesSapo:
         self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
-
-    def _atualizar_fluxo_estado(self, dt):
-        m = self.maquina
-
-        # ACORDANDO
-        if m.eh(EstadoSapo.ACORDANDO):
-            if self.acordar.atualizar(dt):
-                m.trocar(EstadoSapo.PARADO)
-            return
-
-        # ADORMECENDO
-        horario_sono = self.agenda.verificar_horario_sono()
-        if m.eh(EstadoSapo.ADORMECENDO):
-            if not horario_sono:
-                self.iniciar_acordar()
-                return
-            if self.dormir.atualizar(dt):
-                m.trocar(EstadoSapo.DORMINDO)
-            return
-
-        # CICLO DIÁRIO E RESETS
-        self.agenda.atualizar_resets_diarios()
-
-        if (
-            not horario_sono
-            and not self.agenda.executou_acordar_hoje
-            and m.em_estado(EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO)
-        ):
-            self.iniciar_acordar()
-            self.agenda.executou_acordar_hoje = True
-            return
-
-        if (
-            horario_sono
-            and not self.agenda.iniciou_sono_hoje
-            and not m.em_estado(EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO)
-        ):
-            self.agenda.iniciou_sono_hoje = True
-            self.iniciar_dormir()
-            return
 
     def iniciar_dormir(self):
         self.dormir.reset()

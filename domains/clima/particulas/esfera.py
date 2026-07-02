@@ -5,53 +5,47 @@ import kivy_adapter
 from core.fisica import sistema_fisica
 
 
-class ParticulaPoeira:
-    def __init__(self, area_particulas, area_protegida):
+class Esfera:
+    def __init__(self, area_particulas, area_protegida, assets):
         self.area_particulas = area_particulas
         self.area_protegida = area_protegida
+        self.assets = assets
         self.protegido = False
         self.just_exited_timer = 0.0
         self.ativa = True
         self.resetar()
+
+        self.imagem_esfera = self.assets.carregar("clima/esfera.webp")
 
     def resetar(self):
         if self.area_protegida is not None:
             self.x = random.randint(
                 self.area_protegida.left + 4, self.area_protegida.right - 20
             )
-
             self.y = random.randint(
                 self.area_protegida.bottom - 57, self.area_protegida.bottom - 15
             )
-
             self.x_inicial = self.x
-
             self.oscilacao = random.uniform(0.0, 6.28)
-
             self.tempo_vida = 0.0
-
             self.amplitude_lateral = random.uniform(2.0, 6.0)
 
         else:
             self.x = random.randint(
                 self.area_particulas.left, self.area_particulas.right
             )
-
             self.y = random.randint(
                 self.area_particulas.top, self.area_particulas.bottom
             )
 
         # valores originais eram por-frame; converter para pixels/segundo
         self.vel_x = random.uniform(-0.08, 0.12) * 60.0
-
         self.vel_y = random.uniform(-0.03, -0.12) * 60.0
 
         self.gravidade = 12.0
         self.sustentacao_restante = 0.0
         self.no_chao = False
-
         self.limite_chao = self.area_particulas.bottom
-
         self.raio = random.randint(4, 5)
 
         # tornar partículas um pouco menos transparentes
@@ -77,7 +71,6 @@ class ParticulaPoeira:
         if self.area_protegida is not None:
             if self.saiu_do_pote:
                 current_protegido = False
-
             else:
                 current_protegido = self.area_protegida.collidepoint(
                     int(self.x), int(self.y)
@@ -169,34 +162,19 @@ class ParticulaPoeira:
         if not self.ativa:
             return
 
+        # Mantém aproximadamente o mesmo tamanho visual da esfera antiga
         tamanho = self.raio * 6
 
-        superficie = kivy_adapter.Surface((tamanho, tamanho), kivy_adapter.SRCALPHA)
-
-        centro = tamanho // 2
-
-        # =================================
-        # GLOW EXTERNO
-        # =================================
-
-        kivy_adapter.draw.circle(
-            superficie,
-            (255, 255, 255, int(self.alpha * 0.25)),
-            (centro, centro),
-            self.raio * 2,
+        imagem = kivy_adapter.transform.smoothscale(
+            self.imagem_esfera,
+            (tamanho, tamanho),
         )
 
-        # =================================
-        # NÚCLEO
-        # =================================
+        # Mantém o efeito de transparência já existente
+        imagem.set_alpha(self.alpha)
 
-        kivy_adapter.draw.circle(
-            superficie, (255, 255, 255, self.alpha), (centro, centro), self.raio
-        )
-
-        tela.blit(superficie, (self.x, self.y))
+        tela.blit(imagem, (self.x, self.y))
 
     def obter_rect(self):
         tamanho = self.raio * 6
-
         return kivy_adapter.Rect(self.x, self.y, tamanho, tamanho)

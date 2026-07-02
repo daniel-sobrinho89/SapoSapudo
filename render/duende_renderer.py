@@ -30,6 +30,14 @@ class DuendeRenderer:
         self.frames_dormindo = [self.frames_voando[3]]
         self.frames_guardando_violao = self.frames_voando[0:4]
 
+        self.frames_comendo_esfera = []
+        for i in range(60):
+            self.frames_comendo_esfera.append(
+                self.assets.carregar(
+                    f"assistente/comendo_esfera/assistente_{i:04d}.webp"
+                )
+            )
+
     def obter_frame_animacao(self, animacoes):
         if animacoes.dormindo:
             return self.frames_dormindo[animacoes.animacao_dormindo.frame]
@@ -41,6 +49,8 @@ class DuendeRenderer:
             return self.frames_guardando_violao[
                 animacoes.animacao_guardando_violao.frame
             ]
+        elif animacoes.comendo_esfera:
+            return self.frames_comendo_esfera[animacoes.animacao_comendo_esfera.frame]
 
         return self.frames_voando[animacoes.animacao_voando.frame]
 
