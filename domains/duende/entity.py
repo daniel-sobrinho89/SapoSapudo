@@ -8,7 +8,6 @@ import random
 import kivy_adapter
 from domains.duende.animacoes import AnimacoesDuende
 from domains.duende.arraste_duende import ArrasteDuende
-from domains.duende.ia import IADuende
 
 # Novos componentes
 from domains.duende.teleporte_duende import TeleporteDuende
@@ -37,7 +36,6 @@ class DuendeNeblina:
         # =================================
         # COMPONENTES
         # =================================
-        self.ia = IADuende()
         self.animacoes = AnimacoesDuende()
         self.teleporte = TeleporteDuende()
         self.arraste = ArrasteDuende()
@@ -125,24 +123,6 @@ class DuendeNeblina:
 
     # =====================================
     # MÉTODOS PRIVADOS DE ATUALIZAÇÃO
-    # =====================================
-
-    def _atualizar_ia(self, dt, sapo_x, sapo_y, pote_x, pote_y):
-        acao = self.ia.obter_acao(dt)
-        if acao == self.ia.OBSERVANDO_SAPO:
-            self.alvo_x = sapo_x + random.randint(-60, 60)
-            self.alvo_y = sapo_y - 180 + random.randint(-40, 40)
-        elif acao == self.ia.OBSERVANDO_POTE:
-            self.alvo_x = pote_x + random.randint(-40, 40)
-            self.alvo_y = pote_y - 120 + random.randint(-40, 40)
-        elif acao == self.ia.ORBITANDO:
-            self.ia.orbita_angulo += dt * 1.8
-            self.alvo_x = sapo_x + math.cos(self.ia.orbita_angulo) * self.ia.orbita_raio
-            self.alvo_y = sapo_y - 140 + math.sin(self.ia.orbita_angulo) * 35
-        elif acao == self.ia.FUGINDO:
-            self.alvo_x = random.randint(80, 1150)
-            self.alvo_y = random.randint(50, 220)
-
     def _atualizar_destino_livre(self, dt):
         self.tempo_novo_destino += dt
         if self.tempo_novo_destino >= random.uniform(3.0, 6.0):
@@ -158,7 +138,7 @@ class DuendeNeblina:
     # =====================================
     # UPDATE PRINCIPAL
     # =====================================
-    def atualizar(self, dt, sapo, pote_x, pote_y, clima_service, frasco_rect):
+    def atualizar(self, dt):
         self.tempo += dt
 
         # 3. Arraste (bloqueia movimento livre)
@@ -169,10 +149,12 @@ class DuendeNeblina:
 
         self.animacoes.atualizar(dt)
 
-        # 5. IA e Movimento Livre
-        if not self.movimento_bloqueado and not self.teleporte.ativo:
-            self._atualizar_ia(dt, sapo.x, sapo.y, pote_x, pote_y)
-
+        # 5. e Movimento Livre
+        if (
+            not self.movimento_bloqueado
+            and not self.teleporte.ativo
+            and not self.animacoes.escondendo_atras_violao
+        ):
             self._atualizar_destino_livre(dt)
             self.atualizar_movimento(dt)
             self._atualizar_flutuacao(dt)

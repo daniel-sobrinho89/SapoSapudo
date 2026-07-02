@@ -7,8 +7,10 @@ from application.usecases import (
     AtualizarFluxoSpotifyUseCase,
     AtualizarFluxoViolaoUseCase,
     BuscarViolaoUseCase,
+    ControlarComportamentoDuendeUseCase,
     ControlarSonoDuendeUseCase,
     DesacoplarViolaoUseCase,
+    EsconderAtrasViolaoUseCase,
     ProcessarComandoSpotifyUseCase,
     ResgatarViolaoUseCase,
 )
@@ -81,6 +83,12 @@ class ControladorVozMusical:
         )
         self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(
             self.spotify, self.desacoplar_violao
+        )
+        self.esconder_atras_violao = EsconderAtrasViolaoUseCase(
+            self.duende, self.violao
+        )
+        self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
+            self.duende, self.sapo, self.esconder_atras_violao
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
@@ -172,6 +180,9 @@ class ControladorVozMusical:
         self.atualizar_fluxo_violao.executar(dt)
         self.controlar_sono_duende.executar(dt)
         self.resgatar_violao.atualizar(dt)
+
+        if not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
+            self.controlar_comportamento_duende.executar(dt)
 
     def _processar_comando_feira(self):
         self.desligar_microfone()

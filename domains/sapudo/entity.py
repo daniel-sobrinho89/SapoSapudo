@@ -259,7 +259,7 @@ class AreaAcoplamento:
     raio: float
 
     offset_x: float = 5
-    offset_y: float = 20
+    offset_y: float = 28
 
     def contem(self, x, y):
         return abs(x - self.x) < self.raio and abs(y - self.y) < self.raio

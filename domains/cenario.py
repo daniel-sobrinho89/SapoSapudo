@@ -43,9 +43,7 @@ class GerenciadorCenarios:
         self.evento_livro = evento_livro
         self.particulas = particulas
 
-        self.centro_x = LARGURA // 2
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
-
         self.cenario_feira_anterior = False
 
         # Objetos do cenário principal
@@ -110,18 +108,8 @@ class GerenciadorCenarios:
         self.cenario_feira_anterior = self.background_renderer.cenario_feira
 
         if not self.background_renderer.cenario_feira:
-            pote_x = self.centro_x - 260
-            pote_y = self.centro_y + 40
-
             if self.duende:
-                self.duende.atualizar(
-                    dt,
-                    self.sapo,
-                    pote_x,
-                    pote_y,
-                    self.clima_service,
-                    self.frasco_climatico.area_interna,
-                )
+                self.duende.atualizar(dt)
                 sistema_fisica.aplicar_forca_vento(
                     self.duende, self.clima_service, dt, sensibilidade=0.5
                 )
@@ -156,7 +144,7 @@ class GerenciadorCenarios:
                 self.frasco_climatico.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
 
             if self.renderer_duende:
-                self.renderer_duende.renderizar(self.duende)
+                self.renderer_duende.renderizar(self.duende, ESCALA)
             if self.renderer_semente:
                 self.renderer_semente.renderizar(self.semente)
 

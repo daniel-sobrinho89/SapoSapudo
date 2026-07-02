@@ -87,10 +87,10 @@ class AnimacoesSapo:
     # ====================================
 
     def atualizar(self, dt):
-        self._atualizar_animations_tecnicas(dt)
+        self._atualizar_animacoes(dt)
         self._atualizar_fluxo_estado(dt)
 
-    def _atualizar_animations_tecnicas(self, dt):
+    def _atualizar_animacoes(self, dt):
         self.pegar_violao.atualizar(dt) if self.maquina.eh(
             EstadoSapo.PEGANDO_VIOLAO
         ) else None

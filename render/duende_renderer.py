@@ -2,8 +2,6 @@
 # render/duende_renderer.py
 # =====================================
 
-import math
-
 
 class DuendeRenderer:
     def __init__(self, tela, assets, transform):
@@ -22,23 +20,61 @@ class DuendeRenderer:
         # BODY
         # =================================
 
-        self.nuvem1 = self.assets.carregar("clima/duende_neblina/nuvem1.png")
+        self.frames_voando = []
+        for i in range(15):
+            self.frames_voando.append(
+                self.assets.carregar(f"assistente/voando/assistente_{i:04d}.webp")
+            )
 
-        self.nuvem2 = self.assets.carregar("clima/duende_neblina/nuvem2.png")
+        self.frames_descendo_para_dormir = self.frames_voando[3:14]
+        self.frames_dormindo = [self.frames_voando[3]]
+        self.frames_guardando_violao = self.frames_voando[0:4]
 
-        self.olho_esquerdo = self.assets.carregar(
-            "clima/duende_neblina/olho_esquerdo.png"
+    def obter_frame_animacao(self, animacoes):
+        if animacoes.dormindo:
+            return self.frames_dormindo[animacoes.animacao_dormindo.frame]
+        elif animacoes.descendo_para_dormir:
+            return self.frames_descendo_para_dormir[
+                animacoes.animacao_descendo_para_dormir.frame
+            ]
+        elif animacoes.guardando_violao:
+            return self.frames_guardando_violao[
+                animacoes.animacao_guardando_violao.frame
+            ]
+
+        return self.frames_voando[animacoes.animacao_voando.frame]
+
+    # =====================================
+    # RENDER
+    # =====================================
+
+    def renderizar(self, duende, escala):
+        escala *= duende.escala_visual
+        frame = self.obter_frame_animacao(duende.animacoes)
+
+        self.draw(
+            frame,
+            duende.x,
+            duende.y,
+            escala,
+            alpha=duende.alpha_visual,
         )
 
-        self.olho_direito = self.assets.carregar(
-            "clima/duende_neblina/olho_direito.png"
+        largura = int(frame.get_width() * escala)
+        altura = int(frame.get_height() * escala)
+
+        duende.atualizar_hitboxes(
+            duende.x,
+            duende.y,
+            largura,
+            altura,
         )
 
     # =====================================
     # DRAW
     # =====================================
 
-    def draw(self, imagem, x, y, escala_x, escala_y=None, alpha=255, rotacao=0):
+    def draw(self, imagem, x, y, escala_x, escala_y=None, alpha=255):
         if escala_y is None:
             escala_y = escala_x
 
@@ -50,83 +86,6 @@ class DuendeRenderer:
 
         imagem.set_alpha(alpha)
 
-        # =================================
-        # SPRITE
-        # =================================
-
         rect = imagem.get_rect(center=(x, y))
 
         self.tela.blit(imagem, rect)
-
-    # =====================================
-    # RENDER
-    # =====================================
-
-    def renderizar(self, duende):
-        escala = duende.escala * duende.escala_visual
-
-        fator_sono = duende.animacoes.fator_sono_visual
-
-        # =================================
-        # ESCALAS
-        # =================================
-
-        body_scale = escala * (1.0 - (0.20 * fator_sono))
-
-        eye_scale = body_scale * 0.40
-
-        # =================================
-        # POSIÇÕES BASE
-        # =================================
-
-        body_x = duende.x
-        body_y = duende.y
-
-        imagem_corpo = self.nuvem1
-
-        body_width = int(imagem_corpo.get_width() * body_scale)
-
-        body_height = int(imagem_corpo.get_height() * body_scale)
-
-        duende.atualizar_hitboxes(body_x, body_y, body_width, body_height)
-
-        # =================================
-        # OLHOS
-        # =================================
-
-        olho_offset_x = body_width * 0.07
-        olho_offset_y = body_height * 0.06
-
-        olho_esq_x = body_x + olho_offset_x + 1
-        olho_dir_x = body_x - olho_offset_x
-
-        olho_esq_y = body_y - olho_offset_y + 4
-        olho_dir_y = body_y - olho_offset_y + 5
-
-        # =================================
-        # BRILHO MÁGICO
-        # =================================
-
-        transicao_luz = (math.sin(1 * 1.9) + 1) / 2
-
-        transicao_luz = transicao_luz**2
-
-        # =================================
-        # BODY
-        # =================================
-
-        imagem_corpo = self.nuvem1 if transicao_luz < 0.5 else self.nuvem2
-
-        self.draw(imagem_corpo, body_x, body_y, body_scale, alpha=duende.alpha_visual)
-
-        # =================================
-        # EYES
-        # =================================
-
-        if (
-            not duende.animacoes.dormindo
-            and not duende.animacoes.piscando
-            and duende.escala_visual >= 0.98
-        ):
-            self.draw(self.olho_esquerdo, olho_esq_x, olho_esq_y, eye_scale)
-            self.draw(self.olho_direito, olho_dir_x, olho_dir_y, eye_scale)

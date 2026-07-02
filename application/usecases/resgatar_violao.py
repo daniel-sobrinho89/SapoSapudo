@@ -4,12 +4,14 @@ import math
 class ResgatarViolaoUseCase:
     MIN_TELEPORT_DIST = 120
     VELOCIDADE = 450
-    OFFSET_X = 0
-    OFFSET_Y = 15
+    VELOCIDADE_GUARDAR = 220
+    OFFSET_X = 15
+    OFFSET_Y = 40
 
     def __init__(self, duende, violao):
         self.duende = duende
         self.violao = violao
+        self.animacoes = duende.animacoes
         self.ativo = False
         self.violao_em_maos = False
 
@@ -19,7 +21,7 @@ class ResgatarViolaoUseCase:
             or self.ativo
             or estado_violao.acoplado
             or not self._pode_resgatar_violao()
-            or self.duende.animacoes.ciclo_sono.dormir_por_tempo
+            or self.animacoes.ciclo_sono.dormir_por_tempo
         ):
             return
 
@@ -32,7 +34,7 @@ class ResgatarViolaoUseCase:
             not self._consegue_alcancar_antes_da_queda(estado_violao)
             and distancia > self.MIN_TELEPORT_DIST
         ):
-            self._teleportar_para_violao(estado_violao)
+            self._teleportar_para_violao()
             return
 
     def _consegue_alcancar_antes_da_queda(self, estado_violao):
@@ -42,11 +44,23 @@ class ResgatarViolaoUseCase:
             estado_violao,
         )
 
-    def _teleportar_para_violao(self, estado_violao):
+    def _teleportar_para_violao(self):
+        def posicionar_no_violao(entity):
+            deslocamento = (
+                self.violao.velocidade_queda * entity.teleporte.duracao
+            ) + 90
+
+            entity.x = self.violao.x
+            entity.y = min(
+                self.violao.chao_y - 35,
+                self.violao.y + deslocamento,
+            )
+
         self.duende.teleporte.iniciar(
-            estado_violao.x,
-            estado_violao.y,
-            self.violao,
+            ao_teleportar=posicionar_no_violao,
+            ao_finalizar=self._iniciar_resgate_monitorado,
+            duracao=0.12,
+            duracao_sumido=0.0,
         )
 
     def _iniciar_resgate_monitorado(self):
@@ -61,8 +75,8 @@ class ResgatarViolaoUseCase:
 
     def _pode_resgatar_violao(self):
         return (
-            not self.duende.animacoes.dormindo
-            and not self.duende.animacoes.descendo_para_dormir
+            not self.animacoes.dormindo
+            and not self.animacoes.descendo_para_dormir
             and not self.duende.arrastando
             and not self.ativo
             and not self.duende.teleportando
@@ -82,14 +96,9 @@ class ResgatarViolaoUseCase:
             return
 
     def _atualizar_teleporte(self, dt):
-        teleporte_concluido = self.duende.teleporte.atualizar(dt, self.duende)
-
+        self.duende.teleporte.atualizar(dt, self.duende)
         self.duende.alpha_visual = self.duende.teleporte.alpha_visual
-
         self.duende.escala_visual = self.duende.teleporte.escala_visual
-
-        if teleporte_concluido:
-            self._iniciar_resgate_monitorado()
 
     def _atualizar_resgate(self, dt):
         resgate_concluido = self._atualizar_resgates(dt)
@@ -120,6 +129,7 @@ class ResgatarViolaoUseCase:
 
             if distancia <= DISTANCIA_PEGAR:
                 self.violao_em_maos = True
+                self.animacoes.iniciar_guardando_violao()
 
                 self.violao.caindo = False
 
@@ -144,7 +154,7 @@ class ResgatarViolaoUseCase:
             self.violao.y = destino_y
             return True
 
-        velocidade = self.VELOCIDADE * dt
+        velocidade = self.VELOCIDADE_GUARDAR * dt
 
         self.duende.x += (dx / distancia) * velocidade
         self.duende.y += (dy / distancia) * velocidade
@@ -189,6 +199,7 @@ class ResgatarViolaoUseCase:
     def _finalizar_resgate(self):
         self.ativo = False
         self.violao_em_maos = False
+        self.animacoes.iniciar_voo()
         self.duende.movimento_bloqueado = False
         self.duende.iniciar_resgate_monitorado = False
 

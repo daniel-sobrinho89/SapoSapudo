@@ -4,6 +4,8 @@
 
 import random
 
+from domains.sapudo.animacoes_sapo import Animacao
+
 
 class AnimacoesDuende:
     # ==========================
@@ -15,19 +17,25 @@ class AnimacoesDuende:
     VOANDO = "voando"
     INDO_PARA_FRASCO = "indo_para_frasco"
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
+    GUARDANDO_VIOLAO = "guardando_violao"
+    ESCONDENDO_ATRAS_VIOLAO = "escondendo_atras_violao"
 
     def __init__(self):
-        self.piscando = False
-        self.tempo_piscada = 0.0
-        self.tempo_espera = 0.0
         self.intervalo = random.uniform(2.0, 5.0)
-
         # ==========================
         # SONO
         # ==========================
         self.fator_sono_visual = 0.0
         self.ciclo_sono = CicloSono()
         self.estado = self.VOANDO
+
+        # ====================================
+        # CONTROLE TROCA DE FRAMES
+        # ====================================
+        self.animacao_voando = Animacao(15, 0.20)
+        self.animacao_dormindo = Animacao(1, 0.20)
+        self.animacao_descendo_para_dormir = Animacao(10, 0.20)
+        self.animacao_guardando_violao = Animacao(4, 0.40)
 
     # =====================================
     # ESTADO
@@ -53,68 +61,59 @@ class AnimacoesDuende:
     def voando(self):
         return self.estado == self.VOANDO
 
+    @property
+    def guardando_violao(self):
+        return self.estado == self.GUARDANDO_VIOLAO
+
+    @property
+    def escondendo_atras_violao(self):
+        return self.estado == self.ESCONDENDO_ATRAS_VIOLAO
+
     # =====================================
     # TRANSIÇÕES
     # =====================================
 
     def iniciar_sono(self):
+        self.animacao_dormindo.reset()
         self.estado = self.DORMINDO
 
     def iniciar_acordar(self):
         self.estado = self.ACORDANDO
 
     def iniciar_descida(self):
+        self.animacao_descendo_para_dormir.reset()
         self.estado = self.DESCENDO_PARA_DORMIR
 
     def iniciar_entrada_frasco(self):
         self.estado = self.INDO_PARA_FRASCO
 
     def iniciar_voo(self):
+        self.animacao_voando.reset()
         self.estado = self.VOANDO
+
+    def iniciar_guardando_violao(self):
+        self.animacao_guardando_violao.reset()
+        self.estado = self.GUARDANDO_VIOLAO
+
+    def iniciar_escondendo_atras_violao(self):
+        self.estado = self.ESCONDENDO_ATRAS_VIOLAO
 
     # =====================================
     # UPDATE
     # =====================================
 
     def atualizar(self, dt):
-        # =================================
-        # DORMINDO
-        # =================================
+        self._atualizar_animacoes(dt)
 
-        if self.dormindo:
-            self.piscando = False
-
-            return
-
-        # =================================
-        # ESPERA
-        # =================================
-
-        self.tempo_espera += dt
-
-        # =================================
-        # INICIAR PISCADA
-        # =================================
-
-        if not self.piscando:
-            if self.tempo_espera >= self.intervalo:
-                self.piscando = True
-
-                self.tempo_piscada = 0.0
-
-        # =================================
-        # FINALIZAR PISCADA
-        # =================================
-
-        else:
-            self.tempo_piscada += dt
-
-            if self.tempo_piscada >= 0.12:
-                self.piscando = False
-
-                self.tempo_espera = 0.0
-
-                self.intervalo = random.uniform(2.0, 5.0)
+    def _atualizar_animacoes(self, dt):
+        if self.voando or self.escondendo_atras_violao:
+            self.animacao_voando.atualizar(dt)
+        elif self.dormindo:
+            self.animacao_dormindo.atualizar(dt)
+        elif self.descendo_para_dormir:
+            self.animacao_descendo_para_dormir.atualizar(dt)
+        elif self.guardando_violao:
+            self.animacao_guardando_violao.atualizar(dt)
 
 
 class CicloSono:
