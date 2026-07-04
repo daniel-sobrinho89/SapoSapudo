@@ -15,19 +15,13 @@ class BuscarViolaoUseCase:
     def executar(self):
         animacoes = self.sapo.animacoes
 
-        if self.em_execucao:
-            return
-
-        if animacoes.maquina.esta_com_violao():
-            return
-
-        if self.violao.acoplado:
-            return
-
-        if not self.sapo.pode_receber_violao():
-            return
-
-        if not self.sapo.pode_caminhar():
+        if (
+            self.em_execucao
+            or not self.sapo.pode_caminhar()
+            or animacoes.maquina.esta_com_violao()
+            or self.violao.acoplado
+            or not self.sapo.pode_receber_violao()
+        ):
             return
 
         self.em_execucao = True

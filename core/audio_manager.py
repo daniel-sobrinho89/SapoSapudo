@@ -71,6 +71,9 @@ class AudioManager:
         kivy_adapter.mixer.music.play()
 
     def voltar_musica_fundo(self):
+        if self.habilitado and self.musica_atual == MUSICA_FUNDO:
+            return
+
         self.habilitado = True
         kivy_adapter.mixer.music.pause()
         kivy_adapter.mixer.music._sound = None

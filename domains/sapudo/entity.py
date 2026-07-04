@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from domains.sapudo.animacoes_sapo import AnimacoesSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
-from domains.sapudo.respiracao_sapo import RespiracaoSapo
 
 
 class Sapo:
@@ -26,7 +25,6 @@ class Sapo:
 
         # SYSTEMS
         self.animacoes = AnimacoesSapo()
-        self.respiracao = RespiracaoSapo()
         self.pensamentos = PensamentosSapo()
         self.controle_esquerda = False
         self.controle_direita = False
@@ -45,15 +43,6 @@ class Sapo:
         self.distancia_violao = distancia_violao
         self.clima = clima_service
 
-    def ir_para_feira(self):
-        """Inicia o deslocamento para a feira."""
-        self.comando_ir_feira = True
-        self.andar_iniciado_por_controle = False
-        if self.pode_caminhar():
-            self.animacoes.proxima_tentativa_caminhada = None
-            self.animacoes._ultimo_frame_andar = -1
-            self.animacoes.iniciar_andar_esquerda()
-
     def area_violao(self):
         return AreaAcoplamento(
             x=self.x,
@@ -69,40 +58,6 @@ class Sapo:
 
     def esta_tocando_violao(self):
         return self.animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO)
-
-    def iniciar_controle_esquerda(self):
-        if not self.pode_caminhar():
-            return
-
-        self.andando_manual = True
-        self.controle_esquerda = True
-        self.andar_iniciado_por_controle = True
-
-        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
-            self.animacoes.iniciar_andar_esquerda()
-
-    def parar_controle_esquerda(self):
-        self.andando_manual = False
-        self.controle_esquerda = False
-        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
-            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
-
-    def iniciar_controle_direita(self):
-        if not self.pode_caminhar():
-            return
-
-        self.andando_manual = True
-        self.controle_direita = True
-        self.andar_iniciado_por_controle = True
-
-        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
-            self.animacoes.iniciar_andar_direita()
-
-    def parar_controle_direita(self):
-        self.andando_manual = False
-        self.controle_direita = False
-        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
-            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
 
     def pode_caminhar(self):
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)

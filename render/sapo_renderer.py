@@ -79,6 +79,18 @@ class SapoRenderer:
                 self.assets.carregar(f"sapudo/conversar/sapudo_{i:04d}.webp")
             )
 
+        self.frames_pegar_livro = []
+        for i in range(20):
+            self.frames_pegar_livro.append(
+                self.assets.carregar(f"sapudo/pegar_livro/sapudo_{i:04d}.webp")
+            )
+
+        self.frames_lendo_livro = []
+        for i in range(40):
+            self.frames_lendo_livro.append(
+                self.assets.carregar(f"sapudo/lendo_livro/sapudo_{i:04d}.webp")
+            )
+
     # =====================================
     # DRAW
     # =====================================
@@ -124,7 +136,10 @@ class SapoRenderer:
             return self.frames_andar_direita[animacoes.andar_direita.frame]
         elif animacoes.maquina.eh(EstadoSapo.CONVERSAR):
             return self.frames_conversar[animacoes.conversar.frame]
-
+        elif animacoes.maquina.eh(EstadoSapo.PEGANDO_LIVRO):
+            return self.frames_pegar_livro[animacoes.pegar_livro.frame]
+        elif animacoes.maquina.eh(EstadoSapo.LENDO_LIVRO):
+            return self.frames_lendo_livro[animacoes.lendo_livro.frame]
         return self.frames_parado[animacoes.parado.frame]
 
     def renderizar(self, centro_x, centro_y, escala, animacoes):

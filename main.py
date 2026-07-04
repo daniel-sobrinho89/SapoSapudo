@@ -312,13 +312,12 @@ class GameWidget(Widget):
 
         # Controles de Movimento do Sapo
         if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
-            self.controle_renderer.botao_esquerda_pressionado = True
-            self.sapo.iniciar_controle_esquerda()
+            self.controlador_voz_musical.iniciar_controle_esquerda()
             return True
 
         if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
             self.controle_renderer.botao_direita_pressionado = True
-            self.sapo.iniciar_controle_direita()
+            self.controlador_voz_musical.iniciar_controle_direita()
             return True
 
         # Livro e Poeira
@@ -358,8 +357,8 @@ class GameWidget(Widget):
         # Resetar Controles do Sapo
         self.controle_renderer.botao_esquerda_pressionado = False
         self.controle_renderer.botao_direita_pressionado = False
-        self.sapo.parar_controle_esquerda()
-        self.sapo.parar_controle_direita()
+        self.controlador_voz_musical.parar_controle_esquerda()
+        self.controlador_voz_musical.parar_controle_direita()
 
         # Finalizar Arraste Violão
         if self.controlador_voz_musical.processar_toque_up_violao():
@@ -373,23 +372,23 @@ class GameWidget(Widget):
         # seta esquerda
         if key == 276:
             self.tecla_esquerda_pressionada = True
-            self.sapo.iniciar_controle_esquerda()
+            self.controlador_voz_musical.iniciar_controle_esquerda()
 
         # seta direita
         if key == 275:
             self.tecla_direita_pressionada = True
-            self.sapo.iniciar_controle_direita()
+            self.controlador_voz_musical.iniciar_controle_direita()
 
         return True
 
     def on_key_up(self, window, key, scancode):
         if key == 276:
             self.tecla_esquerda_pressionada = False
-            self.sapo.parar_controle_esquerda()
+            self.controlador_voz_musical.parar_controle_esquerda()
 
         if key == 275:
             self.tecla_direita_pressionada = False
-            self.sapo.parar_controle_direita()
+            self.controlador_voz_musical.parar_controle_direita()
 
         return True
 

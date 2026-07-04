@@ -5,6 +5,7 @@
 import random
 
 from domains.sapudo.animacoes_sapo import Animacao
+from domains.sapudo.maquina_estado_sapo import StateMachine
 
 
 class AnimacoesDuende:
@@ -29,7 +30,7 @@ class AnimacoesDuende:
         # ==========================
         self.fator_sono_visual = 0.0
         self.ciclo_sono = CicloSono()
-        self.estado = self.VOANDO
+        self.maquina = StateMachine(self.VOANDO)
 
         # ====================================
         # CONTROLE TROCA DE FRAMES
@@ -45,36 +46,44 @@ class AnimacoesDuende:
     # =====================================
 
     @property
+    def estado(self):
+        return self.maquina.estado
+
+    @estado.setter
+    def estado(self, valor):
+        self.maquina.trocar(valor)
+
+    @property
     def dormindo(self):
-        return self.estado == self.DORMINDO
+        return self.maquina.eh(self.DORMINDO)
 
     @property
     def acordando(self):
-        return self.estado == self.ACORDANDO
+        return self.maquina.eh(self.ACORDANDO)
 
     @property
     def indo_para_frasco(self):
-        return self.estado == self.INDO_PARA_FRASCO
+        return self.maquina.eh(self.INDO_PARA_FRASCO)
 
     @property
     def descendo_para_dormir(self):
-        return self.estado == self.DESCENDO_PARA_DORMIR
+        return self.maquina.eh(self.DESCENDO_PARA_DORMIR)
 
     @property
     def voando(self):
-        return self.estado == self.VOANDO
+        return self.maquina.eh(self.VOANDO)
 
     @property
     def guardando_violao(self):
-        return self.estado == self.GUARDANDO_VIOLAO
+        return self.maquina.eh(self.GUARDANDO_VIOLAO)
 
     @property
     def escondendo_atras_violao(self):
-        return self.estado == self.ESCONDENDO_ATRAS_VIOLAO
+        return self.maquina.eh(self.ESCONDENDO_ATRAS_VIOLAO)
 
     @property
     def comendo_esfera(self):
-        return self.estado == self.COMENDO_ESFERA
+        return self.maquina.eh(self.COMENDO_ESFERA)
 
     # =====================================
     # TRANSIÇÕES
@@ -117,6 +126,7 @@ class AnimacoesDuende:
     # =====================================
 
     def atualizar(self, dt):
+        self.maquina.atualizar(dt)
         self._atualizar_animacoes(dt)
 
     def _atualizar_animacoes(self, dt):

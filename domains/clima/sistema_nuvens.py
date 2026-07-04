@@ -3,6 +3,7 @@
 # ==========================================
 
 import kivy_adapter
+from domains.clima.clima_service import ClimaService
 from domains.clima.nuvem import Nuvem
 
 
@@ -31,26 +32,6 @@ class SistemaNuvens:
         self.area_interna = kivy_adapter.Rect(0, -75, LARGURA, 490)
 
     # ==========================================
-    # CALCULAR INTENSIDADE
-    # ==========================================
-
-    def calcular_intensidade(self, atual, futuro_1h, futuro_2h, futuro_3h):
-        intensidade = atual
-
-        # crescimento gradual futuro
-
-        if futuro_3h > atual:
-            intensidade += (futuro_1h - atual) * 0.2
-
-            intensidade += (futuro_2h - atual) * 0.3
-
-            intensidade += (futuro_3h - atual) * 0.5
-
-        intensidade = max(0, min(100, intensidade))
-
-        return intensidade
-
-    # ==========================================
     # UPDATE
     # ==========================================
 
@@ -67,7 +48,7 @@ class SistemaNuvens:
         if not Nuvem.carregado:
             return
 
-        self.intensidade = self.calcular_intensidade(
+        self.intensidade = ClimaService.calcular_intensidade(
             cloudiness, future_1h, future_2h, future_3h
         )
 

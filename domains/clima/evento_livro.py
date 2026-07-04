@@ -78,10 +78,10 @@ class EventoLivro:
         self.nevoa = 0
         self.tempo_sem_clique = 0
         self.acumulador_retorno = 0.0
-        self.livro.mostrar(0, 0)
+        self.livro.exibir(0, 0)
 
     def ocultar_livro_por_clique(self):
-        self.livro.abrir()
+        self.livro.abrir_para_leitura()
         self.pagina_atual = None
         self.rect_livro = None
         self.nevoa = 0
@@ -93,7 +93,7 @@ class EventoLivro:
             esfera.ativa = True
 
     def ocultar_livro_por_timeout(self):
-        self.livro.ocultar()
+        self.livro.esconder()
         self.rect_livro = None
         self.nevoa = 0
         self.acumulador_retorno = 0.0
@@ -121,7 +121,7 @@ class EventoLivro:
         self.nevoa = (clicadas / total) * 7
 
     def fechar_livro_aberto(self):
-        self.livro.fechar()
+        self.livro.fechar_leitura()
 
         self.pagina_atual = None
 
@@ -228,8 +228,10 @@ class EventoLivro:
         if not self.livro.visivel:
             return
 
-        self.livro.x = frasco_climatico.area_pote.centerx
-        self.livro.y = frasco_climatico.area_pote.centery
+        self.livro.posicionar(
+            frasco_climatico.area_pote.centerx,
+            frasco_climatico.area_pote.centery,
+        )
 
         offset_flutuacao = math.sin(self.tempo * 2) * 5
 

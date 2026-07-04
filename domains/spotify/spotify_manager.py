@@ -1,6 +1,5 @@
 import threading
 
-from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.spotify.spotify_android import SpotifyAndroid
 from domains.spotify.spotify_api import SpotifyApi
 from domains.spotify.spotify_auth import SpotifyAuth
@@ -118,11 +117,6 @@ class SpotifyManager:
 
         self.spotify_tocando_cache = False
 
-        if not sucesso:
-            PensamentosSapo.publicar(
-                "Não estou conseguindo visitar este universo musical agora.", 6
-            )
-
         return sucesso
 
     def tocar(self, _evento=None):
@@ -180,8 +174,6 @@ class SpotifyManager:
             self.spotify_tentativas = 5
             self.iniciar_login_spotify()
 
-            PensamentosSapo.publicar("Preciso conhecer seu Spotify primeiro.", 5)
-
             desligar_microfone_callback()
             return False
 
@@ -195,8 +187,6 @@ class SpotifyManager:
                 self.spotify_pendente = pesquisa
                 self.spotify_pendente_timer = 3
                 self.spotify_tentativas = 5
-
-                PensamentosSapo.publicar("Abrindo seu Spotify...", 3)
 
                 desligar_microfone_callback()
                 return False
@@ -288,27 +278,7 @@ class SpotifyManager:
     # =====================================
 
     def atualizar_animacao_spotify(self, dt):
-        spotify_tocando = self.spotify_tocando_cache
-
-        # =====================================
-        # PENSAMENTOS SOBRE A MÚSICA
-        # =====================================
-
-        if spotify_tocando and self.spotify_artista_atual and self.spotify_musica_atual:
-            self.spotify_pensamento_timer -= dt
-
-            if self.spotify_pensamento_timer <= 0:
-                self.spotify_pensamento_timer = 10
-
-                novoPensamento = f"Lá lá lá... {self.spotify_musica_atual}"
-                if self.spotify_mostrar_artista:
-                    novoPensamento = (
-                        f"Ihuuu! Estou ouvindo {self.spotify_artista_atual}"
-                    )
-
-                PensamentosSapo.publicar(novoPensamento, 10)
-
-                self.spotify_mostrar_artista = not self.spotify_mostrar_artista
+        return None
 
     # =====================================
     # LOOP PRINCIPAL E PROCESSAMENTO ASSÍNCRONO
@@ -350,11 +320,6 @@ class SpotifyManager:
                 self.spotify_pendente_timer = 0
                 self.spotify_tentativas = 0
 
-                PensamentosSapo.publicar(
-                    "Não encontrei um Spotify ativo.",
-                    5,
-                )
-
             return
 
         uri = SpotifyApi.buscar_faixa(
@@ -389,11 +354,6 @@ class SpotifyManager:
             self.spotify_pendente = None
             self.spotify_pendente_timer = 0
             self.spotify_tentativas = 0
-
-            PensamentosSapo.publicar(
-                "Não consegui iniciar a música.",
-                5,
-            )
 
     def _processar_finalizacao_autenticacao(self):
         code = SpotifyCallback.obter_code()

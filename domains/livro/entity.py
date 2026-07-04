@@ -16,9 +16,12 @@ class Livro:
 
         self.timer_visivel = 0.0
 
-    def mostrar(self, x, y, tempo=420):
+    def posicionar(self, x, y):
         self.x = x
         self.y = y
+
+    def mostrar(self, x, y, tempo=420):
+        self.posicionar(x, y)
 
         self.x_inicial = x
         self.y_inicial = y
@@ -27,17 +30,31 @@ class Livro:
         self.aberto = False
         self.timer_visivel = tempo
 
+    def exibir(self, x=0, y=0, tempo=420):
+        self.mostrar(x, y, tempo)
+
     def ocultar(self):
         self.visivel = False
         self.aberto = False
         self.timer_visivel = 0
 
+    def esconder(self):
+        self.ocultar()
+
     def abrir(self):
         self.visivel = False
         self.aberto = True
+        self.timer_visivel = 0
+
+    def abrir_para_leitura(self):
+        self.abrir()
 
     def fechar(self):
         self.aberto = False
+        self.timer_visivel = 0
+
+    def fechar_leitura(self):
+        self.fechar()
 
     def atualizar_timer(self, dt):
         if not self.visivel:

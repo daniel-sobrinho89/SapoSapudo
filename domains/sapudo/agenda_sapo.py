@@ -19,8 +19,8 @@ class AgendaSapo:
         self.executou_acordar_hoje = False
         self.data_ultimo_reset = datetime.now().date()
 
-    def verificar_horario_sono(self):
-        agora = datetime.now()
+    def verificar_horario_sono(self, agora=None):
+        agora = agora or datetime.now()
         horario_atual = (agora.hour * 60) + agora.minute
 
         horario_acordar = (7 * 60) + 30
@@ -31,8 +31,22 @@ class AgendaSapo:
 
         return horario_atual >= horario_dormir or horario_atual < horario_acordar
 
-    def atualizar_resets_diarios(self):
-        agora = datetime.now()
+    def deve_iniciar_caminhada(self, agora, horario_atual):
+        if self.proxima_tentativa_caminhada:
+            return agora >= self.proxima_tentativa_caminhada
+
+        for hora, minuto in self.horarios_caminhada:
+            if horario_atual == (hora, minuto):
+                chave = (agora.year, agora.month, agora.day, hora, minuto)
+
+                if self.ultima_execucao_caminhada != chave:
+                    self.ultima_execucao_caminhada = chave
+                    return True
+
+        return False
+
+    def atualizar_resets_diarios(self, agora=None):
+        agora = agora or datetime.now()
         if agora.hour >= 8 and self.data_ultimo_reset != agora.date():
             self.iniciou_sono_hoje = False
             self.executou_acordar_hoje = False

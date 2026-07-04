@@ -43,6 +43,8 @@ class ControlarComportamentoDuendeUseCase:
             self.FUGINDO: 15,
         }
 
+        self.duende.escolher_novo_destino()
+
     def executar(self, dt):
         estado = self._decidir_proximo_estado(dt)
 

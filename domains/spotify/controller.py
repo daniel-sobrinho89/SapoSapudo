@@ -211,8 +211,20 @@ class ControladorVozMusical:
 
     def _processar_comando_feira(self):
         self.desligar_microfone()
-        self.sapo.ir_para_feira()
+        self.controlar_comportamento_sapo.ir_para_feira()
         self.audio.tocar_passeio_sapudo()
+
+    def iniciar_controle_esquerda(self):
+        self.controlar_comportamento_sapo.iniciar_controle_esquerda()
+
+    def parar_controle_esquerda(self):
+        self.controlar_comportamento_sapo.parar_controle_esquerda()
+
+    def iniciar_controle_direita(self):
+        self.controlar_comportamento_sapo.iniciar_controle_direita()
+
+    def parar_controle_direita(self):
+        self.controlar_comportamento_sapo.parar_controle_direita()
 
     def _processar_conversa(self, texto):
         if not self.conversa_sapudo.modelo_pronto:

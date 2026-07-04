@@ -46,8 +46,6 @@ class DuendeNeblina:
         self.corpo_rect = kivy_adapter.Rect(0, 0, 0, 0)
         self.cabeca_rect = kivy_adapter.Rect(0, 0, 0, 0)
 
-        self.escolher_novo_destino()
-
     @property
     def arrastando(self):
         return self.arraste.ativo

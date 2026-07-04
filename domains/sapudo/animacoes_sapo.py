@@ -25,12 +25,22 @@ class AnimacoesSapo:
         self.andar_esquerda = Animacao(10, 0.07)
         self.andar_direita = Animacao(10, 0.07)
         self.conversar = Animacao(60, 0.17)
+        self.pegar_livro = Animacao(20, 0.16, loop=False)
+        self.lendo_livro = Animacao(40, 0.17)
 
         self.ultimo_frame_guardar = -1
         self.finalizou_soltar_violao = False
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
+
+    @property
+    def estado(self):
+        return self.maquina.estado
+
+    @estado.setter
+    def estado(self, valor):
+        self.maquina.trocar(valor)
 
     @property
     def frame_violao(self):
@@ -45,6 +55,7 @@ class AnimacoesSapo:
     # ====================================
 
     def atualizar(self, dt):
+        self.maquina.atualizar(dt)
         self._atualizar_animacoes(dt)
 
     def _atualizar_animacoes(self, dt):
@@ -69,6 +80,12 @@ class AnimacoesSapo:
         self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
+        self.pegar_livro.atualizar(dt) if self.maquina.eh(
+            EstadoSapo.PEGANDO_LIVRO
+        ) else None
+        self.lendo_livro.atualizar(dt) if self.maquina.eh(
+            EstadoSapo.LENDO_LIVRO
+        ) else None
 
     def iniciar_dormir(self):
         self.dormir.reset()

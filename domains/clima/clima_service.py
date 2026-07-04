@@ -84,6 +84,19 @@ class ClimaService:
     # SUAVIZAÇÃO VISUAL
     # ==========================================
 
+    @staticmethod
+    def calcular_intensidade(atual, futuro_1h, futuro_2h, futuro_3h):
+        intensidade = atual
+
+        if futuro_3h > atual:
+            intensidade += (futuro_1h - atual) * 0.2
+            intensidade += (futuro_2h - atual) * 0.3
+            intensidade += (futuro_3h - atual) * 0.5
+
+        intensidade = max(0, min(100, intensidade))
+
+        return intensidade
+
     def atualizar_visual(self, dt):
         velocidade = 1.5
 

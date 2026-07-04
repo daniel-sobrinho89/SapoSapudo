@@ -23,44 +23,47 @@ class ControlarComportamentoSapoUseCase:
         self.animacoes = sapo.animacoes
         self.agenda = AgendaSapo()
 
-    # ====================================
-    # PROPRIEDADES DE COMPATIBILIDADE (LEGACY)
-    # ====================================
-    @property
-    def horarios_caminhada(self):
-        return self.agenda.horarios_caminhada
+    def ir_para_feira(self):
+        self.sapo.comando_ir_feira = True
+        self.sapo.andar_iniciado_por_controle = False
+        if self.sapo.pode_caminhar():
+            self.animacoes.proxima_tentativa_caminhada = None
+            self.animacoes._ultimo_frame_andar = -1
+            self.animacoes.iniciar_andar_esquerda()
 
-    @property
-    def proxima_tentativa_caminhada(self):
-        return self.agenda.proxima_tentativa_caminhada
+    def iniciar_controle_esquerda(self):
+        if not self.sapo.pode_caminhar():
+            return
 
-    @proxima_tentativa_caminhada.setter
-    def proxima_tentativa_caminhada(self, v):
-        self.agenda.proxima_tentativa_caminhada = v
+        self.sapo.andando_manual = True
+        self.sapo.controle_esquerda = True
+        self.sapo.andar_iniciado_por_controle = True
 
-    @property
-    def ultima_execucao_caminhada(self):
-        return self.agenda.ultima_execucao_caminhada
+        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
+            self.animacoes.iniciar_andar_esquerda()
 
-    @ultima_execucao_caminhada.setter
-    def ultima_execucao_caminhada(self, v):
-        self.agenda.ultima_execucao_caminhada = v
+    def parar_controle_esquerda(self):
+        self.sapo.andando_manual = False
+        self.sapo.controle_esquerda = False
+        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
+            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
 
-    @property
-    def iniciou_sono_hoje(self):
-        return self.agenda.iniciou_sono_hoje
+    def iniciar_controle_direita(self):
+        if not self.sapo.pode_caminhar():
+            return
 
-    @iniciou_sono_hoje.setter
-    def iniciou_sono_hoje(self, v):
-        self.agenda.iniciou_sono_hoje = v
+        self.sapo.andando_manual = True
+        self.sapo.controle_direita = True
+        self.sapo.andar_iniciado_por_controle = True
 
-    @property
-    def executou_acordar_hoje(self):
-        return self.agenda.executou_acordar_hoje
+        if not self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
+            self.animacoes.iniciar_andar_direita()
 
-    @executou_acordar_hoje.setter
-    def executou_acordar_hoje(self, v):
-        self.agenda.executou_acordar_hoje = v
+    def parar_controle_direita(self):
+        self.sapo.andando_manual = False
+        self.sapo.controle_direita = False
+        if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
+            self.animacoes.maquina.trocar(EstadoSapo.PARADO)
 
     def executar(self, dt):
         maquina = self.animacoes.maquina
@@ -91,21 +94,14 @@ class ControlarComportamentoSapoUseCase:
                 if self.sapo.x > LARGURA:
                     self.sapo.x = LARGURA
 
-        # retry pendente
-        if self.agenda.proxima_tentativa_caminhada:
-            if agora >= self.agenda.proxima_tentativa_caminhada:
-                executar_caminhada = True
+        intencao = self._escolher_intencao(
+            agora,
+            horario_atual,
+            maquina,
+        )
 
-        # horários normais
-        else:
-            for hora, minuto in self.agenda.horarios_caminhada:
-                if horario_atual == (hora, minuto):
-                    chave = (agora.year, agora.month, agora.day, hora, minuto)
-
-                    if self.agenda.ultima_execucao_caminhada != chave:
-                        self.agenda.ultima_execucao_caminhada = chave
-                        executar_caminhada = True
-                        break
+        if intencao == "caminhar":
+            executar_caminhada = True
 
         if executar_caminhada:
             self.sapo.andar_iniciado_por_controle = False
@@ -183,7 +179,7 @@ class ControlarComportamentoSapoUseCase:
         # ===================================
         # ADORMECENDO
         # ===================================
-        horario_sono = self.agenda.verificar_horario_sono()
+        horario_sono = self.agenda.verificar_horario_sono(agora)
         if maquina.eh(EstadoSapo.ADORMECENDO):
             if not horario_sono:
                 self.animacoes.iniciar_acordar()
@@ -197,17 +193,13 @@ class ControlarComportamentoSapoUseCase:
         # ===================================
         # RESET DIÁRIO
         # ===================================
-        self.agenda.atualizar_resets_diarios()
+        self.agenda.atualizar_resets_diarios(agora)
         # ===================================
         # ACORDAR
         # ===================================
-        if (
-            not horario_sono
-            and not self.agenda.executou_acordar_hoje
-            and maquina.em_estado(
-                EstadoSapo.DORMINDO,
-                EstadoSapo.ADORMECENDO,
-            )
+        if intencao == "acordar" and maquina.em_estado(
+            EstadoSapo.DORMINDO,
+            EstadoSapo.ADORMECENDO,
         ):
             self.animacoes.iniciar_acordar()
             self.agenda.executou_acordar_hoje = True
@@ -216,14 +208,36 @@ class ControlarComportamentoSapoUseCase:
         # ===================================
         # DORMIR
         # ===================================
+        if intencao == "dormir" and not maquina.em_estado(
+            EstadoSapo.DORMINDO,
+            EstadoSapo.ADORMECENDO,
+        ):
+            self.agenda.iniciou_sono_hoje = True
+            self.animacoes.iniciar_dormir()
+            return
+
+    def _escolher_intencao(self, agora, horario_atual, maquina):
+        if self.agenda.deve_iniciar_caminhada(agora, horario_atual):
+            return "caminhar"
+
         if (
-            horario_sono
+            not self.agenda.verificar_horario_sono(agora)
+            and not self.agenda.executou_acordar_hoje
+            and maquina.em_estado(
+                EstadoSapo.DORMINDO,
+                EstadoSapo.ADORMECENDO,
+            )
+        ):
+            return "acordar"
+
+        if (
+            self.agenda.verificar_horario_sono(agora)
             and not self.agenda.iniciou_sono_hoje
             and not maquina.em_estado(
                 EstadoSapo.DORMINDO,
                 EstadoSapo.ADORMECENDO,
             )
         ):
-            self.agenda.iniciou_sono_hoje = True
-            self.animacoes.iniciar_dormir()
-            return
+            return "dormir"
+
+        return "nenhuma"
