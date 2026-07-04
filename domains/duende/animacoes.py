@@ -121,6 +121,17 @@ class AnimacoesDuende:
         self.animacao_comendo_esfera.reset()
         self.estado = self.COMENDO_ESFERA
 
+    def obter_selecao_frame(self):
+        if self.dormindo:
+            return "dormindo", self.animacao_dormindo.frame
+        if self.descendo_para_dormir:
+            return "descendo_para_dormir", self.animacao_descendo_para_dormir.frame
+        if self.guardando_violao:
+            return "guardando_violao", self.animacao_guardando_violao.frame
+        if self.comendo_esfera:
+            return "comendo_esfera", self.animacao_comendo_esfera.frame
+        return "voando", self.animacao_voando.frame
+
     # =====================================
     # UPDATE
     # =====================================

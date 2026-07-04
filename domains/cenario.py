@@ -123,6 +123,7 @@ class GerenciadorCenarios:
     def renderizar(self, dt, ESCALA, sapo_renderer):
         """Renderiza os elementos do cenário atual."""
         self.background_renderer.desenhar()
+        self._atualizar_carregamento_assets(sapo_renderer)
 
         if self.background_renderer.cenario_feira:
             if self.tamandua_renderer:
@@ -150,3 +151,9 @@ class GerenciadorCenarios:
 
             self.evento_livro.renderizar(self.tela, self.frasco_climatico)
             self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
+
+    def _atualizar_carregamento_assets(self, sapo_renderer):
+        sapo_renderer.atualizar_carregamento(8)
+
+        if self.renderer_duende:
+            self.renderer_duende.atualizar_carregamento(2)

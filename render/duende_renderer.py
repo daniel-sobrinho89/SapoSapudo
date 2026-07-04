@@ -4,63 +4,95 @@
 
 
 class DuendeRenderer:
+    MAPA_ANIMACOES = {
+        "dormindo": "dormindo",
+        "descendo_para_dormir": "descendo_para_dormir",
+        "guardando_violao": "guardando_violao",
+        "comendo_esfera": "comendo_esfera",
+    }
+
     def __init__(self, tela, assets, transform):
         self.tela = tela
         self.assets = assets
         self.transform = transform
+        self._indice = 0
+        self.carregado = False
 
-        self.carregar_assets()
+        self.frames = {
+            "voando": [],
+            "descendo_para_dormir": [],
+            "dormindo": [],
+            "guardando_violao": [],
+            "comendo_esfera": [],
+        }
+
+        self._fila = self._criar_fila()
 
     # =====================================
     # LOAD
     # =====================================
 
-    def carregar_assets(self):
-        # =================================
-        # BODY
-        # =================================
+    def _criar_fila(self):
+        fila = []
 
-        self.frames_voando = []
-        for i in range(15):
-            self.frames_voando.append(
-                self.assets.carregar(f"assistente/voando/assistente_{i:04d}.webp")
-            )
+        definicoes = [
+            ("voando", "assistente/voando/assistente_{:04d}.webp", 15),
+            ("comendo_esfera", "assistente/comendo_esfera/assistente_{:04d}.webp", 60),
+        ]
 
-        self.frames_descendo_para_dormir = self.frames_voando[3:14]
-        self.frames_dormindo = [self.frames_voando[3]]
-        self.frames_guardando_violao = self.frames_voando[0:4]
+        for grupo, mascara, total in definicoes:
+            for i in range(total):
+                fila.append((grupo, mascara.format(i)))
 
-        self.frames_comendo_esfera = []
-        for i in range(60):
-            self.frames_comendo_esfera.append(
-                self.assets.carregar(
-                    f"assistente/comendo_esfera/assistente_{i:04d}.webp"
-                )
-            )
+        return fila
+
+    def atualizar_carregamento(self, quantidade_por_frame=3):
+        if self.carregado:
+            return
+
+        for _ in range(quantidade_por_frame):
+            if self._indice >= len(self._fila):
+                self._finalizar_carregamento()
+                return
+
+            grupo, arquivo = self._fila[self._indice]
+            self._indice += 1
+            self.frames[grupo].append(self.assets.carregar(arquivo))
+
+    def _finalizar_carregamento(self):
+        self.frames["descendo_para_dormir"] = self.frames["voando"][3:14]
+        self.frames["dormindo"] = [self.frames["voando"][3]]
+        self.frames["guardando_violao"] = self.frames["voando"][:4]
+
+        self.carregado = True
+
+    # =====================================
+    # FRAME
+    # =====================================
 
     def obter_frame_animacao(self, animacoes):
-        if animacoes.dormindo:
-            return self.frames_dormindo[animacoes.animacao_dormindo.frame]
-        elif animacoes.descendo_para_dormir:
-            return self.frames_descendo_para_dormir[
-                animacoes.animacao_descendo_para_dormir.frame
-            ]
-        elif animacoes.guardando_violao:
-            return self.frames_guardando_violao[
-                animacoes.animacao_guardando_violao.frame
-            ]
-        elif animacoes.comendo_esfera:
-            return self.frames_comendo_esfera[animacoes.animacao_comendo_esfera.frame]
+        if not self.carregado:
+            return None
 
-        return self.frames_voando[animacoes.animacao_voando.frame]
+        seletor, frame = animacoes.obter_selecao_frame()
+
+        chave = self.MAPA_ANIMACOES.get(seletor, "voando")
+        return self.frames[chave][frame]
 
     # =====================================
     # RENDER
     # =====================================
 
     def renderizar(self, duende, escala):
-        escala *= duende.escala_visual
+        if not self.carregado:
+            return
+
         frame = self.obter_frame_animacao(duende.animacoes)
+
+        if frame is None:
+            return
+
+        escala *= duende.escala_visual
 
         self.draw(
             frame,
@@ -89,11 +121,9 @@ class DuendeRenderer:
             escala_y = escala_x
 
         largura = max(1, int(imagem.get_width() * escala_x))
-
         altura = max(1, int(imagem.get_height() * escala_y))
 
         imagem = self.transform.escalar(imagem, (largura, altura))
-
         imagem.set_alpha(alpha)
 
         rect = imagem.get_rect(center=(x, y))

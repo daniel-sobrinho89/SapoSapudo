@@ -21,6 +21,7 @@ class AtualizarFluxoViolaoUseCase:
             self.animacoes.pegar_violao.reset()
             self.animacoes.violao_logic.resetar()
             maquina.trocar(EstadoSapo.PEGANDO_VIOLAO)
+            self.violao.acoplado = True
             return
 
         #
@@ -31,7 +32,6 @@ class AtualizarFluxoViolaoUseCase:
             and self.animacoes.pegar_violao.frame
             >= self.animacoes.pegar_violao.total_frames - 1
         ):
-            self.violao.acoplado = True
             self.animacoes.violao_logic.resetar()
             maquina.trocar(EstadoSapo.TOCANDO_VIOLAO)
 

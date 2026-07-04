@@ -40,7 +40,8 @@ from domains.voz.tts_service import TTSService
 from render.asset_manager import asset_manager
 from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
-from render.sapo_renderer import PensamentoSapoRenderer, SapoRenderer
+from render.pensamento_sapo_renderer import PensamentoSapoRenderer
+from render.sapo_renderer import SapoRenderer
 from render.transform_utils import TransformUtils
 from render.violao_renderer import ViolaoRenderer
 from utils.input import init_scaling, real_to_virtual

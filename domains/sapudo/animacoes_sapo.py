@@ -87,6 +87,35 @@ class AnimacoesSapo:
             EstadoSapo.LENDO_LIVRO
         ) else None
 
+    def obter_selecao_frame(self):
+        if self.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
+            return "tocar_violao", self.violao_logic.frame_atual
+        if self.maquina.eh(EstadoSapo.ADORMECENDO):
+            return "dormir", self.dormir.frame
+        if self.maquina.eh(EstadoSapo.DORMINDO):
+            return "dormindo", self.dormindo.frame
+        if self.maquina.eh(EstadoSapo.ACORDANDO):
+            return "acordar", self.acordar.frame
+        if self.maquina.eh(EstadoSapo.PEGANDO_VIOLAO):
+            return "pegar_violao", self.pegar_violao.frame
+        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
+            return "levantar_violao", self.levantar_violao.frame
+        if self.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
+            return "guardar_violao", self.guardar_violao.frame
+        if self.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
+            return "soltar_violao", self.soltar_violao.frame
+        if self.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
+            return "andar_esquerda", self.andar_esquerda.frame
+        if self.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
+            return "andar_direita", self.andar_direita.frame
+        if self.maquina.eh(EstadoSapo.CONVERSAR):
+            return "conversar", self.conversar.frame
+        if self.maquina.eh(EstadoSapo.PEGANDO_LIVRO):
+            return "pegar_livro", self.pegar_livro.frame
+        if self.maquina.eh(EstadoSapo.LENDO_LIVRO):
+            return "lendo_livro", self.lendo_livro.frame
+        return "parado", self.parado.frame
+
     def iniciar_dormir(self):
         self.dormir.reset()
         self.maquina.trocar(EstadoSapo.ADORMECENDO)
