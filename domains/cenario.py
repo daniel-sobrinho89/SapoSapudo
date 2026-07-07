@@ -1,7 +1,6 @@
 import gc
 
-from config import ALTURA, LARGURA
-from constants import CENTRO_OFFSET_Y
+from config import ALTURA, CENTRO_OFFSET_Y, LARGURA
 from core.fisica import sistema_fisica
 from domains.clima.semente import Semente
 from domains.duende.entity import DuendeNeblina
@@ -156,4 +155,4 @@ class GerenciadorCenarios:
         sapo_renderer.atualizar_carregamento(8)
 
         if self.renderer_duende:
-            self.renderer_duende.atualizar_carregamento(2)
+            self.renderer_duende.atualizar_carregamento(self.duende, 2)

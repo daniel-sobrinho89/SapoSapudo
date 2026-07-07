@@ -208,7 +208,6 @@ class ClimaService:
             self.proxima_tentativa = None
 
             self.hora_bloqueada = None
-
             self.clima_disponivel = True
 
             # ==========================================

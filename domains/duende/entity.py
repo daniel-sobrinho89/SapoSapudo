@@ -32,7 +32,7 @@ class DuendeNeblina:
         self.alpha_visual = 255
         self.escala_visual = 1.0
         self.movimento_bloqueado = False
-        self.iniciar_resgate_monitorado = False
+        self.carregado = False
         # =================================
         # COMPONENTES
         # =================================
@@ -50,16 +50,12 @@ class DuendeNeblina:
     def arrastando(self):
         return self.arraste.ativo
 
-    @property
-    def teleportando(self):
-        return self.teleporte.ativo
-
-    def escolher_novo_destino(self):
-        self.alvo_x = random.randint(180, 1100)
-        self.alvo_y = random.randint(120, 340)
-
     def atualizar_movimento(self, dt):
-        if self.movimento_bloqueado or self.teleporte.ativo or self.arraste.ativo:
+        if (
+            self.movimento_bloqueado
+            or self.animacoes.teleportando
+            or self.arraste.ativo
+        ):
             return
 
         dx = self.alvo_x - self.x
@@ -147,13 +143,47 @@ class DuendeNeblina:
 
         self.animacoes.atualizar(dt)
 
+        if self.animacoes.teleportando:
+            self._atualizar_teleporte(dt)
+            return
+
         # 5. e Movimento Livre
         if (
             not self.movimento_bloqueado
-            and not self.teleporte.ativo
-            and not self.animacoes.escondendo_atras_violao
+            and not self.animacoes.teleportando
             and not self.animacoes.comendo_esfera
         ):
             self._atualizar_destino_livre(dt)
             self.atualizar_movimento(dt)
             self._atualizar_flutuacao(dt)
+
+    def escolher_novo_destino(self):
+        self.alvo_x = random.randint(180, 1100)
+        self.alvo_y = random.randint(120, 340)
+
+    def teleportar(
+        self,
+        destino_x=None,
+        destino_y=None,
+        ao_teleportar=None,
+        ao_finalizar=None,
+        duracao=None,
+        duracao_sumido=None,
+    ):
+        self.animacoes.iniciar_teleportando()
+        self.teleporte.iniciar(
+            destino_x,
+            destino_y,
+            ao_teleportar,
+            ao_finalizar,
+            duracao,
+            duracao_sumido,
+        )
+
+    def _atualizar_teleporte(self, dt):
+        if not (self.teleporte.atualizar(dt, self)):
+            self.alpha_visual = self.teleporte.alpha_visual
+            self.escala_visual = self.teleporte.escala_visual
+        else:
+            self.alpha_visual = 255
+            self.animacoes.iniciar_voo()

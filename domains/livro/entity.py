@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-
-
 class Livro:
     def __init__(self):
         self.x = 0
@@ -13,7 +10,8 @@ class Livro:
         self.aberto = False
 
         self.flutuando = True
-
+        self.acoplado = False
+        self.sendo_carregado = False
         self.timer_visivel = 0.0
 
     def posicionar(self, x, y):
@@ -27,6 +25,7 @@ class Livro:
         self.y_inicial = y
 
         self.visivel = True
+        self.acoplado = False
         self.aberto = False
         self.timer_visivel = tempo
 
@@ -41,13 +40,14 @@ class Livro:
     def esconder(self):
         self.ocultar()
 
-    def abrir(self):
-        self.visivel = False
-        self.aberto = True
-        self.timer_visivel = 0
+    def carregar(self):
+        self.sendo_carregado = True
 
-    def abrir_para_leitura(self):
-        self.abrir()
+    def acoplar(self):
+        self.sendo_carregado = False
+        self.visivel = False
+        self.acoplado = True
+        self.timer_visivel = 0
 
     def fechar(self):
         self.aberto = False
@@ -71,31 +71,3 @@ class Livro:
     def voltar_origem(self):
         self.x = self.x_inicial
         self.y = self.y_inicial
-
-    def estado(self):
-        return EstadoLivro(
-            x=self.x,
-            y=self.y,
-            x_inicial=self.x_inicial,
-            y_inicial=self.y_inicial,
-            visivel=self.visivel,
-            aberto=self.aberto,
-            flutuando=self.flutuando,
-            timer_visivel=self.timer_visivel,
-        )
-
-
-@dataclass
-class EstadoLivro:
-    x: float
-    y: float
-
-    x_inicial: float
-    y_inicial: float
-
-    visivel: bool
-    aberto: bool
-
-    flutuando: bool
-
-    timer_visivel: float

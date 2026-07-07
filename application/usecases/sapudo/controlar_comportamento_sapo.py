@@ -168,6 +168,13 @@ class ControlarComportamentoSapoUseCase:
                 self.violao.voltar_origem()
                 self.animacoes.finalizou_soltar_violao = False
 
+        if (
+            self.animacoes.maquina.eh(EstadoSapo.PEGANDO_LIVRO)
+            and self.animacoes.pegar_livro.frame
+            >= self.animacoes.pegar_livro.total_frames - 1
+        ):
+            self.animacoes.maquina.trocar(EstadoSapo.LENDO_LIVRO)
+
         # ===================================
         # ACORDANDO
         # ===================================

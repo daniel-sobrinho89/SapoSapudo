@@ -15,7 +15,7 @@ class ComerEsferaUseCase:
         self.tempo = 0.0
         self.esfera_alvo = None
 
-    def iniciar(self):
+    def executar(self):
         self.estado = self.INDO
         self.tempo = 0.0
 
@@ -46,9 +46,9 @@ class ComerEsferaUseCase:
 
         self.duende.animacoes.iniciar_perseguindo_esfera()
 
-    def executar(self, dt):
+    def atualizar(self, dt):
         if self.esfera_alvo is None:
-            return True
+            self.duende.animacoes.iniciar_voo()
 
         if self.estado == self.INDO:
             alvo_x = self.esfera_alvo.x
@@ -71,6 +71,3 @@ class ComerEsferaUseCase:
             terminou = self.duende.animacoes.animacao_comendo_esfera.atualizar(dt)
             if terminou:
                 self.duende.animacoes.iniciar_voo()
-                return True
-
-        return False

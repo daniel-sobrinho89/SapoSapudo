@@ -1,5 +1,7 @@
 import math
 
+from config import CHAO_Y
+
 
 class ResgatarViolaoUseCase:
     MIN_TELEPORT_DIST = 120
@@ -12,23 +14,18 @@ class ResgatarViolaoUseCase:
         self.duende = duende
         self.violao = violao
         self.animacoes = duende.animacoes
-        self.ativo = False
         self.violao_em_maos = False
 
-    def executar(self, estado_violao):
-        if (
-            self.duende.teleportando
-            or self.ativo
-            or estado_violao.acoplado
-            or not self._pode_resgatar_violao()
-            or self.animacoes.ciclo_sono.dormir_por_tempo
-        ):
+    def executar(self):
+        if not self._pode_resgatar_violao():
             return
 
-        self.ativo = True
+        estado_violao = self.violao.estado()
+
         self.violao_em_maos = False
         distancia = abs(estado_violao.x - self.duende.x)
         self.duende.movimento_bloqueado = True
+        self.duende.animacoes.iniciar_perseguindo_violao()
 
         if (
             not self._consegue_alcancar_antes_da_queda(estado_violao)
@@ -52,11 +49,11 @@ class ResgatarViolaoUseCase:
 
             entity.x = self.violao.x
             entity.y = min(
-                self.violao.chao_y - 35,
+                CHAO_Y - 35,
                 self.violao.y + deslocamento,
             )
 
-        self.duende.teleporte.iniciar(
+        self.duende.teleportar(
             ao_teleportar=posicionar_no_violao,
             ao_finalizar=self._iniciar_resgate_monitorado,
             duracao=0.12,
@@ -66,10 +63,7 @@ class ResgatarViolaoUseCase:
     def _iniciar_resgate_monitorado(self):
         if self.violao is not None:
             estado = self.violao.estado()
-
-            self.ativo = True
             self.violao_em_maos = False
-
             self.duende.alvo_x = estado.x
             self.duende.alvo_y = estado.y
 
@@ -78,27 +72,12 @@ class ResgatarViolaoUseCase:
             not self.animacoes.dormindo
             and not self.animacoes.descendo_para_dormir
             and not self.duende.arrastando
-            and not self.ativo
-            and not self.duende.teleportando
+            and not self.duende.animacoes.teleportando
+            and not self.animacoes.ciclo_sono.dormir_por_tempo
         )
 
     def atualizar(self, dt):
-        if self.duende.iniciar_resgate_monitorado:
-            self.duende.iniciar_resgate_monitorado = False
-            self._iniciar_resgate_monitorado()
-
-        if self.duende.teleportando:
-            self._atualizar_teleporte(dt)
-            return
-
-        if self.ativo:
-            self._atualizar_resgate(dt)
-            return
-
-    def _atualizar_teleporte(self, dt):
-        self.duende.teleporte.atualizar(dt, self.duende)
-        self.duende.alpha_visual = self.duende.teleporte.alpha_visual
-        self.duende.escala_visual = self.duende.teleporte.escala_visual
+        self._atualizar_resgate(dt)
 
     def _atualizar_resgate(self, dt):
         resgate_concluido = self._atualizar_resgates(dt)
@@ -108,9 +87,6 @@ class ResgatarViolaoUseCase:
             self._finalizar_resgate()
 
     def _atualizar_resgates(self, dt):
-        if not self.ativo:
-            return False
-
         if self.violao is None:
             return False
 
@@ -178,7 +154,7 @@ class ResgatarViolaoUseCase:
         tempo_voo = distancia / self.VELOCIDADE
 
         gravidade = 900
-        altura_restante = max(1, violao.chao_y - violao.y)
+        altura_restante = max(1, CHAO_Y - violao.y)
         velocidade_queda = max(0, violao.velocidade_queda)
 
         if velocidade_queda > 0:
@@ -197,11 +173,11 @@ class ResgatarViolaoUseCase:
             self.violao.voltar_origem()
 
     def _finalizar_resgate(self):
-        self.ativo = False
         self.violao_em_maos = False
+        self.violao.caindo = False
+        self.violao.fora_do_lugar = False
         self.animacoes.iniciar_voo()
         self.duende.movimento_bloqueado = False
-        self.duende.iniciar_resgate_monitorado = False
 
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0

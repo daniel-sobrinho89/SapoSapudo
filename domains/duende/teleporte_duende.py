@@ -100,12 +100,4 @@ class TeleporteDuende:
         self.alpha_visual = int(255 * progresso)
         self.escala_visual = 0.6 + (progresso * 0.4)
 
-        # if progresso >= 1:
-        #     self.alpha_visual = 255
-        #     self.escala_visual = 1.0
-        #     self.ativo = False
-        #     self.ao_teleportar = None
-
-        #     return True
-
         return False

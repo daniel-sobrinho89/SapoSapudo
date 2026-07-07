@@ -50,6 +50,10 @@ class AnimacoesSapo:
     def frame_violao(self, v):
         self.violao_logic.frame_atual = v
 
+    def iniciar_pegar_livro(self):
+        self.pegar_livro.reset()
+        self.maquina.trocar(EstadoSapo.PEGANDO_LIVRO)
+
     # ====================================
     # UPDATE
     # ====================================

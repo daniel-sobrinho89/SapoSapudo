@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from config import CHAO_Y
 from utils.drag import iniciar_drag, mover_com_offset
 
 
@@ -21,10 +22,9 @@ class Violao:
         self.velocidade_queda = 0
         self.vel_x = 0.0
 
-        self.chao_y = 520
-
         self.no_chao = False
         self.acoplado = False
+        self.fora_do_lugar = False
 
     def iniciar_arraste(self, mouse_x, mouse_y):
         self.arrastando = True
@@ -76,7 +76,6 @@ class Violao:
             y_inicial=self.y_inicial,
             caindo=self.caindo,
             acoplado=self.acoplado,
-            chao_y=self.chao_y,
             no_chao=self.no_chao,
             velocidade_queda=self.velocidade_queda,
             vel_x=self.vel_x,
@@ -93,21 +92,26 @@ class Violao:
         self.x += self.vel_x * dt
         self.y += self.velocidade_queda * dt
 
-        if self.y >= self.chao_y:
-            self.y = self.chao_y
+        if self.y >= CHAO_Y:
+            self.y = CHAO_Y
 
             self.velocidade_queda = 0
 
             self.caindo = False
 
             self.no_chao = True
-        self.y = min(self.y, self.chao_y)
+        self.y = min(self.y, CHAO_Y)
 
         # amortecimento horizontal ao pousar
         if self.no_chao:
             self.vel_x *= 0.3
             if abs(self.vel_x) < 2:
                 self.vel_x = 0
+
+            if self.x != self.x_inicial or self.y != self.y_inicial:
+                self.fora_do_lugar = True
+            else:
+                self.fora_do_lugar = False
 
 
 @dataclass
@@ -120,6 +124,5 @@ class EstadoViolao:
     caindo: bool
     acoplado: bool
     no_chao: bool
-    chao_y: float
     velocidade_queda: float
     vel_x: float

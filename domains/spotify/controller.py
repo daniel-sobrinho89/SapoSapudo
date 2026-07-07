@@ -2,6 +2,7 @@ import threading
 
 from kivy.clock import Clock
 
+from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from application.usecases import (
     AcoplarViolaoUseCase,
     AtualizarFluxoSpotifyUseCase,
@@ -34,6 +35,7 @@ class ControladorVozMusical:
         sapo,
         duende,
         violao,
+        livro,
         spotify,
         audio,
         controle_renderer,
@@ -48,6 +50,7 @@ class ControladorVozMusical:
         self.sapo = sapo
         self.duende = duende
         self.violao = violao
+        self.livro = livro
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
@@ -81,7 +84,7 @@ class ControladorVozMusical:
             self.sapo, self.violao, self.spotify, self.audio
         )
         self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
-        self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.violao)
+        self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.sapo, self.livro)
         self.controlar_sono_duende = ControlarSonoDuendeUseCase(
             self.sapo, self.duende, self.violao, self.clima_service, self.frasco_rect
         )
@@ -98,14 +101,23 @@ class ControladorVozMusical:
             self.duende, self.frasco_climatico, self.esferas, self.evento_livro
         )
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
-            self.duende,
-            self.sapo,
-            self.violao,
-            self.esconder_atras_violao,
-            self.comer_esfera,
+            self.duende, self.sapo, self.violao
         )
         self.controlar_comportamento_sapo = ControlarComportamentoSapoUseCase(
             self.sapo, self.violao, self.spotify, self.audio
+        )
+
+        self.coordenador_estado_jogo = CoordenadorEstadoJogo(
+            self.duende,
+            self.violao,
+            self.livro,
+            self.clima_service,
+            self.resgatar_violao,
+            self.resgatar_livro,
+            self.controlar_sono_duende,
+            self.esconder_atras_violao,
+            self.comer_esfera,
+            self.controlar_comportamento_duende,
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
@@ -154,22 +166,18 @@ class ControladorVozMusical:
 
     def processar_toque_up_violao(self):
         violao_acoplado = self.acoplar_violao.executar(self.sapo.area_violao())
-        if violao_acoplado:
-            self.resgatar_violao.executar(self.violao.estado())
         return violao_acoplado
 
     def processar_toque_up_livro(self):
         livro_acoplado = self.acoplar_livro.executar(self.sapo.area_livro())
         if livro_acoplado:
-            self.resgatar_livro.executar(self.livro.estado())
+            self.resgatar_livro.executar()
         return livro_acoplado
 
     def processar_toque_up_duende(self):
         duende_sendo_arrastado = self.duende.arraste.ativo
         if duende_sendo_arrastado:
-            self.controlar_sono_duende.processar_soltou_duende(
-                self.duende.arraste,
-            )
+            self.coordenador_estado_jogo.processar_soltou_duende()
 
         return duende_sendo_arrastado
 
@@ -202,12 +210,7 @@ class ControladorVozMusical:
         self.controlar_comportamento_sapo.executar(dt)
         self.atualizar_fluxo_spotify.executar(dt)
         self.atualizar_fluxo_violao.executar(dt)
-        self.controlar_sono_duende.executar(dt)
-        self.resgatar_violao.atualizar(dt)
-        self.resgatar_livro.atualizar(dt)
-
-        if not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
-            self.controlar_comportamento_duende.executar(dt)
+        self.coordenador_estado_jogo.executar(dt)
 
     def _processar_comando_feira(self):
         self.desligar_microfone()

@@ -81,7 +81,6 @@ class EventoLivro:
         self.livro.exibir(0, 0)
 
     def ocultar_livro_por_clique(self):
-        self.livro.abrir_para_leitura()
         self.pagina_atual = None
         self.rect_livro = None
         self.nevoa = 0
@@ -228,10 +227,11 @@ class EventoLivro:
         if not self.livro.visivel:
             return
 
-        self.livro.posicionar(
-            frasco_climatico.area_pote.centerx,
-            frasco_climatico.area_pote.centery,
-        )
+        if not self.livro.sendo_carregado:
+            self.livro.posicionar(
+                frasco_climatico.area_pote.centerx,
+                frasco_climatico.area_pote.centery,
+            )
 
         offset_flutuacao = math.sin(self.tempo * 2) * 5
 

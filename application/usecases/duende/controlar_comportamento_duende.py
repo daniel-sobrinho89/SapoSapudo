@@ -1,8 +1,7 @@
 import math
 import random
 
-from config import ALTURA, LARGURA
-from constants import CENTRO_OFFSET_Y
+from config import ALTURA, CENTRO_OFFSET_Y, LARGURA
 
 
 class ControlarComportamentoDuendeUseCase:
@@ -16,12 +15,10 @@ class ControlarComportamentoDuendeUseCase:
     FUGINDO = "fugindo"
     PERSEGUINDO_ESFERA = "perseguindo_esfera"
 
-    def __init__(self, duende, sapo, violao, esconder_atras_violao, comer_esfera):
+    def __init__(self, duende, sapo, violao):
         self.duende = duende
         self.sapo = sapo
         self.violao = violao
-        self.esconder_atras_violao = esconder_atras_violao
-        self.comer_esfera = comer_esfera
 
         self.estado = self.EXPLORANDO
         self.tempo_estado = 0
@@ -48,20 +45,8 @@ class ControlarComportamentoDuendeUseCase:
     def executar(self, dt):
         estado = self._decidir_proximo_estado(dt)
 
-        if estado == self.ESCONDIDO_VIOLAO:
-            terminou = self.esconder_atras_violao.executar(dt)
-            self.tempo_decisao = 0
-            if terminou:
-                self.estado = self.EXPLORANDO
-                self.tempo_estado = 0
-                self.duende.animacoes.iniciar_voo()
-        elif estado == self.PERSEGUINDO_ESFERA:
-            terminou = self.comer_esfera.executar(dt)
-            self.tempo_decisao = 0
-            if terminou:
-                self.estado = self.EXPLORANDO
-                self.tempo_estado = 0
-                self.duende.animacoes.iniciar_voo()
+        if estado == self.ESCONDIDO_VIOLAO or estado == self.PERSEGUINDO_ESFERA:
+            pass
         elif estado == self.ORBITANDO:
             self.orbita_angulo += dt * 1.8
             self.duende.alvo_x = (
@@ -81,12 +66,12 @@ class ControlarComportamentoDuendeUseCase:
 
             self.estado = self._escolher_estado()
             if self.estado == self.ESCONDIDO_VIOLAO:
-                self.esconder_atras_violao.iniciar()
+                self.duende.animacoes.estado = self.duende.animacoes.INDO_ATRAS_VIOLAO
             elif self.estado == self.PERSEGUINDO_ESFERA:
-                self.comer_esfera.iniciar()
+                self.duende.animacoes.estado = self.duende.animacoes.INDO_ATRAS_ESFERA
             elif self.estado == self.EXPLORANDO:
                 destino_x, destino_y = self._obter_destino_teleporte()
-                self.duende.teleporte.iniciar(
+                self.duende.teleportar(
                     destino_x,
                     destino_y,
                     duracao=0.35,

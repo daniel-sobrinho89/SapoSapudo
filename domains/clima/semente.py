@@ -1,6 +1,7 @@
 import math
 import random
 
+from config import CHAO_Y
 from core.fisica import (
     sistema_fisica,
 )
@@ -15,7 +16,7 @@ from domains.clima.animacoes.semente import (
 class Semente:
     def __init__(self):
         self.x = 500
-        self.y = 520
+        self.y = CHAO_Y
         self.vel_x = 0
         self.vel_y = 0
         self.gravidade = 220

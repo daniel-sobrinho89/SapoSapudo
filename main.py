@@ -15,8 +15,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import kivy_adapter
-from config import ALTURA, FPS, LARGURA, QUANTIDADE_POEIRA
-from constants import CENTRO_OFFSET_Y, ESCALA
+from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, FPS, LARGURA, QUANTIDADE_POEIRA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
@@ -272,6 +271,7 @@ class GameWidget(Widget):
             self.sapo,
             self.duende,
             self.violao,
+            self.livro,
             self.spotify,
             self.audio,
             self.controle_renderer,

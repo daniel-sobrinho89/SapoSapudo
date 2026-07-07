@@ -46,25 +46,26 @@ class DuendeRenderer:
 
         return fila
 
-    def atualizar_carregamento(self, quantidade_por_frame=3):
+    def atualizar_carregamento(self, duende, quantidade_por_frame=3):
         if self.carregado:
             return
 
         for _ in range(quantidade_por_frame):
             if self._indice >= len(self._fila):
-                self._finalizar_carregamento()
+                self._finalizar_carregamento(duende)
                 return
 
             grupo, arquivo = self._fila[self._indice]
             self._indice += 1
             self.frames[grupo].append(self.assets.carregar(arquivo))
 
-    def _finalizar_carregamento(self):
+    def _finalizar_carregamento(self, duende):
         self.frames["descendo_para_dormir"] = self.frames["voando"][3:14]
         self.frames["dormindo"] = [self.frames["voando"][3]]
         self.frames["guardando_violao"] = self.frames["voando"][:4]
 
         self.carregado = True
+        duende.carregado = True
 
     # =====================================
     # FRAME
