@@ -24,7 +24,6 @@ class ResgatarViolaoUseCase:
 
         self.violao_em_maos = False
         distancia = abs(estado_violao.x - self.duende.x)
-        self.duende.movimento_bloqueado = True
         self.duende.animacoes.iniciar_perseguindo_violao()
 
         if (
@@ -177,7 +176,6 @@ class ResgatarViolaoUseCase:
         self.violao.caindo = False
         self.violao.fora_do_lugar = False
         self.animacoes.iniciar_voo()
-        self.duende.movimento_bloqueado = False
 
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0

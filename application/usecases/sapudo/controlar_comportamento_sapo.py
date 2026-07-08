@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from domains.clima.livro_climatico import LivroClimatico
 from domains.sapudo.agenda_sapo import AgendaSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 from utils.input import LARGURA
@@ -15,13 +16,27 @@ class ControlarComportamentoSapoUseCase:
     ORBITANDO = "orbitando"
     FUGINDO = "fugindo"
 
-    def __init__(self, sapo, violao, spotify, audio):
+    def __init__(
+        self,
+        sapo,
+        violao,
+        spotify,
+        audio,
+        clima_service=None,
+        livro_climatico=None,
+        tts_service=None,
+    ):
         self.sapo = sapo
         self.violao = violao
         self.spotify = spotify
         self.audio = audio
         self.animacoes = sapo.animacoes
         self.agenda = AgendaSapo()
+        self.clima_service = clima_service
+        self.livro_climatico = livro_climatico or LivroClimatico()
+        self.tts_service = tts_service
+        self._narracao_livro_disparada = False
+        self._estado_sapo_anterior = None
 
     def ir_para_feira(self):
         self.sapo.comando_ir_feira = True
@@ -67,6 +82,12 @@ class ControlarComportamentoSapoUseCase:
 
     def executar(self, dt):
         maquina = self.animacoes.maquina
+        estado_anterior = self._estado_sapo_anterior
+
+        if estado_anterior == EstadoSapo.LENDO_LIVRO and not maquina.eh(
+            EstadoSapo.LENDO_LIVRO
+        ):
+            self._narracao_livro_disparada = False
 
         # =====================================
         # AGENDAMENTO CAMINHADA
@@ -175,12 +196,17 @@ class ControlarComportamentoSapoUseCase:
         ):
             self.animacoes.maquina.trocar(EstadoSapo.LENDO_LIVRO)
 
+        if maquina.eh(EstadoSapo.LENDO_LIVRO) and not self._narracao_livro_disparada:
+            self._narracao_livro_disparada = True
+            self._falar_narracao_livro()
+
         # ===================================
         # ACORDANDO
         # ===================================
         if maquina.eh(EstadoSapo.ACORDANDO):
             if self.animacoes.acordar.atualizar(dt):
                 maquina.trocar(EstadoSapo.PARADO)
+            self._estado_sapo_anterior = maquina.estado
             return
 
         # ===================================
@@ -190,11 +216,13 @@ class ControlarComportamentoSapoUseCase:
         if maquina.eh(EstadoSapo.ADORMECENDO):
             if not horario_sono:
                 self.animacoes.iniciar_acordar()
+                self._estado_sapo_anterior = maquina.estado
                 return
 
             if self.animacoes.dormir.atualizar(dt):
                 maquina.trocar(EstadoSapo.DORMINDO)
 
+            self._estado_sapo_anterior = maquina.estado
             return
 
         # ===================================
@@ -210,6 +238,7 @@ class ControlarComportamentoSapoUseCase:
         ):
             self.animacoes.iniciar_acordar()
             self.agenda.executou_acordar_hoje = True
+            self._estado_sapo_anterior = maquina.estado
             return
 
         # ===================================
@@ -221,7 +250,17 @@ class ControlarComportamentoSapoUseCase:
         ):
             self.agenda.iniciou_sono_hoje = True
             self.animacoes.iniciar_dormir()
+            self._estado_sapo_anterior = maquina.estado
             return
+
+        self._estado_sapo_anterior = maquina.estado
+
+    def _falar_narracao_livro(self):
+        if not self.tts_service or not self.clima_service:
+            return
+
+        texto = self.livro_climatico.gerar_texto_narracao(self.clima_service)
+        self.tts_service.falar(texto)
 
     def _escolher_intencao(self, agora, horario_atual, maquina):
         if self.agenda.deve_iniciar_caminhada(agora, horario_atual):

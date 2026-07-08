@@ -7,6 +7,63 @@ class LivroClimatico:
         with open("data/livro_climatico.json", encoding="utf-8") as arquivo:
             self.frases = json.load(arquivo)
 
+    def gerar_texto_narracao(self, clima):
+        temperatura = getattr(clima, "temperature", 0)
+        umidade = getattr(clima, "humidity", 0)
+        velocidade_vento = getattr(clima, "wind_speed", 0)
+        direcao_vento = self.obter_direcao_vento(getattr(clima, "wind_direction", 0))
+        nuvens = getattr(clima, "cloudiness", 0)
+        previsao_nuvens = getattr(clima, "future_cloudiness_3h", nuvens)
+
+        frases = []
+
+        if temperatura <= 15:
+            frases.append(
+                f"Hum... hoje o lago acordou com {temperatura:.0f} graus. "
+                "Uma temperatura excelente para uma boa leitura."
+            )
+        elif temperatura >= 28:
+            frases.append(
+                f"Hoje o calor chegou com {temperatura:.0f} graus, como se o "
+                "próprio sol quisesse virar página."
+            )
+        else:
+            frases.append(
+                f"Hum... hoje o lago acordou com {temperatura:.0f} graus. "
+                "Uma temperatura excelente para uma boa leitura."
+            )
+
+        if umidade >= 80:
+            frases.append(
+                "A umidade está bem alta. Até as páginas deste livro "
+                "parecem um pouco úmidas."
+            )
+
+        if velocidade_vento >= 20:
+            frases.append(
+                f"O vento resolveu passear pelo {direcao_vento} e está "
+                "soprando com certa vontade."
+            )
+
+        if nuvens >= 70 or previsao_nuvens >= 70:
+            frases.append(
+                "Segundo este velho livro climático, existe chance de chuva "
+                "nas próximas horas. Talvez seja uma boa ideia encontrar uma "
+                "folha grande antes que ela comece."
+            )
+        elif nuvens >= 40:
+            frases.append(
+                "As nuvens estão se organizando como um bando de capivaras curiosas."
+            )
+
+        if not frases:
+            return (
+                "O velho livro climático abriu uma página tranquila e resolveu "
+                "contar um segredo de céu limpo."
+            )
+
+        return random.choice(frases)
+
     def gerar_pagina(self, clima):
         direcao_vento = self.obter_direcao_vento(clima.wind_direction)
 

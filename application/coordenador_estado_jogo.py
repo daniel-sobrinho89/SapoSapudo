@@ -1,32 +1,79 @@
+from application.usecases import (
+    AcoplarViolaoUseCase,
+    AtualizarFluxoViolaoUseCase,
+    ComerEsferaUseCase,
+    ControlarComportamentoDuendeUseCase,
+    ControlarSonoDuendeUseCase,
+    DesacoplarViolaoUseCase,
+    EsconderAtrasViolaoUseCase,
+    ProcessarComandoSpotifyUseCase,
+    ResgatarLivroUseCase,
+    ResgatarViolaoUseCase,
+)
+from domains.sapudo.maquina_estado_sapo import EstadoSapo
+
+
 class CoordenadorEstadoJogo:
     def __init__(
         self,
+        sapo,
         duende,
         violao,
         livro,
+        esferas,
         clima_service,
-        resgatar_violao,
-        resgatar_livro,
-        controlar_sono_duende,
-        esconder_atras_violao,
-        comer_esfera,
-        controlar_comportamento_duende,
+        frasco_climatico,
+        evento_livro,
+        spotify,
+        audio,
     ):
+        self.sapo = sapo
         self.duende = duende
         self.violao = violao
         self.livro = livro
+        self.esferas = esferas
         self.clima_service = clima_service
+        self.frasco_climatico = frasco_climatico
+        self.evento_livro = evento_livro
+        self.spotify = spotify
+        self.audio = audio
 
-        self.resgatar_violao = resgatar_violao
-        self.resgatar_livro = resgatar_livro
-        self.controlar_sono_duende = controlar_sono_duende
-        self.esconder_atras_violao = esconder_atras_violao
-        self.comer_esfera = comer_esfera
-        self.controlar_comportamento_duende = controlar_comportamento_duende
+        self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
+        self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.sapo, self.livro)
+        self.controlar_sono_duende = ControlarSonoDuendeUseCase(
+            self.sapo,
+            self.duende,
+            self.violao,
+            self.clima_service,
+            self.frasco_climatico.area_interna,
+        )
+        self.esconder_atras_violao = EsconderAtrasViolaoUseCase(
+            self.duende, self.violao
+        )
+        self.comer_esfera = ComerEsferaUseCase(
+            self.duende, self.frasco_climatico, self.esferas, self.evento_livro
+        )
+        self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
+            self.duende, self.sapo, self.violao
+        )
+
+        self.acoplar_violao = AcoplarViolaoUseCase(
+            self.violao, self.sapo, self.duende, self.spotify
+        )
+        self.desacoplar_violao = DesacoplarViolaoUseCase(
+            self.violao, self.sapo, self.spotify, self.audio
+        )
+        self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(
+            self.spotify, self.desacoplar_violao
+        )
+        self.atualizar_fluxo_violao = AtualizarFluxoViolaoUseCase(
+            self.sapo, self.violao, self.spotify, self.audio
+        )
 
     def executar(self, dt):
         if self.duende.carregado:
             self._executar_fluxo_duende(dt)
+            self._executar_fluxo_sapudo(dt)
 
     def _executar_fluxo_duende(self, dt):
         if (
@@ -79,7 +126,40 @@ class CoordenadorEstadoJogo:
         elif not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
             self.controlar_comportamento_duende.executar(dt)
 
-    def processar_soltou_duende(self):
-        self.controlar_sono_duende.processar_soltou_duende(
-            self.duende.arraste,
-        )
+    def _executar_fluxo_sapudo(self, dt):
+        if self.violao.acoplado or self.sapo.animacoes.maquina.eh(
+            EstadoSapo.CHEGOU_AO_VIOLAO
+        ):
+            self.atualizar_fluxo_violao.executar(dt)
+
+    def executar_comando_spotify(self, rota):
+        self.processar_comando_spotify.executar(rota["dados"], self.desligar_microfone)
+
+    def processar_toque_down(self, pos_virtual, renderer_violao):
+        if self.desacoplar_violao.executar(
+            mouse_pos=pos_virtual,
+            iniciar_arraste=True,
+        ):
+            return
+
+        if self.duende.processar_toque_down(pos_virtual):
+            return
+
+        # violao_rect
+        if renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
+            self.violao.iniciar_arraste(*pos_virtual)
+            return
+
+    def processar_toque_up(self):
+        if self.duende.arraste.ativo:
+            duende_indo_dormir = self.controlar_sono_duende.processar_soltou_duende(
+                self.duende.arraste,
+            )
+
+            if duende_indo_dormir:
+                return
+
+        violao_acoplado = self.acoplar_violao.executar(self.sapo.area_violao())
+
+        if violao_acoplado:
+            return

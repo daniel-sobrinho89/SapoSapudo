@@ -1,13 +1,13 @@
 {
-    "cloudiness": 100,
-    "wind_speed": 10.4,
-    "wind_direction": 140,
-    "future_cloudiness_1h": 100,
-    "future_cloudiness_2h": 96,
-    "future_cloudiness_3h": 86,
+    "cloudiness": 0,
+    "wind_speed": 3.6,
+    "wind_direction": 175,
+    "future_cloudiness_1h": 0,
+    "future_cloudiness_2h": 0,
+    "future_cloudiness_3h": 0,
     "is_day": 0,
-    "condition_code": 1009,
-    "condition_text": "Overcast",
-    "temperature": 14.2,
-    "humidity": 82
+    "condition_code": 1036,
+    "condition_text": "Smoky haze",
+    "temperature": 15.2,
+    "humidity": 72
 }

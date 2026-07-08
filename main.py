@@ -325,15 +325,9 @@ class GameWidget(Widget):
         if self.evento_livro.processar_toque(pos_virtual):
             return True
 
-        # Duende
-        if self.tem_duende and self.duende.processar_toque_down(pos_virtual):
-            return True
-
-        # Violão (Acoplado ou Normal)
-        if self.controlador_voz_musical.processar_toque_down_violao(
+        self.controlador_voz_musical.processar_toque_down(
             pos_virtual, self.renderer_violao
-        ):
-            return True
+        )
 
         return super().on_touch_down(touch)
 
@@ -361,13 +355,7 @@ class GameWidget(Widget):
         self.controlador_voz_musical.parar_controle_esquerda()
         self.controlador_voz_musical.parar_controle_direita()
 
-        # Finalizar Arraste Violão
-        if self.controlador_voz_musical.processar_toque_up_violao():
-            return True
-
-        # Finalizar Arraste Duende
-        if self.tem_duende and self.controlador_voz_musical.processar_toque_up_duende():
-            return True
+        self.controlador_voz_musical.processar_toque_up()
 
     def on_key_down(self, window, key, scancode, codepoint, modifiers):
         # seta esquerda

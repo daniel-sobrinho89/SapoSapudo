@@ -24,7 +24,6 @@ class ResgatarLivroUseCase:
             self.livro.x - self.duende.x,
             self.livro.y - self.duende.y,
         )
-        self.duende.movimento_bloqueado = True
         self.duende.animacoes.iniciar_perseguindo_livro()
 
         if distancia > self.MIN_TELEPORT_DIST:
@@ -148,7 +147,6 @@ class ResgatarLivroUseCase:
         self.livro.flutuando = False
         self.livro.fora_do_lugar = False
         self.animacoes.iniciar_voo()
-        self.duende.movimento_bloqueado = False
 
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0
