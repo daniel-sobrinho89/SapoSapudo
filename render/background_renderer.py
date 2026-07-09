@@ -112,10 +112,10 @@ class BackgroundRenderer:
         if self.cenario_feira:
             return self.obter_background_feira()
 
-        if self.esta_chovendo():
-            return self.background_chuva
-
         hora_atual = self.ambiente.obter_hora_decimal()
+
+        if self.esta_chovendo() and not (hora_atual >= 18.5 or hora_atual < 6):
+            return self.background_chuva
 
         # =====================================
         # MANHÃ

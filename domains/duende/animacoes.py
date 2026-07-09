@@ -46,7 +46,7 @@ class AnimacoesDuende:
         self.animacao_dormindo = Animacao(1, 0.20)
         self.animacao_descendo_para_dormir = Animacao(10, 0.20)
         self.animacao_guardando_violao = Animacao(4, 0.40)
-        self.animacao_comendo_esfera = Animacao(60, 0.15)
+        self.animacao_comendo_esfera = Animacao(60, 0.20)
 
     # =====================================
     # ESTADO
