@@ -16,6 +16,7 @@ class SapoRenderer:
         "pegar_livro": "pegar_livro",
         "lendo_livro": "lendo_livro",
         "tocar_violao": "tocar_violao",
+        "levantar_livro": "levantar_livro",
     }
 
     def __init__(self, tela, assets, transform):
@@ -43,6 +44,7 @@ class SapoRenderer:
             "conversar": [],
             "pegar_livro": [],
             "lendo_livro": [],
+            "levantar_livro": [],
         }
 
         self._fila = self._criar_fila()
@@ -89,6 +91,10 @@ class SapoRenderer:
         self.frames["andar_direita"] = [
             kivy_adapter.transform.flip(f, True, False)
             for f in self.frames["andar_esquerda"]
+        ]
+        self.frames["levantar_livro"] = [
+            kivy_adapter.transform.flip(f, True, False)
+            for f in self.frames["pegar_livro"]
         ]
         self.carregado = True
 

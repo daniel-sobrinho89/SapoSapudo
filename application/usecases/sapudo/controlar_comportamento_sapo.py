@@ -190,15 +190,22 @@ class ControlarComportamentoSapoUseCase:
                 self.animacoes.finalizou_soltar_violao = False
 
         if (
-            self.animacoes.maquina.eh(EstadoSapo.PEGANDO_LIVRO)
+            maquina.eh(EstadoSapo.PEGANDO_LIVRO)
             and self.animacoes.pegar_livro.frame
             >= self.animacoes.pegar_livro.total_frames - 1
         ):
-            self.animacoes.maquina.trocar(EstadoSapo.LENDO_LIVRO)
+            maquina.trocar(EstadoSapo.LENDO_LIVRO)
 
         if maquina.eh(EstadoSapo.LENDO_LIVRO) and not self._narracao_livro_disparada:
             self._narracao_livro_disparada = True
             self._falar_narracao_livro()
+
+        if (
+            maquina.eh(EstadoSapo.LEVANTAR_LIVRO)
+            and self.animacoes.levantar_livro.frame
+            >= self.animacoes.levantar_livro.total_frames - 1
+        ):
+            maquina.trocar(EstadoSapo.PARADO)
 
         # ===================================
         # ACORDANDO
@@ -260,7 +267,7 @@ class ControlarComportamentoSapoUseCase:
             return
 
         texto = self.livro_climatico.gerar_texto_narracao(self.clima_service)
-        self.tts_service.falar(texto)
+        self.tts_service.falar(texto, self._finalizar_leitura)
 
     def _escolher_intencao(self, agora, horario_atual, maquina):
         if self.agenda.deve_iniciar_caminhada(agora, horario_atual):
@@ -287,3 +294,7 @@ class ControlarComportamentoSapoUseCase:
             return "dormir"
 
         return "nenhuma"
+
+    def _finalizar_leitura(self):
+        if self.animacoes.maquina.eh(EstadoSapo.LENDO_LIVRO):
+            self.animacoes.maquina.trocar(EstadoSapo.LEVANTAR_LIVRO)

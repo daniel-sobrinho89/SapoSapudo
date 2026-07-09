@@ -84,6 +84,7 @@ class EstadoSapo(Enum):
 
     PEGANDO_LIVRO = "pegando_livro"
     LENDO_LIVRO = "lendo_livro"
+    LEVANTAR_LIVRO = "levantar_livro"
 
 
 class MaquinaEstadoSapo(StateMachine):

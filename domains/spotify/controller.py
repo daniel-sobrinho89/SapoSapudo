@@ -34,8 +34,8 @@ class ControladorVozMusical:
         frasco_climatico,
         esferas,
         evento_livro,
-        conversa_sapudo=None,
-        tts=None,
+        conversa_sapudo,
+        tts,
     ):
         self.sapo = sapo
         self.duende = duende

@@ -132,8 +132,8 @@ class CoordenadorEstadoJogo:
         ):
             self.atualizar_fluxo_violao.executar(dt)
 
-    def executar_comando_spotify(self, rota):
-        self.processar_comando_spotify.executar(rota["dados"], self.desligar_microfone)
+    def executar_comando_spotify(self, rota, finalizar_comando):
+        self.processar_comando_spotify.executar(rota["dados"], finalizar_comando)
 
     def processar_toque_down(self, pos_virtual, renderer_violao):
         if self.desacoplar_violao.executar(

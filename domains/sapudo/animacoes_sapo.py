@@ -27,6 +27,7 @@ class AnimacoesSapo:
         self.conversar = Animacao(60, 0.17)
         self.pegar_livro = Animacao(20, 0.16, loop=False)
         self.lendo_livro = Animacao(40, 0.17)
+        self.levantar_livro = Animacao(20, 0.16, loop=False)
 
         self.ultimo_frame_guardar = -1
         self.finalizou_soltar_violao = False
@@ -81,6 +82,9 @@ class AnimacoesSapo:
         self.andar_direita.atualizar(dt) if self.maquina.eh(
             EstadoSapo.ANDANDO_DIREITA
         ) else None
+        self.levantar_livro.atualizar(dt) if self.maquina.eh(
+            EstadoSapo.LEVANTAR_LIVRO
+        ) else None
         self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
@@ -118,6 +122,9 @@ class AnimacoesSapo:
             return "pegar_livro", self.pegar_livro.frame
         if self.maquina.eh(EstadoSapo.LENDO_LIVRO):
             return "lendo_livro", self.lendo_livro.frame
+        if self.maquina.eh(EstadoSapo.LEVANTAR_LIVRO):
+            return "levantar_livro", self.levantar_livro.frame
+
         return "parado", self.parado.frame
 
     def iniciar_dormir(self):

@@ -152,7 +152,7 @@ class GerenciadorCenarios:
             self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
 
     def _atualizar_carregamento_assets(self, sapo_renderer):
-        sapo_renderer.atualizar_carregamento(8)
+        sapo_renderer.atualizar_carregamento(10)
 
         if self.renderer_duende:
-            self.renderer_duende.atualizar_carregamento(self.duende, 2)
+            self.renderer_duende.atualizar_carregamento(self.duende, 10)

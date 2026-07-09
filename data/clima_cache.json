@@ -1,13 +1,13 @@
 {
     "cloudiness": 75,
-    "wind_speed": 5.4,
-    "wind_direction": 152,
+    "wind_speed": 6.1,
+    "wind_direction": 50,
     "future_cloudiness_1h": 0,
     "future_cloudiness_2h": 0,
     "future_cloudiness_3h": 0,
-    "is_day": 0,
+    "is_day": 1,
     "condition_code": 1030,
     "condition_text": "Mist",
-    "temperature": 14.2,
-    "humidity": 77
+    "temperature": 11.0,
+    "humidity": 100
 }

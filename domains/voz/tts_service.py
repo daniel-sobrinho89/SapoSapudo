@@ -20,6 +20,7 @@ class TTSService:
         self.disponivel = False
         self.pronto = False
         self.estava_falando = False
+        self._ao_finalizar = None
 
         if not IS_ANDROID:
             return
@@ -55,15 +56,18 @@ class TTSService:
                 self.estava_falando = False
 
                 event_bus.publicar("tts_finalizado")
+                callback = self._ao_finalizar
+                self._ao_finalizar = None
+
+                if callback:
+                    callback()
 
         except Exception:
             pass
 
-    def falar(self, texto):
-        if not self.pronto:
-            return
-
-        if not texto:
+    def falar(self, texto, ao_finalizar=None):
+        if not self.pronto or not texto:
+            self._ao_finalizar = None
             return
 
         texto_lower = texto.lower()
@@ -74,10 +78,13 @@ class TTSService:
 
         try:
             self.tts.speak(texto)
+            self._ao_finalizar = ao_finalizar
         except Exception as ex:
             print(ex)
 
     def parar(self):
+        self._ao_finalizar = None
+
         if not self.tts:
             return
 
