@@ -121,6 +121,27 @@ class EventoLivro:
 
         self.nevoa = (clicadas / total) * 7
 
+    def mostrar_em_frente_do_sapo(self, sapo):
+        self.livro.devolver_para_esferas()
+
+        OFFSETS = [
+            (-35, 18),
+            (-15, 6),
+            (10, 20),
+            (28, 8),
+            (45, 22),
+        ]
+
+        self.tempo_sem_clique = 0
+        self.acumulador_retorno = 0
+        self.nevoa = 0
+
+        for esfera, (dx, dy) in zip(self.esferas, OFFSETS):
+            esfera.aparecer(
+                sapo.x + dx,
+                sapo.y + dy,
+            )
+
     def fechar_livro_aberto(self):
         self.livro.fechar_leitura()
 

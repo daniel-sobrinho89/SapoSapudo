@@ -1,13 +1,13 @@
 {
     "cloudiness": 0,
-    "wind_speed": 6.8,
-    "wind_direction": 94,
+    "wind_speed": 5.4,
+    "wind_direction": 160,
     "future_cloudiness_1h": 0,
     "future_cloudiness_2h": 0,
     "future_cloudiness_3h": 0,
     "is_day": 1,
     "condition_code": 1036,
     "condition_text": "Smoky haze",
-    "temperature": 16.3,
-    "humidity": 68
+    "temperature": 22.4,
+    "humidity": 46
 }

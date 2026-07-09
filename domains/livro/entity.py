@@ -54,6 +54,7 @@ class Livro:
         self.acoplado = False
         self.visivel = False
         self.sendo_carregado = False
+        self.timer_visivel = 0
 
     def fechar(self):
         self.aberto = False

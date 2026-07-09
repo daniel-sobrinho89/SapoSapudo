@@ -13,9 +13,8 @@ class Esfera:
         self.protegido = False
         self.just_exited_timer = 0.0
         self.ativa = True
-        self.resetar()
-
         self.imagem_esfera = self.assets.carregar("clima/esfera.webp")
+        self.resetar()
 
     def resetar(self):
         if self.area_protegida is not None:
@@ -47,6 +46,13 @@ class Esfera:
         self.no_chao = False
         self.limite_chao = self.area_particulas.bottom
         self.raio = random.randint(4, 5)
+
+        tamanho = self.raio * 7
+
+        self.imagem = kivy_adapter.transform.smoothscale(
+            self.imagem_esfera,
+            (tamanho, tamanho),
+        )
 
         # tornar partículas um pouco menos transparentes
         self.alpha = random.randint(100, 200)
@@ -158,23 +164,35 @@ class Esfera:
                 self.resetar()
                 return
 
+    def aparecer(self, x, y):
+        self.ativa = True
+
+        self.x = x
+        self.y = y
+        self.x_inicial = x
+        self.vel_x = 0
+        self.vel_y = 0
+
+        self.no_chao = False
+        self.sustentacao_restante = 0
+        self.alpha = random.randint(180, 255)
+
+        self.protegido = False
+        self.saiu_do_pote = True
+        self.just_exited_timer = 0
+        self.tempo_vida = 0
+        self.oscilacao = random.uniform(0.0, 6.28)
+
     def desenhar(self, tela):
         if not self.ativa:
             return
 
         # Mantém aproximadamente o mesmo tamanho visual da esfera antiga
-        tamanho = self.raio * 6
-
-        imagem = kivy_adapter.transform.smoothscale(
-            self.imagem_esfera,
-            (tamanho, tamanho),
+        tela.blit(
+            self.imagem,
+            (self.x, self.y),
         )
 
-        # Mantém o efeito de transparência já existente
-        imagem.set_alpha(self.alpha)
-
-        tela.blit(imagem, (self.x, self.y))
-
     def obter_rect(self):
-        tamanho = self.raio * 6
+        tamanho = self.raio * 7
         return kivy_adapter.Rect(self.x, self.y, tamanho, tamanho)

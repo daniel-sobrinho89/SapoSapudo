@@ -74,8 +74,8 @@ class ControladorVozMusical:
             self.violao,
             self.spotify,
             self.audio,
+            self.evento_livro,
             clima_service=self.clima_service,
-            livro_climatico=self.evento_livro.livro_climatico,
             tts_service=self.tts,
         )
 

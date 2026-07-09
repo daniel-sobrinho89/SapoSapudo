@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-from domains.clima.livro_climatico import LivroClimatico
 from domains.sapudo.agenda_sapo import AgendaSapo
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 from utils.input import LARGURA
@@ -22,18 +21,19 @@ class ControlarComportamentoSapoUseCase:
         violao,
         spotify,
         audio,
+        evento_livro,
         clima_service=None,
-        livro_climatico=None,
         tts_service=None,
     ):
         self.sapo = sapo
         self.violao = violao
         self.spotify = spotify
         self.audio = audio
+        self.evento_livro = evento_livro
         self.animacoes = sapo.animacoes
         self.agenda = AgendaSapo()
         self.clima_service = clima_service
-        self.livro_climatico = livro_climatico or LivroClimatico()
+        self.livro_climatico = self.evento_livro.livro_climatico
         self.tts_service = tts_service
         self._narracao_livro_disparada = False
         self._estado_sapo_anterior = None
@@ -205,6 +205,7 @@ class ControlarComportamentoSapoUseCase:
             and self.animacoes.levantar_livro.frame
             >= self.animacoes.levantar_livro.total_frames - 1
         ):
+            self.evento_livro.mostrar_em_frente_do_sapo(self.sapo)
             maquina.trocar(EstadoSapo.PARADO)
 
         # ===================================

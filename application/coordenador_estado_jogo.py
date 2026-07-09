@@ -142,7 +142,12 @@ class CoordenadorEstadoJogo:
         ):
             return
 
-        if self.duende.processar_toque_down(pos_virtual):
+        if (
+            not self.duende.animacoes.teleportando
+            and not self.duende.animacoes.perseguindo_livro
+            and not self.duende.animacoes.guardando_livro
+            and self.duende.processar_toque_down(pos_virtual)
+        ):
             return
 
         # violao_rect
@@ -151,7 +156,7 @@ class CoordenadorEstadoJogo:
             return
 
     def processar_toque_up(self):
-        if self.duende.arraste.ativo:
+        if self.duende.arraste.ativo and not (self.duende.animacoes.teleportando):
             duende_indo_dormir = self.controlar_sono_duende.processar_soltou_duende(
                 self.duende.arraste,
             )
