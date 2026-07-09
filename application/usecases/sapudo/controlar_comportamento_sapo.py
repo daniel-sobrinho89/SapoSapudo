@@ -297,4 +297,5 @@ class ControlarComportamentoSapoUseCase:
 
     def _finalizar_leitura(self):
         if self.animacoes.maquina.eh(EstadoSapo.LENDO_LIVRO):
+            self.animacoes.iniciar_levantar_livro()
             self.animacoes.maquina.trocar(EstadoSapo.LEVANTAR_LIVRO)

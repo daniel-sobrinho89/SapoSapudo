@@ -219,8 +219,9 @@ class GameWidget(Widget):
             for _ in range(QUANTIDADE_POEIRA)
         ]
         self.livro = Livro()
-        self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro)
-        self.evento_livro.esferas = self.esferas
+        self.evento_livro = EventoLivro(
+            asset_manager, self.transform, self.livro, self.esferas
+        )
         for e in self.esferas:
             e.area_protegida = self.frasco_climatico.area_pote
             e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
@@ -322,7 +323,7 @@ class GameWidget(Widget):
             return True
 
         # Livro e Poeira
-        if self.evento_livro.processar_toque(pos_virtual):
+        if self.evento_livro.processar_toque(pos_virtual, self.duende, self.sapo):
             return True
 
         self.controlador_voz_musical.processar_toque_down(
@@ -425,7 +426,7 @@ class GameWidget(Widget):
 
         self.violao.atualizar(dt)
         self.frasco_climatico.atualizar(dt)
-        self.evento_livro.atualizar(dt)
+        self.evento_livro.atualizar(dt, self.sapo, self.duende)
         self.sistema_nuvens.atualizar_area_interna()
 
         Nuvem.finalizar_carregamento()

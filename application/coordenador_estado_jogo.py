@@ -160,6 +160,5 @@ class CoordenadorEstadoJogo:
                 return
 
         violao_acoplado = self.acoplar_violao.executar(self.sapo.area_violao())
-
         if violao_acoplado:
             return

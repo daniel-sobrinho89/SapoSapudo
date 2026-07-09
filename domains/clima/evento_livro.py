@@ -13,15 +13,15 @@ from domains.clima.livro_climatico import LivroClimatico
 
 
 class EventoLivro:
-    def __init__(self, assets, transform, livro):
+    def __init__(self, assets, transform, livro, esferas):
         self.assets = assets
         self.livro = livro
+        self.esferas = esferas
         self.nevoa = 0.0
         self.tempo_sem_clique = 0.0
         self.tempo = 0.0
         self.rect_livro = None
         self.acumulador_retorno = 0.0
-        self.livro_aberto_visivel = False
         self.livro_climatico = LivroClimatico()
         self.pagina_atual = None
 
@@ -54,18 +54,20 @@ class EventoLivro:
         if clicadas >= total:
             self.mostrar_livro()
 
-    def atualizar(self, dt):
+    def atualizar(self, dt, sapo, duende):
         self.tempo += dt
+
+        if duende.animacoes.guardando_livro or sapo.animacoes.maquina.esta_com_livro():
+            return
 
         if self.livro.visivel:
             if self.livro.atualizar_timer(dt):
                 self.ocultar_livro_por_timeout()
-
             return
 
         self.tempo_sem_clique += dt
 
-        if self.tempo_sem_clique > 5:
+        if self.tempo_sem_clique > 7:
             self.acumulador_retorno += dt
 
             if self.acumulador_retorno >= 1.0:
@@ -203,16 +205,9 @@ class EventoLivro:
 
         self.rect_livro_aberto = kivy_adapter.Rect(x, y, largura, altura)
 
-    def processar_toque(self, pos_virtual):
-        if self.livro.aberto:
-            self.fechar_livro_aberto()
-            return True
-
-        if self.livro.visivel and (
-            self.rect_livro and self.rect_livro.collidepoint(pos_virtual)
-        ):
-            self.ocultar_livro_por_clique()
-            return True
+    def processar_toque(self, pos_virtual, duende, sapo):
+        if duende.animacoes.guardando_livro or sapo.animacoes.maquina.esta_com_livro():
+            return
 
         if not self.livro.visivel:
             for esfera in self.esferas:

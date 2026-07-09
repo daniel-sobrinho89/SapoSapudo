@@ -49,6 +49,12 @@ class Livro:
         self.acoplado = True
         self.timer_visivel = 0
 
+    def devolver_para_esferas(self):
+        self.aberto = False
+        self.acoplado = False
+        self.visivel = False
+        self.sendo_carregado = False
+
     def fechar(self):
         self.aberto = False
         self.timer_visivel = 0

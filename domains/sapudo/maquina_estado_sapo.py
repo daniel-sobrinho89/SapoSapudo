@@ -100,3 +100,8 @@ class MaquinaEstadoSapo(StateMachine):
             EstadoSapo.GUARDANDO_VIOLAO,
             EstadoSapo.SOLTANDO_VIOLAO,
         )
+
+    def esta_com_livro(self):
+        return self.em_estado(
+            EstadoSapo.PEGANDO_LIVRO, EstadoSapo.LENDO_LIVRO, EstadoSapo.LEVANTAR_LIVRO
+        )

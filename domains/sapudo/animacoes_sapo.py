@@ -26,7 +26,7 @@ class AnimacoesSapo:
         self.andar_direita = Animacao(10, 0.07)
         self.conversar = Animacao(60, 0.17)
         self.pegar_livro = Animacao(20, 0.16, loop=False)
-        self.lendo_livro = Animacao(40, 0.17)
+        self.lendo_livro = Animacao(30, 0.22)
         self.levantar_livro = Animacao(20, 0.16, loop=False)
 
         self.ultimo_frame_guardar = -1
@@ -55,6 +55,10 @@ class AnimacoesSapo:
         self.pegar_livro.reset()
         self.maquina.trocar(EstadoSapo.PEGANDO_LIVRO)
 
+    def iniciar_levantar_livro(self):
+        self.levantar_livro.reset()
+        self.maquina.trocar(EstadoSapo.LEVANTAR_LIVRO)
+
     # ====================================
     # UPDATE
     # ====================================
@@ -82,9 +86,6 @@ class AnimacoesSapo:
         self.andar_direita.atualizar(dt) if self.maquina.eh(
             EstadoSapo.ANDANDO_DIREITA
         ) else None
-        self.levantar_livro.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.LEVANTAR_LIVRO
-        ) else None
         self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
@@ -93,6 +94,9 @@ class AnimacoesSapo:
         ) else None
         self.lendo_livro.atualizar(dt) if self.maquina.eh(
             EstadoSapo.LENDO_LIVRO
+        ) else None
+        self.levantar_livro.atualizar(dt) if self.maquina.eh(
+            EstadoSapo.LEVANTAR_LIVRO
         ) else None
 
     def obter_selecao_frame(self):

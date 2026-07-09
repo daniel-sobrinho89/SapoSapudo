@@ -62,7 +62,7 @@ class SapoRenderer:
             ("andar_esquerda", "sapudo/andar_esquerda/sapudo_{:04d}.webp", 10),
             ("conversar", "sapudo/conversar/sapudo_{:04d}.webp", 60),
             ("pegar_livro", "sapudo/pegar_livro/sapudo_{:04d}.webp", 20),
-            ("lendo_livro", "sapudo/lendo_livro/sapudo_{:04d}.webp", 40),
+            ("lendo_livro", "sapudo/lendo_livro/sapudo_{:04d}.webp", 30),
         ]
 
         for grupo, mascara, total in definicoes:
@@ -92,10 +92,7 @@ class SapoRenderer:
             kivy_adapter.transform.flip(f, True, False)
             for f in self.frames["andar_esquerda"]
         ]
-        self.frames["levantar_livro"] = [
-            kivy_adapter.transform.flip(f, True, False)
-            for f in self.frames["pegar_livro"]
-        ]
+        self.frames["levantar_livro"] = list(reversed(self.frames["pegar_livro"]))
         self.carregado = True
 
     def obter_frame_animacao(self, animacoes):

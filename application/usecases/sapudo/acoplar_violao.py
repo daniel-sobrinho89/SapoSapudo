@@ -16,9 +16,12 @@ class AcoplarViolaoUseCase:
 
         self.violao.finalizar_arraste()
 
-        if not area.contem(
-            self.violao.x,
-            self.violao.y,
+        if (
+            not area.contem(
+                self.violao.x,
+                self.violao.y,
+            )
+            or self.sapo.animacoes.maquina.esta_com_livro()
         ):
             self.violao.iniciar_queda()
             return True
