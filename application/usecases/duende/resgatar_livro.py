@@ -3,7 +3,6 @@ import math
 
 class ResgatarLivroUseCase:
     MIN_TELEPORT_DIST = 120
-    VELOCIDADE = 450
     VELOCIDADE_GUARDAR = 220
     OFFSET_X = 15
     OFFSET_Y = 40
@@ -95,12 +94,12 @@ class ResgatarLivroUseCase:
 
                 return False
 
-            self._mover_duende(
+            self.duende.mover(
                 dx,
                 dy,
                 distancia,
                 dt,
-                self.VELOCIDADE,
+                self.duende.velocidade,
             )
             return False
 
@@ -119,7 +118,7 @@ class ResgatarLivroUseCase:
             self.sapo.animacoes.iniciar_pegar_livro()
             return True
 
-        self._mover_duende(
+        self.duende.mover(
             dx,
             dy,
             distancia,
@@ -127,16 +126,10 @@ class ResgatarLivroUseCase:
             self.VELOCIDADE_GUARDAR,
         )
 
+        self.livro.x = self.duende.x + self.OFFSET_X
+        self.livro.y = self.duende.y + self.OFFSET_Y
+
         return False
-
-    def _mover_duende(self, dx, dy, distancia, dt, velocidade):
-        self.duende.x += (dx / max(1, distancia)) * velocidade * dt
-        self.duende.y += (dy / max(1, distancia)) * velocidade * dt
-        self.duende.base_y = self.duende.y
-
-        if self.livro_em_maos:
-            self.livro.x = self.duende.x + self.OFFSET_X
-            self.livro.y = self.duende.y + self.OFFSET_Y
 
     # def _devolver_livro(self):
     #     if self.livro is not None:

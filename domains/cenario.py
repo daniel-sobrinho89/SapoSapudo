@@ -2,8 +2,8 @@ import gc
 
 from config import ALTURA, CENTRO_OFFSET_Y, LARGURA
 from core.fisica import sistema_fisica
-from domains.clima.semente import Semente
 from domains.duende.entity import DuendeNeblina
+from domains.semente.entity import Semente
 from render.asset_manager import asset_manager
 from render.barraca_renderer import BarracaRenderer
 from render.duende_renderer import DuendeRenderer
@@ -41,6 +41,7 @@ class GerenciadorCenarios:
         self.ambiente = ambiente
         self.evento_livro = evento_livro
         self.particulas = particulas
+        self.duendes = []
 
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.cenario_feira_anterior = False
@@ -108,7 +109,8 @@ class GerenciadorCenarios:
 
         if not self.background_renderer.cenario_feira:
             if self.duende:
-                self.duende.atualizar(dt)
+                for duende in [self.duende] + self.duendes:
+                    duende.atualizar(dt)
                 sistema_fisica.aplicar_forca_vento(
                     self.duende, self.clima_service, dt, sensibilidade=0.5
                 )
@@ -144,7 +146,9 @@ class GerenciadorCenarios:
                 self.frasco_climatico.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
 
             if self.renderer_duende:
-                self.renderer_duende.renderizar(self.duende, ESCALA)
+                for duende in [self.duende] + self.duendes:
+                    self.renderer_duende.renderizar(duende, ESCALA)
+
             if self.renderer_semente:
                 self.renderer_semente.renderizar(self.semente)
 
@@ -156,3 +160,6 @@ class GerenciadorCenarios:
 
         if self.renderer_duende:
             self.renderer_duende.atualizar_carregamento(self.duende, 10)
+
+    def adicionar_duende(self, duende):
+        self.duendes.append(duende)

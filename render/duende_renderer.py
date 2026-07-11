@@ -95,13 +95,7 @@ class DuendeRenderer:
 
         escala *= duende.escala_visual
 
-        self.draw(
-            frame,
-            duende.x,
-            duende.y,
-            escala,
-            alpha=duende.alpha_visual,
-        )
+        self.draw(frame, duende, escala)
 
         largura = int(frame.get_width() * escala)
         altura = int(frame.get_height() * escala)
@@ -117,7 +111,7 @@ class DuendeRenderer:
     # DRAW
     # =====================================
 
-    def draw(self, imagem, x, y, escala_x, escala_y=None, alpha=255):
+    def draw(self, imagem, duende, escala_x, escala_y=None):
         if escala_y is None:
             escala_y = escala_x
 
@@ -125,8 +119,14 @@ class DuendeRenderer:
         altura = max(1, int(imagem.get_height() * escala_y))
 
         imagem = self.transform.escalar(imagem, (largura, altura))
-        imagem.set_alpha(alpha)
+        imagem.set_alpha(duende.alpha_visual)
 
-        rect = imagem.get_rect(center=(x, y))
+        rect = imagem.get_rect(center=(duende.x, duende.y))
+
+        imagem = imagem.copy()
+
+        imagem.multiplicar_cor(
+            duende.cor,
+        )
 
         self.tela.blit(imagem, rect)

@@ -78,8 +78,11 @@ class Esfera:
             if self.saiu_do_pote:
                 current_protegido = False
             else:
-                current_protegido = self.area_protegida.collidepoint(
-                    int(self.x), int(self.y)
+                limite_superior = self.area_protegida.top - 13
+                current_protegido = (
+                    self.area_protegida.left <= self.x <= self.area_protegida.right
+                    and self.y >= limite_superior
+                    and self.y <= self.area_protegida.bottom
                 )
 
         # Ajustar sensibilidade ao vento de acordo com o tamanho (raio)

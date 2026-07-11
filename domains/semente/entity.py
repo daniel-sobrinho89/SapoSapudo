@@ -2,15 +2,8 @@ import math
 import random
 
 from config import CHAO_Y
-from core.fisica import (
-    sistema_fisica,
-)
-from domains.clima.animacoes.semente import (
-    aplicar_vento as sistema_aplicar_vento,
-)
-from domains.clima.animacoes.semente import (
-    atualizar_piscada as sistema_atualizar_piscada,
-)
+from core.fisica import sistema_fisica
+from domains.semente.animacoes import Animacoes
 
 
 class Semente:
@@ -25,6 +18,7 @@ class Semente:
         self.no_chao = True
         self.sorrindo = False
         self.piscando = False
+        self.animacoes = Animacoes()
 
         self.timer_piscada = random.uniform(2, 5)
 
@@ -131,10 +125,10 @@ class Semente:
         return 5
 
     def aplicar_vento(self, clima_service, dt):
-        return sistema_aplicar_vento(self, clima_service, dt)
+        return self.animacoes.aplicar_vento(self, clima_service, dt)
 
     def atualizar_piscada(self, dt):
-        return sistema_atualizar_piscada(self, dt)
+        return self.animacoes.atualizar_piscada(self, dt)
 
     def atualizar(self, dt, clima_service):
         self.atualizar_piscada(dt)

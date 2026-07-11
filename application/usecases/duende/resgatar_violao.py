@@ -20,25 +20,19 @@ class ResgatarViolaoUseCase:
         if not self._pode_resgatar_violao():
             return
 
-        estado_violao = self.violao.estado()
-
         self.violao_em_maos = False
-        distancia = abs(estado_violao.x - self.duende.x)
+        distancia = abs(self.violao.x - self.duende.x)
         self.duende.animacoes.iniciar_perseguindo_violao()
 
         if (
-            not self._consegue_alcancar_antes_da_queda(estado_violao)
+            not self._consegue_alcancar_antes_da_queda()
             and distancia > self.MIN_TELEPORT_DIST
         ):
             self._teleportar_para_violao()
             return
 
-    def _consegue_alcancar_antes_da_queda(self, estado_violao):
-        return self._consegue_alcancar(
-            self.duende.x,
-            self.duende.y,
-            estado_violao,
-        )
+    def _consegue_alcancar_antes_da_queda(self):
+        return self._consegue_alcancar(self.duende.x, self.duende.y)
 
     def _teleportar_para_violao(self):
         def posicionar_no_violao(entity):
@@ -61,10 +55,9 @@ class ResgatarViolaoUseCase:
 
     def _iniciar_resgate_monitorado(self):
         if self.violao is not None:
-            estado = self.violao.estado()
             self.violao_em_maos = False
-            self.duende.alvo_x = estado.x
-            self.duende.alvo_y = estado.y
+            self.duende.alvo_x = self.violao.x
+            self.duende.alvo_y = self.violao.y
 
     def _pode_resgatar_violao(self):
         return (
@@ -113,7 +106,7 @@ class ResgatarViolaoUseCase:
 
                 return False
 
-            self._mover_duende(dx, dy, distancia, dt)
+            self.duende.mover(dx, dy, distancia, dt, self.VELOCIDADE)
             return False
 
         # LEVANDO PARA CASA
@@ -141,20 +134,13 @@ class ResgatarViolaoUseCase:
 
         return False
 
-    def _mover_duende(self, dx, dy, distancia, dt):
-        velocidade = self.VELOCIDADE * dt
-
-        self.duende.x += (dx / max(1, distancia)) * velocidade
-        self.duende.y += (dy / max(1, distancia)) * velocidade
-        self.duende.base_y = self.duende.y
-
-    def _consegue_alcancar(self, duende_x, duende_y, violao):
-        distancia = math.hypot(violao.x - duende_x, violao.y - duende_y)
+    def _consegue_alcancar(self, duende_x, duende_y):
+        distancia = math.hypot(self.violao.x - duende_x, self.violao.y - duende_y)
         tempo_voo = distancia / self.VELOCIDADE
 
         gravidade = 900
-        altura_restante = max(1, CHAO_Y - violao.y)
-        velocidade_queda = max(0, violao.velocidade_queda)
+        altura_restante = max(1, CHAO_Y - self.violao.y)
+        velocidade_queda = max(0, self.violao.velocidade_queda)
 
         if velocidade_queda > 0:
             tempo_queda = altura_restante / velocidade_queda

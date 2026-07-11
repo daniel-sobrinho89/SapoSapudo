@@ -90,6 +90,7 @@ class ControladorVozMusical:
             self.evento_livro,
             self.spotify,
             self.audio,
+            self.gerenciador_cenarios,
         )
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)

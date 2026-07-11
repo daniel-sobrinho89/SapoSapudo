@@ -27,7 +27,7 @@ class EsconderAtrasViolaoUseCase:
         self.estado = self.INDO
         self.tempo = 0.0
         self.offset_y = 0
-        self.duende.escala_visual = 1.0
+        self.duende.resetar_escala_visual()
         self.duende.animacoes.iniciar_escondendo_atras_violao()
 
     def atualizar(self, dt):
@@ -109,5 +109,5 @@ class EsconderAtrasViolaoUseCase:
 
             if progresso >= 1:
                 self.duende.movimento_bloqueado = False
-                self.duende.escala_visual = 1.0
+                self.duende.resetar_escala_visual()
                 self.duende.animacoes.iniciar_voo()

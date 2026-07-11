@@ -68,19 +68,6 @@ class Violao:
         self.finalizar_arraste()
         return True
 
-    def estado(self):
-        return EstadoViolao(
-            x=self.x,
-            y=self.y,
-            x_inicial=self.x_inicial,
-            y_inicial=self.y_inicial,
-            caindo=self.caindo,
-            acoplado=self.acoplado,
-            no_chao=self.no_chao,
-            velocidade_queda=self.velocidade_queda,
-            vel_x=self.vel_x,
-        )
-
     def atualizar(self, dt):
         if not self.caindo:
             return

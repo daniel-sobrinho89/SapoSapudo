@@ -3,7 +3,7 @@ from domains.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
 from domains.violao.logic import LogicaViolaoSapo
 
 
-class AnimacoesSapo:
+class Animacoes:
     def __init__(self):
         # ====================================
         # COMPONENTES DE COMPORTAMENTO

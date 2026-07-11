@@ -7,7 +7,6 @@ import kivy_adapter
 class FrascoClimatico:
     def __init__(self, transform):
         self.transform = transform
-
         # =====================================
         # POSIÇÃO GLOBAL DO FRASCO
         # =====================================
@@ -231,7 +230,7 @@ class FrascoClimatico:
 
         pote_w = int(self.frasco_vidro.get_width() * 0.67)
 
-        pote_h = int(self.frasco_vidro.get_height() * 0.55)
+        pote_h = int(self.frasco_vidro.get_height() * 0.50)
 
         self.area_pote = kivy_adapter.Rect(pote_x, pote_y, pote_w, pote_h)
 

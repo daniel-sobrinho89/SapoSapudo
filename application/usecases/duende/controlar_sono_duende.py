@@ -10,11 +10,10 @@ class ControlarSonoDuendeUseCase:
         self.clima_service = clima_service
         self.frasco_rect = frasco_rect
         self.saindo_do_frasco = False
-        self.x_entrada_frasco = 0
-        self.y_entrada_frasco = 0
+        self.x_entrada_frasco = self.frasco_rect.centerx
+        self.y_entrada_frasco = self.frasco_rect.top - 60
         self.tempo_respiracao = 0
-        self.y_sono = 490
-        self.velocidade_descida = 40
+        self.y_descida_frasco = 490
 
     def executar(self, dt):
         self._atualizar_sono_programado(dt)
@@ -22,7 +21,6 @@ class ControlarSonoDuendeUseCase:
         self._atualizar_entrada_frasco(dt)
         self._atualizar_descida_sono(dt)
         self._sincronizar_estado_dormindo()
-        self._atualizar_saida_frasco(dt)
         self._atualizar_estado_acordando(dt)
         self._verificar_inicio_sono_por_clima()
         self._atualizar_acordar_por_clima()
@@ -41,7 +39,7 @@ class ControlarSonoDuendeUseCase:
             return
 
         self.duende.escala_visual = 0.74 + math.sin(self.duende.tempo * 2.2) * 0.03
-        self.duende.y = self.y_sono
+        self.duende.y = self.y_descida_frasco
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0
 
@@ -59,6 +57,7 @@ class ControlarSonoDuendeUseCase:
         ciclo.dormir_por_tempo = False
         self._acordar_duende()
         self.saindo_do_frasco = True
+        self.duende.iniciar_saida_frasco()
 
     def _atualizar_fator_visual(self, dt):
         if self.animacoes.em_frente_ao_frasco:
@@ -119,13 +118,10 @@ class ControlarSonoDuendeUseCase:
         ):
             return False
 
-        self.duende.escala_visual = max(
-            0.7,
-            self.duende.escala_visual - dt * 0.6,
-        )
+        self.duende.escala_visual = max(0.7, self.duende.escala_visual - dt * 0.6)
 
-        self.duende.y += self.velocidade_descida * dt
-        altura_restante = max(0, self.y_sono - self.duende.y)
+        self.duende.y += self.duende.velodidade_descina_sono * dt
+        altura_restante = max(0, self.y_descida_frasco - self.duende.y)
         fator_voo = max(0, min(1, altura_restante / 80))
 
         self.duende.y += math.sin(self.duende.tempo * 8) * fator_voo
@@ -134,8 +130,8 @@ class ControlarSonoDuendeUseCase:
         self.duende.velocidade_x *= 0.95
         self.duende.velocidade_y *= 0.95
 
-        if self.duende.y >= self.y_sono:
-            self.duende.y = self.y_sono
+        if self.duende.y >= self.y_descida_frasco:
+            self.duende.y = self.y_descida_frasco
             self.animacoes.iniciar_sono()
             self.duende.velocidade_x = 0
             self.duende.velocidade_y = 0
@@ -152,7 +148,6 @@ class ControlarSonoDuendeUseCase:
 
         if soltou_frente_frasco:
             self.duende.animacoes.iniciar_em_frente_ao_frasco()
-            self.duende.movimento_bloqueado = True
             return True
 
         if (
@@ -166,8 +161,6 @@ class ControlarSonoDuendeUseCase:
         return False
 
     def _processar_entrada_frasco(self):
-        self.x_entrada_frasco = self.frasco_rect.centerx
-        self.y_entrada_frasco = self.frasco_rect.top - 60
         self.animacoes.iniciar_entrada_frasco()
 
     def iniciar_sono_programado(self):
@@ -212,7 +205,7 @@ class ControlarSonoDuendeUseCase:
         ciclo.dormir_por_tempo = False
         ciclo.resetar_tempos()
         self._acordar_duende()
-        self._preparar_duende_acordado()
+        # self._preparar_duende_acordado()
 
     def _acordar_duende(self):
         self.duende.animacoes.ciclo_sono.resetar_tempos()
@@ -222,33 +215,6 @@ class ControlarSonoDuendeUseCase:
         if self.animacoes.dormindo:
             self.duende.x = self.frasco_rect.centerx
             self.duende.y = self.duende.y
-
-    def _atualizar_saida_frasco(self, dt):
-        if not self.saindo_do_frasco:
-            return
-
-        destino_y = self.frasco_rect.top - 50
-        velocidade = 55
-
-        if self.duende.y > destino_y:
-            self.duende.y -= velocidade * dt
-            return
-
-        self.duende.y = destino_y
-        self.saindo_do_frasco = False
-
-        self.duende.y = self.frasco_rect.top - 50
-        self._preparar_duende_acordado()
-
-    def _preparar_duende_acordado(self):
-        self.duende.movimento_bloqueado = False
-        self.duende.escala_visual = 1.0
-        self.duende.animacoes.fator_sono_visual = 0.0
-        self.duende.base_y = self.duende.y
-        self.duende.velocidade_x = 0
-        self.duende.velocidade_y = 0
-        self.duende.escolher_novo_destino()
-        self.duende.animacoes.iniciar_voo()
 
     def _tempo_sono_expirou(self, dt):
         ciclo = self.duende.animacoes.ciclo_sono
@@ -268,6 +234,7 @@ class ControlarSonoDuendeUseCase:
 
         self._acordar_duende()
         self.saindo_do_frasco = True
+        self.duende.iniciar_saida_frasco()
 
     def _precisa_resgatar_apos_acordar(self):
         if (

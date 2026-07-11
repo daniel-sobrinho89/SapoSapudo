@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass
 
-from domains.sapudo.animacoes_sapo import AnimacoesSapo
+from domains.sapudo.animacoes import Animacoes
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 
@@ -24,7 +24,7 @@ class Sapo:
         self.velocidade_y = 0.0
 
         # SYSTEMS
-        self.animacoes = AnimacoesSapo()
+        self.animacoes = Animacoes()
         self.pensamentos = PensamentosSapo()
         self.controle_esquerda = False
         self.controle_direita = False

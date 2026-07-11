@@ -9,6 +9,7 @@ from application.usecases import (
     ProcessarComandoSpotifyUseCase,
     ResgatarLivroUseCase,
     ResgatarViolaoUseCase,
+    SaindoDoFrascoUseCase,
 )
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 
@@ -26,6 +27,7 @@ class CoordenadorEstadoJogo:
         evento_livro,
         spotify,
         audio,
+        gerenciador_cenarios,
     ):
         self.sapo = sapo
         self.duende = duende
@@ -37,6 +39,7 @@ class CoordenadorEstadoJogo:
         self.evento_livro = evento_livro
         self.spotify = spotify
         self.audio = audio
+        self.gerenciador_cenarios = gerenciador_cenarios
 
         self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
         self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.sapo, self.livro)
@@ -51,7 +54,14 @@ class CoordenadorEstadoJogo:
             self.duende, self.violao
         )
         self.comer_esfera = ComerEsferaUseCase(
-            self.duende, self.frasco_climatico, self.esferas, self.evento_livro
+            self.duende,
+            self.frasco_climatico,
+            self.esferas,
+            self.evento_livro,
+            self.gerenciador_cenarios,
+        )
+        self.saindo_do_frasco = SaindoDoFrascoUseCase(
+            self.frasco_climatico.area_interna
         )
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
             self.duende, self.sapo, self.violao
@@ -73,11 +83,17 @@ class CoordenadorEstadoJogo:
     def executar(self, dt):
         if self.duende.carregado:
             self._executar_fluxo_duende(dt)
+            self._executar_fluxo_duende_clones(dt)
             self._executar_fluxo_sapudo(dt)
+            self.evento_livro.atualizar(dt, self.sapo, self.duende)
 
     def _executar_fluxo_duende(self, dt):
-        if (
+        # TODO! Ajustar para verificar se duende existe
+        if self.duende.animacoes.saindo_frasco:
+            self.saindo_do_frasco.executar(dt, self.duende)
+        elif (
             not self.clima_service.clima_disponivel
+            or not self.duende
             or self.duende.animacoes.em_frente_ao_frasco
             or self.duende.animacoes.indo_para_frasco
             or self.duende.animacoes.descendo_para_dormir
@@ -121,10 +137,19 @@ class CoordenadorEstadoJogo:
         elif (
             self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA
             or self.duende.animacoes.estado == self.duende.animacoes.COMENDO_ESFERA
+            or self.duende.animacoes.estado
+            == self.duende.animacoes.INDO_FRASCO_DUPLICAR
+            or self.duende.animacoes.estado
+            == self.duende.animacoes.DESCENDO_FRASCO_DUPLICAR
         ):
             self.comer_esfera.atualizar(dt)
         elif not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
             self.controlar_comportamento_duende.executar(dt)
+
+    def _executar_fluxo_duende_clones(self, dt):
+        for duende in self.gerenciador_cenarios.duendes:
+            if duende.animacoes.saindo_frasco:
+                self.saindo_do_frasco.executar(dt, duende)
 
     def _executar_fluxo_sapudo(self, dt):
         if self.violao.acoplado or self.sapo.animacoes.maquina.eh(
@@ -154,6 +179,11 @@ class CoordenadorEstadoJogo:
         if renderer_violao.obter_rect(self.violao).collidepoint(pos_virtual):
             self.violao.iniciar_arraste(*pos_virtual)
             return
+
+        if self.duende and self.evento_livro.processar_toque(
+            pos_virtual, self.duende, self.sapo
+        ):
+            return True
 
     def processar_toque_up(self):
         if self.duende.arraste.ativo and not (self.duende.animacoes.teleportando):

@@ -4,7 +4,7 @@
 
 import random
 
-from domains.sapudo.animacoes_sapo import Animacao
+from domains.sapudo.animacoes import Animacao
 from domains.sapudo.maquina_estado_sapo import StateMachine
 
 
@@ -17,6 +17,7 @@ class AnimacoesDuende:
     ACORDANDO = "acordando"
     VOANDO = "voando"
     EM_FRENTE_AO_FRASCO = "em_frente_ao_frasco"
+    SAINDO_FRASCO = "saindo_frasco"
     INDO_PARA_FRASCO = "indo_para_frasco"
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
     PERSEGUINDO_VIOLAO = "perseguindo_violao"
@@ -29,6 +30,8 @@ class AnimacoesDuende:
     PERSEGUINDO_LIVRO = "perseguindo_livro"
     GUARDANDO_LIVRO = "guardando_livro"
     TELEPORTANDO = "teleportando"
+    INDO_FRASCO_DUPLICAR = "indo_frasco_duplicar"
+    DESCENDO_FRASCO_DUPLICAR = "descendo_frasco_duplicar"
 
     def __init__(self):
         self.intervalo = random.uniform(2.0, 5.0)
@@ -71,6 +74,10 @@ class AnimacoesDuende:
     @property
     def em_frente_ao_frasco(self):
         return self.maquina.eh(self.EM_FRENTE_AO_FRASCO)
+
+    @property
+    def saindo_frasco(self):
+        return self.maquina.eh(self.SAINDO_FRASCO)
 
     @property
     def indo_para_frasco(self):
@@ -116,6 +123,10 @@ class AnimacoesDuende:
     def indo_atras_esfera(self):
         return self.maquina.eh(self.INDO_ATRAS_ESFERA)
 
+    @property
+    def indo_frasco_duplicar(self):
+        return self.maquina.eh(self.INDO_FRASCO_DUPLICAR)
+
     # =====================================
     # TRANSIÇÕES
     # =====================================
@@ -129,6 +140,9 @@ class AnimacoesDuende:
 
     def iniciar_em_frente_ao_frasco(self):
         self.estado = self.EM_FRENTE_AO_FRASCO
+
+    def iniciar_saindo_frasco(self):
+        self.estado = self.SAINDO_FRASCO
 
     def iniciar_descida(self):
         self.animacao_descendo_para_dormir.reset()
@@ -166,6 +180,14 @@ class AnimacoesDuende:
         self.animacao_comendo_esfera.reset()
         self.estado = self.COMENDO_ESFERA
 
+    def iniciar_indo_frasco_duplicar(self):
+        self.animacao_voando.reset()
+        self.estado = self.INDO_FRASCO_DUPLICAR
+
+    def iniciar_descendo_frasco_duplicar(self):
+        self.animacao_descendo_para_dormir.reset()
+        self.estado = self.DESCENDO_FRASCO_DUPLICAR
+
     def iniciar_teleportando(self):
         self.estado = self.TELEPORTANDO
 
@@ -182,6 +204,7 @@ class AnimacoesDuende:
             return "guardando_livro", self.animacao_guardando_violao.frame
         if self.comendo_esfera:
             return "comendo_esfera", self.animacao_comendo_esfera.frame
+
         return "voando", self.animacao_voando.frame
 
     # =====================================

@@ -9,7 +9,7 @@ from contextlib import suppress
 from io import BytesIO
 
 from kivy.core.image import Image as CoreImage
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 # mouse compatibility
 
@@ -224,6 +224,20 @@ class Surface:
     # convenience to access underlying PIL image
     def pil_image(self):
         return self._img
+
+    def multiplicar_cor(self, cor):
+        r, g, b = cor
+
+        mascara = Image.new(
+            "RGBA",
+            self._img.size,
+            (r, g, b, 255),
+        )
+
+        self._img = ImageChops.multiply(
+            self._img,
+            mascara,
+        )
 
 
 # image module

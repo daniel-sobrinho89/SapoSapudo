@@ -20,7 +20,7 @@ class TeleporteDuende:
         self.finalizar_callback = None
         self.tempo_sumido = 0.0
         self.alpha_visual = 255
-        self.escala_visual = 1.0
+        self.escala_visual = 0.9
 
     def iniciar(
         self,
@@ -39,7 +39,7 @@ class TeleporteDuende:
         self.ao_teleportar = ao_teleportar
         self.finalizar_callback = ao_finalizar
         self.alpha_visual = 255
-        self.escala_visual = 1.0
+        self._resetar_escala_visual()
         self.duracao = duracao if duracao is not None else self.duracao
         self.duracao_sumido = (
             duracao_sumido if duracao_sumido is not None else self.duracao_sumido
@@ -85,7 +85,7 @@ class TeleporteDuende:
 
             if progresso >= 1:
                 self.alpha_visual = 255
-                self.escala_visual = 1.0
+                self._resetar_escala_visual()
                 self.ativo = False
 
                 if self.finalizar_callback:
@@ -101,3 +101,6 @@ class TeleporteDuende:
         self.escala_visual = 0.6 + (progresso * 0.4)
 
         return False
+
+    def _resetar_escala_visual(self):
+        self.escala_visual = 0.9

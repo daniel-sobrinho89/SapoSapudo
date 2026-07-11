@@ -30,9 +30,11 @@ class DuendeNeblina:
         self.tempo = random.uniform(0, 999)
         self.escala = 0.40
         self.alpha_visual = 255
-        self.escala_visual = 1.0
+        self.escala_visual = 0.9
+        self.velodidade_descina_sono = 40
         self.movimento_bloqueado = False
         self.carregado = False
+        self.cor = (255, 255, 255)
         # =================================
         # COMPONENTES
         # =================================
@@ -49,35 +51,6 @@ class DuendeNeblina:
     @property
     def arrastando(self):
         return self.arraste.ativo
-
-    def atualizar_movimento(self, dt):
-        if (
-            self.movimento_bloqueado
-            or self.animacoes.teleportando
-            or self.arraste.ativo
-        ):
-            return
-
-        dx = self.alvo_x - self.x
-        dy = self.alvo_y - self.y
-        distancia = math.hypot(dx, dy)
-
-        if distancia > 1:
-            dir_x = dx / distancia
-            dir_y = dy / distancia
-
-            aceleracao = 2.2
-
-            self.velocidade_x += (
-                ((dir_x * self.velocidade) - self.velocidade_x) * aceleracao * dt
-            )
-
-            self.velocidade_y += (
-                ((dir_y * self.velocidade) - self.velocidade_y) * aceleracao * dt
-            )
-
-        self.x += self.velocidade_x * dt
-        self.y += self.velocidade_y * dt
 
     def esta_dentro_do_frasco(self, area_frasco):
         return area_frasco.collidepoint(int(self.x), int(self.y))
@@ -123,11 +96,63 @@ class DuendeNeblina:
             self.tempo_novo_destino = 0.0
             self.escolher_novo_destino()
 
-    def _atualizar_flutuacao(self, dt):
-        if self.animacoes.dormindo:
+    def _atualizar_movimento(self, dt):
+        if self.arraste.ativo:
             return
+
+        dx = self.alvo_x - self.x
+        dy = self.alvo_y - self.y
+        distancia = math.hypot(dx, dy)
+
+        if distancia > 1:
+            dir_x = dx / distancia
+            dir_y = dy / distancia
+
+            aceleracao = 2.2
+
+            self.velocidade_x += (
+                ((dir_x * self.velocidade) - self.velocidade_x) * aceleracao * dt
+            )
+
+            self.velocidade_y += (
+                ((dir_y * self.velocidade) - self.velocidade_y) * aceleracao * dt
+            )
+
+        self.x += self.velocidade_x * dt
+        self.y += self.velocidade_y * dt
+
+    def _atualizar_flutuacao(self, dt):
         flutuacao = math.sin(self.tempo * 1.8) * 10 + math.sin(self.tempo * 0.6) * 4
         self.y += flutuacao * dt * 8
+
+    def mover(self, dx, dy, distancia, dt, velocidade):
+        self.x += (dx / max(1, distancia)) * velocidade * dt
+        self.y += (dy / max(1, distancia)) * velocidade * dt
+        self.base_y = self.y
+
+    def duplicar(self):
+        novo = DuendeNeblina()
+
+        novo.cor = (200, 235, 255)
+
+        novo.x = self.x
+        novo.y = self.y
+        novo.base_y = self.base_y
+
+        novo.escala_visual = self.escala_visual
+        novo.escala = self.escala
+
+        novo.alpha_visual = self.alpha_visual
+
+        novo.velocidade_x = 0
+        novo.velocidade_y = 0
+
+        novo.iniciar_saida_frasco()
+
+        return novo
+
+    def resetar_escala_visual(self):
+        self.escala_visual = 0.9
 
     # =====================================
     # UPDATE PRINCIPAL
@@ -148,14 +173,14 @@ class DuendeNeblina:
             return
 
         # 5. e Movimento Livre
-        if (
-            not self.movimento_bloqueado
-            and not self.animacoes.teleportando
-            and not self.animacoes.comendo_esfera
-        ):
+        if not self.movimento_bloqueado and not self.animacoes.teleportando:
             self._atualizar_destino_livre(dt)
-            self.atualizar_movimento(dt)
+            self._atualizar_movimento(dt)
             self._atualizar_flutuacao(dt)
+
+    def iniciar_saida_frasco(self):
+        self.animacoes.iniciar_saindo_frasco()
+        self.movimento_bloqueado = True
 
     def escolher_novo_destino(self):
         self.alvo_x = random.randint(180, 1100)
