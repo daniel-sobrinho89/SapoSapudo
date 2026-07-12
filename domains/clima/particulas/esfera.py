@@ -60,7 +60,7 @@ class Esfera:
         # marca se está protegido inicialmente (ex.: dentro do pote)
         # reset entry_x whenever particle is re-spawned
         self.just_exited_timer = 0.0
-        self.saiu_do_pote = False
+        self.saiu_da_casa = False
 
         if self.area_protegida is not None:
             self.protegido = self.area_protegida.collidepoint(int(self.x), int(self.y))
@@ -75,7 +75,7 @@ class Esfera:
         current_protegido = False
 
         if self.area_protegida is not None:
-            if self.saiu_do_pote:
+            if self.saiu_da_casa:
                 current_protegido = False
             else:
                 limite_superior = self.area_protegida.top - 13
@@ -90,13 +90,13 @@ class Esfera:
         sensibilidade = 1.0 / max(self.raio, 1)
         sensibilidade = max(0.15, min(0.6, sensibilidade))
 
-        # Entrando no frasco: travar X e zerar velocidade horizontal
+        # Entrando na casa: travar X e zerar velocidade horizontal
         if current_protegido and not self.protegido:
             self.vel_x = 0.0
 
-        # Saindo do frasco: liberar e aplicar pequeno impulso na direção do vento
+        # Saindo da casa: liberar e aplicar pequeno impulso na direção do vento
         if self.protegido and not current_protegido:
-            self.saiu_do_pote = True
+            self.saiu_da_casa = True
 
             self.vel_x = ambiente.vento * 60.0 * sensibilidade
 
@@ -181,7 +181,7 @@ class Esfera:
         self.alpha = random.randint(180, 255)
 
         self.protegido = False
-        self.saiu_do_pote = True
+        self.saiu_da_casa = True
         self.just_exited_timer = 0
         self.tempo_vida = 0
         self.oscilacao = random.uniform(0.0, 6.28)

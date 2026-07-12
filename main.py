@@ -20,11 +20,11 @@ from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
 from core.fisica import sistema_fisica
+from domains.casa_duende.entity import CasaDuende
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
 from domains.clima.clima_service import ClimaService
 from domains.clima.evento_livro import EventoLivro
-from domains.clima.frasco import FrascoClimatico
 from domains.clima.nuvem import Nuvem
 from domains.clima.particulas.esfera import Esfera
 from domains.clima.sistema_nuvens import SistemaNuvens
@@ -208,12 +208,12 @@ class GameWidget(Widget):
         self.tts = TTSService()
 
     def _inicializar_clima_e_ambiente(self):
-        self.frasco_climatico = FrascoClimatico(self.transform)
-        self.frasco_climatico.atualizar_posicao(centro_y)
+        self.casa_duende = CasaDuende(self.transform)
+        self.casa_duende.atualizar_posicao(centro_y)
         self.esferas = [
             Esfera(
-                self.frasco_climatico.area_particulas,
-                self.frasco_climatico.area_pote,
+                self.casa_duende.area_particulas,
+                self.casa_duende.area_pote,
                 asset_manager,
             )
             for _ in range(QUANTIDADE_POEIRA)
@@ -223,7 +223,7 @@ class GameWidget(Widget):
             asset_manager, self.transform, self.livro, self.esferas
         )
         for e in self.esferas:
-            e.area_protegida = self.frasco_climatico.area_pote
+            e.area_protegida = self.casa_duende.area_pote
             e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
 
         self.clima_service = ClimaService()
@@ -254,7 +254,7 @@ class GameWidget(Widget):
             self.sistema_nuvens,
             self.sapo,
             self.violao,
-            self.frasco_climatico,
+            self.casa_duende,
             self.ambiente,
             self.evento_livro,
             self.esferas,
@@ -278,7 +278,7 @@ class GameWidget(Widget):
             self.controle_renderer,
             self.gerenciador_cenarios,
             self.clima_service,
-            self.frasco_climatico,
+            self.casa_duende,
             self.esferas,
             self.evento_livro,
             self.conversa_sapudo,
@@ -421,7 +421,7 @@ class GameWidget(Widget):
             )
 
         self.violao.atualizar(dt)
-        self.frasco_climatico.atualizar(dt)
+        self.casa_duende.atualizar(dt)
         self.sistema_nuvens.atualizar_area_interna()
 
         Nuvem.finalizar_carregamento()

@@ -64,8 +64,8 @@ class DuendeNeblina:
     def mover_arraste(self, mouse_x, mouse_y):
         self.arraste.mover(mouse_x, mouse_y, self)
 
-    def finalizar_arraste(self, frasco_rect=None):
-        self.arraste.finalizar(self.x, self.y, frasco_rect)
+    def finalizar_arraste(self, casa_duende_rect=None):
+        self.arraste.finalizar(self.x, self.y, casa_duende_rect)
 
     def processar_toque_down(self, pos_virtual):
         return self.arraste.processar_toque_down(
@@ -181,6 +181,11 @@ class DuendeNeblina:
     def iniciar_saida_frasco(self):
         self.animacoes.iniciar_saindo_frasco()
         self.movimento_bloqueado = True
+
+    def iniciar_voo(self):
+        self.animacoes.iniciar_voo()
+        self.movimento_bloqueado = False
+        self.resetar_escala_visual()
 
     def escolher_novo_destino(self):
         self.alvo_x = random.randint(180, 1100)

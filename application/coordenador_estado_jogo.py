@@ -23,7 +23,7 @@ class CoordenadorEstadoJogo:
         livro,
         esferas,
         clima_service,
-        frasco_climatico,
+        casa_duende,
         evento_livro,
         spotify,
         audio,
@@ -35,7 +35,7 @@ class CoordenadorEstadoJogo:
         self.livro = livro
         self.esferas = esferas
         self.clima_service = clima_service
-        self.frasco_climatico = frasco_climatico
+        self.casa_duende = casa_duende
         self.evento_livro = evento_livro
         self.spotify = spotify
         self.audio = audio
@@ -48,21 +48,19 @@ class CoordenadorEstadoJogo:
             self.duende,
             self.violao,
             self.clima_service,
-            self.frasco_climatico.area_interna,
+            self.casa_duende.area_interna,
         )
         self.esconder_atras_violao = EsconderAtrasViolaoUseCase(
             self.duende, self.violao
         )
         self.comer_esfera = ComerEsferaUseCase(
             self.duende,
-            self.frasco_climatico,
+            self.casa_duende,
             self.esferas,
             self.evento_livro,
             self.gerenciador_cenarios,
         )
-        self.saindo_do_frasco = SaindoDoFrascoUseCase(
-            self.frasco_climatico.area_interna
-        )
+        self.saindo_do_frasco = SaindoDoFrascoUseCase(self.casa_duende.area_interna)
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
             self.duende, self.sapo, self.violao
         )

@@ -161,7 +161,7 @@ class ResgatarViolaoUseCase:
         self.violao_em_maos = False
         self.violao.caindo = False
         self.violao.fora_do_lugar = False
-        self.animacoes.iniciar_voo()
+        self.duende.iniciar_voo()
 
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0

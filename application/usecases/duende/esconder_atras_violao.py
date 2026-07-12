@@ -108,6 +108,4 @@ class EsconderAtrasViolaoUseCase:
             )
 
             if progresso >= 1:
-                self.duende.movimento_bloqueado = False
-                self.duende.resetar_escala_visual()
-                self.duende.animacoes.iniciar_voo()
+                self.duende.iniciar_voo()

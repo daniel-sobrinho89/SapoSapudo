@@ -5,56 +5,44 @@ class ComerEsferaUseCase:
     INDO_FRASCO = "indo_frasco"
 
     def __init__(
-        self, duende, frasco_climatico, esferas, evento_livro, gerenciador_cenarios
+        self, duende, casa_duende, esferas, evento_livro, gerenciador_cenarios
     ):
         self.duende = duende
-        self.frasco_climatico = frasco_climatico
+        self.casa_duende = casa_duende
         self.esferas = esferas
         self.evento_livro = evento_livro
         self.gerenciador_cenarios = gerenciador_cenarios
 
         self.tempo = 0.0
         self.esfera_alvo = None
-        self.frasco_rect = self.frasco_climatico.area_interna
-        self.x_entrada_frasco = self.frasco_rect.centerx
-        self.y_entrada_frasco = self.frasco_rect.top - 60
+        self.casa_duende_rect = self.casa_duende.area_interna
+        self.x_entrada_frasco = self.casa_duende_rect.centerx
+        self.y_entrada_frasco = self.casa_duende_rect.top - 60
         self.y_descida_frasco = 490
 
     def executar(self):
         self.tempo = 0.0
 
-        esferas = [e for e in self.esferas if e.ativa]
+        esferas = [e for e in self.esferas if e.ativa and e.saiu_da_casa]
 
         if not esferas:
             self.esfera_alvo = None
             return
 
-        saindo = [e for e in esferas if e.saiu_do_pote]
-
-        if saindo:
-            self.esfera_alvo = min(
-                saindo,
-                key=lambda e: math.hypot(
-                    e.x - self.duende.x,
-                    e.y - self.duende.y,
-                ),
-            )
-        else:
-            self.esfera_alvo = min(
-                esferas,
-                key=lambda e: math.hypot(
-                    e.x - self.frasco_climatico.area_pote.centerx,
-                    e.y - self.frasco_climatico.area_pote.centery,
-                ),
-            )
+        self.esfera_alvo = min(
+            esferas,
+            key=lambda e: math.hypot(
+                e.x - self.duende.x,
+                e.y - self.duende.y,
+            ),
+        )
 
         self.duende.animacoes.iniciar_perseguindo_esfera()
 
     def atualizar(self, dt):
         if self.esfera_alvo is None:
             self.duende.animacoes.iniciar_voo()
-
-        if self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA:
+        elif self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA:
             alvo_x = self.esfera_alvo.x
             alvo_y = self.esfera_alvo.y
             dx = alvo_x - self.duende.x

@@ -31,7 +31,7 @@ class ControladorVozMusical:
         controle_renderer,
         gerenciador_cenarios,
         clima_service,
-        frasco_climatico,
+        casa_duende,
         esferas,
         evento_livro,
         conversa_sapudo,
@@ -46,8 +46,7 @@ class ControladorVozMusical:
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
-        self.frasco_climatico = frasco_climatico
-        self.frasco_rect = frasco_climatico.area_interna
+        self.casa_duende = casa_duende
         self.esferas = esferas
         self.evento_livro = evento_livro
         self.conversa_sapudo = conversa_sapudo
@@ -86,7 +85,7 @@ class ControladorVozMusical:
             self.livro,
             self.esferas,
             self.clima_service,
-            self.frasco_climatico,
+            self.casa_duende,
             self.evento_livro,
             self.spotify,
             self.audio,

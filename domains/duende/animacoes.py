@@ -88,6 +88,10 @@ class AnimacoesDuende:
         return self.maquina.eh(self.DESCENDO_PARA_DORMIR)
 
     @property
+    def descendo_frasco_duplicar(self):
+        return self.maquina.eh(self.DESCENDO_FRASCO_DUPLICAR)
+
+    @property
     def voando(self):
         return self.maquina.eh(self.VOANDO)
 

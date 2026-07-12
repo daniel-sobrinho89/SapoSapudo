@@ -2,60 +2,34 @@ import math
 import random
 
 import kivy_adapter
+from render.asset_manager import asset_manager
 
 
-class FrascoClimatico:
+class CasaDuende:
     def __init__(self, transform):
         self.transform = transform
-        # =====================================
-        # POSIÇÃO GLOBAL DO FRASCO
-        # =====================================
-
         self.x = 140
         self.y = 190
-
-        # =====================================
-        # ESCALA GLOBAL DO FRASCO
-        # =====================================
-
         self.escala = 0.13
-
-        # =====================================
-        # OFFSETS FINOS
-        # =====================================
-
-        self.offset_tampa_y = int(55 * self.escala / 0.14)
-        self.offset_vidro_y = 0
-        self.offset_base_y = int(-120 * self.escala / 0.14)
-
-        self.offset_tampa_x = -3.0
-        self.offset_vidro_x = -3.6
-        self.offset_base_x = 0
+        self.escala_x = 1.90
+        self.escala_y = 1.85
+        self.offset_casa_y = 0
+        self.offset_casa_x = -6
 
         # =====================================
         # LOAD IMAGENS
         # =====================================
 
-        from render.asset_manager import asset_manager
-
-        base_original = asset_manager.carregar("clima/frasco/frasco_base.webp")
-
-        vidro_original = asset_manager.carregar("clima/frasco/frasco_vidro.webp")
-
-        tampa_original = asset_manager.carregar("clima/frasco/frasco_tampa.webp")
+        casa_duende_apagada = asset_manager.carregar(
+            "casa_duende/casa_duende_apagada.webp"
+        )
 
         # =====================================
         # REMOVE ESPAÇOS TRANSPARENTES
         # =====================================
 
-        base_crop = base_original.subsurface(base_original.get_bounding_rect()).copy()
-
-        vidro_crop = vidro_original.subsurface(
-            vidro_original.get_bounding_rect()
-        ).copy()
-
-        tampa_crop = tampa_original.subsurface(
-            tampa_original.get_bounding_rect()
+        casa_duende_crop = casa_duende_apagada.subsurface(
+            casa_duende_apagada.get_bounding_rect()
         ).copy()
 
         # =====================================
@@ -75,58 +49,22 @@ class FrascoClimatico:
             )
 
         # =====================================
-        # ESCALAS DAS PEÇAS
+        # CASA
         # =====================================
 
-        escala_base = self.escala * 0.95
-        escala_vidro = self.escala * 1.01
-        escala_tampa = self.escala * 0.55
-
-        # =====================================
-        # BASE
-        # =====================================
-
-        self.frasco_base = self.transform.escalar(
-            base_crop,
+        self.casa_duende = self.transform.escalar(
+            casa_duende_crop,
             (
-                int(base_crop.get_width() * escala_base),
-                int(base_crop.get_height() * escala_base),
+                int(casa_duende_crop.get_width() * self.escala * self.escala_x),
+                int(casa_duende_crop.get_height() * self.escala * self.escala_y),
             ),
         )
 
         # =====================================
-        # VIDRO
+        # TAMANHO FINAL DA CASA
         # =====================================
 
-        self.frasco_vidro = self.transform.escalar(
-            vidro_crop,
-            (
-                int(vidro_crop.get_width() * escala_vidro),
-                int(vidro_crop.get_height() * escala_vidro),
-            ),
-        )
-
-        # =====================================
-        # TAMPA
-        # =====================================
-
-        self.frasco_tampa = self.transform.escalar(
-            tampa_crop,
-            (
-                int(tampa_crop.get_width() * escala_tampa),
-                int(tampa_crop.get_height() * escala_tampa),
-            ),
-        )
-
-        # =====================================
-        # TAMANHO FINAL DO FRASCO
-        # =====================================
-
-        self.largura = max(
-            self.frasco_base.get_width(),
-            self.frasco_vidro.get_width(),
-            self.frasco_tampa.get_width(),
-        )
+        self.largura = self.casa_duende.get_width()
 
         # =====================================
         # POSICIONAMENTO AUTOMÁTICO
@@ -135,50 +73,22 @@ class FrascoClimatico:
         centro_x = self.largura // 2
 
         # =====================================
-        # VIDRO
+        # CASA
         # =====================================
 
-        topo_frasco = int(110 * self.escala / 0.13)
+        topo_casa = int(110 * self.escala / 0.13)
 
-        vidro_x = centro_x - self.frasco_vidro.get_width() // 2 + self.offset_vidro_x
+        casa_x = centro_x - self.casa_duende.get_width() // 2 + self.offset_casa_x
 
-        vidro_y = topo_frasco + self.offset_vidro_y
+        casa_y = topo_casa + self.offset_casa_y
 
-        # =====================================
-        # BASE
-        # =====================================
-
-        base_x = centro_x - self.frasco_base.get_width() // 2 + self.offset_base_x
-
-        base_y = (
-            vidro_y + int(self.frasco_vidro.get_height() * 0.72) + self.offset_base_y
-        )
-
-        # =====================================
-        # TAMPA
-        # =====================================
-
-        tampa_x = vidro_x + self.frasco_vidro.get_width() - 136
-
-        tampa_y = (
-            base_y
-            + self.frasco_base.get_height()
-            - int(self.frasco_tampa.get_height() * 0.75)
-        )
-
-        # =====================================
-        # CALCULA ALTURA DINAMICAMENTE
-        # =====================================
-
-        altura_base = base_y + self.frasco_base.get_height()
-
-        self.altura = int(altura_base + int(50 * self.escala / 0.13))
+        self.altura = casa_y + self.casa_duende.get_height()
 
         # =====================================
         # SURFACE FINAL
         # =====================================
 
-        self.frasco_surface = kivy_adapter.Surface(
+        self.casa_surface = kivy_adapter.Surface(
             (self.largura, self.altura), kivy_adapter.SRCALPHA
         )
 
@@ -186,25 +96,19 @@ class FrascoClimatico:
         # BLITS
         # =====================================
 
-        self.frasco_surface.blit(self.frasco_vidro, (vidro_x, vidro_y))
-
-        self.frasco_surface.blit(self.frasco_base, (base_x, base_y))
-
-        self.frasco_surface.blit(self.frasco_tampa, (tampa_x, tampa_y))
+        self.casa_surface.blit(self.casa_duende, (casa_x, casa_y))
 
         # =====================================
         # ÁREA INTERNA
         # =====================================
 
-        self.area_interna_offset_x = vidro_x + int(self.frasco_vidro.get_width() * 0.10)
+        self.area_interna_offset_x = casa_x + int(self.casa_duende.get_width() * 0.10)
 
-        self.area_interna_offset_y = vidro_y + int(
-            self.frasco_vidro.get_height() * 0.30
-        )
+        self.area_interna_offset_y = casa_y + int(self.casa_duende.get_height() * 0.24)
 
-        self.area_interna_width = int(self.frasco_vidro.get_width() * 0.80)
+        self.area_interna_width = int(self.casa_duende.get_width() * 0.80)
 
-        self.area_interna_height = int(self.frasco_vidro.get_height() * 0.62)
+        self.area_interna_height = int(self.casa_duende.get_height() * 0.62)
 
         self.area_interna = kivy_adapter.Rect(
             self.x + self.area_interna_offset_x,
@@ -217,20 +121,20 @@ class FrascoClimatico:
             self.x + 40,
             self.y - 180,
             self.largura - 130,
-            self.frasco_surface.get_height() - 180,
+            self.casa_surface.get_height() - 180,
         )
 
         # =====================================
-        # ÁREA PROTEGIDA DO FRASCO
+        # ÁREA PROTEGIDA DA CASA
         # =====================================
 
-        pote_x = self.x + vidro_x + int(self.frasco_vidro.get_width() * 0.18)
+        pote_x = self.x + casa_x + int(self.casa_duende.get_width() * 0.18)
 
-        pote_y = self.y + vidro_y + int(self.frasco_vidro.get_height() * 0.10)
+        pote_y = self.y + casa_y + int(self.casa_duende.get_height() * 0.10)
 
-        pote_w = int(self.frasco_vidro.get_width() * 0.67)
+        pote_w = int(self.casa_duende.get_width() * 0.67)
 
-        pote_h = int(self.frasco_vidro.get_height() * 0.50)
+        pote_h = int(self.casa_duende.get_height() * 0.50)
 
         self.area_pote = kivy_adapter.Rect(pote_x, pote_y, pote_w, pote_h)
 
@@ -243,7 +147,7 @@ class FrascoClimatico:
 
     def atualizar_posicao(self, centro_y=None):
         if centro_y is not None:
-            base_offset = 190
+            base_offset = 100
 
             desired_bottom = centro_y + base_offset
 
@@ -266,7 +170,7 @@ class FrascoClimatico:
             self.area_pote.y = (
                 self.y
                 + self.area_interna_offset_y
-                - int(self.frasco_vidro.get_height() * 0.07)
+                - int(self.casa_duende.get_height() * 0.07)
             )
 
     # =====================================
@@ -275,7 +179,7 @@ class FrascoClimatico:
 
     def renderizar(self, tela, centro_y=None):
         self.atualizar_posicao(centro_y)
-        tela.blit(self.frasco_surface, (self.x, self.y))
+        tela.blit(self.casa_surface, (self.x, self.y))
 
     def desenhar_nevoa(self, tela, intensidade):
         tempo = self.tempo_nevoa

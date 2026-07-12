@@ -25,7 +25,7 @@ class GerenciadorCenarios:
         sistema_nuvens,
         sapo,
         violao,
-        frasco_climatico,
+        casa_duende,
         ambiente,
         evento_livro,
         particulas,
@@ -37,7 +37,7 @@ class GerenciadorCenarios:
         self.sistema_nuvens = sistema_nuvens
         self.sapo = sapo
         self.violao = violao
-        self.frasco_climatico = frasco_climatico
+        self.casa_duende = casa_duende
         self.ambiente = ambiente
         self.evento_livro = evento_livro
         self.particulas = particulas
@@ -137,22 +137,45 @@ class GerenciadorCenarios:
         sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
 
         if not self.background_renderer.cenario_feira:
-            self.frasco_climatico.renderizar(self.tela, self.centro_y)
-
-            if not self.evento_livro.livro.visivel:
-                for particula in self.particulas:
+            for particula in self.particulas:
+                if not particula.saiu_da_casa:
                     particula.desenhar(self.tela)
 
-                self.frasco_climatico.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
+            if self.renderer_duende and (
+                self.duende.animacoes.descendo_para_dormir
+                or self.duende.animacoes.descendo_frasco_duplicar
+                or self.duende.animacoes.saindo_frasco
+            ):
+                self.renderer_duende.renderizar(self.duende, ESCALA)
+
+            if self.duende.animacoes.saindo_frasco:
+                for duende in self.duendes:
+                    self.renderer_duende.renderizar(duende, ESCALA)
+
+            self.casa_duende.renderizar(self.tela, self.centro_y)
+
+            for particula in self.particulas:
+                if particula.saiu_da_casa:
+                    particula.desenhar(self.tela)
+
+            self.casa_duende.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
 
             if self.renderer_duende:
-                for duende in [self.duende] + self.duendes:
-                    self.renderer_duende.renderizar(duende, ESCALA)
+                if (
+                    not self.duende.animacoes.descendo_para_dormir
+                    and not self.duende.animacoes.descendo_frasco_duplicar
+                    and not self.duende.animacoes.saindo_frasco
+                ):
+                    self.renderer_duende.renderizar(self.duende, ESCALA)
+
+                if not self.duende.animacoes.saindo_frasco:
+                    for duende in self.duendes:
+                        self.renderer_duende.renderizar(duende, ESCALA)
 
             if self.renderer_semente:
                 self.renderer_semente.renderizar(self.semente)
 
-            self.evento_livro.renderizar(self.tela, self.frasco_climatico)
+            self.evento_livro.renderizar(self.tela, self.casa_duende)
             self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
 
     def _atualizar_carregamento_assets(self, sapo_renderer):

@@ -203,12 +203,7 @@ class Nuvem:
             self.alpha = max(0, self.alpha - self.fade_speed * dt)
             return self.alpha > 0
 
-        # aplicar força do vento centralizado apenas
-        # se a nuvem estiver fora da área do frasco
-        if not self.area.collidepoint(int(self.x), int(self.y)):
-            sistema_fisica.aplicar_forca_vento(
-                self, None, dt, sensibilidade=self.escala
-            )
+        sistema_fisica.aplicar_forca_vento(self, None, dt, sensibilidade=self.escala)
 
         self.x += self.vx * dt
 
