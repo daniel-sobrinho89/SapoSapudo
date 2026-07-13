@@ -245,8 +245,8 @@ class EventoLivro:
 
         if not self.livro.sendo_carregado:
             self.livro.posicionar(
-                casa_duende.area_pote.centerx,
-                casa_duende.area_pote.centery,
+                casa_duende.area_casa.centerx,
+                casa_duende.area_casa.centery,
             )
 
         offset_flutuacao = math.sin(self.tempo * 2) * 5

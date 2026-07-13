@@ -30,10 +30,14 @@ class DuendeNeblina:
         self.tempo = random.uniform(0, 999)
         self.escala = 0.40
         self.alpha_visual = 255
+        self.percentual_visivel = 1.0
         self.escala_visual = 0.9
+        self.y_descida_casa = 350
+        self.altura_render = 0
         self.velodidade_descina_sono = 40
         self.movimento_bloqueado = False
         self.carregado = False
+        self.fluxo_sono_iniciado = False
         self.cor = (255, 255, 255)
         # =================================
         # COMPONENTES
@@ -52,8 +56,8 @@ class DuendeNeblina:
     def arrastando(self):
         return self.arraste.ativo
 
-    def esta_dentro_do_frasco(self, area_frasco):
-        return area_frasco.collidepoint(int(self.x), int(self.y))
+    def esta_dentro_da_casa(self, area_casa):
+        return area_casa.collidepoint(int(self.x), int(self.y))
 
     # =====================================
     # INTERAÇÃO (Delegação)
@@ -147,7 +151,7 @@ class DuendeNeblina:
         novo.velocidade_x = 0
         novo.velocidade_y = 0
 
-        novo.iniciar_saida_frasco()
+        novo.iniciar_saida_casa()
 
         return novo
 
@@ -178,13 +182,15 @@ class DuendeNeblina:
             self._atualizar_movimento(dt)
             self._atualizar_flutuacao(dt)
 
-    def iniciar_saida_frasco(self):
-        self.animacoes.iniciar_saindo_frasco()
+    def iniciar_saida_casa(self):
+        self.animacoes.iniciar_saindo_da_casa()
         self.movimento_bloqueado = True
 
     def iniciar_voo(self):
         self.animacoes.iniciar_voo()
         self.movimento_bloqueado = False
+        self.fluxo_sono_iniciado = False
+        self.percentual_visivel = 1.0
         self.resetar_escala_visual()
 
     def escolher_novo_destino(self):

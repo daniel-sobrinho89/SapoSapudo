@@ -15,7 +15,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import kivy_adapter
-from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, FPS, LARGURA, QUANTIDADE_POEIRA
+from config import ALTURA, CENTRO_OFFSET_Y, FPS, LARGURA, QUANTIDADE_POEIRA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
@@ -213,7 +213,7 @@ class GameWidget(Widget):
         self.esferas = [
             Esfera(
                 self.casa_duende.area_particulas,
-                self.casa_duende.area_pote,
+                self.casa_duende.area_casa,
                 asset_manager,
             )
             for _ in range(QUANTIDADE_POEIRA)
@@ -223,7 +223,7 @@ class GameWidget(Widget):
             asset_manager, self.transform, self.livro, self.esferas
         )
         for e in self.esferas:
-            e.area_protegida = self.casa_duende.area_pote
+            e.area_protegida = self.casa_duende.area_casa
             e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
 
         self.clima_service = ClimaService()
@@ -413,7 +413,7 @@ class GameWidget(Widget):
 
         self.controlador_voz_musical.atualizar(dt)
         self._atualizar_ambiente_fisica(dt)
-        self.gerenciador_cenarios.atualizar_transicao(dt)
+        self.gerenciador_cenarios.atualizar(dt)
 
         if self.violao.caindo:
             sistema_fisica.aplicar_forca_vento(
@@ -435,7 +435,7 @@ class GameWidget(Widget):
             self.clima_service.wind_speed,
         )
 
-        self.gerenciador_cenarios.renderizar(dt, ESCALA, self.sapo_renderer)
+        self.gerenciador_cenarios.renderizar(dt, self.sapo_renderer)
         self.pensamento_renderer.renderizar(tela, self.sapo, dt)
 
         if not self.violao.acoplado:

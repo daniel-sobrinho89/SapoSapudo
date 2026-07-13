@@ -16,7 +16,16 @@ class ResgatarViolaoUseCase:
         self.animacoes = duende.animacoes
         self.violao_em_maos = False
 
-    def executar(self):
+    def executar(self, dt):
+        if not self.violao.acoplado and not (
+            self.duende.animacoes.perseguindo_violao
+            or self.duende.animacoes.guardando_violao
+        ):
+            self._iniciar()
+        else:
+            self._atualizar(dt)
+
+    def _iniciar(self):
         if not self._pode_resgatar_violao():
             return
 
@@ -68,17 +77,14 @@ class ResgatarViolaoUseCase:
             and not self.animacoes.ciclo_sono.dormir_por_tempo
         )
 
-    def atualizar(self, dt):
-        self._atualizar_resgate(dt)
-
-    def _atualizar_resgate(self, dt):
-        resgate_concluido = self._atualizar_resgates(dt)
+    def _atualizar(self, dt):
+        resgate_concluido = self._atualizar_resgate(dt)
 
         if resgate_concluido:
             self._devolver_violao()
             self._finalizar_resgate()
 
-    def _atualizar_resgates(self, dt):
+    def _atualizar_resgate(self, dt):
         if self.violao is None:
             return False
 

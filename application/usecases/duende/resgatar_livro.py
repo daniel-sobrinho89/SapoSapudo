@@ -14,7 +14,16 @@ class ResgatarLivroUseCase:
         self.animacoes = duende.animacoes
         self.livro_em_maos = False
 
-    def executar(self):
+    def executar(self, dt):
+        if not (
+            self.duende.animacoes.perseguindo_livro
+            or self.duende.animacoes.guardando_livro
+        ):
+            self._iniciar()
+        else:
+            self._atualizar(dt)
+
+    def _iniciar(self):
         if not self._pode_resgatar_livro():
             return
 
@@ -59,16 +68,13 @@ class ResgatarLivroUseCase:
             and self.livro.visivel
         )
 
-    def atualizar(self, dt):
-        self._atualizar_resgate(dt)
-
-    def _atualizar_resgate(self, dt):
-        resgate_concluido = self._atualizar_resgates(dt)
+    def _atualizar(self, dt):
+        resgate_concluido = self._atualizar_resgate(dt)
 
         if resgate_concluido:
             self._finalizar_resgate()
 
-    def _atualizar_resgates(self, dt):
+    def _atualizar_resgate(self, dt):
         if self.livro is None:
             return False
 
@@ -130,10 +136,6 @@ class ResgatarLivroUseCase:
         self.livro.y = self.duende.y + self.OFFSET_Y
 
         return False
-
-    # def _devolver_livro(self):
-    #     if self.livro is not None:
-    #         self.livro.voltar_origem()
 
     def _finalizar_resgate(self):
         self.livro_em_maos = False

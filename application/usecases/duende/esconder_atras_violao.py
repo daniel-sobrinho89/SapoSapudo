@@ -23,14 +23,20 @@ class EsconderAtrasViolaoUseCase:
         self.saindo_offset_x = 0
         self.saindo_offset_y = 0
 
-    def executar(self):
+    def executar(self, dt):
+        if self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_VIOLAO:
+            self._iniciar()
+        else:
+            self._atualizar(dt)
+
+    def _iniciar(self):
         self.estado = self.INDO
         self.tempo = 0.0
         self.offset_y = 0
         self.duende.resetar_escala_visual()
         self.duende.animacoes.iniciar_escondendo_atras_violao()
 
-    def atualizar(self, dt):
+    def _atualizar(self, dt):
         self.tempo += dt
 
         if self.estado == self.INDO:

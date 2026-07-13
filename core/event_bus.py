@@ -144,6 +144,10 @@ class TTSFinalizadoEvent(Event):
     pass
 
 
+class VooIniciadoEvent(Event):
+    pass
+
+
 class PensamentoSapoEvent(Event):
     def __init__(self, texto: str, duracao: float = 6):
         super().__init__(texto=texto, duracao=duracao)
@@ -157,6 +161,7 @@ _MAPA_EVENTOS = {
     "clima_atualizado": ClimaAtualizadoEvent,
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
+    "voo_iniciado": VooIniciadoEvent,
     "pensamento_sapo": PensamentoSapoEvent,
 }
 

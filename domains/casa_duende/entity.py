@@ -2,6 +2,7 @@ import math
 import random
 
 import kivy_adapter
+from core.event_bus import event_bus
 from render.asset_manager import asset_manager
 
 
@@ -11,8 +12,8 @@ class CasaDuende:
         self.x = 140
         self.y = 190
         self.escala = 0.13
-        self.escala_x = 1.90
-        self.escala_y = 1.85
+        self.escala_x = 5.90
+        self.escala_y = 5.85
         self.offset_casa_y = 0
         self.offset_casa_x = -6
 
@@ -23,6 +24,9 @@ class CasaDuende:
         casa_duende_apagada = asset_manager.carregar(
             "casa_duende/casa_duende_apagada.webp"
         )
+        casa_duende_janela_superior_aberta = asset_manager.carregar(
+            "casa_duende/casa_duende_janela_superior_aberta.webp"
+        )
 
         # =====================================
         # REMOVE ESPAÇOS TRANSPARENTES
@@ -31,6 +35,12 @@ class CasaDuende:
         casa_duende_crop = casa_duende_apagada.subsurface(
             casa_duende_apagada.get_bounding_rect()
         ).copy()
+
+        casa_duende_janela_superior_aberta_crop = (
+            casa_duende_janela_superior_aberta.subsurface(
+                casa_duende_janela_superior_aberta.get_bounding_rect()
+            ).copy()
+        )
 
         # =====================================
         # NEVOA
@@ -52,7 +62,7 @@ class CasaDuende:
         # CASA
         # =====================================
 
-        self.casa_duende = self.transform.escalar(
+        self.casa_duende_apagada = self.transform.escalar(
             casa_duende_crop,
             (
                 int(casa_duende_crop.get_width() * self.escala * self.escala_x),
@@ -60,6 +70,23 @@ class CasaDuende:
             ),
         )
 
+        self.casa_duende_janela_superior_aberta = self.transform.escalar(
+            casa_duende_janela_superior_aberta_crop,
+            (
+                int(
+                    casa_duende_janela_superior_aberta_crop.get_width()
+                    * self.escala
+                    * self.escala_x
+                ),
+                int(
+                    casa_duende_janela_superior_aberta_crop.get_height()
+                    * self.escala
+                    * self.escala_y
+                ),
+            ),
+        )
+
+        self.casa_duende = self.casa_duende_apagada
         # =====================================
         # TAMANHO FINAL DA CASA
         # =====================================
@@ -79,9 +106,10 @@ class CasaDuende:
         topo_casa = int(110 * self.escala / 0.13)
 
         casa_x = centro_x - self.casa_duende.get_width() // 2 + self.offset_casa_x
-
         casa_y = topo_casa + self.offset_casa_y
 
+        self.casa_x = casa_x
+        self.casa_y = casa_y
         self.altura = casa_y + self.casa_duende.get_height()
 
         # =====================================
@@ -128,15 +156,14 @@ class CasaDuende:
         # ÁREA PROTEGIDA DA CASA
         # =====================================
 
-        pote_x = self.x + casa_x + int(self.casa_duende.get_width() * 0.18)
+        casa_x = self.x + casa_x + int(self.casa_duende.get_width() * 0.18)
+        casa_y = self.y + casa_y + int(self.casa_duende.get_height() * 0.10)
+        casa_w = int(self.casa_duende.get_width() * 0.67)
+        casa_h = int(self.casa_duende.get_height() * 0.50)
 
-        pote_y = self.y + casa_y + int(self.casa_duende.get_height() * 0.10)
+        self.area_casa = kivy_adapter.Rect(casa_x, casa_y, casa_w, casa_h)
 
-        pote_w = int(self.casa_duende.get_width() * 0.67)
-
-        pote_h = int(self.casa_duende.get_height() * 0.50)
-
-        self.area_pote = kivy_adapter.Rect(pote_x, pote_y, pote_w, pote_h)
+        event_bus.assinar("voo_iniciado", self.fechar_janela_superior)
 
     def atualizar(self, dt):
         self.tempo_nevoa += dt
@@ -161,17 +188,36 @@ class CasaDuende:
 
             self.area_particulas.y = self.y + 40
 
-            self.area_pote.x = (
+            self.area_casa.x = (
                 self.x
                 + self.area_interna_offset_x
                 + int(self.area_interna.width * 0.10)
             )
 
-            self.area_pote.y = (
+            self.area_casa.y = (
                 self.y
                 + self.area_interna_offset_y
                 - int(self.casa_duende.get_height() * 0.07)
             )
+
+    def abrir_janela_superior(self):
+        self.casa_duende = self.casa_duende_janela_superior_aberta
+        self._reconstruir_casa()
+
+    def fechar_janela_superior(self, _evento=None):
+        self.casa_duende = self.casa_duende_apagada
+        self._reconstruir_casa()
+
+    def _reconstruir_casa(self):
+        self.casa_surface = kivy_adapter.Surface(
+            (self.largura, self.altura),
+            kivy_adapter.SRCALPHA,
+        )
+
+        self.casa_surface.blit(
+            self.casa_duende,
+            (self.casa_x, self.casa_y),
+        )
 
     # =====================================
     # RENDER
@@ -195,20 +241,20 @@ class CasaDuende:
             raio = bolha["raio"]
 
             x = int(
-                self.area_pote.centerx
-                + (bolha["x"] - 0.5) * self.area_pote.width * 0.8
+                self.area_casa.centerx
+                + (bolha["x"] - 0.5) * self.area_casa.width * 0.8
                 + math.cos(tempo * bolha["velocidade"] * 0.6 + bolha["fase"]) * 8
             )
 
             y = int(
-                self.area_pote.centery
-                + (bolha["y"] - 0.5) * self.area_pote.height * 0.8
+                self.area_casa.centery
+                + (bolha["y"] - 0.5) * self.area_casa.height * 0.8
                 + math.sin(tempo * bolha["velocidade"] + bolha["fase"]) * 12
             )
 
-            x = max(self.area_pote.left + raio, min(x, self.area_pote.right - raio))
+            x = max(self.area_casa.left + raio, min(x, self.area_casa.right - raio))
 
-            y = max(self.area_pote.top + raio, min(y, self.area_pote.bottom - raio))
+            y = max(self.area_casa.top + raio, min(y, self.area_casa.bottom - raio))
 
             superficie = kivy_adapter.Surface(
                 (raio * 2, raio * 2), kivy_adapter.SRCALPHA

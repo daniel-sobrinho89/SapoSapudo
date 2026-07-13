@@ -95,10 +95,10 @@ class DuendeRenderer:
 
         escala *= duende.escala_visual
 
-        self.draw(frame, duende, escala)
-
         largura = int(frame.get_width() * escala)
         altura = int(frame.get_height() * escala)
+        duende.altura_render = altura
+        self.draw(frame, duende, escala)
 
         duende.atualizar_hitboxes(
             duende.x,
@@ -115,18 +115,35 @@ class DuendeRenderer:
         if escala_y is None:
             escala_y = escala_x
 
+        altura_original = imagem.get_height()
+
+        altura_visivel = max(1, int(altura_original * duende.percentual_visivel))
+
+        if altura_visivel != altura_original:
+            imagem = imagem.subsurface(
+                (
+                    0,
+                    0,
+                    imagem.get_width(),
+                    altura_visivel,
+                )
+            )
+
+        altura_cortada = altura_original - altura_visivel
+
         largura = max(1, int(imagem.get_width() * escala_x))
         altura = max(1, int(imagem.get_height() * escala_y))
 
-        imagem = self.transform.escalar(imagem, (largura, altura))
+        imagem = self.transform.escalar(imagem, (largura, altura)).copy()
+
         imagem.set_alpha(duende.alpha_visual)
-
-        rect = imagem.get_rect(center=(duende.x, duende.y))
-
-        imagem = imagem.copy()
 
         imagem.multiplicar_cor(
             duende.cor,
         )
+
+        offset_y = int(altura_cortada * escala_y / 2)
+
+        rect = imagem.get_rect(center=(duende.x, duende.y - offset_y))
 
         self.tela.blit(imagem, rect)

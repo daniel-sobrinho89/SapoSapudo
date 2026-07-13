@@ -5,11 +5,12 @@ from application.usecases import (
     ControlarComportamentoDuendeUseCase,
     ControlarSonoDuendeUseCase,
     DesacoplarViolaoUseCase,
+    EntrandoNaCasaUseCase,
     EsconderAtrasViolaoUseCase,
     ProcessarComandoSpotifyUseCase,
     ResgatarLivroUseCase,
     ResgatarViolaoUseCase,
-    SaindoDoFrascoUseCase,
+    SaindoDaCasaUseCase,
 )
 from domains.sapudo.maquina_estado_sapo import EstadoSapo
 
@@ -54,13 +55,12 @@ class CoordenadorEstadoJogo:
             self.duende, self.violao
         )
         self.comer_esfera = ComerEsferaUseCase(
-            self.duende,
-            self.casa_duende,
-            self.esferas,
-            self.evento_livro,
-            self.gerenciador_cenarios,
+            self.duende, self.casa_duende, self.esferas, self.evento_livro
         )
-        self.saindo_do_frasco = SaindoDoFrascoUseCase(self.casa_duende.area_interna)
+        self.entrando_na_casa = EntrandoNaCasaUseCase(
+            self.casa_duende, self.gerenciador_cenarios
+        )
+        self.saindo_da_casa = SaindoDaCasaUseCase(self.casa_duende.area_interna)
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
             self.duende, self.sapo, self.violao
         )
@@ -87,67 +87,53 @@ class CoordenadorEstadoJogo:
 
     def _executar_fluxo_duende(self, dt):
         # TODO! Ajustar para verificar se duende existe
-        if self.duende.animacoes.saindo_frasco:
-            self.saindo_do_frasco.executar(dt, self.duende)
+
+        if (
+            self.duende.animacoes.indo_para_casa
+            or self.duende.animacoes.descendo_para_dormir
+        ):
+            self.entrando_na_casa.executar(dt, self.duende)
+        elif self.duende.animacoes.saindo_da_casa:
+            self.saindo_da_casa.executar(dt, self.duende)
         elif (
             not self.clima_service.clima_disponivel
             or not self.duende
-            or self.duende.animacoes.em_frente_ao_frasco
-            or self.duende.animacoes.indo_para_frasco
-            or self.duende.animacoes.descendo_para_dormir
+            or self.duende.animacoes.em_frente_a_casa
             or self.duende.animacoes.dormindo
             or self.duende.animacoes.acordando
         ):
             self.controlar_sono_duende.executar(dt)
         elif (
-            (self.violao.caindo or self.violao.fora_do_lugar)
-            and not (self.violao.acoplado)
-            and not (
-                self.duende.animacoes.perseguindo_violao
-                or self.duende.animacoes.guardando_violao
-            )
-        ):
-            self.resgatar_violao.executar()
-        elif (
-            self.duende.animacoes.perseguindo_violao
+            self.violao.caindo
+            or self.violao.fora_do_lugar
+            or self.duende.animacoes.perseguindo_violao
             or self.duende.animacoes.guardando_violao
         ):
-            self.resgatar_violao.atualizar(dt)
-        elif self.livro.visivel and not (
+            self.resgatar_violao.executar(dt)
+        elif self.livro.visivel or (
             self.duende.animacoes.perseguindo_livro
             or self.duende.animacoes.guardando_livro
         ):
-            self.resgatar_livro.executar()
+            self.resgatar_livro.executar(dt)
         elif (
-            self.duende.animacoes.perseguindo_livro
-            or self.duende.animacoes.guardando_livro
-        ):
-            self.resgatar_livro.atualizar(dt)
-        elif self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_VIOLAO:
-            self.esconder_atras_violao.executar()
-        elif (
-            self.duende.animacoes.estado
+            self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_VIOLAO
+            or self.duende.animacoes.estado
             == self.duende.animacoes.ESCONDENDO_ATRAS_VIOLAO
         ):
-            self.esconder_atras_violao.atualizar(dt)
-        elif self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_ESFERA:
-            self.comer_esfera.executar()
+            self.esconder_atras_violao.executar(dt)
         elif (
-            self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA
+            self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_ESFERA
+            or self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA
             or self.duende.animacoes.estado == self.duende.animacoes.COMENDO_ESFERA
-            or self.duende.animacoes.estado
-            == self.duende.animacoes.INDO_FRASCO_DUPLICAR
-            or self.duende.animacoes.estado
-            == self.duende.animacoes.DESCENDO_FRASCO_DUPLICAR
         ):
-            self.comer_esfera.atualizar(dt)
+            self.comer_esfera.executar(dt)
         elif not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
             self.controlar_comportamento_duende.executar(dt)
 
     def _executar_fluxo_duende_clones(self, dt):
         for duende in self.gerenciador_cenarios.duendes:
-            if duende.animacoes.saindo_frasco:
-                self.saindo_do_frasco.executar(dt, duende)
+            if duende.animacoes.saindo_da_casa:
+                self.saindo_da_casa.executar(dt, duende)
 
     def _executar_fluxo_sapudo(self, dt):
         if self.violao.acoplado or self.sapo.animacoes.maquina.eh(

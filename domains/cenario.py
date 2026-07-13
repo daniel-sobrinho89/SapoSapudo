@@ -1,6 +1,4 @@
-import gc
-
-from config import ALTURA, CENTRO_OFFSET_Y, LARGURA
+from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA
 from core.fisica import sistema_fisica
 from domains.duende.entity import DuendeNeblina
 from domains.semente.entity import Semente
@@ -64,6 +62,10 @@ class GerenciadorCenarios:
     def tem_feira(self):
         return self.tamandua_renderer is not None
 
+    @property
+    def em_feira(self):
+        return self.background_renderer.cenario_feira
+
     def carregar_cenario_feira(self):
         self.tamandua_renderer = TamanduaRenderer(self.tela, self.transform)
         self.barraca_renderer = BarracaRenderer(
@@ -91,18 +93,15 @@ class GerenciadorCenarios:
         self.semente = None
         self.renderer_semente = None
 
-    def atualizar_transicao(self, dt):
-        """Gerencia a transição entre cenários e atualiza os objetos ativos."""
+    def atualizar(self, dt):
         if not self.cenario_feira_anterior and self.background_renderer.cenario_feira:
             self.sistema_nuvens.limpar()
             self.descarregar_cenario_principal()
-            gc.collect()
             self.carregar_cenario_feira()
 
         if self.cenario_feira_anterior and not self.background_renderer.cenario_feira:
             self.sistema_nuvens.limpar()
             self.descarregar_cenario_feira()
-            gc.collect()
             self.carregar_cenario_principal()
 
         self.cenario_feira_anterior = self.background_renderer.cenario_feira
@@ -111,9 +110,9 @@ class GerenciadorCenarios:
             if self.duende:
                 for duende in [self.duende] + self.duendes:
                     duende.atualizar(dt)
-                sistema_fisica.aplicar_forca_vento(
-                    self.duende, self.clima_service, dt, sensibilidade=0.5
-                )
+                    sistema_fisica.aplicar_forca_vento(
+                        self.duende, self.clima_service, dt, sensibilidade=0.5
+                    )
 
             if self.semente:
                 self.semente.atualizar(dt, self.clima_service)
@@ -121,62 +120,63 @@ class GerenciadorCenarios:
             for particula in self.particulas:
                 particula.atualizar(self.ambiente, dt)
 
-    def renderizar(self, dt, ESCALA, sapo_renderer):
+    def renderizar(self, dt, sapo_renderer):
         """Renderiza os elementos do cenário atual."""
         self.background_renderer.desenhar()
         self._atualizar_carregamento_assets(sapo_renderer)
 
-        if self.background_renderer.cenario_feira:
+        if self.em_feira:
             if self.tamandua_renderer:
                 self.tamandua_renderer.atualizar(dt)
                 self.tamandua_renderer.renderizar()
             if self.barraca_renderer:
                 self.barraca_renderer.renderizar()
+        else:
+            self._atualizar_cenario_principal()
 
         self.sistema_nuvens.renderizar(self.tela, self.background_renderer.eh_dia())
         sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
 
-        if not self.background_renderer.cenario_feira:
-            for particula in self.particulas:
-                if not particula.saiu_da_casa:
-                    particula.desenhar(self.tela)
+    def _atualizar_cenario_principal(self):
+        for particula in self.particulas:
+            if not particula.saiu_da_casa:
+                particula.desenhar(self.tela)
 
-            if self.renderer_duende and (
-                self.duende.animacoes.descendo_para_dormir
-                or self.duende.animacoes.descendo_frasco_duplicar
-                or self.duende.animacoes.saindo_frasco
+        if (
+            self.renderer_duende
+            and self.duende.animacoes.atras_da_casa
+            and self.duende.percentual_visivel <= 0.15
+        ):
+            self.renderer_duende.renderizar(self.duende, ESCALA)
+
+        if self.duende.animacoes.saindo_da_casa:
+            for duende in self.duendes:
+                self.renderer_duende.renderizar(duende, ESCALA)
+
+        self.casa_duende.renderizar(self.tela, self.centro_y)
+
+        for particula in self.particulas:
+            if particula.saiu_da_casa:
+                particula.desenhar(self.tela)
+
+        self.casa_duende.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
+
+        if self.renderer_duende:
+            if (
+                self.duende.percentual_visivel > 0.15
+                or not self.duende.animacoes.atras_da_casa
             ):
                 self.renderer_duende.renderizar(self.duende, ESCALA)
 
-            if self.duende.animacoes.saindo_frasco:
+            if not self.duende.animacoes.saindo_da_casa:
                 for duende in self.duendes:
                     self.renderer_duende.renderizar(duende, ESCALA)
 
-            self.casa_duende.renderizar(self.tela, self.centro_y)
+        if self.renderer_semente:
+            self.renderer_semente.renderizar(self.semente)
 
-            for particula in self.particulas:
-                if particula.saiu_da_casa:
-                    particula.desenhar(self.tela)
-
-            self.casa_duende.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
-
-            if self.renderer_duende:
-                if (
-                    not self.duende.animacoes.descendo_para_dormir
-                    and not self.duende.animacoes.descendo_frasco_duplicar
-                    and not self.duende.animacoes.saindo_frasco
-                ):
-                    self.renderer_duende.renderizar(self.duende, ESCALA)
-
-                if not self.duende.animacoes.saindo_frasco:
-                    for duende in self.duendes:
-                        self.renderer_duende.renderizar(duende, ESCALA)
-
-            if self.renderer_semente:
-                self.renderer_semente.renderizar(self.semente)
-
-            self.evento_livro.renderizar(self.tela, self.casa_duende)
-            self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
+        self.evento_livro.renderizar(self.tela, self.casa_duende)
+        self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
 
     def _atualizar_carregamento_assets(self, sapo_renderer):
         sapo_renderer.atualizar_carregamento(10)

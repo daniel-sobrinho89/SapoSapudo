@@ -9,16 +9,11 @@ class ControlarSonoDuendeUseCase:
         self.violao = violao
         self.clima_service = clima_service
         self.casa_duende_rect = casa_duende_rect
-        self.x_entrada_frasco = self.casa_duende_rect.centerx
-        self.y_entrada_frasco = self.casa_duende_rect.top - 60
         self.tempo_respiracao = 0
-        self.y_descida_frasco = 490
 
     def executar(self, dt):
         self._atualizar_sono_programado(dt)
         self._atualizar_fator_visual(dt)
-        self._atualizar_entrada_frasco(dt)
-        self._atualizar_descida_sono(dt)
         self._sincronizar_estado_dormindo()
         self._atualizar_estado_acordando(dt)
         self._verificar_inicio_sono_por_clima()
@@ -38,7 +33,7 @@ class ControlarSonoDuendeUseCase:
             return
 
         self.duende.escala_visual = 0.74 + math.sin(self.duende.tempo * 2.2) * 0.03
-        self.duende.y = self.y_descida_frasco
+        self.duende.y = self.duende.y_descida_casa
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0
 
@@ -55,21 +50,17 @@ class ControlarSonoDuendeUseCase:
 
         ciclo.dormir_por_tempo = False
         self._acordar_duende()
-        self.duende.iniciar_saida_frasco()
+        self.duende.iniciar_saida_casa()
 
     def _atualizar_fator_visual(self, dt):
-        if self.animacoes.em_frente_ao_frasco:
+        if self.animacoes.em_frente_a_casa:
             self.iniciar_sono_programado()
             return
 
         if (
-            not self.duende.animacoes.em_frente_ao_frasco
-            and not self.animacoes.indo_para_frasco
-            and not self.animacoes.escondendo_atras_violao
-            and not self.animacoes.comendo_esfera
-            and not self.animacoes.descendo_para_dormir
+            not self.duende.animacoes.em_frente_a_casa
             and not self.animacoes.dormindo
-            and not self.duende.esta_dentro_do_frasco(self.casa_duende_rect)
+            and not self.duende.esta_dentro_da_casa(self.casa_duende_rect)
         ):
             self.duende.escala_visual = min(1.0, self.duende.escala_visual + dt * 0.6)
 
@@ -86,76 +77,27 @@ class ControlarSonoDuendeUseCase:
                 self.animacoes.fator_sono_visual - (2.0 * dt),
             )
 
-    def _atualizar_entrada_frasco(self, dt):
-        if not self.animacoes.indo_para_frasco:
-            return False
-
-        dx = self.x_entrada_frasco - self.duende.x
-        dy = self.y_entrada_frasco - self.duende.y
-        distancia = math.hypot(dx, dy)
-
-        velocidade_base = 30
-        velocidade_aproximacao = min(50, velocidade_base + distancia * 0.15)
-
-        if distancia > 5:
-            self.duende.x += (dx / distancia) * velocidade_aproximacao * dt
-            self.duende.y += (dy / distancia) * velocidade_aproximacao * dt
-        else:
-            self.animacoes.iniciar_descida()
-
-        if distancia < 60:
-            self.duende.escala_visual = max(0.7, self.duende.escala_visual - dt * 0.6)
-
-        return True
-
-    def _atualizar_descida_sono(self, dt):
-        if not self.animacoes.descendo_para_dormir or self.duende.arrastando:
-            return False
-
-        self.duende.escala_visual = max(0.7, self.duende.escala_visual - dt * 0.6)
-
-        self.duende.y += self.duende.velodidade_descina_sono * dt
-        altura_restante = max(0, self.y_descida_frasco - self.duende.y)
-        fator_voo = max(0, min(1, altura_restante / 80))
-
-        self.duende.y += math.sin(self.duende.tempo * 8) * fator_voo
-
-        # Reduz velocidade residual
-        self.duende.velocidade_x *= 0.95
-        self.duende.velocidade_y *= 0.95
-
-        if self.duende.y >= self.y_descida_frasco:
-            self.duende.y = self.y_descida_frasco
-            self.animacoes.iniciar_sono()
-            self.duende.velocidade_x = 0
-            self.duende.velocidade_y = 0
-
-        return True
-
     def processar_soltou_duende(self, arraste):
         arraste.ativo = False
 
-        soltou_frente_frasco = self.casa_duende_rect.collidepoint(
+        soltou_frente_casa = self.casa_duende_rect.collidepoint(
             int(self.duende.x),
             int(self.duende.y),
         )
 
-        if soltou_frente_frasco:
-            self.duende.animacoes.iniciar_em_frente_ao_frasco()
+        if soltou_frente_casa:
+            self.duende.animacoes.iniciar_em_frente_a_casa()
             return True
 
-        if (
-            self.animacoes.dormindo
-            or self.animacoes.descendo_para_dormir
-            or self.animacoes.indo_para_frasco
-        ):
+        if self.animacoes.dormindo or self.animacoes.descendo_para_dormir:
             self.cancelar_sono_programado()
             return True
 
         return False
 
-    def _processar_entrada_frasco(self):
-        self.animacoes.iniciar_entrada_frasco()
+    def _processar_entrada_casa(self):
+        self.duende.fluxo_sono_iniciado = True
+        self.animacoes.iniciar_entrada_casa()
 
     def iniciar_sono_programado(self):
         ciclo = self.animacoes.ciclo_sono
@@ -163,7 +105,7 @@ class ControlarSonoDuendeUseCase:
         ciclo.resetar_tempos()
         self.duende.movimento_bloqueado = True
 
-        self._processar_entrada_frasco()
+        self._processar_entrada_casa()
 
     def _verificar_inicio_sono_por_clima(self):
         animacoes = self.duende.animacoes
@@ -171,11 +113,9 @@ class ControlarSonoDuendeUseCase:
         if (
             not self.clima_service.clima_disponivel
             and not animacoes.dormindo
-            and not animacoes.descendo_para_dormir
-            and not animacoes.indo_para_frasco
             and not animacoes.acordando
         ):
-            self._processar_entrada_frasco()
+            self._processar_entrada_casa()
 
     def _atualizar_estado_acordando(self, dt):
         if not self.animacoes.acordando:
@@ -189,7 +129,7 @@ class ControlarSonoDuendeUseCase:
 
         ciclo.tempo_acordando = 0
         if not self.clima_service.clima_disponivel:
-            self._processar_entrada_frasco()
+            self._processar_entrada_casa()
             return
 
         self.duende.animacoes.iniciar_voo()
@@ -226,7 +166,7 @@ class ControlarSonoDuendeUseCase:
             return
 
         self._acordar_duende()
-        self.duende.iniciar_saida_frasco()
+        self.duende.iniciar_saida_casa()
 
     def _precisa_resgatar_apos_acordar(self):
         if (
