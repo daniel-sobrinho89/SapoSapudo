@@ -148,6 +148,10 @@ class VooIniciadoEvent(Event):
     pass
 
 
+class DescendoParaDormirEvent(Event):
+    pass
+
+
 class PensamentoSapoEvent(Event):
     def __init__(self, texto: str, duracao: float = 6):
         super().__init__(texto=texto, duracao=duracao)
@@ -162,6 +166,7 @@ _MAPA_EVENTOS = {
     "tts_iniciado": TTSIniciadoEvent,
     "tts_finalizado": TTSFinalizadoEvent,
     "voo_iniciado": VooIniciadoEvent,
+    "descendo_para_dormir": DescendoParaDormirEvent,
     "pensamento_sapo": PensamentoSapoEvent,
 }
 

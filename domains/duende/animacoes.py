@@ -4,8 +4,8 @@
 
 import random
 
+from core.animacao import Animacao
 from core.event_bus import event_bus
-from domains.sapudo.animacoes import Animacao
 from domains.sapudo.maquina_estado_sapo import StateMachine
 
 
@@ -149,6 +149,7 @@ class AnimacoesDuende:
     def iniciar_descida(self):
         self.animacao_descendo_para_dormir.reset()
         self.estado = self.DESCENDO_PARA_DORMIR
+        event_bus.publicar("descendo_para_dormir")
 
     def iniciar_entrada_casa(self):
         self.animacao_descendo_para_dormir.reset()

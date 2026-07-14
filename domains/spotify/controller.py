@@ -32,7 +32,6 @@ class ControladorVozMusical:
         gerenciador_cenarios,
         clima_service,
         casa_duende,
-        esferas,
         evento_livro,
         conversa_sapudo,
         tts,
@@ -47,7 +46,7 @@ class ControladorVozMusical:
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
         self.casa_duende = casa_duende
-        self.esferas = esferas
+        self.esferas = self.gerenciador_cenarios.esferas
         self.evento_livro = evento_livro
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
@@ -94,6 +93,10 @@ class ControladorVozMusical:
 
         Clock.schedule_interval(self._atualizar_status_modelo, 1)
 
+    @property
+    def inicializado(self):
+        return True
+
     def desligar_microfone(self):
         self.controle_renderer.microfone_ligado = False
         self.tempo_sem_audio = 0
@@ -124,9 +127,25 @@ class ControladorVozMusical:
         return False
 
     def processar_toque_down(self, pos_virtual, renderer_violao):
+        # Microfone e Comandos Musicais
+        if self.processar_toque_microfone(pos_virtual):
+            return
+
+        # Controles de Movimento do Sapo
+        if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
+            self.iniciar_controle_esquerda()
+            return
+
+        if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
+            self.controle_renderer.botao_direita_pressionado = True
+            self.iniciar_controle_direita()
+            return
+
         self.coordenador_estado_jogo.processar_toque_down(pos_virtual, renderer_violao)
 
     def processar_toque_up(self):
+        self.parar_controle_esquerda()
+        self.parar_controle_direita()
         self.coordenador_estado_jogo.processar_toque_up()
 
     def processar_toque_up_livro(self):
@@ -279,3 +298,33 @@ class ControladorVozMusical:
         if self._pensamento_event:
             self._pensamento_event.cancel()
             self._pensamento_event = None
+
+
+class ControladorVozMusicalNulo:
+    @property
+    def inicializado(self):
+        return False
+
+    def atualizar(self, dt):
+        pass
+
+    def processar_toque_up(self):
+        pass
+
+    def processar_toque_down(self, *args):
+        pass
+
+    def processar_toque_microfone(self, *args):
+        pass
+
+    def iniciar_controle_esquerda(self):
+        pass
+
+    def parar_controle_esquerda(self):
+        pass
+
+    def iniciar_controle_direita(self):
+        pass
+
+    def parar_controle_direita(self):
+        pass

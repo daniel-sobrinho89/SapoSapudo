@@ -1,9 +1,13 @@
-from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA
+from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA, QUANTIDADE_POEIRA
 from core.fisica import sistema_fisica
+from domains.clima.evento_livro import EventoLivro
+from domains.clima.particulas.esfera import Esfera
 from domains.duende.entity import DuendeNeblina
+from domains.livro.entity import Livro
 from domains.semente.entity import Semente
 from render.asset_manager import asset_manager
 from render.barraca_renderer import BarracaRenderer
+from render.casa_duende_renderer import CasaDuendeRenderer
 from render.duende_renderer import DuendeRenderer
 from render.semente_renderer import SementeRenderer
 from render.tamandua_renderer import TamanduaRenderer
@@ -25,8 +29,6 @@ class GerenciadorCenarios:
         violao,
         casa_duende,
         ambiente,
-        evento_livro,
-        particulas,
     ):
         self.tela = tela
         self.transform = transform
@@ -37,9 +39,8 @@ class GerenciadorCenarios:
         self.violao = violao
         self.casa_duende = casa_duende
         self.ambiente = ambiente
-        self.evento_livro = evento_livro
-        self.particulas = particulas
         self.duendes = []
+        self.esferas = []
 
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.cenario_feira_anterior = False
@@ -47,8 +48,12 @@ class GerenciadorCenarios:
         # Objetos do cenário principal
         self.duende = None
         self.renderer_duende = None
+        self.casa_duende_renderer = None
         self.semente = None
         self.renderer_semente = None
+        self.evento_livro = None
+        self.livro = None
+        self.cenario_principal_carregado = False
 
         # Objetos do cenário feira
         self.tamandua_renderer = None
@@ -86,10 +91,17 @@ class GerenciadorCenarios:
         self.renderer_semente = SementeRenderer(
             self.tela, asset_manager, self.transform
         )
+        self.casa_duende_renderer = CasaDuendeRenderer(
+            self.tela, asset_manager, self.transform
+        )
+        self.livro = Livro()
+
+        self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro, [])
 
     def descarregar_cenario_principal(self):
         self.duende = None
         self.renderer_duende = None
+        self.casa_duende_renderer = None
         self.semente = None
         self.renderer_semente = None
 
@@ -117,8 +129,8 @@ class GerenciadorCenarios:
             if self.semente:
                 self.semente.atualizar(dt, self.clima_service)
 
-            for particula in self.particulas:
-                particula.atualizar(self.ambiente, dt)
+            for esfera in self.esferas:
+                esfera.atualizar(self.ambiente, dt)
 
     def renderizar(self, dt, sapo_renderer):
         """Renderiza os elementos do cenário atual."""
@@ -138,9 +150,9 @@ class GerenciadorCenarios:
         sapo_renderer.renderizar(self.sapo.x, self.sapo.y, ESCALA, self.sapo.animacoes)
 
     def _atualizar_cenario_principal(self):
-        for particula in self.particulas:
-            if not particula.saiu_da_casa:
-                particula.desenhar(self.tela)
+        for esfera in self.esferas:
+            if not esfera.saiu_da_casa:
+                esfera.desenhar(self.tela)
 
         if (
             self.renderer_duende
@@ -153,11 +165,20 @@ class GerenciadorCenarios:
             for duende in self.duendes:
                 self.renderer_duende.renderizar(duende, ESCALA)
 
-        self.casa_duende.renderizar(self.tela, self.centro_y)
+        hora_atual = self.ambiente.obter_hora_decimal()
+        if (
+            hora_atual >= 18.5 or hora_atual < 6
+        ) and not self.casa_duende.animacoes.luz_esta_acesa:
+            self.casa_duende.animacoes.iniciar_luz_acesa()
 
-        for particula in self.particulas:
-            if particula.saiu_da_casa:
-                particula.desenhar(self.tela)
+        self.casa_duende_renderer.renderizar(
+            self.casa_duende,
+            self.casa_duende.animacoes,
+        )
+
+        for esfera in self.esferas:
+            if esfera.saiu_da_casa:
+                esfera.desenhar(self.tela)
 
         self.casa_duende.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
 
@@ -179,10 +200,33 @@ class GerenciadorCenarios:
         self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
 
     def _atualizar_carregamento_assets(self, sapo_renderer):
+        if self.cenario_principal_carregado:
+            return
+
         sapo_renderer.atualizar_carregamento(10)
 
         if self.renderer_duende:
             self.renderer_duende.atualizar_carregamento(self.duende, 10)
+
+        self.casa_duende_renderer.atualizar_carregamento(self.casa_duende, 10)
+        self.cenario_principal_carregado = (
+            sapo_renderer.carregado
+            and self.renderer_duende.carregado
+            and self.casa_duende_renderer.carregado
+        )
+        if self.cenario_principal_carregado:
+            self.esferas = [
+                Esfera(
+                    self.casa_duende.area_particulas,
+                    self.casa_duende.area_casa,
+                    asset_manager,
+                )
+                for _ in range(QUANTIDADE_POEIRA)
+            ]
+            self.evento_livro.esferas = self.esferas
+            for e in self.esferas:
+                e.area_protegida = self.casa_duende.area_casa
+                e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
 
     def adicionar_duende(self, duende):
         self.duendes.append(duende)

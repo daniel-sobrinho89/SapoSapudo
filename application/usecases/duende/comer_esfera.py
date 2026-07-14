@@ -24,6 +24,7 @@ class ComerEsferaUseCase:
 
         if not esferas:
             self.esfera_alvo = None
+            self.duende.animacoes.iniciar_voo()
             return
 
         self.esfera_alvo = min(

@@ -2,13 +2,13 @@ import math
 
 
 class ControlarSonoDuendeUseCase:
-    def __init__(self, sapo, duende, violao, clima_service, casa_duende_rect):
+    def __init__(self, sapo, duende, violao, clima_service, casa_duende):
         self.sapo = sapo
         self.duende = duende
         self.animacoes = self.duende.animacoes
         self.violao = violao
         self.clima_service = clima_service
-        self.casa_duende_rect = casa_duende_rect
+        self.casa_duende = casa_duende
         self.tempo_respiracao = 0
 
     def executar(self, dt):
@@ -32,7 +32,7 @@ class ControlarSonoDuendeUseCase:
         if not self.animacoes.dormindo or self.duende.arrastando:
             return
 
-        self.duende.escala_visual = 0.74 + math.sin(self.duende.tempo * 2.2) * 0.03
+        self.duende.escala_visual = 0.60 + math.sin(self.duende.tempo * 2.2) * 0.03
         self.duende.y = self.duende.y_descida_casa
         self.duende.velocidade_x = 0
         self.duende.velocidade_y = 0
@@ -60,7 +60,7 @@ class ControlarSonoDuendeUseCase:
         if (
             not self.duende.animacoes.em_frente_a_casa
             and not self.animacoes.dormindo
-            and not self.duende.esta_dentro_da_casa(self.casa_duende_rect)
+            and not self.duende.esta_dentro_da_casa(self.casa_duende.area_interna)
         ):
             self.duende.escala_visual = min(1.0, self.duende.escala_visual + dt * 0.6)
 
@@ -80,7 +80,7 @@ class ControlarSonoDuendeUseCase:
     def processar_soltou_duende(self, arraste):
         arraste.ativo = False
 
-        soltou_frente_casa = self.casa_duende_rect.collidepoint(
+        soltou_frente_casa = self.casa_duende.area_interna.collidepoint(
             int(self.duende.x),
             int(self.duende.y),
         )
@@ -146,7 +146,7 @@ class ControlarSonoDuendeUseCase:
         self.duende.movimento_bloqueado = True
 
         if self.animacoes.dormindo:
-            self.duende.x = self.casa_duende_rect.centerx
+            self.duende.x = self.casa_duende.area_interna.centerx
             self.duende.y = self.duende.y
 
     def _tempo_sono_expirou(self, dt):

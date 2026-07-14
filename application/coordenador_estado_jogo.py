@@ -49,7 +49,7 @@ class CoordenadorEstadoJogo:
             self.duende,
             self.violao,
             self.clima_service,
-            self.casa_duende.area_interna,
+            self.casa_duende,
         )
         self.esconder_atras_violao = EsconderAtrasViolaoUseCase(
             self.duende, self.violao
@@ -60,7 +60,7 @@ class CoordenadorEstadoJogo:
         self.entrando_na_casa = EntrandoNaCasaUseCase(
             self.casa_duende, self.gerenciador_cenarios
         )
-        self.saindo_da_casa = SaindoDaCasaUseCase(self.casa_duende.area_interna)
+        self.saindo_da_casa = SaindoDaCasaUseCase(self.casa_duende)
         self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
             self.duende, self.sapo, self.violao
         )

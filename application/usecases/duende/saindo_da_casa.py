@@ -1,12 +1,12 @@
 class SaindoDaCasaUseCase:
-    def __init__(self, casa_duende_rect):
-        self.casa_duende_rect = casa_duende_rect
+    def __init__(self, casa_duende):
+        self.casa_duende = casa_duende
 
     def executar(self, dt, duende):
         self._atualizar_saida_casa(dt, duende)
 
     def _atualizar_saida_casa(self, dt, duende):
-        destino_y = self.casa_duende_rect.top - 50
+        destino_y = self.casa_duende.area_interna.top - 50
         velocidade = 55
 
         if duende.y > destino_y:
@@ -15,7 +15,7 @@ class SaindoDaCasaUseCase:
 
         duende.y = destino_y
 
-        duende.y = self.casa_duende_rect.top - 50
+        duende.y = self.casa_duende.area_interna.top - 50
         self._preparar_duende_fora_casa(duende)
 
     def _preparar_duende_fora_casa(self, duende):

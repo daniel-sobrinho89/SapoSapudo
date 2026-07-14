@@ -15,7 +15,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import kivy_adapter
-from config import ALTURA, CENTRO_OFFSET_Y, FPS, LARGURA, QUANTIDADE_POEIRA
+from config import ALTURA, CENTRO_Y, FPS, LARGURA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
@@ -24,15 +24,12 @@ from domains.casa_duende.entity import CasaDuende
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
 from domains.clima.clima_service import ClimaService
-from domains.clima.evento_livro import EventoLivro
 from domains.clima.nuvem import Nuvem
-from domains.clima.particulas.esfera import Esfera
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
 from domains.conversas.qwen_local_client import QwenLocalClient
-from domains.livro.entity import Livro
 from domains.sapudo.entity import Sapo
-from domains.spotify.controller import ControladorVozMusical
+from domains.spotify.controller import ControladorVozMusical, ControladorVozMusicalNulo
 from domains.spotify.spotify_manager import SpotifyManager
 from domains.violao.entity import Violao
 from domains.voz.tts_service import TTSService
@@ -89,8 +86,6 @@ init_scaling(LARGURA_REAL, ALTURA_REAL, LARGURA, ALTURA)
 # =========================================
 
 centro_x = LARGURA // 2
-
-centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
 
 # =========================================
 # Kivy App wrapper
@@ -209,23 +204,6 @@ class GameWidget(Widget):
 
     def _inicializar_clima_e_ambiente(self):
         self.casa_duende = CasaDuende(self.transform)
-        self.casa_duende.atualizar_posicao(centro_y)
-        self.esferas = [
-            Esfera(
-                self.casa_duende.area_particulas,
-                self.casa_duende.area_casa,
-                asset_manager,
-            )
-            for _ in range(QUANTIDADE_POEIRA)
-        ]
-        self.livro = Livro()
-        self.evento_livro = EventoLivro(
-            asset_manager, self.transform, self.livro, self.esferas
-        )
-        for e in self.esferas:
-            e.area_protegida = self.casa_duende.area_casa
-            e.protegido = e.area_protegida.collidepoint(int(e.x), int(e.y))
-
         self.clima_service = ClimaService()
 
         self.background_renderer = BackgroundRenderer(
@@ -238,7 +216,7 @@ class GameWidget(Widget):
         self.violao = Violao()
         self.sapo = Sapo(
             centro_x,
-            centro_y,
+            CENTRO_Y,
             self.violao,
             self.spotify,
             DISTANCIA_VIOLAO,
@@ -256,34 +234,19 @@ class GameWidget(Widget):
             self.violao,
             self.casa_duende,
             self.ambiente,
-            self.evento_livro,
-            self.esferas,
         )
 
         if self.background_renderer.cenario_feira:
             self.gerenciador_cenarios.carregar_cenario_feira()
         else:
             self.gerenciador_cenarios.carregar_cenario_principal()
+            self.evento_livro = self.gerenciador_cenarios.evento_livro
+            self.livro = self.gerenciador_cenarios.livro
 
         self.client = QwenLocalClient()
         self.conversa_sapudo = ConversaSapudo(self.client)
 
-        self.controlador_voz_musical = ControladorVozMusical(
-            self.sapo,
-            self.duende,
-            self.violao,
-            self.livro,
-            self.spotify,
-            self.audio,
-            self.controle_renderer,
-            self.gerenciador_cenarios,
-            self.clima_service,
-            self.casa_duende,
-            self.esferas,
-            self.evento_livro,
-            self.conversa_sapudo,
-            self.tts,
-        )
+        self.controlador_voz_musical = ControladorVozMusicalNulo()
 
     def _configurar_graficos(self):
         with self.canvas:
@@ -307,20 +270,6 @@ class GameWidget(Widget):
 
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
-
-        # Microfone e Comandos Musicais
-        if self.controlador_voz_musical.processar_toque_microfone(pos_virtual):
-            return True
-
-        # Controles de Movimento do Sapo
-        if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
-            self.controlador_voz_musical.iniciar_controle_esquerda()
-            return True
-
-        if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
-            self.controle_renderer.botao_direita_pressionado = True
-            self.controlador_voz_musical.iniciar_controle_direita()
-            return True
 
         self.controlador_voz_musical.processar_toque_down(
             pos_virtual, self.renderer_violao
@@ -349,8 +298,6 @@ class GameWidget(Widget):
         # Resetar Controles do Sapo
         self.controle_renderer.botao_esquerda_pressionado = False
         self.controle_renderer.botao_direita_pressionado = False
-        self.controlador_voz_musical.parar_controle_esquerda()
-        self.controlador_voz_musical.parar_controle_direita()
 
         self.controlador_voz_musical.processar_toque_up()
 
@@ -411,7 +358,28 @@ class GameWidget(Widget):
 
         self.spotify.atualizar_spotify(dt)
 
+        if (
+            not self.controlador_voz_musical.inicializado
+            and self.gerenciador_cenarios.cenario_principal_carregado
+        ):
+            self.controlador_voz_musical = ControladorVozMusical(
+                self.sapo,
+                self.duende,
+                self.violao,
+                self.livro,
+                self.spotify,
+                self.audio,
+                self.controle_renderer,
+                self.gerenciador_cenarios,
+                self.clima_service,
+                self.casa_duende,
+                self.evento_livro,
+                self.conversa_sapudo,
+                self.tts,
+            )
+
         self.controlador_voz_musical.atualizar(dt)
+
         self._atualizar_ambiente_fisica(dt)
         self.gerenciador_cenarios.atualizar(dt)
 

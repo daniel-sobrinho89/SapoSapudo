@@ -32,7 +32,7 @@ class DuendeNeblina:
         self.alpha_visual = 255
         self.percentual_visivel = 1.0
         self.escala_visual = 0.9
-        self.y_descida_casa = 350
+        self.y_descida_casa = 275
         self.altura_render = 0
         self.velodidade_descina_sono = 40
         self.movimento_bloqueado = False

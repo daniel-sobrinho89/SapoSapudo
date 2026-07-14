@@ -4,10 +4,9 @@ import math
 class EntrandoNaCasaUseCase:
     def __init__(self, casa_duende, gerenciador_cenarios):
         self.casa_duende = casa_duende
-        self.casa_duende_rect = casa_duende.area_interna
         self.gerenciador_cenarios = gerenciador_cenarios
-        self.y_inicio_corte = 245
-        self.y_fim_corte = 370
+        self.y_inicio_corte = 155
+        self.y_fim_corte = 260
 
     def executar(self, dt, duende):
         if duende.animacoes.indo_para_casa:
@@ -16,8 +15,8 @@ class EntrandoNaCasaUseCase:
             self._atualizar_descida_casa(dt, duende)
 
     def _atualizar_entrada_casa(self, dt, duende):
-        dx = self.casa_duende_rect.centerx - duende.x
-        dy = (self.casa_duende_rect.top - 90) - duende.y
+        dx = (self.casa_duende.area_interna.centerx - 6) - duende.x
+        dy = (self.casa_duende.area_interna.top - 90) - duende.y
         distancia = math.hypot(dx, dy)
 
         velocidade_base = 30
@@ -64,7 +63,7 @@ class EntrandoNaCasaUseCase:
             duende.velocidade_y = 0
             duende.percentual_visivel = 1.0
             if duende.fluxo_sono_iniciado:
-                self.casa_duende.abrir_janela_superior()
+                duende.percentual_visivel = 0.73
                 duende.animacoes.iniciar_sono()
             else:
                 novo_duende = duende.duplicar()
