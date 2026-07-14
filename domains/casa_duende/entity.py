@@ -12,8 +12,8 @@ class CasaDuende:
         self.x = 140
         self.y = 190
         self.escala = 0.13
-        self.escala_x = 5.90
-        self.escala_y = 5.85
+        self.escala_x = 6.0
+        self.escala_y = 6.0
         self.offset_casa_y = 0
         self.offset_casa_x = -6
 
