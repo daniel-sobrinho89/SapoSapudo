@@ -134,6 +134,7 @@ class GerenciadorCenarios:
 
     def renderizar(self, dt, sapo_renderer):
         """Renderiza os elementos do cenário atual."""
+        self.tela.fill((0, 0, 0, 0))
         self.background_renderer.desenhar()
         self._atualizar_carregamento_assets(sapo_renderer)
 

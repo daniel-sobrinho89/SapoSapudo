@@ -239,6 +239,16 @@ class Surface:
             mascara,
         )
 
+    def fill(self, color):
+        if len(color) == 3:
+            color = (*color, 255)
+
+        self._img = Image.new(
+            "RGBA",
+            (self.width, self.height),
+            color,
+        )
+
 
 # image module
 class image:
@@ -357,6 +367,16 @@ class draw:
         draw_ctx = ImageDraw.Draw(surface._img)
 
         draw_ctx.rectangle((rect.left, rect.top, rect.right, rect.bottom), fill=color)
+
+    @staticmethod
+    def line(surface, color, start_pos, end_pos, width=1):
+        draw_ctx = ImageDraw.Draw(surface._img)
+
+        draw_ctx.line(
+            [start_pos, end_pos],
+            fill=color,
+            width=width,
+        )
 
 
 # display module
