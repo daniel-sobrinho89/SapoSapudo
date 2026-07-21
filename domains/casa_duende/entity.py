@@ -40,15 +40,11 @@ class CasaDuende:
         self,
         largura,
         altura,
-        casa_width,
-        casa_height,
     ):
         self.largura = largura
         self.altura = altura
 
-        self.casa_width = casa_width
-        self.casa_height = casa_height
-        self.reconstruir_areas()
+        self._reconstruir_areas()
 
     def atualizar_posicao(self):
         self.area_interna.x = self.x + self.area_interna_offset_x
@@ -61,15 +57,13 @@ class CasaDuende:
             self.x + self.area_interna_offset_x + int(self.area_interna.width * 0.10)
         )
 
-        self.area_casa.y = (
-            self.y + self.area_interna_offset_y - int(self.casa_height * 0.07)
-        )
+        self.area_casa.y = self.y + self.area_interna_offset_y - int(self.altura * 0.07)
 
-    def reconstruir_areas(self):
-        self.area_interna_offset_x = int(self.casa_width * 0.10)
-        self.area_interna_offset_y = int(self.casa_height * 0.24)
-        self.area_interna_width = int(self.casa_width * 0.80)
-        self.area_interna_height = int(self.casa_height * 0.62)
+    def _reconstruir_areas(self):
+        self.area_interna_offset_x = int(self.largura * 0.10)
+        self.area_interna_offset_y = int(self.altura * 0.24)
+        self.area_interna_width = int(self.largura * 0.80)
+        self.area_interna_height = int(self.altura * 0.62)
 
         self.area_interna = kivy_adapter.Rect(
             self.x + self.area_interna_offset_x,
@@ -85,10 +79,10 @@ class CasaDuende:
             self.altura - 180,
         )
 
-        casa_x = self.x + int(self.casa_width * 0.18)
-        casa_y = self.y + int(self.casa_height * 0.10)
-        casa_w = int(self.casa_width * 0.67)
-        casa_h = int(self.casa_height * 0.50)
+        casa_x = self.x + int(self.largura * 0.18)
+        casa_y = self.y + int(self.altura * 0.10)
+        casa_w = int(self.largura * 0.67)
+        casa_h = int(self.altura * 0.50)
 
         self.area_casa = kivy_adapter.Rect(
             casa_x,

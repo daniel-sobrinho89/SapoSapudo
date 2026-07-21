@@ -2,11 +2,15 @@ from application.usecases import (
     AcoplarViolaoUseCase,
     AtualizarFluxoViolaoUseCase,
     ComerEsferaUseCase,
+    ControlarComportamentoAldeaoUseCase,
     ControlarComportamentoDuendeUseCase,
+    ControlarComportamentoOvelhaUseCase,
     ControlarSonoDuendeUseCase,
+    CortarArvoreUseCase,
     DesacoplarViolaoUseCase,
     EntrandoNaCasaUseCase,
     EsconderAtrasViolaoUseCase,
+    ObterOuroUseCase,
     ProcessarComandoSpotifyUseCase,
     ResgatarLivroUseCase,
     ResgatarViolaoUseCase,
@@ -78,12 +82,30 @@ class CoordenadorEstadoJogo:
             self.sapo, self.violao, self.spotify, self.audio
         )
 
+        self.controlar_comportamento_ovelha = ControlarComportamentoOvelhaUseCase()
+
+        self.obter_ouro = ObterOuroUseCase(self.gerenciador_cenarios)
+        self.cortar_arvore = CortarArvoreUseCase(self.gerenciador_cenarios)
+        self.controlar_comportamento_aldeao = ControlarComportamentoAldeaoUseCase(
+            self.gerenciador_cenarios.aldeao
+        )
+
     def executar(self, dt):
         if self.duende.carregado:
             self._executar_fluxo_duende(dt)
             self._executar_fluxo_duende_clones(dt)
             self._executar_fluxo_sapudo(dt)
             self.evento_livro.atualizar(dt, self.sapo, self.duende)
+
+            if self.gerenciador_cenarios.aldeao.animacoes.maquina.interagindo_arvore():
+                self.cortar_arvore.executar(dt)
+            elif self.gerenciador_cenarios.aldeao.animacoes.maquina.interagindo_ouro():
+                self.obter_ouro.executar(dt)
+            else:
+                self.controlar_comportamento_aldeao.executar(dt)
+
+        for ovelha in self.gerenciador_cenarios.ovelhas:
+            self.controlar_comportamento_ovelha.executar(dt, ovelha)
 
     def _executar_fluxo_duende(self, dt):
         # TODO! Ajustar para verificar se duende existe
@@ -145,6 +167,38 @@ class CoordenadorEstadoJogo:
         self.processar_comando_spotify.executar(rota["dados"], finalizar_comando)
 
     def processar_toque_down(self, pos_virtual, renderer_violao):
+        renderer_aldeao = self.gerenciador_cenarios.renderer_aldeao
+
+        if renderer_aldeao.corpo_rect.collidepoint(pos_virtual):
+            print("Selecionou aldeao")
+            self.gerenciador_cenarios.aldeao.selecionado = True
+            return
+
+        for arvore, renderer in zip(
+            self.gerenciador_cenarios.arvores,
+            self.gerenciador_cenarios.renderers_arvores,
+        ):
+            if renderer.corpo_rect.collidepoint(pos_virtual):
+                print("Arvore selecionada", id(arvore))
+                if self.gerenciador_cenarios.aldeao.selecionado:
+                    self.cortar_arvore.iniciar(arvore)
+
+                self.gerenciador_cenarios.aldeao.selecionado = False
+                return
+
+        for ouro, renderer in zip(
+            self.gerenciador_cenarios.ouro,
+            self.gerenciador_cenarios.renderers_ouro,
+        ):
+            if renderer.corpo_rect.collidepoint(pos_virtual):
+                if self.gerenciador_cenarios.aldeao.selecionado:
+                    self.obter_ouro.iniciar(ouro, renderer)
+
+                self.gerenciador_cenarios.aldeao.selecionado = False
+                return
+
+        self.gerenciador_cenarios.aldeao.selecionado = False
+
         if self.desacoplar_violao.executar(
             mouse_pos=pos_virtual,
             iniciar_arraste=True,

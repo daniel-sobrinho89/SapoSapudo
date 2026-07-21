@@ -20,7 +20,6 @@ from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
 from core.fisica import sistema_fisica
-from domains.casa_duende.entity import CasaDuende
 from domains.cenario import GerenciadorCenarios
 from domains.clima.animacoes.folha import AnimacoesFolha
 from domains.clima.clima_service import ClimaService
@@ -37,7 +36,6 @@ from render.asset_manager import asset_manager
 from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
 from render.pensamento_sapo_renderer import PensamentoSapoRenderer
-from render.sapo_renderer import SapoRenderer
 from render.transform_utils import TransformUtils
 from render.violao_renderer import ViolaoRenderer
 from utils.input import init_scaling, real_to_virtual
@@ -94,72 +92,16 @@ centro_x = LARGURA // 2
 
 class GameWidget(Widget):
     @property
-    def duende(self):
-        return self.gerenciador_cenarios.duende
-
-    @duende.setter
-    def duende(self, valor):
-        self.gerenciador_cenarios.duende = valor
-
-    @property
-    def renderer_duende(self):
-        return self.gerenciador_cenarios.renderer_duende
-
-    @renderer_duende.setter
-    def renderer_duende(self, valor):
-        self.gerenciador_cenarios.renderer_duende = valor
-
-    @property
-    def semente(self):
-        return self.gerenciador_cenarios.semente
-
-    @semente.setter
-    def semente(self, valor):
-        self.gerenciador_cenarios.semente = valor
-
-    @property
-    def renderer_semente(self):
-        return self.gerenciador_cenarios.renderer_semente
-
-    @renderer_semente.setter
-    def renderer_semente(self, valor):
-        self.gerenciador_cenarios.renderer_semente = valor
-
-    @property
-    def tamandua_renderer(self):
-        return self.gerenciador_cenarios.tamandua_renderer
-
-    @property
-    def barraca_renderer(self):
-        return self.gerenciador_cenarios.barraca_renderer
+    def cenario(self):
+        return self.gerenciador_cenarios.cenario_principal
 
     @property
     def tem_duende(self):
         return self.gerenciador_cenarios.tem_duende
 
     @property
-    def tem_feira(self):
-        return self.gerenciador_cenarios.tem_feira
-
-    @property
     def reconhecedor_voz(self):
         return self.controlador_voz_musical.reconhecedor_voz
-
-    @property
-    def tempo_sem_audio(self):
-        return self.controlador_voz_musical.tempo_sem_audio
-
-    @tempo_sem_audio.setter
-    def tempo_sem_audio(self, valor):
-        self.controlador_voz_musical.tempo_sem_audio = valor
-
-    @property
-    def spotify_andando_para_violao(self):
-        return self.controlador_voz_musical.spotify_andando_para_violao
-
-    @spotify_andando_para_violao.setter
-    def spotify_andando_para_violao(self, valor):
-        self.controlador_voz_musical.spotify_andando_para_violao = valor
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -196,14 +138,12 @@ class GameWidget(Widget):
     def _inicializar_sistemas_base(self):
         self.transform = TransformUtils()
         self.ambiente = Ambiente()
-        self.sapo_renderer = SapoRenderer(tela, asset_manager, self.transform)
         self.pensamento_renderer = PensamentoSapoRenderer()
         self.animacoes_folha = AnimacoesFolha()
         self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
         self.tts = TTSService()
 
     def _inicializar_clima_e_ambiente(self):
-        self.casa_duende = CasaDuende(self.transform)
         self.clima_service = ClimaService()
 
         self.background_renderer = BackgroundRenderer(
@@ -232,16 +172,15 @@ class GameWidget(Widget):
             self.sistema_nuvens,
             self.sapo,
             self.violao,
-            self.casa_duende,
             self.ambiente,
         )
 
         if self.background_renderer.cenario_feira:
-            self.gerenciador_cenarios.carregar_cenario_feira()
+            self.gerenciador_cenarios.cenario_feira.carregar()
         else:
-            self.gerenciador_cenarios.carregar_cenario_principal()
-            self.evento_livro = self.gerenciador_cenarios.evento_livro
-            self.livro = self.gerenciador_cenarios.livro
+            self.gerenciador_cenarios.cenario_principal.carregar()
+            self.evento_livro = self.cenario.evento_livro
+            self.livro = self.cenario.livro
 
         self.client = QwenLocalClient()
         self.conversa_sapudo = ConversaSapudo(self.client)
@@ -256,9 +195,6 @@ class GameWidget(Widget):
 
     def carregar_cenario_feira(self):
         self.gerenciador_cenarios.carregar_cenario_feira()
-
-    def carregar_cenario_principal(self):
-        self.gerenciador_cenarios.carregar_cenario_principal()
 
     def on_size(self, *args):
         self.rect.size = (self.width, self.height)
@@ -284,8 +220,8 @@ class GameWidget(Widget):
         if self.violao.arrastando:
             self.violao.mover_arraste(*pos_virtual)
 
-        if self.tem_duende and self.duende.arrastando:
-            self.duende.mover_arraste(*pos_virtual)
+        if self.tem_duende and self.cenario.duende.arrastando:
+            self.cenario.duende.mover_arraste(*pos_virtual)
 
         # Resetar estados visuais dos botões se sair da área
         if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
@@ -338,10 +274,6 @@ class GameWidget(Widget):
     def _atualizar_ambiente_fisica(self, dt):
         self.ambiente.atualizar(dt, self.clima_service)
 
-        sistema_fisica.aplicar_forca_vento(
-            self.sapo, self.clima_service, dt, sensibilidade=0.25
-        )
-
         if getattr(self.clima_service, "rajada_ativa", False):
             self.animacoes_folha.intensidade_vento = 5.0
         else:
@@ -358,21 +290,18 @@ class GameWidget(Widget):
 
         self.spotify.atualizar_spotify(dt)
 
-        if (
-            not self.controlador_voz_musical.inicializado
-            and self.gerenciador_cenarios.cenario_principal_carregado
-        ):
+        if not self.controlador_voz_musical.inicializado and self.cenario.carregado:
             self.controlador_voz_musical = ControladorVozMusical(
                 self.sapo,
-                self.duende,
+                self.cenario.duende,
                 self.violao,
                 self.livro,
                 self.spotify,
                 self.audio,
                 self.controle_renderer,
-                self.gerenciador_cenarios,
+                self.cenario,
                 self.clima_service,
-                self.casa_duende,
+                self.cenario.casa_duende,
                 self.evento_livro,
                 self.conversa_sapudo,
                 self.tts,
@@ -389,7 +318,6 @@ class GameWidget(Widget):
             )
 
         self.violao.atualizar(dt)
-        self.casa_duende.atualizar(dt)
         self.sistema_nuvens.atualizar_area_interna()
 
         Nuvem.finalizar_carregamento()
@@ -403,7 +331,7 @@ class GameWidget(Widget):
             self.clima_service.wind_speed,
         )
 
-        self.gerenciador_cenarios.renderizar(dt, self.sapo_renderer)
+        self.gerenciador_cenarios.renderizar(dt)
         self.pensamento_renderer.renderizar(tela, self.sapo, dt)
 
         if not self.violao.acoplado:

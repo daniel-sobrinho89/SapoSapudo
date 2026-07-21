@@ -33,7 +33,7 @@ class ControlarComportamentoSapoUseCase:
         self.animacoes = sapo.animacoes
         self.agenda = AgendaSapo()
         self.clima_service = clima_service
-        self.livro_climatico = self.evento_livro.livro_climatico
+        self.livro_climatico = getattr(self.evento_livro, "livro_climatico", None)
         self.tts_service = tts_service
         self._narracao_livro_disparada = False
         self._estado_sapo_anterior = None

@@ -1,4 +1,8 @@
+from .aldeao.controlar_comportamento_aldeao import ControlarComportamentoAldeaoUseCase
+from .aldeao.cortar_arvore import CortarArvoreUseCase
+from .aldeao.obter_ouro import ObterOuroUseCase
 from .atualizar_fluxo_spotify import AtualizarFluxoSpotifyUseCase
+from .controlar_comportamento_ovelha import ControlarComportamentoOvelhaUseCase
 from .duende.comer_esfera import ComerEsferaUseCase
 from .duende.controlar_comportamento_duende import ControlarComportamentoDuendeUseCase
 from .duende.controlar_sono_duende import ControlarSonoDuendeUseCase
@@ -21,6 +25,7 @@ __all__ = [
     "AtualizarFluxoViolaoUseCase",
     "ControlarComportamentoDuendeUseCase",
     "ControlarComportamentoSapoUseCase",
+    "ControlarComportamentoAldeaoUseCase",
     "ControlarSonoDuendeUseCase",
     "ComerEsferaUseCase",
     "EntrandoNaCasaUseCase",
@@ -30,4 +35,7 @@ __all__ = [
     "ResgatarViolaoUseCase",
     "ResgatarLivroUseCase",
     "SaindoDaCasaUseCase",
+    "CortarArvoreUseCase",
+    "ObterOuroUseCase",
+    "ControlarComportamentoOvelhaUseCase",
 ]

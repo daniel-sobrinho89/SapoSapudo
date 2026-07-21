@@ -92,15 +92,10 @@ class CasaDuendeRenderer:
     def calcular_layout(self):
         frame = self.frames["inicial"][0]
 
-        largura = int(frame.get_width() * self.escala * self.escala_x)
-        altura = int(frame.get_height() * self.escala * self.escala_y)
+        self.largura = int(frame.get_width() * self.escala * self.escala_x)
+        self.altura = int(frame.get_height() * self.escala * self.escala_y)
 
-        return {
-            "largura": largura,
-            "altura": altura,
-            "casa_width": largura,
-            "casa_height": altura,
-        }
+        return {"largura": self.largura, "altura": self.altura}
 
     def draw(self, imagem, x, y, alpha=255):
         imagem.set_alpha(alpha)
@@ -111,8 +106,8 @@ class CasaDuendeRenderer:
         if not self.carregado:
             return
 
-        centro_x = casa.x + casa.casa_width // 2
-        centro_y = casa.y + casa.casa_height // 2
+        centro_x = casa.x + self.largura // 2
+        centro_y = casa.y + self.altura // 2
 
         frame = self.obter_frame_animacao(animacoes)
         if frame is None:

@@ -16,3 +16,5 @@ select = [
 "domains/conversas/personalidade_sapudo.py" = ["E501"]
 "domains/clima/livro_climatico.py" = ["E501"]
 "render/background_renderer.py" = ["SIM108"]
+"application/usecases/aldeao/cortar_arvore.py" = ["SIM108"]
+"application/usecases/aldeao/obter_ouro.py" = ["SIM108"]

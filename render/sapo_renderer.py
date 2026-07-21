@@ -24,6 +24,9 @@ class SapoRenderer:
         self.assets = assets
         self.transform = transform
         self._indice = 0
+        self.escala = 0.3
+        self.escala_x = 0.3
+        self.escala_y = 0.3
 
         self.corpo_rect = kivy_adapter.Rect(-1000, -1000, 1, 1)
 
@@ -104,12 +107,9 @@ class SapoRenderer:
         chave = self.MAPA_ANIMACOES.get(seletor, "parado")
         return self.frames[chave][frame]
 
-    def draw(self, imagem, x, y, escala_x, escala_y=None, alpha=255):
-        if escala_y is None:
-            escala_y = escala_x
-
-        largura = max(1, int(imagem.get_width() * escala_x))
-        altura = max(1, int(imagem.get_height() * escala_y))
+    def draw(self, imagem, x, y, alpha=255):
+        largura = max(1, int(imagem.get_width() * self.escala_x))
+        altura = max(1, int(imagem.get_height() * self.escala_y))
 
         imagem = self.transform.escalar(imagem, (largura, altura))
         imagem.set_alpha(alpha)
@@ -117,7 +117,7 @@ class SapoRenderer:
         rect = imagem.get_rect(center=(x, y))
         self.tela.blit(imagem, rect)
 
-    def renderizar(self, centro_x, centro_y, escala, animacoes):
+    def renderizar(self, centro_x, centro_y, animacoes):
         if not self.carregado:
             return
 
@@ -125,10 +125,10 @@ class SapoRenderer:
         if frame is None:
             return
 
-        self.draw(frame, centro_x, centro_y, escala)
+        self.draw(frame, centro_x, centro_y)
 
-        largura = int(frame.get_width() * escala)
-        altura = int(frame.get_height() * escala)
+        largura = int(frame.get_width() * self.escala)
+        altura = int(frame.get_height() * self.escala)
 
         self.corpo_rect = kivy_adapter.Rect(
             centro_x - largura // 2,

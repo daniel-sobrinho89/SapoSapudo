@@ -319,18 +319,38 @@ class CeuRenderer:
         # -------------------------
         # Pôr do Sol
         # -------------------------
-        if self.hora < 19:
-            t = (self.hora - 17) / 2
+        if self.hora < 18:
+            t = self.hora - 17
 
             topo = self._lerp_cor(
                 (100, 120, 255),
-                (20, 35, 90),
+                (45, 55, 140),
                 t,
             )
 
             baixo = self._lerp_cor(
                 (255, 195, 120),
-                (255, 110, 70),
+                (255, 95, 60),
+                t,
+            )
+
+            return topo, baixo
+
+        # -------------------------
+        # Crepúsculo
+        # -------------------------
+        if self.hora < 18.7:
+            t = (self.hora - 18) / 0.7
+
+            topo = self._lerp_cor(
+                (45, 55, 140),
+                (10, 15, 55),
+                t,
+            )
+
+            baixo = self._lerp_cor(
+                (255, 95, 60),
+                (45, 35, 80),
                 t,
             )
 
@@ -340,16 +360,16 @@ class CeuRenderer:
         # Noite
         # -------------------------
         if self.hora < 22:
-            t = (self.hora - 19) / 3
+            t = (self.hora - 18.7) / 3.3
 
             topo = self._lerp_cor(
-                (20, 35, 90),
+                (10, 15, 55),
                 (5, 10, 35),
                 t,
             )
 
             baixo = self._lerp_cor(
-                (255, 110, 70),
+                (45, 35, 80),
                 (20, 30, 70),
                 t,
             )
@@ -485,6 +505,7 @@ class CeuRenderer:
                 astro["y"],
                 astro["raio"],
                 lua["fase"],
+                lua["nome"],
             )
 
     def obter_astro(self):
@@ -547,6 +568,18 @@ class CeuRenderer:
             "alpha": 30,
         }
 
+    def obter_cor_ceu(self, y):
+        topo, baixo = self.obter_cores()
+
+        t = max(0, min(1, y / self.altura))
+
+        return (
+            int(self._lerp(topo[0], baixo[0], t)),
+            int(self._lerp(topo[1], baixo[1], t)),
+            int(self._lerp(topo[2], baixo[2], t)),
+            255,
+        )
+
     def obter_fase_lua(self):
         """
         Retorna informações da fase atual da Lua.
@@ -608,15 +641,13 @@ class CeuRenderer:
         cy,
         raio,
         fase,
+        nome,
     ):
-        topo, _ = self.obter_cores()
+        import math
 
-        sombra = (
-            topo[0] + 6,
-            topo[1] + 6,
-            topo[2] + 8,
-            255,
-        )
+        # ----------------------------------------
+        # Cor da lua
+        # ----------------------------------------
 
         luz = (
             235,
@@ -625,47 +656,150 @@ class CeuRenderer:
             255,
         )
 
-        # disco iluminado
-        kivy_adapter.draw.circle(
-            self.luz,
-            luz,
-            (cx, cy),
-            raio,
-        )
+        # ----------------------------------------
+        # Glow
+        # ----------------------------------------
 
-        # lua cheia
-        if 0.48 <= fase <= 0.52:
-            return
+        for r in range(raio + 8, raio, -1):
+            alpha = int(8 * ((r - raio) / 8))
 
-        # lua nova
-        if fase < 0.02 or fase > 0.98:
             kivy_adapter.draw.circle(
                 self.luz,
-                sombra,
-                (cx, cy),
-                raio,
+                (
+                    175,
+                    205,
+                    255,
+                    alpha,
+                ),
+                (
+                    cx,
+                    cy,
+                ),
+                r,
             )
 
+        # ----------------------------------------
+        # Lua Nova
+        # ----------------------------------------
+
+        if nome == "nova":
             return
 
-        if fase < 0.5:
-            t = fase / 0.5
+        # ----------------------------------------
+        # Calcula iluminação
+        # ----------------------------------------
 
-            deslocamento = int(self._lerp(-raio, raio, t))
+        if fase <= 0.5:
+            iluminacao = fase / 0.5
+            crescente = True
 
         else:
-            t = (fase - 0.5) / 0.5
+            iluminacao = (1.0 - fase) / 0.5
+            crescente = False
 
-            deslocamento = int(self._lerp(raio, -raio, t))
+        iluminacao = max(
+            0.0,
+            min(
+                1.0,
+                iluminacao,
+            ),
+        )
+
+        # ----------------------------------------
+        # Desenha linha por linha
+        # ----------------------------------------
+
+        for dy in range(-raio, raio + 1):
+            largura_total = math.sqrt(raio * raio - dy * dy)
+
+            largura_total = int(largura_total)
+
+            if largura_total <= 0:
+                continue
+
+            # ----------------------------
+            # Lua cheia
+            # ----------------------------
+
+            if nome == "cheia":
+                x1 = -largura_total
+                x2 = largura_total
+
+            # ----------------------------
+            # Quarto Crescente
+            # ----------------------------
+
+            elif nome == "quarto_crescente":
+                x1 = 0
+                x2 = largura_total
+
+            # ----------------------------
+            # Quarto Minguante
+            # ----------------------------
+
+            elif nome == "quarto_minguante":
+                x1 = -largura_total
+                x2 = 0
+
+            elif nome == "gibosa_crescente":
+                largura_iluminada = int(largura_total * iluminacao)
+
+                t = (fase - 0.28) / (0.47 - 0.28)
+
+                excesso = int(largura_total * (0.10 + 0.17 * t))
+
+                x1 = largura_total - largura_iluminada - excesso
+                x2 = largura_total
+
+            # ----------------------------
+            # Restantes
+            # ----------------------------
+
+            else:
+                largura_iluminada = int(largura_total * iluminacao)
+
+                if crescente:
+                    x1 = largura_total - largura_iluminada
+                    x2 = largura_total
+
+                else:
+                    x1 = -largura_total
+                    x2 = -largura_total + largura_iluminada
+
+            if x2 <= x1:
+                continue
+
+            kivy_adapter.draw.line(
+                self.luz,
+                luz,
+                (
+                    cx + x1,
+                    cy + dy,
+                ),
+                (
+                    cx + x2,
+                    cy + dy,
+                ),
+            )
+
+        # ----------------------------------------
+        # Borda suave
+        # ----------------------------------------
 
         kivy_adapter.draw.circle(
             self.luz,
-            sombra,
             (
-                cx + deslocamento,
+                245,
+                248,
+                255,
+                80,
+            ),
+            (
+                cx,
                 cy,
             ),
             raio,
+            1,
         )
 
     def desenhar_estrelas(self):

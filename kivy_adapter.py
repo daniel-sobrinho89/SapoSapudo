@@ -156,24 +156,47 @@ class Surface:
     def get_size(self):
         return (self.get_width(), self.get_height())
 
-    def blit(self, src, pos):
-        # src can be another Surface or a PIL Image
+    def blit(self, src, pos, area=None):
+        # ---------------------------------------
+        # Origem
+        # ---------------------------------------
+
         if isinstance(src, Surface):
             src_img = src._img
+
         elif isinstance(src, Image.Image):
             src_img = src
+
         else:
             raise TypeError("Unsupported blit source")
 
-        # pos can be tuple (x,y) or Rect
-        if isinstance(pos, Rect):
-            x, y = pos.x, pos.y
-        else:
-            x, y = int(pos[0]), int(pos[1])
+        # ---------------------------------------
+        # Área da imagem
+        # ---------------------------------------
+        if area is not None:
+            x1, y1, w, h = area
 
-        # handle alpha
-        base = self._img
-        base.alpha_composite(src_img, (x, y))
+            src_img = src_img.crop(
+                (
+                    int(x1),
+                    int(y1),
+                    int(x1 + w),
+                    int(y1 + h),
+                )
+            )
+
+        # ---------------------------------------
+        # Destino
+        # ---------------------------------------
+        if isinstance(pos, Rect):
+            dx, dy = pos.x, pos.y
+        else:
+            dx, dy = int(pos[0]), int(pos[1])
+
+        self._img.alpha_composite(
+            src_img,
+            (dx, dy),
+        )
 
     def copy(self):
         s = Surface(self.get_size())
@@ -343,12 +366,30 @@ class transform:
 
 class draw:
     @staticmethod
-    def circle(surface, color, center, radius):
+    def circle(surface, color, center, radius, width=0):
         draw_ctx = ImageDraw.Draw(surface._img)
 
         x, y = center
 
-        draw_ctx.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
+        bbox = (
+            x - radius,
+            y - radius,
+            x + radius,
+            y + radius,
+        )
+
+        if width <= 0:
+            draw_ctx.ellipse(
+                bbox,
+                fill=color,
+            )
+
+        else:
+            draw_ctx.ellipse(
+                bbox,
+                outline=color,
+                width=width,
+            )
 
     @staticmethod
     def ellipse(surface, color, rect):
@@ -363,10 +404,36 @@ class draw:
         draw_ctx.ellipse(bbox, fill=color)
 
     @staticmethod
-    def rect(surface, color, rect):
+    def rect(surface, color, rect, width=0):
         draw_ctx = ImageDraw.Draw(surface._img)
 
-        draw_ctx.rectangle((rect.left, rect.top, rect.right, rect.bottom), fill=color)
+        if isinstance(rect, Rect):
+            bbox = (
+                rect.left,
+                rect.top,
+                rect.right,
+                rect.bottom,
+            )
+        else:
+            x, y, w, h = rect
+            bbox = (
+                x,
+                y,
+                x + w,
+                y + h,
+            )
+
+        if width <= 0:
+            draw_ctx.rectangle(
+                bbox,
+                fill=color,
+            )
+        else:
+            draw_ctx.rectangle(
+                bbox,
+                outline=color,
+                width=width,
+            )
 
     @staticmethod
     def line(surface, color, start_pos, end_pos, width=1):
