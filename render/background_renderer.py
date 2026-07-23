@@ -4,6 +4,7 @@ from datetime import datetime
 
 import kivy_adapter
 from render.asset_manager import asset_manager
+from render.tilemap_renderer import TileMapRenderer
 
 
 class BackgroundRenderer:
@@ -17,8 +18,11 @@ class BackgroundRenderer:
             largura,
             ambiente,
         )
-        self.horizonte_renderer = HorizonteRenderer(tela, largura, transform)
-        self.chao_renderer = ChaoRenderer(tela, largura, altura, transform)
+        self.tilemap_renderer = TileMapRenderer(
+            tela,
+            asset_manager,
+            transform,
+        )
         # =====================================
         # BACKGROUND MANHÃ
         # =====================================
@@ -178,13 +182,13 @@ class BackgroundRenderer:
     def esta_chovendo(self):
         return self.ambiente.esta_chovendo(self.clima_service)
 
-    def desenhar(self):
+    def desenhar(self, dt):
         # background = self.obter_background_atual()
         # self.tela.blit(background, (0, 0))
+        self.tilemap_renderer.atualizar_carregamento()
 
         self.ceu_renderer.desenhar()
-        self.horizonte_renderer.desenhar()
-        self.chao_renderer.desenhar()
+        self.tilemap_renderer.renderizar(dt)
 
 
 class CeuRenderer:
@@ -193,7 +197,7 @@ class CeuRenderer:
         self.ambiente = ambiente
 
         self.largura = largura
-        self.altura = 425
+        self.altura = 325
 
         self.superficie = kivy_adapter.Surface((largura, self.altura))
         self.luz = kivy_adapter.Surface((largura, self.altura))
@@ -869,59 +873,3 @@ class CeuRenderer:
                     (x, y),
                     1,
                 )
-
-
-class HorizonteRenderer:
-    def __init__(self, tela, largura_tela, transform):
-        self.tela = tela
-
-        imagem = asset_manager.carregar("background/horizonte.webp")
-
-        # O horizonte ocupa 90% da largura da tela
-        self.largura = int(largura_tela * 0.90)
-
-        proporcao = imagem.get_height() / imagem.get_width()
-
-        self.altura = int(self.largura * proporcao)
-
-        self.horizonte = transform.escalar(
-            imagem,
-            (
-                self.largura,
-                self.altura,
-            ),
-        )
-
-        self.x = (largura_tela - self.largura) // 2
-        self.y = 310
-
-    def desenhar(self):
-        self.tela.blit(
-            self.horizonte,
-            (
-                self.x,
-                self.y,
-            ),
-        )
-
-
-class ChaoRenderer:
-    def __init__(self, tela, largura, altura, transform):
-        self.tela = tela
-
-        imagem = asset_manager.carregar("background/chao.webp")
-
-        self.altura = 220
-
-        self.chao = transform.escalar(
-            imagem,
-            (largura, self.altura),
-        )
-
-        self.y = altura - self.altura
-
-    def desenhar(self):
-        self.tela.blit(
-            self.chao,
-            (0, self.y),
-        )

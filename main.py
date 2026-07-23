@@ -15,7 +15,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import kivy_adapter
-from config import ALTURA, CENTRO_Y, FPS, LARGURA
+from config import ALTURA, CENTRO_Y, FPS, IS_ANDROID, LARGURA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
@@ -44,8 +44,6 @@ logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 
-
-IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 
 if not IS_ANDROID:
     os.environ["SDL_AUDIODRIVER"] = "alsa"
@@ -223,6 +221,8 @@ class GameWidget(Widget):
         if self.tem_duende and self.cenario.duende.arrastando:
             self.cenario.duende.mover_arraste(*pos_virtual)
 
+        self.controlador_voz_musical.processar_on_touch_move(pos_virtual)
+
         # Resetar estados visuais dos botões se sair da área
         if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
             self.controle_renderer.botao_esquerda_pressionado = False
@@ -231,11 +231,13 @@ class GameWidget(Widget):
             self.controle_renderer.botao_direita_pressionado = False
 
     def on_touch_up(self, touch):
+        pos_virtual = real_to_virtual(touch.pos)
+
         # Resetar Controles do Sapo
         self.controle_renderer.botao_esquerda_pressionado = False
         self.controle_renderer.botao_direita_pressionado = False
 
-        self.controlador_voz_musical.processar_toque_up()
+        self.controlador_voz_musical.processar_toque_up(pos_virtual)
 
     def on_key_down(self, window, key, scancode, codepoint, modifiers):
         # seta esquerda
@@ -301,7 +303,6 @@ class GameWidget(Widget):
                 self.controle_renderer,
                 self.cenario,
                 self.clima_service,
-                self.cenario.casa_duende,
                 self.evento_livro,
                 self.conversa_sapudo,
                 self.tts,

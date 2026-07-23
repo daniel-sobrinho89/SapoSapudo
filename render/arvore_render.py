@@ -53,15 +53,7 @@ class ArvoreRenderer:
             self.frames[grupo] = frames
 
     def _finalizar_carregamento(self):
-        self.calcular_layout()
-
         self.carregado = True
-
-    def calcular_layout(self):
-        frame = self.frames["ocioso"][0]
-
-        self.largura = int(frame.get_width() * self.escala * self.escala_x)
-        self.altura = int(frame.get_height() * self.escala * self.escala_y)
 
     # =====================================
     # FRAME
@@ -80,7 +72,7 @@ class ArvoreRenderer:
     # RENDER
     # =====================================
 
-    def renderizar(self, arvore, animacoes):
+    def renderizar(self, entidade, animacoes):
         if not self.carregado:
             return
 
@@ -88,37 +80,20 @@ class ArvoreRenderer:
         if frame is None:
             return
 
-        frame = self.transform.escalar(
-            frame,
-            (
-                int(frame.get_width() * self.escala * self.escala_x),
-                int(frame.get_height() * self.escala * self.escala_y),
-            ),
-        )
+        largura = max(1, int(frame.get_width() * self.escala_x))
+        altura = max(1, int(frame.get_height() * self.escala_y))
 
-        centro_x = arvore.x + frame.get_width() // 2
-        centro_y = arvore.y + frame.get_height() // 2
-
+        frame = self.transform.escalar(frame, (largura, altura))
         frame.set_alpha(255)
-        rect = frame.get_rect(center=(centro_x, centro_y))
+
+        bbox = frame.get_bounding_rect()
+
+        rect = frame.get_rect(center=(entidade.x, entidade.y))
         self.tela.blit(frame, rect)
 
-        largura = int(frame.get_width() * 0.32)
-        altura = int(frame.get_height() * 0.38)
-
-        x = rect.centerx - largura // 2
-        y = rect.centery - (altura // 2)
-
         self.corpo_rect = kivy_adapter.Rect(
-            x,
-            y,
-            largura,
-            altura,
+            rect.x + bbox.x,
+            rect.y + bbox.y,
+            bbox.w,
+            bbox.h,
         )
-
-        # kivy_adapter.draw.rect(
-        #     self.tela,
-        #     (255, 0, 0),
-        #     self.corpo_rect,
-        #     2,
-        # )

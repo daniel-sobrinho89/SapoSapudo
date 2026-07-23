@@ -7,12 +7,12 @@ from domains.ouro.maquina_estado import EstadoOuro
 class ObterOuroUseCase:
     VELOCIDADE = 110
     DISTANCIA_PARADA = 18
-    TEMPO_CORTANDO = 4.0
+    TEMPO_OBTENDO = 4.0
 
     def __init__(self, cenario_principal):
         self.cenario_principal = cenario_principal
-        self.aldeao = self.cenario_principal.aldeao
-        self.casa_duende = self.cenario_principal.casa_duende
+        self.guardar_recurso_x = 550
+        self.guardar_recurso_y = 265
 
         self.mina = None
         self.renderer_ouro = None
@@ -20,9 +20,10 @@ class ObterOuroUseCase:
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, mina, renderer_ouro):
+    def iniciar(self, mina, renderer_ouro, personagem):
         self.mina = mina
         self.renderer_ouro = renderer_ouro
+        self.aldeao = personagem
 
         self.tempo = 0.0
 
@@ -49,16 +50,14 @@ class ObterOuroUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        OFFSET_X_ESQUERDA = -24
-        OFFSET_X_DIREITA = 32
-        OFFSET_Y = -34
+        rect = self.renderer_ouro.corpo_rect
 
         if self.flip:
-            destino_x = self.mina.x + OFFSET_X_DIREITA
+            destino_x = rect.right - 5
         else:
-            destino_x = self.mina.x + OFFSET_X_ESQUERDA
+            destino_x = rect.left - 40
 
-        destino_y = self.mina.y + OFFSET_Y
+        destino_y = rect.bottom - 35
 
         dx = destino_x - self.aldeao.x
         dy = destino_y - self.aldeao.y
@@ -84,10 +83,10 @@ class ObterOuroUseCase:
     def _obter(self, dt):
         self.tempo += dt
 
-        if self.tempo < self.TEMPO_CORTANDO:
+        if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.casa_duende.x < self.aldeao.x
+        self.flip = self.guardar_recurso_x < self.aldeao.x
         self.mina.obter_ouro()
 
         if self.flip:
@@ -96,8 +95,8 @@ class ObterOuroUseCase:
             self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_OURO
 
     def _entregar(self, dt):
-        destino_x = self.casa_duende.x - 40
-        destino_y = self.casa_duende.y + 150
+        destino_x = self.guardar_recurso_x - 40
+        destino_y = self.guardar_recurso_y + 150
 
         dx = destino_x - self.aldeao.x
         dy = destino_y - self.aldeao.y
@@ -110,14 +109,14 @@ class ObterOuroUseCase:
             else:
                 self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
 
-            OFFSET = 80
+            OFFSET = 40
 
             if self.flip:
                 recurso_x = self.aldeao.x - OFFSET
             else:
                 recurso_x = self.aldeao.x + OFFSET
 
-            recurso_y = self.aldeao.y + 70
+            recurso_y = self.aldeao.y
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "ouro")
 
@@ -126,7 +125,7 @@ class ObterOuroUseCase:
                 self.mina = None
                 self.renderer_ouro = None
             else:
-                self.iniciar(self.mina, self.renderer_ouro)
+                self.iniciar(self.mina, self.renderer_ouro, self.aldeao)
 
             return
 

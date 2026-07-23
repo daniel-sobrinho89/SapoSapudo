@@ -8,7 +8,7 @@ from application.usecases import (
     BuscarViolaoUseCase,
     ControlarComportamentoSapoUseCase,
 )
-from core.platform import IS_ANDROID
+from config import IS_ANDROID
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
@@ -31,7 +31,6 @@ class ControladorVozMusical:
         controle_renderer,
         gerenciador_cenarios,
         clima_service,
-        casa_duende,
         evento_livro,
         conversa_sapudo,
         tts,
@@ -45,7 +44,6 @@ class ControladorVozMusical:
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
-        self.casa_duende = casa_duende
         self.esferas = self.gerenciador_cenarios.esferas
         self.evento_livro = evento_livro
         self.conversa_sapudo = conversa_sapudo
@@ -84,7 +82,6 @@ class ControladorVozMusical:
             self.livro,
             self.esferas,
             self.clima_service,
-            self.casa_duende,
             self.evento_livro,
             self.spotify,
             self.audio,
@@ -143,10 +140,13 @@ class ControladorVozMusical:
 
         self.coordenador_estado_jogo.processar_toque_down(pos_virtual, renderer_violao)
 
-    def processar_toque_up(self):
+    def processar_toque_up(self, pos_virtual):
         self.parar_controle_esquerda()
         self.parar_controle_direita()
-        self.coordenador_estado_jogo.processar_toque_up()
+        self.coordenador_estado_jogo.processar_toque_up(pos_virtual)
+
+    def processar_on_touch_move(self, pos_virtual):
+        self.coordenador_estado_jogo.processar_on_touch_move(pos_virtual)
 
     def processar_toque_up_livro(self):
         pass
@@ -308,10 +308,13 @@ class ControladorVozMusicalNulo:
     def atualizar(self, dt):
         pass
 
-    def processar_toque_up(self):
+    def processar_toque_up(self, pos_virtual):
         pass
 
     def processar_toque_down(self, *args):
+        pass
+
+    def processar_on_touch_move(self, pos_virtual):
         pass
 
     def processar_toque_microfone(self, *args):

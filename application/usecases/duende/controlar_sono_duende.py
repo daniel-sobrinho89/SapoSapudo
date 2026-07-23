@@ -2,13 +2,12 @@ import math
 
 
 class ControlarSonoDuendeUseCase:
-    def __init__(self, sapo, duende, violao, clima_service, casa_duende):
+    def __init__(self, sapo, duende, violao, clima_service):
         self.sapo = sapo
         self.duende = duende
         self.animacoes = self.duende.animacoes
         self.violao = violao
         self.clima_service = clima_service
-        self.casa_duende = casa_duende
         self.tempo_respiracao = 0
 
     def executar(self, dt):
@@ -57,11 +56,7 @@ class ControlarSonoDuendeUseCase:
             self.iniciar_sono_programado()
             return
 
-        if (
-            not self.duende.animacoes.em_frente_a_casa
-            and not self.animacoes.dormindo
-            and not self.duende.esta_dentro_da_casa(self.casa_duende.area_interna)
-        ):
+        if not self.duende.animacoes.em_frente_a_casa and not self.animacoes.dormindo:
             self.duende.escala_visual = min(1.0, self.duende.escala_visual + dt * 0.6)
 
         if self.animacoes.dormindo:
@@ -79,15 +74,6 @@ class ControlarSonoDuendeUseCase:
 
     def processar_soltou_duende(self, arraste):
         arraste.ativo = False
-
-        soltou_frente_casa = self.casa_duende.area_interna.collidepoint(
-            int(self.duende.x),
-            int(self.duende.y),
-        )
-
-        if soltou_frente_casa:
-            self.duende.animacoes.iniciar_em_frente_a_casa()
-            return True
 
         if self.animacoes.dormindo or self.animacoes.descendo_para_dormir:
             self.cancelar_sono_programado()
@@ -146,7 +132,6 @@ class ControlarSonoDuendeUseCase:
         self.duende.movimento_bloqueado = True
 
         if self.animacoes.dormindo:
-            self.duende.x = self.casa_duende.area_interna.centerx
             self.duende.y = self.duende.y
 
     def _tempo_sono_expirou(self, dt):

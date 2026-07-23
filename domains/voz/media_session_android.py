@@ -1,6 +1,4 @@
-import os
-
-IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
+from config import IS_ANDROID
 
 if IS_ANDROID:
     from jnius import autoclass

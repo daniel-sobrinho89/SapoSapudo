@@ -239,15 +239,9 @@ class EventoLivro:
 
         return False
 
-    def renderizar(self, tela, casa_duende):
+    def renderizar(self, tela):
         if not self.livro.visivel:
             return
-
-        if not self.livro.sendo_carregado:
-            self.livro.posicionar(
-                casa_duende.area_casa.centerx,
-                casa_duende.area_casa.centery,
-            )
 
         offset_flutuacao = math.sin(self.tempo * 2) * 5
 

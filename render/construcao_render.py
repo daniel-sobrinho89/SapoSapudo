@@ -1,8 +1,14 @@
 import kivy_adapter
 
 
-class AldeaoRenderer:
-    def __init__(self, tela, assets, transform, escala):
+class ConstrucaoRenderer:
+    MAPA_ANIMACOES = {
+        "ocioso": "ocioso",
+    }
+
+    def __init__(
+        self, tela, assets, transform, nome_recurso, total_frames_recurso, escala
+    ):
         self.tela = tela
         self.assets = assets
         self.transform = transform
@@ -11,13 +17,14 @@ class AldeaoRenderer:
         self.escala = escala
         self.escala_x = escala
         self.escala_y = escala
+        self.nome_recurso = nome_recurso
+        self.total_frames_recurso = total_frames_recurso
 
-        self.frames = {}
+        self.frames = {
+            "ocioso": [],
+        }
+
         self._fila = self._criar_fila()
-
-        for grupo, *_ in self._fila:
-            self.frames[grupo] = []
-            self.frames[f"{grupo}_flip"] = []
 
     # =====================================
     # LOAD
@@ -25,18 +32,11 @@ class AldeaoRenderer:
 
     def _criar_fila(self):
         return [
-            ("ocioso", "aldeao/ocioso/aldeao.png", 8),
-            ("ocioso_madeira", "aldeao/ocioso/aldeao_madeira.png", 8),
-            ("correndo", "aldeao/correndo/aldeao.png", 6),
-            ("correndo_machado", "aldeao/correndo/aldeao_machado.png", 6),
-            ("correndo_madeira", "aldeao/correndo/aldeao_madeira.png", 6),
-            ("correndo_picareta", "aldeao/correndo/aldeao_picareta.png", 6),
-            ("correndo_ouro", "aldeao/correndo/aldeao_ouro.png", 6),
-            ("correndo_faca", "aldeao/correndo/aldeao_faca.png", 6),
-            ("correndo_carne", "aldeao/correndo/aldeao_carne.png", 6),
-            ("usando_machado", "aldeao/obtendo_recursos/aldeao_machado.png", 6),
-            ("usando_picareta", "aldeao/obtendo_recursos/aldeao_picareta.png", 6),
-            ("usando_faca", "aldeao/obtendo_recursos/aldeao_faca.png", 4),
+            (
+                "ocioso",
+                f"construcoes/{self.nome_recurso}.png",
+                self.total_frames_recurso,
+            ),
         ]
 
     def atualizar_carregamento(self, quantidade_por_frame=3):
@@ -60,21 +60,10 @@ class AldeaoRenderer:
 
             self.frames[grupo] = frames
 
-            self.frames[f"{grupo}_flip"] = [
-                self.transform.espelhar(frame) for frame in frames
-            ]
-
     def _finalizar_carregamento(self):
         self.calcular_layout()
 
         self.carregado = True
-
-    def espelhar(self, imagem):
-        return kivy_adapter.transform.flip(
-            imagem,
-            True,
-            False,
-        )
 
     def calcular_layout(self):
         frame = self.frames["ocioso"][0]
@@ -92,16 +81,20 @@ class AldeaoRenderer:
 
         seletor, frame = animacoes.obter_selecao_frame()
 
-        return self.frames.get(
-            seletor,
-            self.frames["ocioso"],
-        )[frame]
+        chave = self.MAPA_ANIMACOES.get(seletor, "ocioso")
+        return self.frames[chave][frame]
 
     # =====================================
     # RENDER
     # =====================================
 
-    def renderizar(self, entidade, animacoes, alpha=255, x=0, y=0, escala=1.0):
+    def renderizar(
+        self,
+        entidade,
+        animacoes,
+        alpha=255,
+        escala=1.0,
+    ):
         if not self.carregado:
             return
 
@@ -136,10 +129,3 @@ class AldeaoRenderer:
         )
 
         entidade.corpo_rect = self.corpo_rect
-
-        # kivy_adapter.draw.rect(
-        #     self.tela,
-        #     (255, 0, 0),
-        #     self.corpo_rect,
-        #     2,
-        # )

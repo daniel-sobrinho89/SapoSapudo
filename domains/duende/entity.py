@@ -68,9 +68,6 @@ class DuendeNeblina:
     def mover_arraste(self, mouse_x, mouse_y):
         self.arraste.mover(mouse_x, mouse_y, self)
 
-    def finalizar_arraste(self, casa_duende_rect=None):
-        self.arraste.finalizar(self.x, self.y, casa_duende_rect)
-
     def processar_toque_down(self, pos_virtual):
         return self.arraste.processar_toque_down(
             pos_virtual, self.corpo_rect, self.x, self.y
@@ -133,27 +130,6 @@ class DuendeNeblina:
         self.x += (dx / max(1, distancia)) * velocidade * dt
         self.y += (dy / max(1, distancia)) * velocidade * dt
         self.base_y = self.y
-
-    def duplicar(self):
-        novo = DuendeNeblina()
-
-        novo.cor = (200, 235, 255)
-
-        novo.x = self.x
-        novo.y = self.y
-        novo.base_y = self.base_y
-
-        novo.escala_visual = self.escala_visual
-        novo.escala = self.escala
-
-        novo.alpha_visual = self.alpha_visual
-
-        novo.velocidade_x = 0
-        novo.velocidade_y = 0
-
-        novo.iniciar_saida_casa()
-
-        return novo
 
     def resetar_escala_visual(self):
         self.escala_visual = 0.9

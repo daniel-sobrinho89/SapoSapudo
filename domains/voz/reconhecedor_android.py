@@ -1,7 +1,6 @@
-import os
 from contextlib import suppress
 
-IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
+from config import IS_ANDROID
 
 if IS_ANDROID:
     from jnius import PythonJavaClass, autoclass, java_method

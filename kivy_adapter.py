@@ -9,7 +9,13 @@ from contextlib import suppress
 from io import BytesIO
 
 from kivy.core.image import Image as CoreImage
-from PIL import Image, ImageChops, ImageDraw, ImageOps
+from PIL import (
+    Image,
+    ImageChops,
+    ImageDraw,
+    ImageFont,
+    ImageOps,
+)
 
 # mouse compatibility
 
@@ -162,7 +168,17 @@ class Surface:
         # ---------------------------------------
 
         if isinstance(src, Surface):
-            src_img = src._img
+            if src._alpha == 255:
+                src_img = src._img
+
+            else:
+                src_img = src._img.copy()
+
+                alpha = src_img.getchannel("A")
+
+                alpha = alpha.point(lambda p: (p * src._alpha) // 255)
+
+                src_img.putalpha(alpha)
 
         elif isinstance(src, Image.Image):
             src_img = src
@@ -227,14 +243,6 @@ class Surface:
 
     def set_alpha(self, a):
         self._alpha = max(0, min(255, int(a)))
-
-        img = self._img.copy()
-        alpha = img.getchannel("A")
-
-        alpha = alpha.point(lambda p: int(p * self._alpha / 255))
-
-        img.putalpha(alpha)
-        self._img = img
 
     def get_rect(self, **kwargs):
         # support center=(x,y)
@@ -443,6 +451,31 @@ class draw:
             [start_pos, end_pos],
             fill=color,
             width=width,
+        )
+
+    @staticmethod
+    def text(
+        surface,
+        texto,
+        posicao,
+        cor=(255, 255, 255),
+        tamanho=20,
+    ):
+        draw_ctx = ImageDraw.Draw(surface._img)
+
+        try:
+            fonte = ImageFont.truetype(
+                "DejaVuSans.ttf",
+                tamanho,
+            )
+        except Exception:
+            fonte = ImageFont.load_default()
+
+        draw_ctx.text(
+            posicao,
+            str(texto),
+            fill=cor,
+            font=fonte,
         )
 
 

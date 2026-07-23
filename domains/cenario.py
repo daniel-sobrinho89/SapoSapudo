@@ -1,21 +1,25 @@
-from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA, QUANTIDADE_POEIRA
+from application.usecases.aldeao.controlar_comportamento_aldeao import (
+    ControlarComportamentoAldeaoUseCase,
+)
+from application.usecases.aldeao.cortar_arvore import CortarArvoreUseCase
+from application.usecases.aldeao.obter_carne import ObterCarneUseCase
+from application.usecases.aldeao.obter_ouro import ObterOuroUseCase
+from config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA
 from core.fisica import sistema_fisica
-from domains.aldeao.entity import Aldeao
+from domains.aldeao.entity import criar_personagem
 from domains.arvore.entity import Arvore
-from domains.casa_duende.entity import CasaDuende
 from domains.clima.evento_livro import EventoLivro
-from domains.clima.particulas.esfera import Esfera
 from domains.duende.entity import DuendeNeblina
 from domains.livro.entity import Livro
 from domains.ouro.entity import Ouro
 from domains.ovelha.entity import Ovelha
 from domains.recursos.entity import Recurso
-from render.aldeao_renderer import AldeaoRenderer
 from render.arvore_render import ArvoreRenderer
 from render.asset_manager import asset_manager
 from render.barraca_renderer import BarracaRenderer
-from render.casa_duende_renderer import CasaDuendeRenderer
 from render.duende_renderer import DuendeRenderer
+from render.menu_casa_renderer import MenuCasaRenderer
+from render.menu_construcoes_renderer import MenuConstrucoesRenderer
 from render.ouro_rendery import OuroRenderer
 from render.ovelha_render import OvelhaRenderer
 from render.recurso_render import RecursoRenderer
@@ -53,14 +57,13 @@ class CenarioBase:
     def atualizar(self, dt):
         raise NotImplementedError
 
-    def renderizar(self, dt, sapo_renderer):
+    def renderizar(self, dt):
         raise NotImplementedError
 
 
 class CenarioPrincipal(CenarioBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.duendes = []
         self.esferas = []
         self.arvores = []
         self.renderers_arvores = []
@@ -69,30 +72,83 @@ class CenarioPrincipal(CenarioBase):
         self.recursos = []
         self.renderer_madeira = None
         self.renderer_ouro = None
+        self.renderer_carne = None
         self.renderers_recursos = []
         self.ovelhas = []
         self.renderers_ovelhas = []
-
+        self.construcoes = []
+        self.personagens = []
+        self.controladores = {}
         self.sapo_renderer = None
-        self.aldeao = None
-        self.renderer_aldeao = None
+        self.menu_construcoes = None
+        self.menu_casa_renderer = None
         self.duende = None
         self.renderer_duende = None
-        self.casa_duende = None
-        self.casa_duende_renderer = None
         self.evento_livro = None
         self.livro = None
         self.carregado = False
 
+        self.construcao_arrastando = None
+        self.personagem_arrastando = None
+
     @property
     def tem_duende(self):
         return self.duende is not None
+
+    @property
+    def total_madeira(self):
+        return sum(
+            1
+            for renderer in self.renderers_recursos
+            if renderer.nome_recurso == "madeira"
+        )
+
+    @property
+    def total_ouro(self):
+        return sum(
+            1 for renderer in self.renderers_recursos if renderer.nome_recurso == "ouro"
+        )
+
+    @property
+    def total_carne(self):
+        return sum(
+            1
+            for renderer in self.renderers_recursos
+            if renderer.nome_recurso == "carne"
+        )
+
+    def construcao_desbloqueada(self, construcao):
+        return (
+            self.total_madeira >= construcao.custo_madeira
+            and self.total_ouro >= construcao.custo_ouro
+            and self.total_carne >= construcao.custo_carne
+        )
+
+    @property
+    def possui_castelo(self):
+        return any(c.nome == "Castelo" for c in self.construcoes)
+
+    @property
+    def tilemap(self):
+        return self.background_renderer.tilemap_renderer
+
+    def adicionar_personagem(self, personagem):
+        self.personagens.append(personagem)
+
+        self.controladores[personagem] = {
+            "ia": ControlarComportamentoAldeaoUseCase(),
+            "corte": CortarArvoreUseCase(self),
+            "ouro": ObterOuroUseCase(self),
+            "carne": ObterCarneUseCase(self),
+        }
 
     def adicionar_recurso(self, x, y, nome_recurso):
         if nome_recurso == "madeira":
             total_frames_recurso = 1
         elif nome_recurso == "ouro":
             total_frames_recurso = 6
+        elif nome_recurso == "carne":
+            total_frames_recurso = 1
 
         recurso = Recurso(self.transform, x, y, total_frames_recurso)
 
@@ -102,6 +158,8 @@ class CenarioPrincipal(CenarioBase):
             self.renderers_recursos.append(self.renderer_madeira)
         elif nome_recurso == "ouro":
             self.renderers_recursos.append(self.renderer_ouro)
+        elif nome_recurso == "carne":
+            self.renderers_recursos.append(self.renderer_carne)
 
     def remover_recurso(self, renderer_ouro):
         if renderer_ouro in self.renderers_ouro:
@@ -114,16 +172,17 @@ class CenarioPrincipal(CenarioBase):
         self.sapo_renderer = SapoRenderer(self.tela, asset_manager, self.transform)
         self.duende = DuendeNeblina()
         self.renderer_duende = DuendeRenderer(self.tela, asset_manager, self.transform)
-        self.casa_duende = CasaDuende(self.transform)
-        self.casa_duende_renderer = CasaDuendeRenderer(
-            self.tela, asset_manager, self.transform
-        )
 
         self.livro = Livro()
         self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro, [])
 
-        self.aldeao = Aldeao(self.transform)
-        self.renderer_aldeao = AldeaoRenderer(self.tela, asset_manager, self.transform)
+        self.adicionar_personagem(criar_personagem("Aldeao"))
+        self.menu_construcoes = MenuConstrucoesRenderer(
+            self.tela, asset_manager, self.transform
+        )
+        self.menu_casa_renderer = MenuCasaRenderer(
+            self.tela, asset_manager, self.transform
+        )
 
         self.renderer_madeira = RecursoRenderer(
             self.tela,
@@ -139,12 +198,19 @@ class CenarioPrincipal(CenarioBase):
             "ouro",
             6,
         )
+        self.renderer_carne = RecursoRenderer(
+            self.tela,
+            asset_manager,
+            self.transform,
+            "carne",
+            1,
+        )
 
         posicoes = [
-            (180, 240),
-            (250, 215),
-            (320, 255),
-            (235, 305),
+            (230, 340),
+            (300, 315),
+            (370, 355),
+            (285, 405),
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
@@ -160,8 +226,8 @@ class CenarioPrincipal(CenarioBase):
             self.renderers_arvores.append(renderer)
 
         posicoes = [
-            (105, 400),
-            (120, 440),
+            (145, 510),
+            (160, 540),
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
@@ -173,8 +239,8 @@ class CenarioPrincipal(CenarioBase):
 
         posicoes = [
             (180, 420),
-            (350, 455),
             (620, 435),
+            (350, 455),
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
@@ -191,18 +257,11 @@ class CenarioPrincipal(CenarioBase):
     def descarregar(self):
         self.duende = None
         self.renderer_duende = None
-        self.casa_duende = None
-        self.casa_duende_renderer = None
-        self.aldeao = None
-        self.renderer_aldeao = None
         self.renderer_madeira = None
 
     def atualizar(self, dt):
-        if self.casa_duende:
-            self.casa_duende.atualizar(dt)
-
         if self.duende:
-            for duende in [self.duende] + self.duendes:
+            for duende in [self.duende]:
                 duende.atualizar(dt)
                 sistema_fisica.aplicar_forca_vento(
                     self.duende, self.clima_service, dt, sensibilidade=0.5
@@ -211,8 +270,11 @@ class CenarioPrincipal(CenarioBase):
         for esfera in self.esferas:
             esfera.atualizar(self.ambiente, dt)
 
-        if self.aldeao:
-            self.aldeao.atualizar(dt)
+        for construcao in self.construcoes:
+            construcao.atualizar(dt)
+
+        for personagem in self.personagens:
+            personagem.atualizar(dt)
 
         for arvore in self.arvores:
             arvore.atualizar(dt)
@@ -248,33 +310,36 @@ class CenarioPrincipal(CenarioBase):
             if not esfera.saiu_da_casa:
                 esfera.desenhar(self.tela)
 
-        if (
-            self.renderer_duende
-            and self.duende.animacoes.atras_da_casa
-            and self.duende.percentual_visivel <= 0.15
-        ):
-            self.renderer_duende.renderizar(self.duende, ESCALA)
+        for construcao in self.construcoes:
+            renderer = self.menu_construcoes.obter_renderer(construcao)
 
-        if self.duende.animacoes.saindo_da_casa:
-            for duende in self.duendes:
-                self.renderer_duende.renderizar(duende, ESCALA)
+            renderer.renderizar(
+                construcao,
+                construcao.animacoes,
+                escala=2.6,
+            )
 
-        hora_atual = self.ambiente.obter_hora_decimal()
-        if (
-            hora_atual >= 18.5 or hora_atual < 6
-        ) and not self.casa_duende.animacoes.luz_esta_acesa:
-            self.casa_duende.animacoes.iniciar_luz_acesa()
+            if construcao.menu_aberto:
+                self.menu_casa_renderer.renderizar(construcao, self)
 
-        self.casa_duende_renderer.renderizar(
-            self.casa_duende,
-            self.casa_duende.animacoes,
-        )
+        for personagem in self.personagens:
+            renderer = self.menu_casa_renderer.obter_renderer(personagem)
 
-        for ovelha, renderer in zip(self.ovelhas, self.renderers_ovelhas):
-            renderer.renderizar(ovelha, ovelha.animacoes)
+            renderer.renderizar(
+                personagem,
+                personagem.animacoes,
+                escala=1,
+            )
+
+            if personagem.menu_construcoes_aberto:
+                self.menu_construcoes.renderizar(
+                    personagem,
+                    self,
+                )
 
         renderizou_madeira = False
         renderizou_ouro = False
+        renderizou_carne = False
         for recurso, renderer in zip(self.recursos, self.renderers_recursos):
             if renderer.nome_recurso == "madeira":
                 if renderizou_madeira:
@@ -286,31 +351,51 @@ class CenarioPrincipal(CenarioBase):
                     continue
 
                 renderizou_ouro = True
+            elif renderer.nome_recurso == "carne":
+                if renderizou_carne:
+                    continue
+
+                renderizou_carne = True
 
             renderer.renderizar(recurso, recurso.animacoes)
+
+        for ovelha, renderer in zip(self.ovelhas, self.renderers_ovelhas):
+            renderer.renderizar(ovelha, ovelha.animacoes)
 
         for esfera in self.esferas:
             if esfera.saiu_da_casa:
                 esfera.desenhar(self.tela)
 
-        self.casa_duende.desenhar_nevoa(self.tela, self.evento_livro.nevoa)
-
         if self.renderer_duende:
-            if (
-                self.duende.percentual_visivel > 0.15
-                or not self.duende.animacoes.atras_da_casa
-            ):
-                self.renderer_duende.renderizar(self.duende, ESCALA)
+            self.renderer_duende.renderizar(self.duende, ESCALA)
 
-            if not self.duende.animacoes.saindo_da_casa:
-                for duende in self.duendes:
-                    self.renderer_duende.renderizar(duende, ESCALA)
-
-        self.renderer_aldeao.renderizar(self.aldeao, self.aldeao.animacoes)
-        self.evento_livro.renderizar(self.tela, self.casa_duende)
+        self.evento_livro.renderizar(self.tela)
         self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
-
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, self.sapo.animacoes)
+
+        if self.construcao_arrastando:
+            renderer = self.menu_construcoes.obter_renderer(
+                self.construcao_arrastando,
+            )
+
+            renderer.renderizar(
+                self.construcao_arrastando,
+                self.construcao_arrastando.animacoes,
+                180,
+                escala=2.6,
+            )
+
+        if self.personagem_arrastando:
+            renderer = self.menu_casa_renderer.obter_renderer(
+                self.personagem_arrastando,
+            )
+
+            renderer.renderizar(
+                self.personagem_arrastando,
+                self.personagem_arrastando.animacoes,
+                180,
+                escala=1,
+            )
 
     def _atualizar_carregamento_assets(self):
         if self.carregado:
@@ -320,8 +405,6 @@ class CenarioPrincipal(CenarioBase):
 
         if self.renderer_duende:
             self.renderer_duende.atualizar_carregamento(self.duende, 10)
-
-        self.casa_duende_renderer.atualizar_carregamento(self.casa_duende, 10)
 
         for renderer in self.renderers_arvores:
             renderer.atualizar_carregamento(5)
@@ -334,33 +417,12 @@ class CenarioPrincipal(CenarioBase):
 
         self.renderer_madeira.atualizar_carregamento(1)
         self.renderer_ouro.atualizar_carregamento(5)
+        self.renderer_carne.atualizar_carregamento(1)
 
-        self.renderer_aldeao.atualizar_carregamento(5)
+        self.menu_construcoes.atualizar_carregamento()
+        self.menu_casa_renderer.atualizar_carregamento()
 
-        self.carregado = (
-            self.sapo_renderer.carregado
-            and self.renderer_duende.carregado
-            and self.casa_duende_renderer.carregado
-        )
-        if self.carregado:
-            self.esferas = [
-                Esfera(
-                    self.casa_duende.area_particulas,
-                    self.casa_duende.area_casa,
-                    asset_manager,
-                )
-                for _ in range(QUANTIDADE_POEIRA)
-            ]
-            self.evento_livro.esferas = self.esferas
-            for esfera in self.esferas:
-                esfera.area_protegida = self.casa_duende.area_casa
-                esfera.protegido = esfera.area_protegida.collidepoint(
-                    int(esfera.x), int(esfera.y)
-                )
-
-    def adicionar_duende(self, duende):
-        if len(self.duendes) < 1:
-            self.duendes.append(duende)
+        self.carregado = self.sapo_renderer.carregado and self.renderer_duende.carregado
 
 
 class CenarioFeira(CenarioBase):
@@ -482,7 +544,7 @@ class GerenciadorCenarios:
 
     def renderizar(self, dt):
         self.tela.fill((0, 0, 0, 0))
-        self.background_renderer.desenhar()
+        self.background_renderer.desenhar(dt)
 
         self.cenario_atual.renderizar(dt)
 

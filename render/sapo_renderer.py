@@ -125,10 +125,14 @@ class SapoRenderer:
         if frame is None:
             return
 
-        self.draw(frame, centro_x, centro_y)
+        largura = max(1, int(frame.get_width() * self.escala_x))
+        altura = max(1, int(frame.get_height() * self.escala_y))
 
-        largura = int(frame.get_width() * self.escala)
-        altura = int(frame.get_height() * self.escala)
+        frame = self.transform.escalar(frame, (largura, altura))
+        frame.set_alpha(255)
+
+        rect = frame.get_rect(center=(centro_x, centro_y))
+        self.tela.blit(frame, rect)
 
         self.corpo_rect = kivy_adapter.Rect(
             centro_x - largura // 2,

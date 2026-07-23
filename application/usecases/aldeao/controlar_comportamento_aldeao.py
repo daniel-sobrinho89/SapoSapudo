@@ -5,9 +5,7 @@ from domains.aldeao.maquina_estado import EstadoAldeao
 
 
 class ControlarComportamentoAldeaoUseCase:
-    def __init__(self, aldeao):
-        self.aldeao = aldeao
-
+    def __init__(self):
         self.tempo = 0.0
         self.proxima_acao = random.uniform(3, 8)
 
@@ -18,7 +16,9 @@ class ControlarComportamentoAldeaoUseCase:
         self.limite_direito = LARGURA - 220
         self.distancia_minima = 40
 
-    def executar(self, dt):
+    def executar(self, dt, aldeao):
+        self.aldeao = aldeao
+
         if self.andando:
             self._andar(dt)
             return

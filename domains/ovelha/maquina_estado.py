@@ -10,6 +10,7 @@ class EstadoOvelha(Enum):
     COMENDO_FLIP = "comendo_flip"
     CORRENDO = "correndo"
     CORRENDO_FLIP = "correndo_flip"
+    OBTIDO = "obtido"
 
 
 class MaquinaEstadoOvelha(StateMachine):

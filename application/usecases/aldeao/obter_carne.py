@@ -1,10 +1,10 @@
 from math import hypot
 
 from domains.aldeao.maquina_estado import EstadoAldeao
-from domains.arvore.maquina_estado import EstadoArvore
+from domains.ovelha.maquina_estado import EstadoOvelha
 
 
-class CortarArvoreUseCase:
+class ObterCarneUseCase:
     VELOCIDADE = 110
     DISTANCIA_PARADA = 18
     TEMPO_OBTENDO = 4.0
@@ -12,37 +12,37 @@ class CortarArvoreUseCase:
     def __init__(self, cenario_principal):
         self.cenario_principal = cenario_principal
         self.guardar_recurso_x = 550
-        self.guardar_recurso_y = 275
+        self.guardar_recurso_y = 255
 
-        self.arvore = None
-        self.renderer_arvore = None
+        self.animal = None
+        self.renderer_animal = None
 
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, arvore, renderer_arvore, personagem):
-        self.arvore = arvore
-        self.renderer_arvore = renderer_arvore
+    def iniciar(self, animal, renderer_animal, personagem):
+        self.animal = animal
+        self.renderer_animal = renderer_animal
         self.aldeao = personagem
 
         self.tempo = 0.0
 
-        self.flip = arvore.x < self.aldeao.x
+        self.flip = animal.x < self.aldeao.x
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO_FLIP
+            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO
+            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
     # --------------------------------------------------------
 
     def executar(self, dt):
-        if self.arvore is None:
+        if self.animal is None:
             return
 
-        if self.aldeao.animacoes.maquina.cortando_arvore():
+        if self.aldeao.animacoes.maquina.obtendo_carne():
             self._obter(dt)
-        elif self.aldeao.animacoes.maquina.entregando_madeira():
+        elif self.aldeao.animacoes.maquina.entregando_carne():
             self._entregar(dt)
         else:
             self._andar(dt)
@@ -50,14 +50,14 @@ class CortarArvoreUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.renderer_arvore.corpo_rect
+        rect = self.renderer_animal.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
         else:
-            destino_x = rect.left - 1
+            destino_x = rect.left - 40
 
-        destino_y = rect.bottom - 25
+        destino_y = rect.bottom - 30
 
         dx = destino_x - self.aldeao.x
         dy = destino_y - self.aldeao.y
@@ -68,9 +68,9 @@ class CortarArvoreUseCase:
             self.tempo = 0.0
 
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_MACHADO_FLIP
+                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_FACA_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_MACHADO
+                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_FACA
 
             return
 
@@ -83,16 +83,20 @@ class CortarArvoreUseCase:
     def _obter(self, dt):
         self.tempo += dt
 
+        if self.animal.vida > 0:
+            self.animal.receber_golpe()
+            return
+
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
         self.flip = self.guardar_recurso_x < self.aldeao.x
-        self.arvore.obter_madeira()
+        self.animal.obter_carne()
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
+            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_CARNE_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA
+            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_CARNE
 
     def _entregar(self, dt):
         destino_x = self.guardar_recurso_x - 40
@@ -118,13 +122,14 @@ class CortarArvoreUseCase:
 
             recurso_y = self.aldeao.y
 
-            self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "madeira")
+            self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "carne")
 
-            if self.arvore.animacoes.estado == EstadoArvore.CORTADA:
-                self.arvore = None
-                self.renderer_arvore = None
+            if self.animal.animacoes.estado == EstadoOvelha.OBTIDO:
+                self.cenario_principal.remover_recurso(self.renderer_animal)
+                self.animal = None
+                self.renderer_animal = None
             else:
-                self.iniciar(self.arvore, self.renderer_arvore, self.aldeao)
+                self.iniciar(self.animal, self.renderer_animal, self.aldeao)
 
             return
 

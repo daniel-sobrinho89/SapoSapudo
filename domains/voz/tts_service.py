@@ -2,8 +2,8 @@ from contextlib import suppress
 
 from kivy.clock import Clock
 
+from config import IS_ANDROID
 from core.event_bus import event_bus
-from core.platform import IS_ANDROID
 
 PALAVRAS_BLOQUEADAS = ("estou ouvindo", "lá lá lá")
 

@@ -8,7 +8,7 @@ class Arvore:
         self.x = x
         self.y = y
         self.animacoes = AnimacoesArvore()
-        self.madeira = 4
+        self.madeira = 8
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)

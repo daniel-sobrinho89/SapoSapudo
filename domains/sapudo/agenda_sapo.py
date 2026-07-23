@@ -23,7 +23,7 @@ class AgendaSapo:
         agora = agora or datetime.now()
         horario_atual = (agora.hour * 60) + agora.minute
 
-        horario_acordar = (7 * 60) + 30
+        horario_acordar = (5 * 60) + 30
         horario_dormir = (22 * 60) + 00
 
         if horario_dormir < horario_acordar:

@@ -22,6 +22,12 @@ class EstadoAldeao(Enum):
     USANDO_PICARETA_FLIP = "usando_picareta_flip"
     CORRENDO_OURO = "correndo_ouro"
     CORRENDO_OURO_FLIP = "correndo_ouro_flip"
+    CORRENDO_FACA = "correndo_faca"
+    CORRENDO_FACA_FLIP = "correndo_faca_flip"
+    USANDO_FACA = "usando_faca"
+    USANDO_FACA_FLIP = "usando_faca_flip"
+    CORRENDO_CARNE = "correndo_carne"
+    CORRENDO_CARNE_FLIP = "correndo_carne_flip"
 
 
 class MaquinaEstadoAldeao(StateMachine):
@@ -70,4 +76,36 @@ class MaquinaEstadoAldeao(StateMachine):
         return self.em_estado(
             EstadoAldeao.CORRENDO_OURO,
             EstadoAldeao.CORRENDO_OURO_FLIP,
+        )
+
+    def carregando_recuso(self):
+        return self.em_estado(
+            EstadoAldeao.CORRENDO_OURO,
+            EstadoAldeao.CORRENDO_OURO_FLIP,
+            EstadoAldeao.CORRENDO_MADEIRA,
+            EstadoAldeao.CORRENDO_MADEIRA_FLIP,
+            EstadoAldeao.CORRENDO_CARNE,
+            EstadoAldeao.CORRENDO_CARNE_FLIP,
+        )
+
+    def interagindo_carne(self):
+        return self.em_estado(
+            EstadoAldeao.CORRENDO_FACA,
+            EstadoAldeao.CORRENDO_FACA_FLIP,
+            EstadoAldeao.USANDO_FACA,
+            EstadoAldeao.USANDO_FACA_FLIP,
+            EstadoAldeao.CORRENDO_CARNE,
+            EstadoAldeao.CORRENDO_CARNE_FLIP,
+        )
+
+    def obtendo_carne(self):
+        return self.em_estado(
+            EstadoAldeao.USANDO_FACA,
+            EstadoAldeao.USANDO_FACA_FLIP,
+        )
+
+    def entregando_carne(self):
+        return self.em_estado(
+            EstadoAldeao.CORRENDO_CARNE,
+            EstadoAldeao.CORRENDO_CARNE_FLIP,
         )
