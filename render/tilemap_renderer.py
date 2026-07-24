@@ -28,93 +28,19 @@ class TileMapRenderer:
 
     @staticmethod
     def floresta():
+        largura = 24
+        altura = 8
+
         return [
-            ["agua"] * 17,
-            ["agua"] * 18,
             [
-                "agua",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "agua",
-            ],
-            [
-                "agua",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "agua",
-            ],
-            [
-                "agua",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "agua",
-            ],
-            [
-                "agua",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "grama",
-                "agua",
-            ],
+                "agua" if y < 2 or x == 0 or x == largura - 1 else "grama"
+                for x in range(largura)
+            ]
+            for y in range(altura)
         ]
 
     @staticmethod
-    def feira():
+    def vila_goblin():
         return [
             ["grama"] * 24,
             ["grama"] * 24,
@@ -247,7 +173,10 @@ class TileMapRenderer:
         return coluna, linha
 
     def tile_para_pixel(self, coluna, linha):
-        return (coluna * self.TILE_SIZE, linha * self.TILE_SIZE)
+        return (
+            self.offset_x + coluna * self.TILE_SIZE,
+            self.offset_y + linha * self.TILE_SIZE,
+        )
 
     # ==================================================
     # AUTOTILE
@@ -329,19 +258,39 @@ class TileMapRenderer:
     # RENDER
     # ==================================================
 
-    def renderizar(self, dt):
+    def renderizar(self, dt, camera):
         if not self.carregado:
             return
 
-        for linha in range(self.altura):
-            for coluna in range(self.largura):
+        inicio_x = max(
+            0,
+            int(camera.x // self.TILE_SIZE),
+        )
+
+        fim_x = min(
+            self.largura,
+            int((camera.x + camera.largura) // self.TILE_SIZE) + 2,
+        )
+
+        inicio_y = max(
+            0,
+            int(camera.y // self.TILE_SIZE),
+        )
+
+        fim_y = min(
+            self.altura,
+            int((camera.y + camera.altura) // self.TILE_SIZE) + 2,
+        )
+
+        for linha in range(inicio_y, fim_y):
+            for coluna in range(inicio_x, fim_x):
                 sprite = self.obter_sprite(coluna, linha)
 
                 if sprite is None:
                     continue
 
-                x = self.offset_x + coluna * self.TILE_SIZE
-                y = self.offset_y + linha * self.TILE_SIZE
+                x = self.offset_x + coluna * self.TILE_SIZE - camera.x
+                y = self.offset_y + linha * self.TILE_SIZE - camera.y
 
                 if sprite == self.agua_parada:
                     x += self.offset_agua_parada_x

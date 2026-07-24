@@ -62,50 +62,6 @@ class BackgroundRenderer:
         )
 
         # =====================================
-        # FEIRA MANHÃ
-        # =====================================
-
-        background_feira_manha = asset_manager.carregar("background_feira_manha.webp")
-
-        self.background_feira_manha = self.transform.escalar(
-            background_feira_manha, (largura, altura)
-        )
-
-        # =====================================
-        # FEIRA DIA
-        # =====================================
-
-        background_feira = asset_manager.carregar("background_feira.webp")
-
-        self.background_feira = self.transform.escalar(
-            background_feira, (largura, altura)
-        )
-
-        # =====================================
-        # FEIRA FINAL TARDE
-        # =====================================
-
-        background_feira_final_tarde = asset_manager.carregar(
-            "background_feira_final_tarde.webp"
-        )
-
-        self.background_feira_final_tarde = self.transform.escalar(
-            background_feira_final_tarde, (largura, altura)
-        )
-
-        # =====================================
-        # FEIRA NOITE
-        # =====================================
-
-        background_feira_night = asset_manager.carregar(
-            "background_feira_night_19h.webp"
-        )
-
-        self.background_feira_night = self.transform.escalar(
-            background_feira_night, (largura, altura)
-        )
-
-        # =====================================
         # CHUVA
         # =====================================
 
@@ -115,18 +71,7 @@ class BackgroundRenderer:
             background_chuva, (largura, altura)
         )
 
-        background_feira_chuva = asset_manager.carregar("background_feira_chuva.webp")
-
-        self.background_feira_chuva = self.transform.escalar(
-            background_feira_chuva, (largura, altura)
-        )
-
-        self.cenario_feira = False
-
     def obter_background_atual(self):
-        if self.cenario_feira:
-            return self.obter_background_feira()
-
         hora_atual = self.ambiente.obter_hora_decimal()
 
         if self.esta_chovendo() and not (hora_atual >= 18.5 or hora_atual < 6):
@@ -159,36 +104,17 @@ class BackgroundRenderer:
 
         return self.background_day
 
-    def obter_background_feira(self):
-        if self.esta_chovendo():
-            return self.background_feira_chuva
-
-        hora_atual = self.ambiente.obter_hora_decimal()
-
-        if 6 <= hora_atual < 12:
-            return self.background_feira_manha
-
-        if 15 <= hora_atual < 18.5:
-            return self.background_feira_final_tarde
-
-        if hora_atual >= 18.5 or hora_atual < 6:
-            return self.background_feira_night
-
-        return self.background_feira
-
     def eh_dia(self):
         return self.ambiente.eh_dia()
 
     def esta_chovendo(self):
         return self.ambiente.esta_chovendo(self.clima_service)
 
-    def desenhar(self, dt):
-        # background = self.obter_background_atual()
-        # self.tela.blit(background, (0, 0))
+    def desenhar(self, dt, camera):
         self.tilemap_renderer.atualizar_carregamento()
 
         self.ceu_renderer.desenhar()
-        self.tilemap_renderer.renderizar(dt)
+        self.tilemap_renderer.renderizar(dt, camera)
 
 
 class CeuRenderer:

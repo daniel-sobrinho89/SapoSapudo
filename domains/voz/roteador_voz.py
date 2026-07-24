@@ -12,9 +12,6 @@ class RoteadorVoz:
                 "dados": comando_spotify,
             }
 
-        if ComandoVoz.eh_comando_feira(texto):
-            return {"tipo": "feira"}
-
         return {
             "tipo": "conversa",
             "texto": texto,

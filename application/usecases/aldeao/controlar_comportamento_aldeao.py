@@ -1,7 +1,7 @@
 import random
 
 from config import LARGURA
-from domains.aldeao.maquina_estado import EstadoAldeao
+from domains.personagem.maquina_estado import EstadoAldeao
 
 
 class ControlarComportamentoAldeaoUseCase:

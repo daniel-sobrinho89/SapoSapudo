@@ -29,13 +29,15 @@ def criar_construcao(nome):
         return criar_castelo()
     elif nome == "Casa":
         return criar_casa()
+    elif nome == "Quartel":
+        return criar_quartel()
 
 
 def criar_castelo():
     return Construcao(
         "Castelo",
-        madeira=20,
-        ouro=40,
+        madeira=30,
+        ouro=50,
     )
 
 
@@ -45,3 +47,19 @@ def criar_casa():
         madeira=10,
         ouro=0,
     )
+
+
+def criar_quartel():
+    return Construcao(
+        "Quartel",
+        madeira=0,
+        ouro=0,
+    )
+
+
+# def criar_quartel():
+#     return Construcao(
+#         "Quartel",
+#         madeira=20,
+#         ouro=10,
+#     )

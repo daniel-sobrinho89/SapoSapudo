@@ -35,9 +35,6 @@ class Sapo:
         # FLAGS mínimas
         self.acoplado_violao = False
         self.background_renderer = None
-        self.indo_para_feira = False
-        self.retornando_da_feira = False
-        self.comando_ir_feira = False
         self.violao = violao
         self.spotify = spotify
         self.distancia_violao = distancia_violao

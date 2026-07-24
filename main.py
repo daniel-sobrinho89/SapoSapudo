@@ -173,12 +173,9 @@ class GameWidget(Widget):
             self.ambiente,
         )
 
-        if self.background_renderer.cenario_feira:
-            self.gerenciador_cenarios.cenario_feira.carregar()
-        else:
-            self.gerenciador_cenarios.cenario_principal.carregar()
-            self.evento_livro = self.cenario.evento_livro
-            self.livro = self.cenario.livro
+        self.gerenciador_cenarios.cenario_principal.carregar()
+        self.evento_livro = self.cenario.evento_livro
+        self.livro = self.cenario.livro
 
         self.client = QwenLocalClient()
         self.conversa_sapudo = ConversaSapudo(self.client)
@@ -190,9 +187,6 @@ class GameWidget(Widget):
             self.texture = Texture.create(size=(LARGURA, ALTURA), colorfmt="rgba")
             self.texture.flip_vertical()
             self.rect = Rectangle(texture=self.texture, pos=(0, 0), size=Window.size)
-
-    def carregar_cenario_feira(self):
-        self.gerenciador_cenarios.carregar_cenario_feira()
 
     def on_size(self, *args):
         self.rect.size = (self.width, self.height)

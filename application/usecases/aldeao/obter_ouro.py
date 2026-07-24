@@ -1,7 +1,7 @@
 from math import hypot
 
-from domains.aldeao.maquina_estado import EstadoAldeao
 from domains.ouro.maquina_estado import EstadoOuro
+from domains.personagem.maquina_estado import EstadoAldeao
 
 
 class ObterOuroUseCase:
@@ -15,14 +15,12 @@ class ObterOuroUseCase:
         self.guardar_recurso_y = 265
 
         self.mina = None
-        self.renderer_ouro = None
 
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, mina, renderer_ouro, personagem):
+    def iniciar(self, mina, personagem):
         self.mina = mina
-        self.renderer_ouro = renderer_ouro
         self.aldeao = personagem
 
         self.tempo = 0.0
@@ -50,7 +48,7 @@ class ObterOuroUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.renderer_ouro.corpo_rect
+        rect = self.mina.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -121,11 +119,10 @@ class ObterOuroUseCase:
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "ouro")
 
             if self.mina.animacoes.estado == EstadoOuro.OBTIDO:
-                self.cenario_principal.remover_recurso(self.renderer_ouro)
+                self.cenario_principal.remover_recurso(self.mina)
                 self.mina = None
-                self.renderer_ouro = None
             else:
-                self.iniciar(self.mina, self.renderer_ouro, self.aldeao)
+                self.iniciar(self.mina, self.aldeao)
 
             return
 

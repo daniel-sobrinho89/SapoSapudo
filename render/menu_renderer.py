@@ -120,7 +120,7 @@ class MenuRenderer:
 
         linhas = linhas_slots + 2
 
-        centros = []
+        slots = []
 
         for linha in range(linhas):
             for coluna in range(COLUNAS):
@@ -148,7 +148,8 @@ class MenuRenderer:
                     linha < linhas_slots
                     and (linha * COLUNAS + coluna) < quantidade_itens
                 ):
-                    SLOT_OFFSET_X = 14
+                    SLOT_OFFSET_X = -13 if coluna == 2 else 14
+
                     SLOT_OFFSET_Y = 18
 
                     rect = self.slot.get_rect(
@@ -163,6 +164,6 @@ class MenuRenderer:
                         rect,
                     )
 
-                    centros.append(rect.center)
+                    slots.append(rect)
 
-        return centros
+        return slots

@@ -15,17 +15,6 @@ class ComandoVoz:
         return texto
 
     @classmethod
-    def eh_comando_feira(cls, texto):
-        texto = cls.normalizar(texto)
-        texto = texto.replace("sapado", "sapudo")
-        texto = texto.replace("sapo do", "sapudo")
-        texto = texto.replace("sabudo", "sapudo")
-        if "sapudo" not in texto:
-            return False
-
-        return "feira" in texto
-
-    @classmethod
     def obter_comando_spotify(cls, texto):
         texto = cls.normalizar(texto)
         texto = texto.replace("sapado", "sapudo")

@@ -1,7 +1,7 @@
 from math import hypot
 
-from domains.aldeao.maquina_estado import EstadoAldeao
 from domains.ovelha.maquina_estado import EstadoOvelha
+from domains.personagem.maquina_estado import EstadoAldeao
 
 
 class ObterCarneUseCase:
@@ -15,14 +15,12 @@ class ObterCarneUseCase:
         self.guardar_recurso_y = 255
 
         self.animal = None
-        self.renderer_animal = None
 
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, animal, renderer_animal, personagem):
+    def iniciar(self, animal, personagem):
         self.animal = animal
-        self.renderer_animal = renderer_animal
         self.aldeao = personagem
 
         self.tempo = 0.0
@@ -50,7 +48,7 @@ class ObterCarneUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.renderer_animal.corpo_rect
+        rect = self.animal.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -125,11 +123,9 @@ class ObterCarneUseCase:
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "carne")
 
             if self.animal.animacoes.estado == EstadoOvelha.OBTIDO:
-                self.cenario_principal.remover_recurso(self.renderer_animal)
                 self.animal = None
-                self.renderer_animal = None
             else:
-                self.iniciar(self.animal, self.renderer_animal, self.aldeao)
+                self.iniciar(self.animal, self.aldeao)
 
             return
 

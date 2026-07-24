@@ -1,8 +1,8 @@
 import kivy_adapter
 from core.mouse_events import Hover
-from domains.construcao.entity import criar_casa, criar_castelo
-from render.construcao_render import ConstrucaoRenderer
+from domains.construcao.entity import criar_casa, criar_castelo, criar_quartel
 from render.menu_renderer import MenuRenderer
+from render.sprite_animado_renderer import SpriteAnimadoRenderer
 
 
 class MenuConstrucoesRenderer:
@@ -17,12 +17,16 @@ class MenuConstrucoesRenderer:
         self.transform = transform
 
         self.castelo = criar_castelo()
-        self.renderer_castelo = ConstrucaoRenderer(
-            tela, assets, transform, "castelo", 1, 0.25
+        self.renderer_castelo = SpriteAnimadoRenderer(
+            tela, assets, transform, "castelo", 0.25
         )
         self.casa = criar_casa()
-        self.renderer_casa = ConstrucaoRenderer(
-            tela, assets, transform, "casa", 1, 0.25
+        self.renderer_casa = SpriteAnimadoRenderer(
+            tela, assets, transform, "casa", 0.25
+        )
+        self.quartel = criar_quartel()
+        self.renderer_quartel = SpriteAnimadoRenderer(
+            tela, assets, transform, "quartel", 0.25
         )
 
         self.menu_renderer = MenuRenderer(
@@ -39,12 +43,17 @@ class MenuConstrucoesRenderer:
                 "construcao": self.casa,
                 "renderer": self.renderer_casa,
             },
+            {
+                "construcao": self.quartel,
+                "renderer": self.renderer_quartel,
+            },
         ]
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
         self.renderer_castelo.atualizar_carregamento()
         self.renderer_casa.atualizar_carregamento()
+        self.renderer_quartel.atualizar_carregamento()
 
     def obter_opcao_clicada(self, pos):
         for opcao in self.opcoes:
@@ -63,6 +72,7 @@ class MenuConstrucoesRenderer:
         self,
         aldeao,
         cenario,
+        camera,
     ):
         if not aldeao.menu_construcoes_aberto:
             return
@@ -76,32 +86,39 @@ class MenuConstrucoesRenderer:
             len(self.opcoes),
         )
 
-        for (slot_x, slot_y), opcao in zip(slots, self.opcoes):
+        for slot, opcao in zip(slots, self.opcoes):
             construcao = opcao["construcao"]
             renderer = opcao["renderer"]
 
-            construcao.x = slot_x
-            construcao.y = slot_y
+            construcao.x = slot.centerx
+            construcao.y = slot.centery
 
             alpha = 255 if cenario.construcao_desbloqueada(construcao) else 90
 
             if construcao.nome == "Castelo" and cenario.possui_castelo:
                 alpha = 90
 
-            construcao.x = slot_x
-            construcao.y = slot_y
+            camera_x = camera.x
+            camera_y = camera.y
+
+            camera.x = 0
+            camera.y = 0
 
             renderer.renderizar(
                 construcao,
                 construcao.animacoes,
+                camera,
                 alpha,
             )
+
+            camera.x = camera_x
+            camera.y = camera_y
 
             if Hover.esta_sobre(construcao.corpo_rect):
                 kivy_adapter.draw.text(
                     self.tela,
                     f"Madeira {cenario.total_madeira}/{construcao.custo_madeira}",
-                    (slot_x - 25, slot_y + 35),
+                    (slot.left - 20, slot.bottom + 5),
                     (255, 255, 255),
                     15,
                 )
@@ -109,7 +126,7 @@ class MenuConstrucoesRenderer:
                 kivy_adapter.draw.text(
                     self.tela,
                     f"Ouro {cenario.total_ouro}/{construcao.custo_ouro}",
-                    (slot_x - 25, slot_y + 52),
+                    (slot.left - 20, slot.bottom + 22),
                     (255, 255, 255),
                     15,
                 )

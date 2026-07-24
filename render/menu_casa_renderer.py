@@ -1,70 +1,114 @@
 import kivy_adapter
 from core.mouse_events import Hover
-from domains.aldeao.entity import criar_aldeao
-from render.aldeao_renderer import AldeaoRenderer
+from domains.personagem.entity import criar_aldeao, criar_soldado
 from render.menu_renderer import MenuRenderer
+from render.sprite_animado_renderer import SpriteAnimadoRenderer
 
 
 class MenuCasaRenderer:
     def __init__(self, tela, assets, transform):
         self.tela = tela
 
-        self.aldeao_preview = criar_aldeao()
-        self.renderer_aldeao = AldeaoRenderer(tela, assets, transform, 1.0)
+        self.aldeao = criar_aldeao()
+        self.soldado = criar_soldado()
+
+        self.renderer_aldeao = SpriteAnimadoRenderer(
+            tela,
+            assets,
+            transform,
+            "aldeao",
+            1.0,
+        )
+
+        self.renderer_soldado = SpriteAnimadoRenderer(
+            tela,
+            assets,
+            transform,
+            "soldado",
+            1.0,
+        )
         self.menu_renderer = MenuRenderer(
             tela,
             assets,
             transform,
         )
 
+        self.opcoes = [
+            {
+                "personagem": self.aldeao,
+                "renderer": self.renderer_aldeao,
+            },
+            {
+                "personagem": self.soldado,
+                "renderer": self.renderer_soldado,
+            },
+        ]
+
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
         self.renderer_aldeao.atualizar_carregamento(10)
+        self.renderer_soldado.atualizar_carregamento(5)
 
-    def obter_opcao_clicada(self, pos):
-        if (
-            self.aldeao_preview.corpo_rect
-            and self.aldeao_preview.corpo_rect.collidepoint(pos)
-        ):
-            return self.aldeao_preview
+    def obter_opcao_clicada(self, pos, cenario):
+        for opcao in self.opcoes:
+            personagem = opcao["personagem"]
+
+            if not cenario.personagem_desbloqueado(personagem):
+                continue
+
+            if personagem.corpo_rect and personagem.corpo_rect.collidepoint(pos):
+                return personagem
 
         return None
 
     def obter_renderer(self, personagem):
-        if personagem.nome == "Aldeao":
-            return self.renderer_aldeao
+        for opcao in self.opcoes:
+            if opcao["personagem"].nome == personagem.nome:
+                return opcao["renderer"]
 
-    def renderizar(
-        self,
-        construcao,
-        cenario,
-    ):
+    def renderizar(self, construcao, cenario, camera):
         if not construcao.menu_aberto:
             return
 
         MENU_X = self.tela.get_width() - 220
         MENU_Y = 40
 
-        slots = self.menu_renderer.renderizar(MENU_X, MENU_Y, 1)
-
-        slot_x, slot_y = slots[0]
-
-        self.aldeao_preview.x = slot_x
-        self.aldeao_preview.y = slot_y
-
-        self.renderer_aldeao.renderizar(
-            self.aldeao_preview,
-            self.aldeao_preview.animacoes,
-            alpha=255 if cenario.total_carne >= self.aldeao_preview.custo_carne else 90,
-            x=slot_x,
-            y=slot_y,
+        slots = self.menu_renderer.renderizar(
+            MENU_X,
+            MENU_Y,
+            len(self.opcoes),
         )
 
-        if Hover.esta_sobre(self.aldeao_preview.corpo_rect):
-            kivy_adapter.draw.text(
-                self.tela,
-                f"Carne {cenario.total_carne}/{self.aldeao_preview.custo_carne}",
-                (slot_x - 25, slot_y + 35),
-                (255, 255, 255),
-                15,
+        for slot, opcao in zip(slots, self.opcoes):
+            personagem = opcao["personagem"]
+            renderer = opcao["renderer"]
+
+            personagem.x = slot.centerx
+            personagem.y = slot.centery
+
+            alpha = 255 if cenario.personagem_desbloqueado(personagem) else 90
+
+            camera_x = camera.x
+            camera_y = camera.y
+
+            camera.x = 0
+            camera.y = 0
+
+            renderer.renderizar(
+                personagem,
+                personagem.animacoes,
+                camera,
+                alpha,
             )
+
+            camera.x = camera_x
+            camera.y = camera_y
+
+            if Hover.esta_sobre(personagem.corpo_rect):
+                kivy_adapter.draw.text(
+                    self.tela,
+                    f"Carne {cenario.total_carne}/{personagem.custo_carne}",
+                    (slot.left - 20, slot.bottom + 5),
+                    (255, 255, 255),
+                    15,
+                )

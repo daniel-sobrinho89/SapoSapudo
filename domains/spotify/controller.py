@@ -171,9 +171,6 @@ class ControladorVozMusical:
                         rota["dados"], self.desligar_microfone
                     )
 
-                elif rota["tipo"] == "feira":
-                    self._processar_comando_feira()
-
                 elif rota["tipo"] == "conversa":
                     self._processar_conversa(rota["texto"])
             else:
@@ -184,11 +181,6 @@ class ControladorVozMusical:
         self.controlar_comportamento_sapo.executar(dt)
         self.atualizar_fluxo_spotify.executar(dt)
         self.coordenador_estado_jogo.executar(dt)
-
-    def _processar_comando_feira(self):
-        self.desligar_microfone()
-        self.controlar_comportamento_sapo.ir_para_feira()
-        self.audio.tocar_passeio_sapudo()
 
     def iniciar_controle_esquerda(self):
         self.controlar_comportamento_sapo.iniciar_controle_esquerda()

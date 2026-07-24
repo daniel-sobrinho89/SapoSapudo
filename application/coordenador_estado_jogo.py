@@ -42,7 +42,6 @@ class CoordenadorEstadoJogo:
         self.gerenciador_cenarios = gerenciador_cenarios
         self.double_click = DoubleClickDetector()
         self.controladores = {}
-
         self.resgatar_violao = ResgatarViolaoUseCase(self.duende, self.violao)
         self.resgatar_livro = ResgatarLivroUseCase(self.duende, self.sapo, self.livro)
         self.controlar_sono_duende = ControlarSonoDuendeUseCase(
@@ -86,15 +85,14 @@ class CoordenadorEstadoJogo:
 
         for personagem in self.gerenciador_cenarios.personagens:
             ctrl = self.gerenciador_cenarios.controladores[personagem]
+            maquina = personagem.animacoes.maquina
 
-            if personagem.animacoes.maquina.interagindo_arvore():
-                ctrl["corte"].executar(dt)
-            elif personagem.animacoes.maquina.interagindo_ouro():
-                ctrl["ouro"].executar(dt)
-            elif personagem.animacoes.maquina.interagindo_carne():
-                ctrl["carne"].executar(dt)
+            for estado, acao in ctrl["acoes"].items():
+                if getattr(maquina, f"interagindo_{estado}")():
+                    acao["usecase"].executar(dt)
+                    break
             else:
-                ctrl["ia"].executar(dt, personagem)
+                ctrl["padrao"].executar(dt, personagem)
 
         for ovelha in self.gerenciador_cenarios.ovelhas:
             self.controlar_comportamento_ovelha.executar(dt, ovelha)
@@ -146,14 +144,15 @@ class CoordenadorEstadoJogo:
         self.processar_comando_spotify.executar(rota["dados"], finalizar_comando)
 
     def processar_toque_down(self, pos_virtual, renderer_violao):
+        mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
         # ==========================================================
         # Seleção de aldeão / duplo clique na casa
         # ==========================================================
         for personagem in self.gerenciador_cenarios.personagens:
             if personagem.corpo_rect and personagem.corpo_rect.collidepoint(
-                pos_virtual
+                mouse_mundo
             ):
-                if self.double_click.detectar(pos_virtual):
+                if self.double_click.detectar(mouse_mundo):
                     personagem.menu_construcoes_aberto = (
                         not personagem.menu_construcoes_aberto
                     )
@@ -180,44 +179,24 @@ class CoordenadorEstadoJogo:
         if personagem and not personagem.animacoes.maquina.carregando_recuso():
             ctrl = self.gerenciador_cenarios.controladores[personagem]
 
-            for arvore, renderer in zip(
-                self.gerenciador_cenarios.arvores,
-                self.gerenciador_cenarios.renderers_arvores,
-            ):
-                if renderer.corpo_rect.collidepoint(pos_virtual):
-                    ctrl["corte"].iniciar(arvore, renderer, personagem)
-                    personagem.selecionado = False
-                    return
+            for acao in ctrl["acoes"].values():
+                for item in acao["itens"]:
+                    if item.corpo_rect.collidepoint(mouse_mundo):
+                        acao["usecase"].iniciar(
+                            item,
+                            personagem,
+                        )
 
-            for ouro, renderer in zip(
-                self.gerenciador_cenarios.ouro,
-                self.gerenciador_cenarios.renderers_ouro,
-            ):
-                if renderer.corpo_rect.collidepoint(pos_virtual):
-                    ctrl["ouro"].iniciar(ouro, renderer, personagem)
-                    personagem.selecionado = False
-                    return
-
-            for ovelha, renderer in zip(
-                self.gerenciador_cenarios.ovelhas,
-                self.gerenciador_cenarios.renderers_ovelhas,
-            ):
-                if renderer.corpo_rect.collidepoint(pos_virtual):
-                    ctrl["carne"].iniciar(ovelha, renderer, personagem)
-                    personagem.selecionado = False
-                    return
+                        personagem.selecionado = False
+                        return
 
         # ==========================================================
         # Construções
         # ==========================================================
         for construcao in self.gerenciador_cenarios.construcoes:
-            renderer = self.gerenciador_cenarios.menu_construcoes.obter_renderer(
-                construcao
-            )
-
-            if renderer.corpo_rect.collidepoint(
-                pos_virtual
-            ) and self.double_click.detectar(pos_virtual):
+            if construcao.corpo_rect.collidepoint(
+                mouse_mundo
+            ) and self.double_click.detectar(mouse_mundo):
                 construcao.menu_aberto = not construcao.menu_aberto
                 return
 
@@ -227,17 +206,17 @@ class CoordenadorEstadoJogo:
 
         if construcao:
             self.construir.iniciar_arraste(
-                pos_virtual, self.gerenciador_cenarios, construcao=construcao
+                mouse_mundo, self.gerenciador_cenarios, construcao=construcao
             )
             return
 
         personagem = self.gerenciador_cenarios.menu_casa_renderer.obter_opcao_clicada(
-            pos_virtual
+            pos_virtual, self.gerenciador_cenarios
         )
 
         if personagem:
             self.construir.iniciar_arraste(
-                pos_virtual, self.gerenciador_cenarios, personagem=personagem
+                mouse_mundo, self.gerenciador_cenarios, personagem=personagem
             )
             return
 
@@ -264,7 +243,16 @@ class CoordenadorEstadoJogo:
         ):
             return True
 
+        camera = self.gerenciador_cenarios.camera
+        camera.arrastando = True
+        camera.ultimo_mouse = pos_virtual
+
     def processar_toque_up(self, pos_virtual):
+        camera = self.gerenciador_cenarios.camera
+        camera.arrastando = False
+        camera.ultimo_mouse = None
+        mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
+
         if self.duende.arraste.ativo and not (self.duende.animacoes.teleportando):
             duende_indo_dormir = self.controlar_sono_duende.processar_soltou_duende(
                 self.duende.arraste,
@@ -282,16 +270,31 @@ class CoordenadorEstadoJogo:
             or self.gerenciador_cenarios.personagem_arrastando
         ):
             self.construir.finalizar_arraste(
-                pos_virtual,
+                mouse_mundo,
                 self.gerenciador_cenarios,
             )
 
     def processar_on_touch_move(self, pos_virtual):
+        camera = self.gerenciador_cenarios.camera
+
+        if camera.arrastando:
+            dx = pos_virtual[0] - camera.ultimo_mouse[0]
+            dy = pos_virtual[1] - camera.ultimo_mouse[1]
+
+            camera.x -= dx
+            camera.y -= dy
+
+            camera.ultimo_mouse = pos_virtual
+            return
+
+        mouse_mundo = camera.mundo(*pos_virtual)
+
         if (
             self.gerenciador_cenarios.construcao_arrastando
             or self.gerenciador_cenarios.personagem_arrastando
         ):
             self.construir.atualizar_arraste(
-                pos_virtual,
+                mouse_mundo,
                 self.gerenciador_cenarios,
             )
+            return

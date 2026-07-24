@@ -1,7 +1,7 @@
 from math import hypot
 
-from domains.aldeao.maquina_estado import EstadoAldeao
 from domains.arvore.maquina_estado import EstadoArvore
+from domains.personagem.maquina_estado import EstadoAldeao
 
 
 class CortarArvoreUseCase:
@@ -15,14 +15,12 @@ class CortarArvoreUseCase:
         self.guardar_recurso_y = 275
 
         self.arvore = None
-        self.renderer_arvore = None
 
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, arvore, renderer_arvore, personagem):
+    def iniciar(self, arvore, personagem):
         self.arvore = arvore
-        self.renderer_arvore = renderer_arvore
         self.aldeao = personagem
 
         self.tempo = 0.0
@@ -50,7 +48,7 @@ class CortarArvoreUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.renderer_arvore.corpo_rect
+        rect = self.arvore.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -122,9 +120,8 @@ class CortarArvoreUseCase:
 
             if self.arvore.animacoes.estado == EstadoArvore.CORTADA:
                 self.arvore = None
-                self.renderer_arvore = None
             else:
-                self.iniciar(self.arvore, self.renderer_arvore, self.aldeao)
+                self.iniciar(self.arvore, self.aldeao)
 
             return
 

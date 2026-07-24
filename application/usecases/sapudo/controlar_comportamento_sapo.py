@@ -38,14 +38,6 @@ class ControlarComportamentoSapoUseCase:
         self._narracao_livro_disparada = False
         self._estado_sapo_anterior = None
 
-    def ir_para_feira(self):
-        self.sapo.comando_ir_feira = True
-        self.sapo.andar_iniciado_por_controle = False
-        if self.sapo.pode_caminhar():
-            self.animacoes.proxima_tentativa_caminhada = None
-            self.animacoes._ultimo_frame_andar = -1
-            self.animacoes.iniciar_andar_esquerda()
-
     def iniciar_controle_esquerda(self):
         if not self.sapo.pode_caminhar():
             return
@@ -96,24 +88,14 @@ class ControlarComportamentoSapoUseCase:
         horario_atual = (agora.hour, agora.minute)
         executar_caminhada = False
 
-        if self.sapo.controle_esquerda and not self.sapo.indo_para_feira:
+        if self.sapo.controle_esquerda:
             self.sapo.x -= 4
-            if self.sapo.background_renderer.cenario_feira and self.sapo.x <= 0:
-                self.sapo.x = 0
 
         if self.sapo.controle_direita:
             self.sapo.x += 4
 
-            if self.sapo.background_renderer.cenario_feira:
-                if self.sapo.x > LARGURA:
-                    excesso = self.sapo.x - LARGURA
-
-                    self.sapo.background_renderer.cenario_feira = False
-                    self.sapo.x = excesso
-
-            else:
-                if self.sapo.x > LARGURA:
-                    self.sapo.x = LARGURA
+            if self.sapo.x > LARGURA:
+                self.sapo.x = LARGURA
 
         intencao = self._escolher_intencao(
             agora,
@@ -146,33 +128,6 @@ class ControlarComportamentoSapoUseCase:
             if frame_atual != self.animacoes._ultimo_frame_andar:
                 self.animacoes._ultimo_frame_andar = frame_atual
                 self.sapo.x -= 4
-
-            if (
-                self.sapo.x < 0
-                and (self.sapo.comando_ir_feira or not self.sapo.indo_para_feira)
-                and not self.sapo.background_renderer.cenario_feira
-            ):
-                self.sapo.background_renderer.cenario_feira = True
-                self.sapo.indo_para_feira = True
-
-                self.sapo.x = LARGURA + 100
-                self.sapo.comando_ir_feira = False
-
-            if self.sapo.indo_para_feira:
-                destino = (LARGURA // 2) + 180
-
-                if self.sapo.x <= destino:
-                    self.sapo.x = destino
-
-                    self.sapo.indo_para_feira = False
-                    self.sapo.comando_ir_feira = False
-
-                    self.sapo.controle_esquerda = False
-                    self.sapo.andando_manual = False
-
-                    self.animacoes.maquina.trocar(EstadoSapo.PARADO)
-
-                    self.animacoes._ultimo_frame_andar = -1
 
         if self.animacoes.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             frame_atual = self.animacoes.andar_direita.frame

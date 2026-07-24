@@ -1,5 +1,5 @@
-from domains.aldeao.entity import criar_personagem
 from domains.construcao.entity import criar_construcao
+from domains.personagem.entity import criar_personagem
 
 
 class ConstruirUseCase:
@@ -91,15 +91,15 @@ class ConstruirUseCase:
             carnes = cenario.personagem_arrastando.custo_carne
 
         for renderer in cenario.renderers_recursos:
-            if renderer.nome_recurso == "madeira" and madeiras:
+            if renderer.tipo == "madeira" and madeiras:
                 madeiras -= 1
                 continue
 
-            if renderer.nome_recurso == "ouro" and ouros:
+            if renderer.tipo == "ouro" and ouros:
                 ouros -= 1
                 continue
 
-            if renderer.nome_recurso == "carne" and carnes:
+            if renderer.tipo == "carne" and carnes:
                 carnes -= 1
                 continue
 
