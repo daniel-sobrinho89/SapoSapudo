@@ -1,6 +1,6 @@
 import kivy_adapter
 from core.mouse_events import Hover
-from domains.personagem.entity import criar_aldeao, criar_soldado
+from domains.personagem.entity import criar_aldeao, criar_goblin_tocha, criar_soldado
 from render.menu_renderer import MenuRenderer
 from render.sprite_animado_renderer import SpriteAnimadoRenderer
 
@@ -11,6 +11,7 @@ class MenuCasaRenderer:
 
         self.aldeao = criar_aldeao()
         self.soldado = criar_soldado()
+        self.goblin_tocha = criar_goblin_tocha()
 
         self.renderer_aldeao = SpriteAnimadoRenderer(
             tela,
@@ -27,6 +28,15 @@ class MenuCasaRenderer:
             "soldado",
             1.0,
         )
+
+        self.renderer_goblin_tocha = SpriteAnimadoRenderer(
+            tela,
+            assets,
+            transform,
+            "goblin_tocha",
+            1.0,
+        )
+
         self.menu_renderer = MenuRenderer(
             tela,
             assets,
@@ -37,17 +47,27 @@ class MenuCasaRenderer:
             {
                 "personagem": self.aldeao,
                 "renderer": self.renderer_aldeao,
+                "frames": 10,
             },
             {
                 "personagem": self.soldado,
                 "renderer": self.renderer_soldado,
+                "frames": 5,
+            },
+            {
+                "personagem": self.goblin_tocha,
+                "renderer": self.renderer_goblin_tocha,
+                "frames": 5,
             },
         ]
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
-        self.renderer_aldeao.atualizar_carregamento(10)
-        self.renderer_soldado.atualizar_carregamento(5)
+
+        for opcao in self.opcoes:
+            opcao["renderer"].atualizar_carregamento(
+                opcao["frames"],
+            )
 
     def obter_opcao_clicada(self, pos, cenario):
         for opcao in self.opcoes:

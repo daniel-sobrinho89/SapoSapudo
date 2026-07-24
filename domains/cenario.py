@@ -1,6 +1,9 @@
 from application.usecases.aldeao.controlar_comportamento_aldeao import (
     ControlarComportamentoAldeaoUseCase,
 )
+from application.usecases.aldeao.controlar_comportamento_goblin_tocha import (
+    ControlarComportamentoGoblinTochaUseCase,
+)
 from application.usecases.aldeao.controlar_comportamento_soldado import (
     ControlarComportamentoSoldadoUseCase,
 )
@@ -148,9 +151,14 @@ class CenarioPrincipal(CenarioBase):
                     },
                 },
             }
-        else:
+        elif personagem.nome == "Soldado":
             self.controladores[personagem] = {
                 "padrao": ControlarComportamentoSoldadoUseCase(),
+                "acoes": {},
+            }
+        else:
+            self.controladores[personagem] = {
+                "padrao": ControlarComportamentoGoblinTochaUseCase(),
                 "acoes": {},
             }
 
@@ -202,6 +210,7 @@ class CenarioPrincipal(CenarioBase):
         self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro, [])
 
         self.adicionar_personagem(criar_personagem("Aldeao"))
+        self.adicionar_personagem(criar_personagem("GoblinTocha", x=1200, y=500))
         self.menu_construcoes = MenuConstrucoesRenderer(
             self.tela, asset_manager, self.transform
         )

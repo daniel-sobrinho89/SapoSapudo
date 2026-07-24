@@ -1,5 +1,6 @@
 from core.animacao import Animacao
 from domains.personagem.maquina_estado import MaquinaEstadoAldeao
+from domains.personagem.maquina_estado_goblin_tocha import MaquinaEstadoGoblinTocha
 from domains.personagem.maquina_estado_soldado import MaquinaEstadoSoldado
 
 CONFIG = {
@@ -39,6 +40,17 @@ CONFIG = {
             "ocioso_flip": (8, 0.20),
             "correndo": (6, 0.15),
             "correndo_flip": (6, 0.15),
+        },
+    },
+    "GoblinTocha": {
+        "maquina": MaquinaEstadoGoblinTocha,
+        "animacoes": {
+            "ocioso": (8, 0.20),
+            "ocioso_flip": (8, 0.20),
+            "correndo": (6, 0.15),
+            "correndo_flip": (6, 0.15),
+            "atacando": (8, 0.15),
+            "atacando_flip": (8, 0.15),
         },
     },
 }

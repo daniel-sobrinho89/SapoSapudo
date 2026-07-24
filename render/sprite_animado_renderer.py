@@ -110,6 +110,14 @@ class SpriteAnimadoRenderer:
                 ("nivel_ouro1", "ouro/mina_ouro_006.png", 6),
             ],
         },
+        "goblin_tocha": {
+            "flip": True,
+            "animacoes": [
+                ("ocioso", "goblin/tocha/goblin_ocioso.png", 8),
+                ("correndo", "goblin/tocha/goblin_correndo.png", 6),
+                ("atacando", "goblin/tocha/goblin_atacando.png", 8),
+            ],
+        },
     }
 
     def __init__(

@@ -2,15 +2,9 @@ from domains.personagem.animacoes import AnimacoesPersonagem
 
 
 class Personagem:
-    def __init__(
-        self,
-        nome="Aldeao",
-        madeira=0,
-        ouro=0,
-        carne=0,
-    ):
-        self.x = 400
-        self.y = 450
+    def __init__(self, nome="Aldeao", madeira=0, ouro=0, carne=0, x=400, y=450):
+        self.x = x
+        self.y = y
         self.animacoes = AnimacoesPersonagem(nome)
         self.controlador = None
         self.corpo_rect = None
@@ -27,11 +21,13 @@ class Personagem:
         self.animacoes.atualizar(dt)
 
 
-def criar_personagem(nome):
+def criar_personagem(nome, x=400, y=450):
     if nome == "Aldeao":
         return criar_aldeao()
     elif nome == "Soldado":
         return criar_soldado()
+    elif nome == "GoblinTocha":
+        return criar_goblin_tocha(x, y)
 
 
 def criar_aldeao():
@@ -46,3 +42,7 @@ def criar_soldado():
         "Soldado",
         carne=0,
     )
+
+
+def criar_goblin_tocha(x=400, y=450):
+    return Personagem("GoblinTocha", carne=0, x=x, y=y)
