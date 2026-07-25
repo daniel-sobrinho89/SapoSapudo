@@ -1,28 +1,24 @@
 import random
 
 from application.usecases.mover_personagem import MoverPersonagemUseCase
-from config import LARGURA
-from domains.personagem.maquina_estado_goblin_tocha import EstadoGoblinTocha
+from domains.personagem.maquina_estado_soldado import EstadoSoldado
 
 
-class ControlarComportamentoGoblinTochaUseCase:
+class ControlarComportamentoSoldadoUseCase:
     def __init__(self, navegacao):
         self.navegacao = navegacao
         self.mover = MoverPersonagemUseCase()
         self.tempo = 0.0
         self.proxima_acao = random.uniform(3, 8)
-        self.velocidade = 35
 
-        self.limite_esquerdo = 30
-        self.limite_direito = LARGURA - 220
-        self.distancia_minima = 40
+        self.velocidade = 35
 
     def executar(self, dt, personagem):
         self.personagem = personagem
 
         if self.personagem.animacoes.estado in (
-            EstadoGoblinTocha.CORRENDO,
-            EstadoGoblinTocha.CORRENDO_FLIP,
+            EstadoSoldado.CORRENDO,
+            EstadoSoldado.CORRENDO_FLIP,
         ):
             self._andar(dt)
             return
@@ -40,7 +36,7 @@ class ControlarComportamentoGoblinTochaUseCase:
         estado = self.personagem.animacoes.estado
         correr = random.random() < 0.35
 
-        if estado == EstadoGoblinTocha.OCIOSO:
+        if estado == EstadoSoldado.OCIOSO:
             if correr:
                 (
                     self.personagem.destino_x,
@@ -52,11 +48,12 @@ class ControlarComportamentoGoblinTochaUseCase:
                     180,
                 )
 
-                self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
-            else:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO_FLIP
+                self.personagem.animacoes.estado = EstadoSoldado.CORRENDO
 
-        elif estado == EstadoGoblinTocha.OCIOSO_FLIP:
+            else:
+                self.personagem.animacoes.estado = EstadoSoldado.OCIOSO_FLIP
+
+        elif estado == EstadoSoldado.OCIOSO_FLIP:
             if correr:
                 (
                     self.personagem.destino_x,
@@ -68,18 +65,19 @@ class ControlarComportamentoGoblinTochaUseCase:
                     180,
                 )
 
-                self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO_FLIP
+                self.personagem.animacoes.estado = EstadoSoldado.CORRENDO_FLIP
+
             else:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO
+                self.personagem.animacoes.estado = EstadoSoldado.OCIOSO
 
     def _andar(self, dt):
         self.mover.executar(
             personagem=self.personagem,
             navegacao=self.navegacao,
             velocidade=self.velocidade,
-            estado_correndo=EstadoGoblinTocha.CORRENDO,
-            estado_correndo_flip=EstadoGoblinTocha.CORRENDO_FLIP,
-            estado_parado=EstadoGoblinTocha.OCIOSO,
-            estado_parado_flip=EstadoGoblinTocha.OCIOSO_FLIP,
+            estado_correndo=EstadoSoldado.CORRENDO,
+            estado_correndo_flip=EstadoSoldado.CORRENDO_FLIP,
+            estado_parado=EstadoSoldado.OCIOSO,
+            estado_parado_flip=EstadoSoldado.OCIOSO_FLIP,
             dt=dt,
         )

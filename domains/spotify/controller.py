@@ -5,7 +5,6 @@ from kivy.clock import Clock
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from application.usecases import (
     AtualizarFluxoSpotifyUseCase,
-    BuscarViolaoUseCase,
     ControlarComportamentoSapoUseCase,
 )
 from config import IS_ANDROID
@@ -24,28 +23,22 @@ class ControladorVozMusical:
         self,
         sapo,
         duende,
-        violao,
-        livro,
         spotify,
         audio,
         controle_renderer,
         gerenciador_cenarios,
         clima_service,
-        evento_livro,
         conversa_sapudo,
         tts,
     ):
         self.sapo = sapo
         self.duende = duende
-        self.violao = violao
-        self.livro = livro
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
         self.esferas = self.gerenciador_cenarios.esferas
-        self.evento_livro = evento_livro
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
         self._pensamento_event = None
@@ -59,18 +52,12 @@ class ControladorVozMusical:
         self.reconhecedor_voz = ReconhecedorAndroid()
         self.tempo_sem_audio = 0
 
-        self.buscar_violao = BuscarViolaoUseCase(self.violao, self.sapo)
-
-        self.atualizar_fluxo_spotify = AtualizarFluxoSpotifyUseCase(
-            self.spotify, self.buscar_violao
-        )
+        self.atualizar_fluxo_spotify = AtualizarFluxoSpotifyUseCase(self.spotify)
 
         self.controlar_comportamento_sapo = ControlarComportamentoSapoUseCase(
             self.sapo,
-            self.violao,
             self.spotify,
             self.audio,
-            self.evento_livro,
             clima_service=self.clima_service,
             tts_service=self.tts,
         )
@@ -78,11 +65,8 @@ class ControladorVozMusical:
         self.coordenador_estado_jogo = CoordenadorEstadoJogo(
             self.sapo,
             self.duende,
-            self.violao,
-            self.livro,
             self.esferas,
             self.clima_service,
-            self.evento_livro,
             self.spotify,
             self.audio,
             self.gerenciador_cenarios,
@@ -123,7 +107,7 @@ class ControladorVozMusical:
             return True
         return False
 
-    def processar_toque_down(self, pos_virtual, renderer_violao):
+    def processar_toque_down(self, pos_virtual):
         # Microfone e Comandos Musicais
         if self.processar_toque_microfone(pos_virtual):
             return
@@ -138,7 +122,7 @@ class ControladorVozMusical:
             self.iniciar_controle_direita()
             return
 
-        self.coordenador_estado_jogo.processar_toque_down(pos_virtual, renderer_violao)
+        self.coordenador_estado_jogo.processar_toque_down(pos_virtual)
 
     def processar_toque_up(self, pos_virtual):
         self.parar_controle_esquerda()
@@ -147,13 +131,6 @@ class ControladorVozMusical:
 
     def processar_on_touch_move(self, pos_virtual):
         self.coordenador_estado_jogo.processar_on_touch_move(pos_virtual)
-
-    def processar_toque_up_livro(self):
-        pass
-        # livro_acoplado = self.acoplar_livro.executar(self.sapo.area_livro())
-        # if livro_acoplado:
-        #     self.resgatar_livro.executar()
-        # return livro_acoplado
 
     def atualizar(self, dt):
         if self.controle_renderer.microfone_ligado:

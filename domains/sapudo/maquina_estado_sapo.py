@@ -71,37 +71,11 @@ class EstadoSapo(Enum):
     DORMINDO = "dormindo"
     ACORDANDO = "acordando"
 
-    PEGANDO_VIOLAO = "pegando_violao"
-    TOCANDO_VIOLAO = "tocando_violao"
-    LEVANTANDO_VIOLAO = "levantando_violao"
-    GUARDANDO_VIOLAO = "guardando_violao"
-    CHEGOU_AO_VIOLAO = "chegou_ao_violao"
-    SOLTANDO_VIOLAO = "soltando_violao"
-
     ANDANDO_ESQUERDA = "andando_esquerda"
     ANDANDO_DIREITA = "andando_direita"
     CONVERSAR = "conversar"
-
-    PEGANDO_LIVRO = "pegando_livro"
-    LENDO_LIVRO = "lendo_livro"
-    LEVANTAR_LIVRO = "levantar_livro"
 
 
 class MaquinaEstadoSapo(StateMachine):
     def __init__(self):
         super().__init__(EstadoSapo.PARADO)
-
-    def esta_com_violao(self):
-        return self.em_estado(
-            EstadoSapo.CHEGOU_AO_VIOLAO,
-            EstadoSapo.PEGANDO_VIOLAO,
-            EstadoSapo.TOCANDO_VIOLAO,
-            EstadoSapo.LEVANTANDO_VIOLAO,
-            EstadoSapo.GUARDANDO_VIOLAO,
-            EstadoSapo.SOLTANDO_VIOLAO,
-        )
-
-    def esta_com_livro(self):
-        return self.em_estado(
-            EstadoSapo.PEGANDO_LIVRO, EstadoSapo.LENDO_LIVRO, EstadoSapo.LEVANTAR_LIVRO
-        )

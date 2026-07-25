@@ -1,0 +1,316 @@
+{
+    "aldeao": {
+        "maquina": "MaquinaEstadoAldeao",
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "aldeao/ocioso/aldeao.png",
+                "frames": 8,
+                "tempo": 0.20
+            },
+            "ocioso_madeira": {
+                "arquivo": "aldeao/ocioso/aldeao_madeira.png",
+                "frames": 8,
+                "tempo": 0.15
+            },
+            "correndo": {
+                "arquivo": "aldeao/correndo/aldeao.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_machado": {
+                "arquivo": "aldeao/correndo/aldeao_machado.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_madeira": {
+                "arquivo": "aldeao/correndo/aldeao_madeira.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_picareta": {
+                "arquivo": "aldeao/correndo/aldeao_picareta.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_ouro": {
+                "arquivo": "aldeao/correndo/aldeao_ouro.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_faca": {
+                "arquivo": "aldeao/correndo/aldeao_faca.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "correndo_carne": {
+                "arquivo": "aldeao/correndo/aldeao_carne.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "usando_machado": {
+                "arquivo": "aldeao/obtendo_recursos/aldeao_machado.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "usando_picareta": {
+                "arquivo": "aldeao/obtendo_recursos/aldeao_picareta.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "usando_faca": {
+                "arquivo": "aldeao/obtendo_recursos/aldeao_faca.png",
+                "frames": 4,
+                "tempo": 0.15
+            }
+        }
+    },
+
+    "soldado": {
+        "maquina": "MaquinaEstadoSoldado",
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "soldado/soldado_ocioso.png",
+                "frames": 8,
+                "tempo": 0.20
+            },
+            "correndo": {
+                "arquivo": "soldado/soldado_correndo.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "atacando1": {
+                "arquivo": "soldado/soldado_atacando1.png",
+                "frames": 4,
+                "tempo": 0.20
+            },
+            "atacando2": {
+                "arquivo": "soldado/soldado_atacando2.png",
+                "frames": 4,
+                "tempo": 0.20
+            }
+        }
+    },
+
+    "goblin_tocha": {
+        "maquina": "MaquinaEstadoGoblinTocha",
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "goblin/tocha/goblin_ocioso.png",
+                "frames": 8,
+                "tempo": 0.20
+            },
+            "correndo": {
+                "arquivo": "goblin/tocha/goblin_correndo.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "atacando": {
+                "arquivo": "goblin/tocha/goblin_atacando.png",
+                "frames": 8,
+                "tempo": 0.15
+            }
+        }
+    },
+
+    "madeira": {
+        "maquina": "MaquinaEstadoRecurso",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "recursos/madeira.png",
+                "frames": 1,
+                "tempo": 0.45
+            }
+        }
+    },
+
+    "carne": {
+        "maquina": "MaquinaEstadoRecurso",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "recursos/carne.png",
+                "frames": 1,
+                "tempo": 0.45
+            }
+        }
+    },
+
+    "ouro": {
+        "maquina": "MaquinaEstadoRecurso",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "recursos/ouro.png",
+                "frames": 6,
+                "tempo": 0.45
+            }
+        }
+    },
+
+    "casa": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/casa.png",
+                "frames": 1,
+                "tempo": 0.20
+            }
+        }
+    },
+
+    "quartel": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/quartel.png",
+                "frames": 1,
+                "tempo": 0.20
+            }
+        }
+    },
+
+    "castelo": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/castelo.png",
+                "frames": 1,
+                "tempo": 0.20
+            }
+        }
+    },
+
+    "arvore1": {
+        "maquina": "MaquinaEstadoArvore",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "arvore/arvore_001.png",
+                "frames": 8,
+                "tempo": 0.25
+            },
+            "cortada": {
+                "arquivo": "arvore/arvore_cortada_001.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+
+    "arvore2": {
+        "maquina": "MaquinaEstadoArvore",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "arvore/arvore_002.png",
+                "frames": 8,
+                "tempo": 0.25
+            },
+            "cortada": {
+                "arquivo": "arvore/arvore_cortada_002.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+
+    "arvore3": {
+        "maquina": "MaquinaEstadoArvore",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "arvore/arvore_003.png",
+                "frames": 8,
+                "tempo": 0.25
+            },
+            "cortada": {
+                "arquivo": "arvore/arvore_cortada_003.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+
+    "arvore4": {
+        "maquina": "MaquinaEstadoArvore",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "arvore/arvore_004.png",
+                "frames": 8,
+                "tempo": 0.25
+            },
+            "cortada": {
+                "arquivo": "arvore/arvore_cortada_004.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+
+    "ovelha": {
+        "maquina": "MaquinaEstadoOvelha",
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "fauna/ovelha_ocioso.png",
+                "frames": 6,
+                "tempo": 0.20
+            },
+            "comendo": {
+                "arquivo": "fauna/ovelha_comendo.png",
+                "frames": 12,
+                "tempo": 0.35
+            },
+            "correndo": {
+                "arquivo": "fauna/ovelha_correndo.png",
+                "frames": 4,
+                "tempo": 0.15
+            }
+        }
+    },
+
+    "mina_ouro": {
+        "maquina": "MaquinaEstadoOuro",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ouro/mina_ouro_001.png",
+                "frames": 6,
+                "tempo": 0.45
+            },
+            "nivel_ouro5": {
+                "arquivo": "ouro/mina_ouro_002.png",
+                "frames": 6,
+                "tempo": 0.45
+            },
+            "nivel_ouro4": {
+                "arquivo": "ouro/mina_ouro_003.png",
+                "frames": 6,
+                "tempo": 0.45
+            },
+            "nivel_ouro3": {
+                "arquivo": "ouro/mina_ouro_004.png",
+                "frames": 6,
+                "tempo": 0.45
+            },
+            "nivel_ouro2": {
+                "arquivo": "ouro/mina_ouro_005.png",
+                "frames": 6,
+                "tempo": 0.45
+            },
+            "nivel_ouro1": {
+                "arquivo": "ouro/mina_ouro_006.png",
+                "frames": 6,
+                "tempo": 0.45
+            }
+        }
+    }
+}

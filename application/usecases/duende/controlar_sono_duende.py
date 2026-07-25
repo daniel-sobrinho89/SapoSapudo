@@ -2,11 +2,10 @@ import math
 
 
 class ControlarSonoDuendeUseCase:
-    def __init__(self, sapo, duende, violao, clima_service):
+    def __init__(self, sapo, duende, clima_service):
         self.sapo = sapo
         self.duende = duende
         self.animacoes = self.duende.animacoes
-        self.violao = violao
         self.clima_service = clima_service
         self.tempo_respiracao = 0
 
@@ -152,18 +151,3 @@ class ControlarSonoDuendeUseCase:
 
         self._acordar_duende()
         self.duende.iniciar_saida_casa()
-
-    def _precisa_resgatar_apos_acordar(self):
-        if (
-            self.violao is None
-            or self.violao.acoplado
-            or self.sapo.esta_tocando_violao()
-        ):
-            return False
-
-        tolerancia = 10
-
-        return (
-            abs(self.violao.x - self.violao.x_inicial) > tolerancia
-            or abs(self.violao.y - self.violao.y_inicial) > tolerancia
-        )

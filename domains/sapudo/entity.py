@@ -11,7 +11,7 @@ from domains.sapudo.pensamentos_sapo import PensamentosSapo
 
 
 class Sapo:
-    def __init__(self, x, y, violao, spotify, distancia_violao, clima_service):
+    def __init__(self, x, y, spotify, clima_service):
         # POSIÇÃO CENTRAL (coordenadas usadas pelo renderer)
         self.x = x
         self.y = y
@@ -33,29 +33,11 @@ class Sapo:
         self.andar_iniciado_por_spotify = False
 
         # FLAGS mínimas
-        self.acoplado_violao = False
         self.background_renderer = None
-        self.violao = violao
         self.spotify = spotify
-        self.distancia_violao = distancia_violao
         self.clima = clima_service
 
-    def area_violao(self):
-        return AreaAcoplamento(
-            x=self.x,
-            y=self.y,
-            raio=80,
-        )
-
     # métodos de delegação / API pública
-    def pode_receber_violao(self):
-        return not self.animacoes.maquina.em_estado(
-            EstadoSapo.DORMINDO, EstadoSapo.ADORMECENDO
-        )
-
-    def esta_tocando_violao(self):
-        return self.animacoes.maquina.eh(EstadoSapo.TOCANDO_VIOLAO)
-
     def pode_caminhar(self):
         return self.animacoes.maquina.eh(EstadoSapo.PARADO)
 
@@ -75,9 +57,3 @@ class AreaAcoplamento:
 
     def contem(self, x, y):
         return abs(x - self.x) < self.raio and abs(y - self.y) < self.raio
-
-    def posicao_violao(self):
-        return (
-            self.x + self.offset_x,
-            self.y + self.offset_y,
-        )

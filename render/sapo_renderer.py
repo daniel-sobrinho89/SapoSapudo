@@ -6,17 +6,9 @@ class SapoRenderer:
         "dormir": "dormir",
         "dormindo": "dormindo",
         "acordar": "acordar",
-        "pegar_violao": "pegar_violao",
-        "levantar_violao": "levantar_violao",
-        "guardar_violao": "guardar_violao",
-        "soltar_violao": "soltar_violao",
         "andar_esquerda": "andar_esquerda",
         "andar_direita": "andar_direita",
         "conversar": "conversar",
-        "pegar_livro": "pegar_livro",
-        "lendo_livro": "lendo_livro",
-        "tocar_violao": "tocar_violao",
-        "levantar_livro": "levantar_livro",
     }
 
     def __init__(self, tela, assets, transform):
@@ -37,17 +29,9 @@ class SapoRenderer:
             "acordar": [],
             "dormir": [],
             "dormindo": [],
-            "pegar_violao": [],
-            "levantar_violao": [],
-            "tocar_violao": [],
-            "guardar_violao": [],
-            "soltar_violao": [],
             "andar_esquerda": [],
             "andar_direita": [],
             "conversar": [],
-            "pegar_livro": [],
-            "lendo_livro": [],
-            "levantar_livro": [],
         }
 
         self._fila = self._criar_fila()
@@ -58,14 +42,8 @@ class SapoRenderer:
         definicoes = [
             ("parado", "sapudo/parado/sapudo_{:04d}.webp", 60),
             ("acordar", "sapudo/acordar/sapudo_{:04d}.webp", 60),
-            ("pegar_violao", "sapudo/pegar_violao/sapudo_{:04d}.webp", 15),
-            ("tocar_violao", "sapudo/tocar_violao/sapudo_{:04d}.webp", 10),
-            ("guardar_violao", "sapudo/guardar_violao/sapudo_{:04d}.webp", 9),
-            ("soltar_violao", "sapudo/soltar_violao/sapudo_{:04d}.webp", 9),
             ("andar_esquerda", "sapudo/andar_esquerda/sapudo_{:04d}.webp", 10),
             ("conversar", "sapudo/conversar/sapudo_{:04d}.webp", 60),
-            ("pegar_livro", "sapudo/pegar_livro/sapudo_{:04d}.webp", 20),
-            ("lendo_livro", "sapudo/lendo_livro/sapudo_{:04d}.webp", 30),
         ]
 
         for grupo, mascara, total in definicoes:
@@ -90,12 +68,10 @@ class SapoRenderer:
     def _finalizar_carregamento(self):
         self.frames["dormir"] = list(reversed(self.frames["acordar"]))
         self.frames["dormindo"] = list(reversed(self.frames["acordar"][:9]))
-        self.frames["levantar_violao"] = list(reversed(self.frames["pegar_violao"]))
         self.frames["andar_direita"] = [
             kivy_adapter.transform.flip(f, True, False)
             for f in self.frames["andar_esquerda"]
         ]
-        self.frames["levantar_livro"] = list(reversed(self.frames["pegar_livro"]))
         self.carregado = True
 
     def obter_frame_animacao(self, animacoes):

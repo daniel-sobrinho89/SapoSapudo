@@ -76,9 +76,6 @@ class DuendeNeblina:
     def processar_toque_move(self, pos_virtual):
         return self.arraste.processar_toque_move(pos_virtual, self)
 
-    def violao_sendo_arrastado(self):
-        return self.arraste.ativo
-
     def atualizar_hitboxes(self, body_x, body_y, body_width, body_height):
         cabeca_w = int(body_width * 0.30)
         cabeca_h = int(body_height * 0.30)

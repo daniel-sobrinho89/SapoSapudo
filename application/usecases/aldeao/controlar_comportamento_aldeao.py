@@ -1,25 +1,28 @@
 import random
 
-from config import LARGURA
+from application.usecases.mover_personagem import MoverPersonagemUseCase
 from domains.personagem.maquina_estado import EstadoAldeao
 
 
 class ControlarComportamentoAldeaoUseCase:
-    def __init__(self):
+    def __init__(self, navegacao):
         self.tempo = 0.0
         self.proxima_acao = random.uniform(3, 8)
-
-        self.andando = False
+        self.navegacao = navegacao
+        self.mover = MoverPersonagemUseCase()
         self.velocidade = 35
 
-        self.limite_esquerdo = 30
-        self.limite_direito = LARGURA - 220
-        self.distancia_minima = 40
+    def executar(
+        self,
+        dt,
+        personagem,
+    ):
+        self.personagem = personagem
 
-    def executar(self, dt, aldeao):
-        self.aldeao = aldeao
-
-        if self.andando:
+        if self.personagem.animacoes.estado in (
+            EstadoAldeao.CORRENDO,
+            EstadoAldeao.CORRENDO_FLIP,
+        ):
             self._andar(dt)
             return
 
@@ -30,101 +33,55 @@ class ControlarComportamentoAldeaoUseCase:
 
         self.tempo = 0
         self.proxima_acao = random.uniform(3, 8)
+
         self._escolher_proxima_acao()
 
     def _escolher_proxima_acao(self):
-        estado = self.aldeao.animacoes.estado
+        estado = self.personagem.animacoes.estado
         correr = random.random() < 0.35
 
-        # =====================================
-        # OCIOSO (olhando para direita)
-        # =====================================
-
         if estado == EstadoAldeao.OCIOSO:
-            if correr and self.aldeao.x < self.limite_direito - self.distancia_minima:
-                self.andando = True
-                self.aldeao.destino_x = random.randint(
-                    int(self.aldeao.x + self.distancia_minima),
-                    self.limite_direito,
+            if correr:
+                (
+                    self.personagem.destino_x,
+                    self.personagem.destino_y,
+                ) = self.navegacao.ponto_aleatorio_no_raio(
+                    self.personagem.x,
+                    self.personagem.y,
+                    40,
+                    180,
                 )
 
-                self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO
-            else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO
 
-        # =====================================
-        # OCIOSO FLIP (olhando para esquerda)
-        # =====================================
+            else:
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
 
         elif estado == EstadoAldeao.OCIOSO_FLIP:
-            if correr and self.aldeao.x > self.limite_esquerdo + self.distancia_minima:
-                self.andando = True
-                self.aldeao.destino_x = random.randint(
-                    self.limite_esquerdo,
-                    int(self.aldeao.x - self.distancia_minima),
+            if correr:
+                (
+                    self.personagem.destino_x,
+                    self.personagem.destino_y,
+                ) = self.navegacao.ponto_aleatorio_no_raio(
+                    self.personagem.x,
+                    self.personagem.y,
+                    40,
+                    180,
                 )
 
-                self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FLIP
+
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
-
-        # =====================================
-        # MADEIRA
-        # =====================================
-
-        elif estado == EstadoAldeao.OCIOSO_MADEIRA:
-            if correr and self.aldeao.x < self.limite_direito - self.distancia_minima:
-                self.andando = True
-                self.aldeao.destino_x = random.randint(
-                    int(self.aldeao.x + self.distancia_minima),
-                    self.limite_direito,
-                )
-
-                self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA
-            else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_MADEIRA_FLIP
-
-        elif estado == EstadoAldeao.OCIOSO_MADEIRA_FLIP:
-            if correr and self.aldeao.x > self.limite_esquerdo + self.distancia_minima:
-                self.andando = True
-                self.aldeao.destino_x = random.randint(
-                    self.limite_esquerdo,
-                    int(self.aldeao.x - self.distancia_minima),
-                )
-
-                self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
-            else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_MADEIRA
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
     def _andar(self, dt):
-        estado = self.aldeao.animacoes.estado
-
-        if estado in (
-            EstadoAldeao.CORRENDO,
-            EstadoAldeao.CORRENDO_MADEIRA,
-        ):
-            self.aldeao.x += self.velocidade * dt
-
-            if self.aldeao.x >= self.aldeao.destino_x:
-                self.aldeao.x = self.aldeao.destino_x
-                self.andando = False
-
-                if estado == EstadoAldeao.CORRENDO_MADEIRA:
-                    self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_MADEIRA
-                else:
-                    self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
-
-        elif estado in (
-            EstadoAldeao.CORRENDO_FLIP,
-            EstadoAldeao.CORRENDO_MADEIRA_FLIP,
-        ):
-            self.aldeao.x -= self.velocidade * dt
-
-            if self.aldeao.x <= self.aldeao.destino_x:
-                self.aldeao.x = self.aldeao.destino_x
-                self.andando = False
-
-                if estado == EstadoAldeao.CORRENDO_MADEIRA_FLIP:
-                    self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_MADEIRA_FLIP
-                else:
-                    self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
+        self.mover.executar(
+            personagem=self.personagem,
+            navegacao=self.navegacao,
+            velocidade=self.velocidade,
+            estado_correndo=EstadoAldeao.CORRENDO,
+            estado_correndo_flip=EstadoAldeao.CORRENDO_FLIP,
+            estado_parado=EstadoAldeao.OCIOSO,
+            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+            dt=dt,
+        )

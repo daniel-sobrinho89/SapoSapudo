@@ -19,9 +19,8 @@ from config import ALTURA, CENTRO_Y, FPS, IS_ANDROID, LARGURA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
-from core.fisica import sistema_fisica
-from domains.cenario import GerenciadorCenarios
-from domains.clima.animacoes.folha import AnimacoesFolha
+from core.mouse_events import DoubleClickDetector
+from domains.cenario import EstadoJogo, GerenciadorCenarios
 from domains.clima.clima_service import ClimaService
 from domains.clima.nuvem import Nuvem
 from domains.clima.sistema_nuvens import SistemaNuvens
@@ -30,14 +29,12 @@ from domains.conversas.qwen_local_client import QwenLocalClient
 from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical, ControladorVozMusicalNulo
 from domains.spotify.spotify_manager import SpotifyManager
-from domains.violao.entity import Violao
 from domains.voz.tts_service import TTSService
 from render.asset_manager import asset_manager
 from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
 from render.pensamento_sapo_renderer import PensamentoSapoRenderer
 from render.transform_utils import TransformUtils
-from render.violao_renderer import ViolaoRenderer
 from utils.input import init_scaling, real_to_virtual
 
 logging.getLogger().setLevel(logging.INFO)
@@ -63,7 +60,6 @@ if IS_ANDROID:
 info_w, info_h = Window.width, Window.height
 LARGURA_REAL = int(info_w)
 ALTURA_REAL = int(info_h)
-DISTANCIA_VIOLAO = 20
 
 # superficie virtual usada por todo o jogo (resolução lógica fixa)
 
@@ -109,6 +105,7 @@ class GameWidget(Widget):
             10,
         )
 
+        self.double_click = DoubleClickDetector()
         self._inicializar_audio_spotify()
         self._inicializar_controles()
         self._inicializar_sistemas_base()
@@ -137,8 +134,6 @@ class GameWidget(Widget):
         self.transform = TransformUtils()
         self.ambiente = Ambiente()
         self.pensamento_renderer = PensamentoSapoRenderer()
-        self.animacoes_folha = AnimacoesFolha()
-        self.renderer_violao = ViolaoRenderer(tela, asset_manager, self.transform)
         self.tts = TTSService()
 
     def _inicializar_clima_e_ambiente(self):
@@ -151,13 +146,10 @@ class GameWidget(Widget):
         self.sistema_nuvens = SistemaNuvens(self.transform)
 
     def _inicializar_interacao(self):
-        self.violao = Violao()
         self.sapo = Sapo(
             centro_x,
             CENTRO_Y,
-            self.violao,
             self.spotify,
-            DISTANCIA_VIOLAO,
             self.clima_service,
         )
         self.sapo.background_renderer = self.background_renderer
@@ -169,13 +161,10 @@ class GameWidget(Widget):
             self.background_renderer,
             self.sistema_nuvens,
             self.sapo,
-            self.violao,
             self.ambiente,
         )
 
         self.gerenciador_cenarios.cenario_principal.carregar()
-        self.evento_livro = self.cenario.evento_livro
-        self.livro = self.cenario.livro
 
         self.client = QwenLocalClient()
         self.conversa_sapudo = ConversaSapudo(self.client)
@@ -199,9 +188,14 @@ class GameWidget(Widget):
     def on_touch_down(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        self.controlador_voz_musical.processar_toque_down(
-            pos_virtual, self.renderer_violao
-        )
+        if (
+            self.gerenciador_cenarios.estado == EstadoJogo.ABERTURA
+            and self.double_click.detectar(pos_virtual)
+        ):
+            self.gerenciador_cenarios.estado = EstadoJogo.JOGANDO
+            return True
+
+        self.controlador_voz_musical.processar_toque_down(pos_virtual)
 
         return super().on_touch_down(touch)
 
@@ -209,9 +203,6 @@ class GameWidget(Widget):
         pos_virtual = real_to_virtual(touch.pos)
 
         # Atualizar Arrastes
-        if self.violao.arrastando:
-            self.violao.mover_arraste(*pos_virtual)
-
         if self.tem_duende and self.cenario.duende.arrastando:
             self.cenario.duende.mover_arraste(*pos_virtual)
 
@@ -267,14 +258,6 @@ class GameWidget(Widget):
 
         self.clima_service.atualizar_visual(dt)
 
-    def _atualizar_ambiente_fisica(self, dt):
-        self.ambiente.atualizar(dt, self.clima_service)
-
-        if getattr(self.clima_service, "rajada_ativa", False):
-            self.animacoes_folha.intensidade_vento = 5.0
-        else:
-            self.animacoes_folha.intensidade_vento = 1.8
-
     def update(self, dt):
         dt = min(dt, 0.05)
 
@@ -290,29 +273,19 @@ class GameWidget(Widget):
             self.controlador_voz_musical = ControladorVozMusical(
                 self.sapo,
                 self.cenario.duende,
-                self.violao,
-                self.livro,
                 self.spotify,
                 self.audio,
                 self.controle_renderer,
                 self.cenario,
                 self.clima_service,
-                self.evento_livro,
                 self.conversa_sapudo,
                 self.tts,
             )
 
         self.controlador_voz_musical.atualizar(dt)
 
-        self._atualizar_ambiente_fisica(dt)
+        self.ambiente.atualizar(dt, self.clima_service)
         self.gerenciador_cenarios.atualizar(dt)
-
-        if self.violao.caindo:
-            sistema_fisica.aplicar_forca_vento(
-                self.violao, self.clima_service, dt, sensibilidade=0.6
-            )
-
-        self.violao.atualizar(dt)
         self.sistema_nuvens.atualizar_area_interna()
 
         Nuvem.finalizar_carregamento()
@@ -328,9 +301,6 @@ class GameWidget(Widget):
 
         self.gerenciador_cenarios.renderizar(dt)
         self.pensamento_renderer.renderizar(tela, self.sapo, dt)
-
-        if not self.violao.acoplado:
-            self.renderer_violao.renderizar(self.violao)
 
         # escalonar e apresentar
         img = tela._img

@@ -14,13 +14,13 @@ class CortarArvoreUseCase:
         self.guardar_recurso_x = 550
         self.guardar_recurso_y = 275
 
-        self.arvore = None
+        self.entidade_alvo = None
 
         self.tempo = 0.0
         self.flip = False
 
     def iniciar(self, arvore, personagem):
-        self.arvore = arvore
+        self.entidade_alvo = arvore
         self.aldeao = personagem
 
         self.tempo = 0.0
@@ -35,7 +35,7 @@ class CortarArvoreUseCase:
     # --------------------------------------------------------
 
     def executar(self, dt):
-        if self.arvore is None:
+        if self.entidade_alvo is None:
             return
 
         if self.aldeao.animacoes.maquina.cortando_arvore():
@@ -48,7 +48,7 @@ class CortarArvoreUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.arvore.corpo_rect
+        rect = self.entidade_alvo.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -85,7 +85,7 @@ class CortarArvoreUseCase:
             return
 
         self.flip = self.guardar_recurso_x < self.aldeao.x
-        self.arvore.obter_madeira()
+        self.entidade_alvo.obter_madeira()
 
         if self.flip:
             self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
@@ -118,10 +118,10 @@ class CortarArvoreUseCase:
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "madeira")
 
-            if self.arvore.animacoes.estado == EstadoArvore.CORTADA:
-                self.arvore = None
+            if self.entidade_alvo.animacoes.estado == EstadoArvore.CORTADA:
+                self.entidade_alvo = None
             else:
-                self.iniciar(self.arvore, self.aldeao)
+                self.iniciar(self.entidade_alvo, self.aldeao)
 
             return
 

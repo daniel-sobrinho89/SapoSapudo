@@ -1,124 +1,12 @@
+import json
+
 import kivy_adapter
+from utils.paths import BASE_DIR
 
 
 class SpriteAnimadoRenderer:
-    CONFIG = {
-        "aldeao": {
-            "animacoes": [
-                ("ocioso", "aldeao/ocioso/aldeao.png", 8),
-                ("ocioso_madeira", "aldeao/ocioso/aldeao_madeira.png", 8),
-                ("correndo", "aldeao/correndo/aldeao.png", 6),
-                ("correndo_machado", "aldeao/correndo/aldeao_machado.png", 6),
-                ("correndo_madeira", "aldeao/correndo/aldeao_madeira.png", 6),
-                ("correndo_picareta", "aldeao/correndo/aldeao_picareta.png", 6),
-                ("correndo_ouro", "aldeao/correndo/aldeao_ouro.png", 6),
-                ("correndo_faca", "aldeao/correndo/aldeao_faca.png", 6),
-                ("correndo_carne", "aldeao/correndo/aldeao_carne.png", 6),
-                ("usando_machado", "aldeao/obtendo_recursos/aldeao_machado.png", 6),
-                ("usando_picareta", "aldeao/obtendo_recursos/aldeao_picareta.png", 6),
-                ("usando_faca", "aldeao/obtendo_recursos/aldeao_faca.png", 4),
-            ],
-            "flip": True,
-        },
-        "soldado": {
-            "animacoes": [
-                ("ocioso", "soldado/soldado_ocioso.png", 8),
-                ("correndo", "soldado/soldado_correndo.png", 6),
-            ],
-            "flip": True,
-        },
-        "madeira": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "recursos/madeira.png", 1),
-            ],
-        },
-        "carne": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "recursos/carne.png", 1),
-            ],
-        },
-        "ouro": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "recursos/ouro.png", 6),
-            ],
-        },
-        "casa": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "construcoes/casa.png", 1),
-            ],
-        },
-        "quartel": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "construcoes/quartel.png", 1),
-            ],
-        },
-        "castelo": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "construcoes/castelo.png", 1),
-            ],
-        },
-        "arvore1": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "arvore/arvore_001.png", 8),
-                ("cortada", "arvore/arvore_cortada_001.png", 1),
-            ],
-        },
-        "arvore2": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "arvore/arvore_002.png", 8),
-                ("cortada", "arvore/arvore_cortada_002.png", 1),
-            ],
-        },
-        "arvore3": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "arvore/arvore_003.png", 8),
-                ("cortada", "arvore/arvore_cortada_003.png", 1),
-            ],
-        },
-        "arvore4": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "arvore/arvore_004.png", 8),
-                ("cortada", "arvore/arvore_cortada_004.png", 1),
-            ],
-        },
-        "ovelha": {
-            "flip": True,
-            "animacoes": [
-                ("ocioso", "fauna/ovelha_ocioso.png", 6),
-                ("comendo", "fauna/ovelha_comendo.png", 12),
-                ("correndo", "fauna/ovelha_correndo.png", 4),
-            ],
-        },
-        "mina_ouro": {
-            "flip": False,
-            "animacoes": [
-                ("ocioso", "ouro/mina_ouro_001.png", 6),
-                ("nivel_ouro5", "ouro/mina_ouro_002.png", 6),
-                ("nivel_ouro4", "ouro/mina_ouro_003.png", 6),
-                ("nivel_ouro3", "ouro/mina_ouro_004.png", 6),
-                ("nivel_ouro2", "ouro/mina_ouro_005.png", 6),
-                ("nivel_ouro1", "ouro/mina_ouro_006.png", 6),
-            ],
-        },
-        "goblin_tocha": {
-            "flip": True,
-            "animacoes": [
-                ("ocioso", "goblin/tocha/goblin_ocioso.png", 8),
-                ("correndo", "goblin/tocha/goblin_correndo.png", 6),
-                ("atacando", "goblin/tocha/goblin_atacando.png", 8),
-            ],
-        },
-    }
+    with open(BASE_DIR / "data/sprites_config.json", encoding="utf8") as f:
+        CONFIG = json.load(f)
 
     def __init__(
         self,
@@ -146,10 +34,11 @@ class SpriteAnimadoRenderer:
         config = self.CONFIG[self.tipo]
 
         self.flip = config["flip"]
-        self._fila = config["animacoes"]
+        self._fila = list(config["animacoes"].items())
 
-        for grupo, *_ in self._fila:
+        for grupo, _ in self._fila:
             self.frames[grupo] = []
+
             if self.flip:
                 self.frames[f"{grupo}_flip"] = []
 
@@ -169,15 +58,16 @@ class SpriteAnimadoRenderer:
                 self._finalizar_carregamento()
                 return
 
-            grupo, arquivo, total_frames = self._fila[self._indice]
+            grupo, dados = self._fila[self._indice]
+
             self._indice += 1
 
-            spritesheet = self.assets.carregar(arquivo)
+            spritesheet = self.assets.carregar(dados["arquivo"])
 
             frames = self.transform.recortar_spritesheet(
                 spritesheet,
                 linhas=1,
-                colunas=total_frames,
+                colunas=dados["frames"],
             )
 
             self.frames[grupo] = frames
@@ -210,19 +100,20 @@ class SpriteAnimadoRenderer:
     # FRAME
     # =====================================
 
-    def obter_frame_animacao(
-        self,
-        animacoes,
-    ):
+    def obter_frame_animacao(self, animacoes):
         if not self.carregado:
             return None
 
         seletor, indice = animacoes.obter_selecao_frame()
 
-        return self.frames.get(
+        frames = self.frames.get(
             seletor,
             self.frames[self.grupo_padrao],
-        )[indice]
+        )
+
+        indice = min(indice, len(frames) - 1)
+
+        return frames[indice]
 
     # =====================================
     # RENDER

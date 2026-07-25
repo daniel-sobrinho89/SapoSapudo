@@ -4,7 +4,6 @@ from datetime import datetime
 
 import kivy_adapter
 from render.asset_manager import asset_manager
-from render.tilemap_renderer import TileMapRenderer
 
 
 class BackgroundRenderer:
@@ -16,12 +15,8 @@ class BackgroundRenderer:
         self.ceu_renderer = CeuRenderer(
             tela,
             largura,
+            altura,
             ambiente,
-        )
-        self.tilemap_renderer = TileMapRenderer(
-            tela,
-            asset_manager,
-            transform,
         )
         # =====================================
         # BACKGROUND MANHÃ
@@ -71,39 +66,6 @@ class BackgroundRenderer:
             background_chuva, (largura, altura)
         )
 
-    def obter_background_atual(self):
-        hora_atual = self.ambiente.obter_hora_decimal()
-
-        if self.esta_chovendo() and not (hora_atual >= 18.5 or hora_atual < 6):
-            return self.background_chuva
-
-        # =====================================
-        # MANHÃ
-        # =====================================
-
-        if 6 <= hora_atual < 12:
-            return self.background_manha
-
-        # =====================================
-        # FINAL TARDE
-        # =====================================
-
-        if 15 <= hora_atual < 18.5:
-            return self.background_final_tarde
-
-        # =====================================
-        # NOITE
-        # =====================================
-
-        if hora_atual >= 18.5 or hora_atual < 6:
-            return self.background_night
-
-        # =====================================
-        # DIA
-        # =====================================
-
-        return self.background_day
-
     def eh_dia(self):
         return self.ambiente.eh_dia()
 
@@ -111,19 +73,16 @@ class BackgroundRenderer:
         return self.ambiente.esta_chovendo(self.clima_service)
 
     def desenhar(self, dt, camera):
-        self.tilemap_renderer.atualizar_carregamento()
-
         self.ceu_renderer.desenhar()
-        self.tilemap_renderer.renderizar(dt, camera)
 
 
 class CeuRenderer:
-    def __init__(self, tela, largura, ambiente):
+    def __init__(self, tela, largura, altura, ambiente):
         self.tela = tela
         self.ambiente = ambiente
 
         self.largura = largura
-        self.altura = 325
+        self.altura = altura
 
         self.superficie = kivy_adapter.Surface((largura, self.altura))
         self.luz = kivy_adapter.Surface((largura, self.altura))
@@ -134,7 +93,8 @@ class CeuRenderer:
         largura_celula = 90
         altura_celula = 55
 
-        for gy in range(15, 250, altura_celula):
+        limite = int(self.altura * 0.85)
+        for gy in range(15, limite, altura_celula):
             for gx in range(0, self.largura, largura_celula):
                 quantidade = random.choices([0, 1, 2], weights=[30, 65, 5])[0]
 
@@ -448,8 +408,8 @@ class CeuRenderer:
 
             x = int(self.largura * (0.10 + 0.80 * t))
 
-            y_inicio = 310
-            y_topo = 120
+            y_inicio = int(self.altura * 0.95)
+            y_topo = int(self.altura * 0.25)
 
             y = int(y_inicio - (y_inicio - y_topo) * (1 - (2 * t - 1) ** 2))
 
@@ -480,8 +440,8 @@ class CeuRenderer:
 
         x = int(self.largura * (0.90 - 0.80 * t))
 
-        y_inicio = 340
-        y_topo = 90
+        y_inicio = int(self.altura * 0.98)
+        y_topo = int(self.altura * 0.20)
 
         y = int(y_inicio - (y_inicio - y_topo) * (1 - (2 * t - 1) ** 2))
 

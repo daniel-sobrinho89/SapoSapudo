@@ -1,13 +1,14 @@
-from domains.arvore.animacoes import AnimacoesArvore
+from core.animacoes import Animacoes
 from domains.arvore.maquina_estado import EstadoArvore
 
 
 class Arvore:
-    def __init__(self, transform, x, y):
+    def __init__(self, transform, x, y, nome):
+        self.nome = nome
         self.transform = transform
         self.x = x
         self.y = y
-        self.animacoes = AnimacoesArvore()
+        self.animacoes = Animacoes(nome)
         self.madeira = 8
 
     def atualizar(self, dt):

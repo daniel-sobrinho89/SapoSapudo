@@ -8,6 +8,10 @@ class EstadoSoldado(Enum):
     OCIOSO_FLIP = "ocioso_flip"
     CORRENDO = "correndo"
     CORRENDO_FLIP = "correndo_flip"
+    ATACANDO1 = "atacando1"
+    ATACANDO1_FLIP = "atacando1_flip"
+    ATACANDO2 = "atacando2"
+    ATACANDO2_FLIP = "atacando2_flip"
 
 
 class MaquinaEstadoSoldado(StateMachine):
@@ -16,3 +20,16 @@ class MaquinaEstadoSoldado(StateMachine):
 
     def carregando_recuso(self):
         return False
+
+    def atacando(self):
+        return self.em_estado(
+            EstadoSoldado.ATACANDO1,
+            EstadoSoldado.ATACANDO1_FLIP,
+            EstadoSoldado.ATACANDO2,
+            EstadoSoldado.ATACANDO2_FLIP,
+        )
+
+    def atacando_flip(self):
+        return self.em_estado(
+            EstadoSoldado.ATACANDO1_FLIP, EstadoSoldado.ATACANDO2_FLIP
+        )

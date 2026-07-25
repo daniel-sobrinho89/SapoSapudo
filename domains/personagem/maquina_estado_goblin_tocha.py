@@ -18,3 +18,11 @@ class MaquinaEstadoGoblinTocha(StateMachine):
 
     def carregando_recuso(self):
         return False
+
+    def atacando(self):
+        return self.em_estado(
+            EstadoGoblinTocha.ATACANDO, EstadoGoblinTocha.ATACANDO_FLIP
+        )
+
+    def atacando_flip(self):
+        return self.em_estado(EstadoGoblinTocha.ATACANDO_FLIP)

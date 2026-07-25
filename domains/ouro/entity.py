@@ -1,13 +1,14 @@
-from domains.ouro.animacoes import AnimacoesOuro
+from core.animacoes import Animacoes
 from domains.ouro.maquina_estado import EstadoOuro
 
 
 class Ouro:
-    def __init__(self, transform, x, y):
+    def __init__(self, transform, x, y, nome):
+        self.nome = nome
         self.transform = transform
         self.x = x
         self.y = y
-        self.animacoes = AnimacoesOuro()
+        self.animacoes = Animacoes(nome)
         self.mineiro = 24
 
     def atualizar(self, dt):

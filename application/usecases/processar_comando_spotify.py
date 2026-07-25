@@ -2,9 +2,8 @@ from domains.sapudo.pensamentos_sapo import PensamentosSapo
 
 
 class ProcessarComandoSpotifyUseCase:
-    def __init__(self, spotify, desacoplar_violao):
+    def __init__(self, spotify):
         self.spotify = spotify
-        self.desacoplar_violao = desacoplar_violao
 
     def executar(self, comando_spotify, finalizar_comando):
         acao = comando_spotify["acao"]
@@ -17,7 +16,7 @@ class ProcessarComandoSpotifyUseCase:
 
     def _executar_acao(self, acao, comando_spotify, finalizar_comando):
         if acao == "pause":
-            return self.desacoplar_violao.executar()
+            pass
 
         if acao == "play":
             return self.spotify.tocar()

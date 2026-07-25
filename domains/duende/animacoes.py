@@ -4,7 +4,7 @@
 
 import random
 
-from core.animacao import Animacao
+from core.animacao import AnimacaoMovimento
 from core.event_bus import event_bus
 from domains.sapudo.maquina_estado_sapo import StateMachine
 
@@ -21,15 +21,9 @@ class AnimacoesDuende:
     SAINDO_DA_CASA = "saindo_da_casa"
     INDO_PARA_CASA = "indo_para_casa"
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
-    PERSEGUINDO_VIOLAO = "perseguindo_violao"
-    GUARDANDO_VIOLAO = "guardando_violao"
-    INDO_ATRAS_VIOLAO = "indo_atras_violao"
-    ESCONDENDO_ATRAS_VIOLAO = "escondendo_atras_violao"
     INDO_ATRAS_ESFERA = "indo_atras_esfera"
     PERSEGUINDO_ESFERA = "perseguindo_esfera"
     COMENDO_ESFERA = "comendo_esfera"
-    PERSEGUINDO_LIVRO = "perseguindo_livro"
-    GUARDANDO_LIVRO = "guardando_livro"
     TELEPORTANDO = "teleportando"
 
     def __init__(self):
@@ -44,11 +38,10 @@ class AnimacoesDuende:
         # ====================================
         # CONTROLE TROCA DE FRAMES
         # ====================================
-        self.animacao_voando = Animacao(15, 0.20)
-        self.animacao_dormindo = Animacao(1, 0.20)
-        self.animacao_descendo_para_dormir = Animacao(10, 0.20)
-        self.animacao_guardando_violao = Animacao(4, 0.40)
-        self.animacao_comendo_esfera = Animacao(60, 0.20)
+        self.animacao_voando = AnimacaoMovimento(15, 0.20)
+        self.animacao_dormindo = AnimacaoMovimento(1, 0.20)
+        self.animacao_descendo_para_dormir = AnimacaoMovimento(10, 0.20)
+        self.animacao_comendo_esfera = AnimacaoMovimento(60, 0.20)
 
     # =====================================
     # ESTADO
@@ -91,28 +84,8 @@ class AnimacoesDuende:
         return self.maquina.eh(self.VOANDO)
 
     @property
-    def guardando_violao(self):
-        return self.maquina.eh(self.GUARDANDO_VIOLAO)
-
-    @property
-    def escondendo_atras_violao(self):
-        return self.maquina.eh(self.ESCONDENDO_ATRAS_VIOLAO)
-
-    @property
     def comendo_esfera(self):
         return self.maquina.eh(self.COMENDO_ESFERA)
-
-    @property
-    def perseguindo_violao(self):
-        return self.maquina.eh(self.PERSEGUINDO_VIOLAO)
-
-    @property
-    def perseguindo_livro(self):
-        return self.maquina.eh(self.PERSEGUINDO_LIVRO)
-
-    @property
-    def guardando_livro(self):
-        return self.maquina.eh(self.GUARDANDO_LIVRO)
 
     @property
     def teleportando(self):
@@ -160,23 +133,6 @@ class AnimacoesDuende:
         self.estado = self.VOANDO
         event_bus.publicar("voo_iniciado")
 
-    def iniciar_perseguindo_violao(self):
-        self.estado = self.PERSEGUINDO_VIOLAO
-
-    def iniciar_perseguindo_livro(self):
-        self.estado = self.PERSEGUINDO_LIVRO
-
-    def iniciar_guardando_violao(self):
-        self.animacao_guardando_violao.reset()
-        self.estado = self.GUARDANDO_VIOLAO
-
-    def iniciar_guardando_livro(self):
-        self.animacao_guardando_violao.reset()
-        self.estado = self.GUARDANDO_LIVRO
-
-    def iniciar_escondendo_atras_violao(self):
-        self.estado = self.ESCONDENDO_ATRAS_VIOLAO
-
     def iniciar_perseguindo_esfera(self):
         self.estado = self.PERSEGUINDO_ESFERA
 
@@ -194,10 +150,6 @@ class AnimacoesDuende:
             return "descendo_para_dormir", self.animacao_descendo_para_dormir.frame
         if self.indo_para_casa:
             return "indo_para_casa", self.animacao_descendo_para_dormir.frame
-        if self.guardando_violao:
-            return "guardando_violao", self.animacao_guardando_violao.frame
-        if self.guardando_livro:
-            return "guardando_livro", self.animacao_guardando_violao.frame
         if self.comendo_esfera:
             return "comendo_esfera", self.animacao_comendo_esfera.frame
 
@@ -212,14 +164,12 @@ class AnimacoesDuende:
         self._atualizar_animacoes(dt)
 
     def _atualizar_animacoes(self, dt):
-        if self.voando or self.escondendo_atras_violao or self.indo_atras_esfera:
+        if self.voando or self.indo_atras_esfera:
             self.animacao_voando.atualizar(dt)
         elif self.dormindo:
             self.animacao_dormindo.atualizar(dt)
         elif self.indo_para_casa or self.descendo_para_dormir:
             self.animacao_descendo_para_dormir.atualizar(dt)
-        elif self.guardando_violao or self.guardando_livro:
-            self.animacao_guardando_violao.atualizar(dt)
 
 
 class CicloSono:

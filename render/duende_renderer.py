@@ -7,7 +7,6 @@ class DuendeRenderer:
     MAPA_ANIMACOES = {
         "dormindo": "dormindo",
         "descendo_para_dormir": "descendo_para_dormir",
-        "guardando_violao": "guardando_violao",
         "comendo_esfera": "comendo_esfera",
     }
 
@@ -22,7 +21,6 @@ class DuendeRenderer:
             "voando": [],
             "descendo_para_dormir": [],
             "dormindo": [],
-            "guardando_violao": [],
             "comendo_esfera": [],
         }
 
@@ -62,7 +60,6 @@ class DuendeRenderer:
     def _finalizar_carregamento(self, duende):
         self.frames["descendo_para_dormir"] = self.frames["voando"][3:14]
         self.frames["dormindo"] = [self.frames["voando"][3]]
-        self.frames["guardando_violao"] = self.frames["voando"][:4]
 
         self.carregado = True
         duende.carregado = True

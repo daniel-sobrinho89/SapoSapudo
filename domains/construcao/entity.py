@@ -1,4 +1,4 @@
-from domains.construcao.animacoes import AnimacoesConstrucao
+from core.animacoes import Animacoes
 
 
 class Construcao:
@@ -14,7 +14,7 @@ class Construcao:
         self.custo_madeira = madeira
         self.custo_ouro = ouro
         self.custo_carne = carne
-        self.animacoes = AnimacoesConstrucao()
+        self.animacoes = Animacoes(nome)
         self.corpo_rect = None
         self.x = 0
         self.y = 0
@@ -44,7 +44,7 @@ def criar_castelo():
 def criar_casa():
     return Construcao(
         "Casa",
-        madeira=10,
+        madeira=0,
         ouro=0,
     )
 

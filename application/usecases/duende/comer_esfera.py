@@ -2,10 +2,9 @@ import math
 
 
 class ComerEsferaUseCase:
-    def __init__(self, duende, esferas, evento_livro):
+    def __init__(self, duende, esferas):
         self.duende = duende
         self.esferas = esferas
-        self.evento_livro = evento_livro
 
         self.tempo = 0.0
         self.esfera_alvo = None
@@ -54,7 +53,6 @@ class ComerEsferaUseCase:
             else:
                 self.esfera_alvo.ativa = False
                 self.duende.movimento_bloqueado = True
-                self.evento_livro.registrar_clique_esfera()
                 self.duende.animacoes.iniciar_comer_esfera()
         elif self.duende.animacoes.estado == self.duende.animacoes.COMENDO_ESFERA:
             terminou = self.duende.animacoes.animacao_comendo_esfera.atualizar(dt)

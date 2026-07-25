@@ -4,19 +4,22 @@ from application.usecases.aldeao.controlar_comportamento_aldeao import (
 from application.usecases.aldeao.controlar_comportamento_goblin_tocha import (
     ControlarComportamentoGoblinTochaUseCase,
 )
-from application.usecases.aldeao.controlar_comportamento_soldado import (
-    ControlarComportamentoSoldadoUseCase,
-)
 from application.usecases.aldeao.cortar_arvore import CortarArvoreUseCase
 from application.usecases.aldeao.obter_carne import ObterCarneUseCase
 from application.usecases.aldeao.obter_ouro import ObterOuroUseCase
+from application.usecases.controlar_comportamento_ovelha import (
+    ControlarComportamentoOvelhaUseCase,
+)
+from application.usecases.goblin.atacar import AtacarUseCase as AtacarGoblinUseCase
+from application.usecases.soldado.atacar import AtacarUseCase
+from application.usecases.soldado.controlar_comportamento_soldado import (
+    ControlarComportamentoSoldadoUseCase,
+)
 from config import ALTURA, CENTRO_OFFSET_Y, ESCALA
 from core.camera import Camera
-from core.fisica import sistema_fisica
+from core.navegacao_mapa import NavegacaoMapa
 from domains.arvore.entity import Arvore
-from domains.clima.evento_livro import EventoLivro
 from domains.duende.entity import DuendeNeblina
-from domains.livro.entity import Livro
 from domains.ouro.entity import Ouro
 from domains.ovelha.entity import Ovelha
 from domains.personagem.entity import criar_personagem
@@ -27,6 +30,7 @@ from render.menu_casa_renderer import MenuCasaRenderer
 from render.menu_construcoes_renderer import MenuConstrucoesRenderer
 from render.sapo_renderer import SapoRenderer
 from render.sprite_animado_renderer import SpriteAnimadoRenderer
+from render.tilemap_renderer import TileMapRenderer
 
 
 class CenarioBase:
@@ -36,11 +40,13 @@ class CenarioBase:
         transform,
         clima_service,
         background_renderer,
+        navegacao,
+        tilemap_renderer,
         sistema_nuvens,
         sapo,
-        violao,
         ambiente,
         camera,
+        estado,
     ):
         self.tela = tela
         self.transform = transform
@@ -48,9 +54,11 @@ class CenarioBase:
         self.background_renderer = background_renderer
         self.sistema_nuvens = sistema_nuvens
         self.sapo = sapo
-        self.violao = violao
         self.ambiente = ambiente
         self.camera = camera
+        self.navegacao = navegacao
+        self.tilemap_renderer = tilemap_renderer
+        self.estado = estado
 
     def carregar(self):
         raise NotImplementedError
@@ -79,14 +87,13 @@ class CenarioPrincipal(CenarioBase):
         self.renderers_ovelhas = []
         self.construcoes = []
         self.personagens = []
+        self.personagens_hostis = []
         self.controladores = {}
         self.sapo_renderer = None
         self.menu_construcoes = None
         self.menu_casa_renderer = None
         self.duende = None
         self.renderer_duende = None
-        self.evento_livro = None
-        self.livro = None
         self.carregado = False
 
         self.construcao_arrastando = None
@@ -125,52 +132,63 @@ class CenarioPrincipal(CenarioBase):
 
     @property
     def tilemap(self):
-        return self.background_renderer.tilemap_renderer
+        return self.tilemap_renderer
 
     def adicionar_personagem(self, personagem):
         self.personagens.append(personagem)
 
         if personagem.nome == "Aldeao":
             self.controladores[personagem] = {
-                "padrao": ControlarComportamentoAldeaoUseCase(),
+                "padrao": ControlarComportamentoAldeaoUseCase(self.navegacao),
                 "acoes": {
                     "arvore": {
                         "itens": self.arvores,
-                        "renderers": self.renderers_arvores,
                         "usecase": CortarArvoreUseCase(self),
                     },
                     "ouro": {
                         "itens": self.ouro,
-                        "renderers": self.renderers_ouro,
                         "usecase": ObterOuroUseCase(self),
                     },
                     "carne": {
                         "itens": self.ovelhas,
-                        "renderers": self.renderers_ovelhas,
                         "usecase": ObterCarneUseCase(self),
                     },
                 },
             }
         elif personagem.nome == "Soldado":
             self.controladores[personagem] = {
-                "padrao": ControlarComportamentoSoldadoUseCase(),
-                "acoes": {},
+                "padrao": ControlarComportamentoSoldadoUseCase(self.navegacao),
+                "acoes": {
+                    "atacar": {
+                        "itens": self.personagens_hostis,
+                        "usecase": AtacarUseCase(self),
+                    },
+                },
             }
-        else:
-            self.controladores[personagem] = {
-                "padrao": ControlarComportamentoGoblinTochaUseCase(),
-                "acoes": {},
-            }
+
+    def adicionar_personagem_hostil(self, personagem):
+        self.personagens_hostis.append(personagem)
+
+        self.controladores[personagem] = {
+            "padrao": ControlarComportamentoGoblinTochaUseCase(self.navegacao),
+            "acoes": {
+                "atacar": {
+                    "itens": self.personagens,
+                    "usecase": AtacarGoblinUseCase(self),
+                },
+            },
+        }
+
+    def adicionar_animal(self, personagem):
+        self.ovelhas.append(personagem)
+
+        self.controladores[personagem] = {
+            "padrao": ControlarComportamentoOvelhaUseCase(self.navegacao),
+            "acoes": {},
+        }
 
     def adicionar_recurso(self, x, y, nome_recurso):
-        if nome_recurso == "madeira":
-            total_frames_recurso = 1
-        elif nome_recurso == "ouro":
-            total_frames_recurso = 6
-        elif nome_recurso == "carne":
-            total_frames_recurso = 1
-
-        recurso = Recurso(self.transform, x, y, total_frames_recurso)
+        recurso = Recurso(self.transform, x, y, nome_recurso)
 
         self.recursos.append(recurso)
 
@@ -206,11 +224,10 @@ class CenarioPrincipal(CenarioBase):
         self.duende = DuendeNeblina()
         self.renderer_duende = DuendeRenderer(self.tela, asset_manager, self.transform)
 
-        self.livro = Livro()
-        self.evento_livro = EventoLivro(asset_manager, self.transform, self.livro, [])
-
         self.adicionar_personagem(criar_personagem("Aldeao"))
-        self.adicionar_personagem(criar_personagem("GoblinTocha", x=1200, y=500))
+        self.adicionar_personagem_hostil(
+            criar_personagem("Goblin_Tocha", x=1200, y=500)
+        )
         self.menu_construcoes = MenuConstrucoesRenderer(
             self.tela, asset_manager, self.transform
         )
@@ -248,9 +265,9 @@ class CenarioPrincipal(CenarioBase):
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
-            arvore = Arvore(self.transform, x, y)
+            arvore = Arvore(self.transform, x, y, f"arvore{_indice}")
             renderer = SpriteAnimadoRenderer(
-                self.tela, asset_manager, self.transform, f"arvore{_indice}", 1
+                self.tela, asset_manager, self.transform, arvore.nome, 1
             )
 
             self.arvores.append(arvore)
@@ -262,9 +279,9 @@ class CenarioPrincipal(CenarioBase):
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
-            ouro = Ouro(self.transform, x, y)
+            ouro = Ouro(self.transform, x, y, "mina_ouro")
             renderer = SpriteAnimadoRenderer(
-                self.tela, asset_manager, self.transform, "mina_ouro", 1
+                self.tela, asset_manager, self.transform, ouro.nome, 1
             )
 
             self.ouro.append(ouro)
@@ -277,21 +294,17 @@ class CenarioPrincipal(CenarioBase):
         ]
 
         for _indice, (x, y) in enumerate(posicoes, start=1):
-            ovelha = Ovelha(self.transform, x, y)
+            ovelha = Ovelha(self.transform, x, y, "ovelha")
+            self.adicionar_animal(ovelha)
             renderer = SpriteAnimadoRenderer(
-                self.tela, asset_manager, self.transform, "ovelha", 1
+                self.tela, asset_manager, self.transform, ovelha.nome, 1
             )
-
-            self.ovelhas.append(ovelha)
             self.renderers_ovelhas.append(renderer)
 
     def atualizar(self, dt):
         if self.duende:
             for duende in [self.duende]:
                 duende.atualizar(dt)
-                sistema_fisica.aplicar_forca_vento(
-                    self.duende, self.clima_service, dt, sensibilidade=0.5
-                )
 
         for esfera in self.esferas:
             esfera.atualizar(self.ambiente, dt)
@@ -300,6 +313,9 @@ class CenarioPrincipal(CenarioBase):
             construcao.atualizar(dt)
 
         for personagem in self.personagens:
+            personagem.atualizar(dt)
+
+        for personagem in self.personagens_hostis:
             personagem.atualizar(dt)
 
         for arvore in self.arvores:
@@ -366,6 +382,16 @@ class CenarioPrincipal(CenarioBase):
                     self.camera,
                 )
 
+        for personagem in self.personagens_hostis:
+            renderer = self.menu_casa_renderer.obter_renderer(personagem)
+
+            renderer.renderizar(
+                personagem,
+                personagem.animacoes,
+                self.camera,
+                escala=1,
+            )
+
         renderizou_madeira = False
         renderizou_ouro = False
         renderizou_carne = False
@@ -398,8 +424,6 @@ class CenarioPrincipal(CenarioBase):
         if self.renderer_duende:
             self.renderer_duende.renderizar(self.duende, ESCALA)
 
-        self.evento_livro.renderizar(self.tela)
-        self.evento_livro.renderizar_livro_aberto(self.tela, self.clima_service)
         self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, self.sapo.animacoes)
 
         if self.construcao_arrastando:
@@ -469,7 +493,6 @@ class GerenciadorCenarios:
         background_renderer,
         sistema_nuvens,
         sapo,
-        violao,
         ambiente,
     ):
         self.camera = Camera()
@@ -479,20 +502,28 @@ class GerenciadorCenarios:
         self.background_renderer = background_renderer
         self.sistema_nuvens = sistema_nuvens
         self.sapo = sapo
-        self.violao = violao
         self.ambiente = ambiente
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
+        self.estado = EstadoJogo.ABERTURA
+        self.tilemap_renderer = TileMapRenderer(
+            tela,
+            asset_manager,
+            transform,
+        )
+        self.navegacao = NavegacaoMapa(self.tilemap_renderer)
 
         self.cenario_principal = CenarioPrincipal(
             tela,
             transform,
             clima_service,
             background_renderer,
+            self.navegacao,
+            self.tilemap_renderer,
             sistema_nuvens,
             sapo,
-            violao,
             ambiente,
             self.camera,
+            self.estado,
         )
 
         self.cenario_atual = self.cenario_principal
@@ -506,14 +537,24 @@ class GerenciadorCenarios:
 
     def renderizar(self, dt):
         self.tela.fill((0, 0, 0, 0))
-        self.background_renderer.desenhar(dt, self.camera)
 
-        self.cenario_atual.renderizar(dt)
+        if self.estado == EstadoJogo.ABERTURA:
+            self.background_renderer.desenhar(dt, self.camera)
+        else:
+            self.tilemap_renderer.atualizar_carregamento()
+            self.tilemap_renderer.renderizar(dt, self.camera)
 
-        self.sistema_nuvens.renderizar(
-            self.tela,
-            self.background_renderer.eh_dia(),
-        )
+            self.cenario_atual.renderizar(dt)
+
+            self.sistema_nuvens.renderizar(
+                self.tela,
+                self.background_renderer.eh_dia(),
+            )
 
     def adicionar_duende(self, duende):
         self.cenario_principal.adicionar_duende(duende)
+
+
+class EstadoJogo:
+    ABERTURA = 0
+    JOGANDO = 1

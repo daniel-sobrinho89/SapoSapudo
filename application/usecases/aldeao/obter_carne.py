@@ -8,47 +8,45 @@ class ObterCarneUseCase:
     VELOCIDADE = 110
     DISTANCIA_PARADA = 18
     TEMPO_OBTENDO = 4.0
+    TEMPO_MINIMO_ATAQUE = 0.25
 
     def __init__(self, cenario_principal):
         self.cenario_principal = cenario_principal
         self.guardar_recurso_x = 550
         self.guardar_recurso_y = 255
 
-        self.animal = None
-
+        self.entidade_alvo = None
         self.tempo = 0.0
         self.flip = False
 
     def iniciar(self, animal, personagem):
-        self.animal = animal
-        self.aldeao = personagem
+        self.entidade_alvo = animal
+        self.personagem = personagem
 
         self.tempo = 0.0
 
-        self.flip = animal.x < self.aldeao.x
+        self.flip = animal.x < self.personagem.x
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_FACA
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
     # --------------------------------------------------------
 
     def executar(self, dt):
-        if self.animal is None:
+        if self.entidade_alvo is None:
             return
 
-        if self.aldeao.animacoes.maquina.obtendo_carne():
+        if self.personagem.animacoes.maquina.obtendo_carne():
             self._obter(dt)
-        elif self.aldeao.animacoes.maquina.entregando_carne():
+        elif self.personagem.animacoes.maquina.entregando_carne():
             self._entregar(dt)
         else:
             self._andar(dt)
 
-    # --------------------------------------------------------
-
-    def _andar(self, dt):
-        rect = self.animal.corpo_rect
+    def _alvo_ainda_esta_no_alcance(self):
+        rect = self.entidade_alvo.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -57,8 +55,25 @@ class ObterCarneUseCase:
 
         destino_y = rect.bottom - 30
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
+
+        return hypot(dx, dy) <= self.DISTANCIA_PARADA
+
+    def _andar(self, dt):
+        self.flip = self.entidade_alvo.x < self.personagem.x
+
+        rect = self.entidade_alvo.corpo_rect
+
+        if self.flip:
+            destino_x = rect.right - 5
+        else:
+            destino_x = rect.left - 40
+
+        destino_y = rect.bottom - 30
+
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
@@ -66,68 +81,100 @@ class ObterCarneUseCase:
             self.tempo = 0.0
 
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_FACA_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_FACA_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_FACA
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_FACA
 
             return
 
-        if distancia > 0:
-            self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-            self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+        if self.flip:
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+        else:
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
-    # --------------------------------------------------------
+        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
 
     def _obter(self, dt):
-        self.tempo += dt
+        if self.entidade_alvo.vida > 0:
+            animacao = self.personagem.animacoes.animacao_atual
 
-        if self.animal.vida > 0:
-            self.animal.receber_golpe()
+            if not self._alvo_ainda_esta_no_alcance():
+                if not animacao.golpe_executado:
+                    return
+
+                self.flip = self.entidade_alvo.x < self.personagem.x
+
+                if self.flip:
+                    self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+                else:
+                    self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
+
+                return
+
+            if not animacao.golpe_executado:
+                return
+
+            destino = self.cenario_principal.navegacao.fugir(
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
+                self.personagem.x,
+                self.personagem.y,
+            )
+
+            self.entidade_alvo.receber_golpe(
+                self.personagem.x,
+                *destino,
+            )
+
             return
+
+        self.tempo += dt
 
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.guardar_recurso_x < self.aldeao.x
-        self.animal.obter_carne()
+        self.flip = self.guardar_recurso_x < self.personagem.x
+
+        self.entidade_alvo.obter_carne()
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_CARNE_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_CARNE_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_CARNE
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_CARNE
 
     def _entregar(self, dt):
         destino_x = self.guardar_recurso_x - 40
         destino_y = self.guardar_recurso_y + 150
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
             OFFSET = 40
 
             if self.flip:
-                recurso_x = self.aldeao.x - OFFSET
+                recurso_x = self.personagem.x - OFFSET
             else:
-                recurso_x = self.aldeao.x + OFFSET
+                recurso_x = self.personagem.x + OFFSET
 
-            recurso_y = self.aldeao.y
+            recurso_y = self.personagem.y
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "carne")
 
-            if self.animal.animacoes.estado == EstadoOvelha.OBTIDO:
-                self.animal = None
+            if self.entidade_alvo.animacoes.estado == EstadoOvelha.OBTIDO:
+                self.entidade_alvo = None
             else:
-                self.iniciar(self.animal, self.aldeao)
+                self.iniciar(self.entidade_alvo, self.personagem)
 
             return
 
-        self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt

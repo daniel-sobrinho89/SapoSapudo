@@ -1,7 +1,6 @@
-from core.animacao import Animacao
+from core.animacao import AnimacaoMovimento
 from core.event_bus import event_bus
 from domains.sapudo.maquina_estado_sapo import EstadoSapo, MaquinaEstadoSapo
-from domains.violao.logic import LogicaViolaoSapo
 
 
 class Animacoes:
@@ -10,28 +9,19 @@ class Animacoes:
         # COMPONENTES DE COMPORTAMENTO
         # ====================================
         self.maquina = MaquinaEstadoSapo()
-        self.violao_logic = LogicaViolaoSapo()
 
         # ====================================
         # CONTROLE TROCA DE FRAMES
         # ====================================
-        self.parado = Animacao(60, 0.15)
-        self.dormir = Animacao(60, 0.15, loop=False)
-        self.dormindo = Animacao(9, 0.50)
-        self.acordar = Animacao(60, 0.15, loop=False)
-        self.pegar_violao = Animacao(15, 0.16, loop=False)
-        self.levantar_violao = Animacao(15, 0.14, loop=False)
-        self.guardar_violao = Animacao(9, 0.14)
-        self.soltar_violao = Animacao(9, 0.14, loop=False)
-        self.andar_esquerda = Animacao(10, 0.07)
-        self.andar_direita = Animacao(10, 0.07)
-        self.conversar = Animacao(60, 0.17)
-        self.pegar_livro = Animacao(20, 0.16, loop=False)
-        self.lendo_livro = Animacao(30, 0.22)
-        self.levantar_livro = Animacao(20, 0.16, loop=False)
+        self.parado = AnimacaoMovimento(60, 0.15)
+        self.dormir = AnimacaoMovimento(60, 0.15, loop=False)
+        self.dormindo = AnimacaoMovimento(9, 0.50)
+        self.acordar = AnimacaoMovimento(60, 0.15, loop=False)
+        self.andar_esquerda = AnimacaoMovimento(10, 0.07)
+        self.andar_direita = AnimacaoMovimento(10, 0.07)
+        self.conversar = AnimacaoMovimento(60, 0.17)
 
         self.ultimo_frame_guardar = -1
-        self.finalizou_soltar_violao = False
 
         event_bus.assinar("tts_iniciado", self.fala_iniciada)
         event_bus.assinar("tts_finalizado", self.fala_finalizada)
@@ -44,22 +34,6 @@ class Animacoes:
     def estado(self, valor):
         self.maquina.trocar(valor)
 
-    @property
-    def frame_violao(self):
-        return self.violao_logic.frame_atual
-
-    @frame_violao.setter
-    def frame_violao(self, v):
-        self.violao_logic.frame_atual = v
-
-    def iniciar_pegar_livro(self):
-        self.pegar_livro.reset()
-        self.maquina.trocar(EstadoSapo.PEGANDO_LIVRO)
-
-    def iniciar_levantar_livro(self):
-        self.levantar_livro.reset()
-        self.maquina.trocar(EstadoSapo.LEVANTAR_LIVRO)
-
     # ====================================
     # UPDATE
     # ====================================
@@ -69,18 +43,6 @@ class Animacoes:
         self._atualizar_animacoes(dt)
 
     def _atualizar_animacoes(self, dt):
-        self.pegar_violao.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.PEGANDO_VIOLAO
-        ) else None
-        self.levantar_violao.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.LEVANTANDO_VIOLAO
-        ) else None
-        self.guardar_violao.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.GUARDANDO_VIOLAO
-        ) else None
-        self.soltar_violao.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.SOLTANDO_VIOLAO
-        ) else None
         self.andar_esquerda.atualizar(dt) if self.maquina.eh(
             EstadoSapo.ANDANDO_ESQUERDA
         ) else None
@@ -90,45 +52,20 @@ class Animacoes:
         self.conversar.atualizar(dt) if self.maquina.eh(EstadoSapo.CONVERSAR) else None
         self.parado.atualizar(dt) if self.maquina.eh(EstadoSapo.PARADO) else None
         self.dormindo.atualizar(dt) if self.maquina.eh(EstadoSapo.DORMINDO) else None
-        self.pegar_livro.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.PEGANDO_LIVRO
-        ) else None
-        self.lendo_livro.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.LENDO_LIVRO
-        ) else None
-        self.levantar_livro.atualizar(dt) if self.maquina.eh(
-            EstadoSapo.LEVANTAR_LIVRO
-        ) else None
 
     def obter_selecao_frame(self):
-        if self.maquina.eh(EstadoSapo.TOCANDO_VIOLAO):
-            return "tocar_violao", self.violao_logic.frame_atual
         if self.maquina.eh(EstadoSapo.ADORMECENDO):
             return "dormir", self.dormir.frame
         if self.maquina.eh(EstadoSapo.DORMINDO):
             return "dormindo", self.dormindo.frame
         if self.maquina.eh(EstadoSapo.ACORDANDO):
             return "acordar", self.acordar.frame
-        if self.maquina.eh(EstadoSapo.PEGANDO_VIOLAO):
-            return "pegar_violao", self.pegar_violao.frame
-        if self.maquina.eh(EstadoSapo.LEVANTANDO_VIOLAO):
-            return "levantar_violao", self.levantar_violao.frame
-        if self.maquina.eh(EstadoSapo.GUARDANDO_VIOLAO):
-            return "guardar_violao", self.guardar_violao.frame
-        if self.maquina.eh(EstadoSapo.SOLTANDO_VIOLAO):
-            return "soltar_violao", self.soltar_violao.frame
         if self.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):
             return "andar_esquerda", self.andar_esquerda.frame
         if self.maquina.eh(EstadoSapo.ANDANDO_DIREITA):
             return "andar_direita", self.andar_direita.frame
         if self.maquina.eh(EstadoSapo.CONVERSAR):
             return "conversar", self.conversar.frame
-        if self.maquina.eh(EstadoSapo.PEGANDO_LIVRO):
-            return "pegar_livro", self.pegar_livro.frame
-        if self.maquina.eh(EstadoSapo.LENDO_LIVRO):
-            return "lendo_livro", self.lendo_livro.frame
-        if self.maquina.eh(EstadoSapo.LEVANTAR_LIVRO):
-            return "levantar_livro", self.levantar_livro.frame
 
         return "parado", self.parado.frame
 
@@ -139,10 +76,6 @@ class Animacoes:
     def iniciar_acordar(self):
         self.acordar.reset()
         self.maquina.trocar(EstadoSapo.ACORDANDO)
-
-    def parar_violao(self, _evento=None):
-        self.maquina.trocar(EstadoSapo.PARADO)
-        self.violao_logic.resetar()
 
     def iniciar_andar_esquerda(self):
         if self.maquina.eh(EstadoSapo.ANDANDO_ESQUERDA):

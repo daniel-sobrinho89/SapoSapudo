@@ -1,16 +1,15 @@
 import random
 
-from config import LARGURA
+from application.usecases.mover_personagem import MoverPersonagemUseCase
 from domains.ovelha.maquina_estado import EstadoOvelha
 
 
 class ControlarComportamentoOvelhaUseCase:
-    def __init__(self):
+    def __init__(self, navegacao):
+        self.navegacao = navegacao
         self.velocidade = 35
-
-        self.limite_esquerdo = 30
-        self.limite_direito = LARGURA - 220
         self.distancia_minima = 40
+        self.mover = MoverPersonagemUseCase()
 
     def executar(self, dt, ovelha):
         self.ovelha = ovelha
@@ -35,10 +34,6 @@ class ControlarComportamentoOvelhaUseCase:
         estado = self.ovelha.animacoes.estado
         acao = random.random()
 
-        # ==================================================
-        # OLHANDO PARA DIREITA
-        # ==================================================
-
         if estado in (
             EstadoOvelha.OCIOSO,
             EstadoOvelha.COMENDO,
@@ -46,22 +41,21 @@ class ControlarComportamentoOvelhaUseCase:
             if acao < 0.70:
                 self.ovelha.animacoes.estado = EstadoOvelha.COMENDO
 
-            elif (
-                acao < 0.90
-                and self.ovelha.x < self.limite_direito - self.distancia_minima
-            ):
-                self.ovelha.destino_x = random.randint(
-                    int(self.ovelha.x + self.distancia_minima),
-                    self.limite_direito,
+            elif acao < 0.90:
+                (
+                    self.ovelha.destino_x,
+                    self.ovelha.destino_y,
+                ) = self.navegacao.ponto_aleatorio_no_raio(
+                    self.ovelha.x,
+                    self.ovelha.y,
+                    40,
+                    180,
                 )
+
                 self.ovelha.animacoes.estado = EstadoOvelha.CORRENDO
 
             else:
                 self.ovelha.animacoes.estado = EstadoOvelha.OCIOSO_FLIP
-
-        # ==================================================
-        # OLHANDO PARA ESQUERDA
-        # ==================================================
 
         elif estado in (
             EstadoOvelha.OCIOSO_FLIP,
@@ -70,32 +64,30 @@ class ControlarComportamentoOvelhaUseCase:
             if acao < 0.70:
                 self.ovelha.animacoes.estado = EstadoOvelha.COMENDO_FLIP
 
-            elif (
-                acao < 0.90
-                and self.ovelha.x > self.limite_esquerdo + self.distancia_minima
-            ):
-                self.ovelha.destino_x = random.randint(
-                    self.limite_esquerdo,
-                    int(self.ovelha.x - self.distancia_minima),
+            elif acao < 0.90:
+                (
+                    self.ovelha.destino_x,
+                    self.ovelha.destino_y,
+                ) = self.navegacao.ponto_aleatorio_no_raio(
+                    self.ovelha.x,
+                    self.ovelha.y,
+                    40,
+                    180,
                 )
+
                 self.ovelha.animacoes.estado = EstadoOvelha.CORRENDO_FLIP
 
             else:
                 self.ovelha.animacoes.estado = EstadoOvelha.OCIOSO
 
     def _andar(self, dt):
-        estado = self.ovelha.animacoes.estado
-
-        if estado == EstadoOvelha.CORRENDO:
-            self.ovelha.x += self.velocidade * dt
-
-            if self.ovelha.x >= self.ovelha.destino_x:
-                self.ovelha.x = self.ovelha.destino_x
-                self.ovelha.animacoes.estado = EstadoOvelha.COMENDO
-
-        elif estado == EstadoOvelha.CORRENDO_FLIP:
-            self.ovelha.x -= self.velocidade * dt
-
-            if self.ovelha.x <= self.ovelha.destino_x:
-                self.ovelha.x = self.ovelha.destino_x
-                self.ovelha.animacoes.estado = EstadoOvelha.COMENDO_FLIP
+        self.mover.executar(
+            personagem=self.ovelha,
+            navegacao=self.navegacao,
+            velocidade=self.velocidade,
+            estado_correndo=EstadoOvelha.CORRENDO,
+            estado_correndo_flip=EstadoOvelha.CORRENDO_FLIP,
+            estado_parado=EstadoOvelha.COMENDO,
+            estado_parado_flip=EstadoOvelha.COMENDO_FLIP,
+            dt=dt,
+        )

@@ -10,15 +10,13 @@ class ControlarComportamentoDuendeUseCase:
     # ==========================
 
     EXPLORANDO = "explorando"
-    ESCONDIDO_VIOLAO = "escondido_violao"
     ORBITANDO = "orbitando"
     FUGINDO = "fugindo"
     PERSEGUINDO_ESFERA = "perseguindo_esfera"
 
-    def __init__(self, duende, sapo, violao):
+    def __init__(self, duende, sapo):
         self.duende = duende
         self.sapo = sapo
-        self.violao = violao
 
         self.estado = self.EXPLORANDO
         self.tempo_estado = 0
@@ -33,7 +31,6 @@ class ControlarComportamentoDuendeUseCase:
         self.pote_x = self.centro_x - 260
         self.pote_y = self.centro_y + 40
         self.interesses = {
-            self.ESCONDIDO_VIOLAO: 40,
             self.PERSEGUINDO_ESFERA: 10,
             self.EXPLORANDO: 30,
             self.ORBITANDO: 20,
@@ -45,7 +42,7 @@ class ControlarComportamentoDuendeUseCase:
     def executar(self, dt):
         estado = self._decidir_proximo_estado(dt)
 
-        if estado == self.ESCONDIDO_VIOLAO or estado == self.PERSEGUINDO_ESFERA:
+        if estado == self.PERSEGUINDO_ESFERA:
             pass
         elif estado == self.ORBITANDO:
             self.orbita_angulo += dt * 1.8
@@ -65,9 +62,7 @@ class ControlarComportamentoDuendeUseCase:
             self.proxima_decisao = random.uniform(4.0, 8.0)
 
             self.estado = self._escolher_estado()
-            if self.estado == self.ESCONDIDO_VIOLAO:
-                self.duende.animacoes.estado = self.duende.animacoes.INDO_ATRAS_VIOLAO
-            elif self.estado == self.PERSEGUINDO_ESFERA:
+            if self.estado == self.PERSEGUINDO_ESFERA:
                 self.duende.animacoes.estado = self.duende.animacoes.INDO_ATRAS_ESFERA
             elif self.estado == self.EXPLORANDO:
                 destino_x, destino_y = self._obter_destino_teleporte()
@@ -97,12 +92,6 @@ class ControlarComportamentoDuendeUseCase:
 
     def _escolher_estado(self):
         pesos = self.interesses.copy()
-
-        if self.violao.acoplado:
-            pesos[self.ESCONDIDO_VIOLAO] = 0
-
-        if self.duende.animacoes.escondendo_atras_violao:
-            pesos[self.ESCONDIDO_VIOLAO] = 0
 
         # evita repetir o mesmo comportamento
         pesos[self.estado] *= 0.20

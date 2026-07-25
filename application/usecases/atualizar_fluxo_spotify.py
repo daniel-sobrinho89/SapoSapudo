@@ -2,9 +2,8 @@ from domains.sapudo.pensamentos_sapo import PensamentosSapo
 
 
 class AtualizarFluxoSpotifyUseCase:
-    def __init__(self, spotify, buscar_violao):
+    def __init__(self, spotify):
         self.spotify = spotify
-        self.buscar_violao = buscar_violao
         self.spotify_tocando_anterior = False
         self.spotify_pronto_anterior = False
 
@@ -21,16 +20,8 @@ class AtualizarFluxoSpotifyUseCase:
         if spotify_tocando != self.spotify_tocando_anterior:
             self.spotify_tocando_anterior = spotify_tocando
 
-            if spotify_tocando:
-                self.buscar_violao.executar()
-
         if spotify_pronto != self.spotify_pronto_anterior:
             self.spotify_pronto_anterior = spotify_pronto
-
-            if spotify_pronto and self.spotify.spotify_pendente and not spotify_tocando:
-                self.buscar_violao.executar()
-
-        self.buscar_violao.atualizar()
 
     def _avaliar_pensamentos_spotify(self, dt):
         if not self.spotify.spotify_tocando_cache:

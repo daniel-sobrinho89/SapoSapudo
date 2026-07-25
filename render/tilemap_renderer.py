@@ -1,6 +1,7 @@
-class TileMapRenderer:
-    TILE_SIZE = 64
+from config import TILE_SIZE
 
+
+class TileMapRenderer:
     TIPO_GRAMA = "grama"
     TIPO_AGUA = "agua"
     TIPO_ROCHA = "rocha"
@@ -29,7 +30,7 @@ class TileMapRenderer:
     @staticmethod
     def floresta():
         largura = 24
-        altura = 8
+        altura = 11
 
         return [
             [
@@ -86,8 +87,8 @@ class TileMapRenderer:
 
         spritesheet = self.assets.carregar("background/chao1.png")
 
-        colunas = spritesheet.get_width() // self.TILE_SIZE
-        linhas = spritesheet.get_height() // self.TILE_SIZE
+        colunas = spritesheet.get_width() // TILE_SIZE
+        linhas = spritesheet.get_height() // TILE_SIZE
 
         tiles = self.transform.recortar_spritesheet(
             spritesheet,
@@ -124,7 +125,7 @@ class TileMapRenderer:
         self.mapa = mapa
         self.altura = len(mapa)
         self.largura = len(mapa[0]) if mapa else 0
-        self.offset_y = self.altura + 220
+        self.offset_y = self.altura - 96
         self.offset_x = -60
 
     # ==================================================
@@ -167,15 +168,15 @@ class TileMapRenderer:
     # ==================================================
 
     def pixel_para_tile(self, x, y):
-        coluna = int((x - self.offset_x) // self.TILE_SIZE)
-        linha = int((y - self.offset_y) // self.TILE_SIZE)
+        coluna = int((x - self.offset_x) // TILE_SIZE)
+        linha = int((y - self.offset_y) // TILE_SIZE)
 
         return coluna, linha
 
     def tile_para_pixel(self, coluna, linha):
         return (
-            self.offset_x + coluna * self.TILE_SIZE,
-            self.offset_y + linha * self.TILE_SIZE,
+            self.offset_x + coluna * TILE_SIZE,
+            self.offset_y + linha * TILE_SIZE,
         )
 
     # ==================================================
@@ -264,22 +265,22 @@ class TileMapRenderer:
 
         inicio_x = max(
             0,
-            int(camera.x // self.TILE_SIZE),
+            int(camera.x // TILE_SIZE),
         )
 
         fim_x = min(
             self.largura,
-            int((camera.x + camera.largura) // self.TILE_SIZE) + 2,
+            int((camera.x + camera.largura) // TILE_SIZE) + 2,
         )
 
         inicio_y = max(
             0,
-            int(camera.y // self.TILE_SIZE),
+            int(camera.y // TILE_SIZE),
         )
 
         fim_y = min(
             self.altura,
-            int((camera.y + camera.altura) // self.TILE_SIZE) + 2,
+            int((camera.y + camera.altura) // TILE_SIZE) + 2,
         )
 
         for linha in range(inicio_y, fim_y):
@@ -289,8 +290,8 @@ class TileMapRenderer:
                 if sprite is None:
                     continue
 
-                x = self.offset_x + coluna * self.TILE_SIZE - camera.x
-                y = self.offset_y + linha * self.TILE_SIZE - camera.y
+                x = self.offset_x + coluna * TILE_SIZE - camera.x
+                y = self.offset_y + linha * TILE_SIZE - camera.y
 
                 if sprite == self.agua_parada:
                     x += self.offset_agua_parada_x

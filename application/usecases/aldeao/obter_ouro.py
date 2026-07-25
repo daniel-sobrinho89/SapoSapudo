@@ -14,13 +14,13 @@ class ObterOuroUseCase:
         self.guardar_recurso_x = 550
         self.guardar_recurso_y = 265
 
-        self.mina = None
+        self.entidade_alvo = None
 
         self.tempo = 0.0
         self.flip = False
 
     def iniciar(self, mina, personagem):
-        self.mina = mina
+        self.entidade_alvo = mina
         self.aldeao = personagem
 
         self.tempo = 0.0
@@ -35,7 +35,7 @@ class ObterOuroUseCase:
     # --------------------------------------------------------
 
     def executar(self, dt):
-        if self.mina is None:
+        if self.entidade_alvo is None:
             return
 
         if self.aldeao.animacoes.maquina.obtendo_ouro():
@@ -48,7 +48,7 @@ class ObterOuroUseCase:
     # --------------------------------------------------------
 
     def _andar(self, dt):
-        rect = self.mina.corpo_rect
+        rect = self.entidade_alvo.corpo_rect
 
         if self.flip:
             destino_x = rect.right - 5
@@ -85,7 +85,7 @@ class ObterOuroUseCase:
             return
 
         self.flip = self.guardar_recurso_x < self.aldeao.x
-        self.mina.obter_ouro()
+        self.entidade_alvo.obter_ouro()
 
         if self.flip:
             self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_OURO_FLIP
@@ -118,11 +118,11 @@ class ObterOuroUseCase:
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "ouro")
 
-            if self.mina.animacoes.estado == EstadoOuro.OBTIDO:
-                self.cenario_principal.remover_recurso(self.mina)
-                self.mina = None
+            if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
+                self.cenario_principal.remover_recurso(self.entidade_alvo)
+                self.entidade_alvo = None
             else:
-                self.iniciar(self.mina, self.aldeao)
+                self.iniciar(self.entidade_alvo, self.aldeao)
 
             return
 
