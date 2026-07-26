@@ -1,41 +1,12 @@
 import kivy_adapter
 from core.mouse_events import Hover
-from domains.personagem.entity import criar_aldeao, criar_goblin_tocha, criar_soldado
 from render.menu_renderer import MenuRenderer
-from render.sprite_animado_renderer import SpriteAnimadoRenderer
 
 
 class MenuCasaRenderer:
-    def __init__(self, tela, assets, transform):
+    def __init__(self, tela, assets, transform, cenario):
         self.tela = tela
-
-        self.aldeao = criar_aldeao()
-        self.soldado = criar_soldado()
-        self.goblin_tocha = criar_goblin_tocha()
-
-        self.renderer_aldeao = SpriteAnimadoRenderer(
-            tela,
-            assets,
-            transform,
-            "aldeao",
-            1.0,
-        )
-
-        self.renderer_soldado = SpriteAnimadoRenderer(
-            tela,
-            assets,
-            transform,
-            "soldado",
-            1.0,
-        )
-
-        self.renderer_goblin_tocha = SpriteAnimadoRenderer(
-            tela,
-            assets,
-            transform,
-            "goblin_tocha",
-            1.0,
-        )
+        self.aberto = False
 
         self.menu_renderer = MenuRenderer(
             tela,
@@ -45,29 +16,17 @@ class MenuCasaRenderer:
 
         self.opcoes = [
             {
-                "personagem": self.aldeao,
-                "renderer": self.renderer_aldeao,
-                "frames": 10,
+                "personagem": cenario.avatar_aldeao,
+                "renderer": cenario.renderer_avatar_aldeao,
             },
             {
-                "personagem": self.soldado,
-                "renderer": self.renderer_soldado,
-                "frames": 5,
-            },
-            {
-                "personagem": self.goblin_tocha,
-                "renderer": self.renderer_goblin_tocha,
-                "frames": 5,
+                "personagem": cenario.avatar_soldado,
+                "renderer": cenario.renderer_avatar_soldado,
             },
         ]
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
-
-        for opcao in self.opcoes:
-            opcao["renderer"].atualizar_carregamento(
-                opcao["frames"],
-            )
 
     def obter_opcao_clicada(self, pos, cenario):
         for opcao in self.opcoes:
@@ -81,13 +40,8 @@ class MenuCasaRenderer:
 
         return None
 
-    def obter_renderer(self, personagem):
-        for opcao in self.opcoes:
-            if opcao["personagem"].nome == personagem.nome:
-                return opcao["renderer"]
-
-    def renderizar(self, construcao, cenario, camera):
-        if not construcao.menu_aberto:
+    def renderizar(self, cenario, camera):
+        if not self.aberto:
             return
 
         MENU_X = self.tela.get_width() - 220

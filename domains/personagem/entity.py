@@ -10,13 +10,13 @@ class Personagem:
         self.corpo_rect = None
         self.selecionado = False
         self.destino_x = self.x
-        self.menu_construcoes_aberto = False
         self.construcao_selecionada = None
         self.custo_carne = carne
         self.custo_ouro = ouro
         self.custo_madeira = madeira
         self.nome = nome
-        self.vida = 1000
+        self.vida = 40
+        self.fugindo = False
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)
@@ -32,7 +32,8 @@ class Personagem:
 
         self.vida -= 1
 
-        if self.vida < 300:
+        if self.vida < 20:
+            self.fugindo = True
             self.destino_x = destino_x
             self.destino_y = destino_y
 
@@ -45,27 +46,21 @@ class Personagem:
 
 
 def criar_personagem(nome, x=400, y=450):
-    if nome == "Aldeao":
-        return criar_aldeao()
-    elif nome == "Soldado":
-        return criar_soldado()
-    elif nome == "Goblin_Tocha":
+    if nome == "aldeao":
+        return criar_aldeao(x, y)
+    elif nome == "soldado":
+        return criar_soldado(x, y)
+    elif nome == "goblin_Tocha":
         return criar_goblin_tocha(x, y)
 
 
-def criar_aldeao():
-    return Personagem(
-        "Aldeao",
-        carne=0,
-    )
+def criar_aldeao(x=400, y=450):
+    return Personagem("aldeao", carne=0, x=x, y=y)
 
 
-def criar_soldado():
-    return Personagem(
-        "Soldado",
-        carne=0,
-    )
+def criar_soldado(x=400, y=450):
+    return Personagem("soldado", carne=0, x=x, y=y)
 
 
 def criar_goblin_tocha(x=400, y=450):
-    return Personagem("Goblin_Tocha", carne=0, x=x, y=y)
+    return Personagem("goblin_Tocha", carne=0, x=x, y=y)

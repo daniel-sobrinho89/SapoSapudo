@@ -6,6 +6,8 @@ from domains.personagem.maquina_estado_soldado import EstadoSoldado
 class AtacarUseCase:
     VELOCIDADE = 110
     DISTANCIA_PARADA = 18
+    DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
+    DISTANCIA_LATERAL_ATAQUE = 45
     TEMPO_MINIMO_ATAQUE = 0.25
 
     def __init__(self, cenario_principal):
@@ -15,12 +17,14 @@ class AtacarUseCase:
         self.tempo = 0.0
         self.flip = False
         self.segundo_golpe = False
+        self.posicao_alvo_no_inicio_ataque = None
 
     def iniciar(self, personagemalvo, personagem):
         self.tempo = 0.0
         self.segundo_golpe = False
         self.entidade_alvo = personagemalvo
         self.personagem = personagem
+        self.posicao_alvo_no_inicio_ataque = None
 
         self.tempo = 0.0
 
@@ -43,31 +47,32 @@ class AtacarUseCase:
             self._andar(dt)
 
     def _alvo_ainda_esta_no_alcance(self):
-        rect = self.entidade_alvo.corpo_rect
+        if self.posicao_alvo_no_inicio_ataque is None:
+            return True
 
-        if self.flip:
-            destino_x = rect.right - 5
-        else:
-            destino_x = rect.left - 40
+        alvo_x, alvo_y = self.posicao_alvo_no_inicio_ataque
+        deslocamento_alvo = hypot(
+            self.entidade_alvo.x - alvo_x,
+            self.entidade_alvo.y - alvo_y,
+        )
 
-        destino_y = rect.bottom - 30
+        return deslocamento_alvo <= self.DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR
 
-        dx = destino_x - self.personagem.x
-        dy = destino_y - self.personagem.y
+    def _esta_correndo(self, personagem):
+        estado = personagem.animacoes.estado
+        tipo_estado = estado.__class__
 
-        return hypot(dx, dy) <= self.DISTANCIA_PARADA
+        return estado in (tipo_estado.CORRENDO, tipo_estado.CORRENDO_FLIP)
 
     def _andar(self, dt):
         self.flip = self.entidade_alvo.x < self.personagem.x
 
-        rect = self.entidade_alvo.corpo_rect
-
         if self.flip:
-            destino_x = rect.right - 5
+            destino_x = self.entidade_alvo.x + self.DISTANCIA_LATERAL_ATAQUE
         else:
-            destino_x = rect.left - 40
+            destino_x = self.entidade_alvo.x - self.DISTANCIA_LATERAL_ATAQUE
 
-        destino_y = rect.bottom - 30
+        destino_y = self.entidade_alvo.y
 
         dx = destino_x - self.personagem.x
         dy = destino_y - self.personagem.y
@@ -76,6 +81,10 @@ class AtacarUseCase:
 
         if distancia <= self.DISTANCIA_PARADA:
             self.tempo = 0.0
+            self.posicao_alvo_no_inicio_ataque = (
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
+            )
 
             if self.flip:
                 self.personagem.animacoes.estado = EstadoSoldado.ATACANDO1_FLIP
@@ -134,6 +143,7 @@ class AtacarUseCase:
             else:
                 self.personagem.animacoes.estado = EstadoSoldado.CORRENDO
 
+            self.posicao_alvo_no_inicio_ataque = None
             return
 
         if not animacao.golpe_executado:
@@ -156,7 +166,13 @@ class AtacarUseCase:
         if ctrl is not None:
             atacar = ctrl["acoes"].get("atacar")
 
-            if atacar is not None:
+            alvo_atual = atacar["usecase"].entidade_alvo if atacar else None
+
+            if (
+                atacar is not None
+                and not self._esta_correndo(self.entidade_alvo)
+                and (alvo_atual is None or self._esta_correndo(alvo_atual))
+            ):
                 atacar["usecase"].iniciar(
                     self.personagem,
                     self.entidade_alvo,

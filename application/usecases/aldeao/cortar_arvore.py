@@ -117,6 +117,7 @@ class CortarArvoreUseCase:
             recurso_y = self.aldeao.y
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "madeira")
+            self.cenario_principal.adicionar_estoque("madeira", 1)
 
             if self.entidade_alvo.animacoes.estado == EstadoArvore.CORTADA:
                 self.entidade_alvo = None

@@ -22,7 +22,6 @@ class ControladorVozMusical:
     def __init__(
         self,
         sapo,
-        duende,
         spotify,
         audio,
         controle_renderer,
@@ -32,13 +31,11 @@ class ControladorVozMusical:
         tts,
     ):
         self.sapo = sapo
-        self.duende = duende
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
-        self.esferas = self.gerenciador_cenarios.esferas
         self.conversa_sapudo = conversa_sapudo
         self.tts = tts
         self._pensamento_event = None
@@ -64,8 +61,6 @@ class ControladorVozMusical:
 
         self.coordenador_estado_jogo = CoordenadorEstadoJogo(
             self.sapo,
-            self.duende,
-            self.esferas,
             self.clima_service,
             self.spotify,
             self.audio,

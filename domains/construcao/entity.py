@@ -2,13 +2,7 @@ from core.animacoes import Animacoes
 
 
 class Construcao:
-    def __init__(
-        self,
-        nome,
-        madeira,
-        ouro,
-        carne=0,
-    ):
+    def __init__(self, nome, madeira=0, ouro=0, carne=0, x=0, y=0):
         self.nome = nome
 
         self.custo_madeira = madeira
@@ -16,42 +10,48 @@ class Construcao:
         self.custo_carne = carne
         self.animacoes = Animacoes(nome)
         self.corpo_rect = None
-        self.x = 0
-        self.y = 0
-        self.menu_aberto = False
+        self.x = x
+        self.y = y
+        self.vida = 1000
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)
 
 
-def criar_construcao(nome):
-    if nome == "Castelo":
+def criar_construcao(nome, x=0, y=0):
+    if nome == "castelo":
         return criar_castelo()
-    elif nome == "Casa":
+    elif nome == "casa":
         return criar_casa()
-    elif nome == "Quartel":
+    elif nome == "quartel":
         return criar_quartel()
+    elif nome == "casa_goblin":
+        return criar_casa_goblin(x, y)
 
 
 def criar_castelo():
     return Construcao(
-        "Castelo",
-        madeira=30,
-        ouro=50,
-    )
-
-
-def criar_casa():
-    return Construcao(
-        "Casa",
+        "castelo",
         madeira=0,
         ouro=0,
     )
 
 
+def criar_casa():
+    return Construcao(
+        "casa",
+        madeira=0,
+        ouro=0,
+    )
+
+
+def criar_casa_goblin(x=0, y=0):
+    return Construcao("casa_goblin", x=x, y=y)
+
+
 def criar_quartel():
     return Construcao(
-        "Quartel",
+        "quartel",
         madeira=0,
         ouro=0,
     )

@@ -1,8 +1,5 @@
 from application.usecases import (
-    ComerEsferaUseCase,
     ConstruirUseCase,
-    ControlarComportamentoDuendeUseCase,
-    ControlarSonoDuendeUseCase,
     ProcessarComandoSpotifyUseCase,
 )
 from core.mouse_events import DoubleClickDetector
@@ -12,62 +9,40 @@ class CoordenadorEstadoJogo:
     def __init__(
         self,
         sapo,
-        duende,
-        esferas,
         clima_service,
         spotify,
         audio,
         gerenciador_cenarios,
     ):
         self.sapo = sapo
-        self.duende = duende
-        self.esferas = esferas
+        self.duende = gerenciador_cenarios.duende
         self.clima_service = clima_service
         self.spotify = spotify
         self.audio = audio
         self.gerenciador_cenarios = gerenciador_cenarios
         self.double_click = DoubleClickDetector()
         self.controladores = {}
-        self.controlar_sono_duende = ControlarSonoDuendeUseCase(
-            self.sapo,
-            self.duende,
-            self.clima_service,
-        )
-        self.comer_esfera = ComerEsferaUseCase(self.duende, self.esferas)
-        self.controlar_comportamento_duende = ControlarComportamentoDuendeUseCase(
-            self.duende, self.sapo
-        )
         self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(self.spotify)
 
         self.construir = ConstruirUseCase()
 
     def executar(self, dt):
-        if self.duende.carregado:
-            self._executar_fluxo_duende(dt)
-            self._executar_fluxo_sapudo(dt)
+        self._executar_fluxo_sapudo(dt)
 
-        for personagem in self.gerenciador_cenarios.personagens:
-            ctrl = self.gerenciador_cenarios.controladores[personagem]
-
-            for acao in ctrl["acoes"].values():
-                if acao["usecase"].entidade_alvo is not None:
-                    acao["usecase"].executar(dt)
-                    break
-            else:
-                ctrl["padrao"].executar(dt, personagem)
-
-        for personagem in self.gerenciador_cenarios.personagens_hostis:
-            ctrl = self.gerenciador_cenarios.controladores[personagem]
-
-            for acao in ctrl["acoes"].values():
-                if acao["usecase"].entidade_alvo is not None:
-                    acao["usecase"].executar(dt)
-                    break
-            else:
-                ctrl["padrao"].executar(dt, personagem)
+        for personagem in (
+            self.gerenciador_cenarios.personagens
+            + self.gerenciador_cenarios.personagens_hostis
+        ):
+            self._executar_fluxo_personagem(personagem, dt)
 
         for personagem in self.gerenciador_cenarios.ovelhas:
             ctrl = self.gerenciador_cenarios.controladores[personagem]
+
+            if personagem.vida <= 0:
+                if ctrl["morte"].entidade_alvo is None:
+                    ctrl["morte"].iniciar(personagem)
+                else:
+                    ctrl["morte"].executar(dt)
 
             for acao in ctrl["acoes"].values():
                 acao["usecase"].executar(dt)
@@ -75,24 +50,29 @@ class CoordenadorEstadoJogo:
             else:
                 ctrl["padrao"].executar(dt, personagem)
 
-    def _executar_fluxo_duende(self, dt):
-        # TODO! Ajustar para verificar se duende existe
+    def _executar_fluxo_personagem(self, personagem, dt):
+        ctrl = self.gerenciador_cenarios.controladores[personagem]
 
-        if (
-            not self.clima_service.clima_disponivel
-            or not self.duende
-            or self.duende.animacoes.dormindo
-            or self.duende.animacoes.acordando
-        ):
-            self.controlar_sono_duende.executar(dt)
-        elif (
-            self.duende.animacoes.estado == self.duende.animacoes.INDO_ATRAS_ESFERA
-            or self.duende.animacoes.estado == self.duende.animacoes.PERSEGUINDO_ESFERA
-            or self.duende.animacoes.estado == self.duende.animacoes.COMENDO_ESFERA
-        ):
-            self.comer_esfera.executar(dt)
-        elif not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
-            self.controlar_comportamento_duende.executar(dt)
+        if personagem.vida <= 0:
+            if ctrl["morte"].entidade_alvo is None:
+                ctrl["morte"].iniciar(personagem)
+            else:
+                ctrl["morte"].executar(dt)
+            return
+
+        if personagem.fugindo:
+            for acao in ctrl["acoes"].values():
+                acao["usecase"].entidade_alvo = None
+
+            ctrl["padrao"].executar(dt, personagem)
+            return
+
+        for acao in ctrl["acoes"].values():
+            if acao["usecase"].entidade_alvo:
+                acao["usecase"].executar(dt)
+                return
+
+        ctrl["padrao"].executar(dt, personagem)
 
     def _executar_fluxo_sapudo(self, dt):
         pass
@@ -110,8 +90,8 @@ class CoordenadorEstadoJogo:
                 mouse_mundo
             ):
                 if self.double_click.detectar(mouse_mundo):
-                    personagem.menu_construcoes_aberto = (
-                        not personagem.menu_construcoes_aberto
+                    self.gerenciador_cenarios.menu_construcoes.aberto = (
+                        not self.gerenciador_cenarios.menu_construcoes.aberto
                     )
                     return
 
@@ -141,7 +121,9 @@ class CoordenadorEstadoJogo:
 
             for acao in ctrl["acoes"].values():
                 for item in acao["itens"]:
-                    if item.corpo_rect.collidepoint(mouse_mundo):
+                    if item.corpo_rect is not None and item.corpo_rect.collidepoint(
+                        mouse_mundo
+                    ):
                         acao["usecase"].iniciar(
                             item,
                             personagem,
@@ -154,10 +136,14 @@ class CoordenadorEstadoJogo:
         # Construções
         # ==========================================================
         for construcao in self.gerenciador_cenarios.construcoes:
-            if construcao.corpo_rect.collidepoint(
-                mouse_mundo
-            ) and self.double_click.detectar(mouse_mundo):
-                construcao.menu_aberto = not construcao.menu_aberto
+            if (
+                construcao.corpo_rect is not None
+                and construcao.corpo_rect.collidepoint(mouse_mundo)
+                and self.double_click.detectar(mouse_mundo)
+            ):
+                self.gerenciador_cenarios.menu_casa_renderer.aberto = (
+                    not self.gerenciador_cenarios.menu_casa_renderer.aberto
+                )
                 return
 
         construcao = self.gerenciador_cenarios.menu_construcoes.obter_opcao_clicada(
@@ -180,11 +166,6 @@ class CoordenadorEstadoJogo:
             )
             return
 
-        if not self.duende.animacoes.teleportando and self.duende.processar_toque_down(
-            pos_virtual
-        ):
-            return
-
         camera = self.gerenciador_cenarios.camera
         camera.arrastando = True
         camera.ultimo_mouse = pos_virtual
@@ -194,14 +175,6 @@ class CoordenadorEstadoJogo:
         camera.arrastando = False
         camera.ultimo_mouse = None
         mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
-
-        if self.duende.arraste.ativo and not (self.duende.animacoes.teleportando):
-            duende_indo_dormir = self.controlar_sono_duende.processar_soltou_duende(
-                self.duende.arraste,
-            )
-
-            if duende_indo_dormir:
-                return
 
         if (
             self.gerenciador_cenarios.construcao_arrastando

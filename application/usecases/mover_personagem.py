@@ -1,3 +1,4 @@
+import traceback
 from math import hypot
 
 
@@ -13,32 +14,37 @@ class MoverPersonagemUseCase:
         estado_parado_flip,
         dt,
     ):
-        dx = personagem.destino_x - personagem.x
-        dy = personagem.destino_y - personagem.y
+        try:
+            dx = personagem.destino_x - personagem.x
+            dy = personagem.destino_y - personagem.y
 
-        distancia = hypot(dx, dy)
+            distancia = hypot(dx, dy)
 
-        if distancia < 2:
+            if distancia < 2:
+                if dx >= 0:
+                    personagem.animacoes.estado = estado_parado
+                else:
+                    personagem.animacoes.estado = estado_parado_flip
+
+                return False
+
+            novo_x = personagem.x + dx / distancia * velocidade * dt
+            novo_y = personagem.y + dy / distancia * velocidade * dt
+
+            personagem.x, personagem.y = navegacao.limitar_movimento(
+                personagem.x,
+                personagem.y,
+                novo_x,
+                novo_y,
+            )
+
             if dx >= 0:
-                personagem.animacoes.estado = estado_parado
+                personagem.animacoes.estado = estado_correndo
             else:
-                personagem.animacoes.estado = estado_parado_flip
+                personagem.animacoes.estado = estado_correndo_flip
+
+            return True
+        except Exception:
+            traceback.print_exc()
 
             return False
-
-        novo_x = personagem.x + dx / distancia * velocidade * dt
-        novo_y = personagem.y + dy / distancia * velocidade * dt
-
-        personagem.x, personagem.y = navegacao.limitar_movimento(
-            personagem.x,
-            personagem.y,
-            novo_x,
-            novo_y,
-        )
-
-        if dx >= 0:
-            personagem.animacoes.estado = estado_correndo
-        else:
-            personagem.animacoes.estado = estado_correndo_flip
-
-        return True

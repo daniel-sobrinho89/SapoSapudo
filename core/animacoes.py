@@ -77,9 +77,9 @@ class Animacoes:
         if estado_animacao != self._estado_anterior:
             animacao.reset()
             self._estado_anterior = estado_animacao
-            return
+            return False
 
-        animacao.atualizar(dt)
+        return animacao.atualizar(dt)
 
     def obter_selecao_frame(self):
         estado = self.maquina.estado.name.lower()

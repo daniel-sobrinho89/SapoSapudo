@@ -7,7 +7,6 @@ class DuendeRenderer:
     MAPA_ANIMACOES = {
         "dormindo": "dormindo",
         "descendo_para_dormir": "descendo_para_dormir",
-        "comendo_esfera": "comendo_esfera",
     }
 
     def __init__(self, tela, assets, transform):
@@ -21,7 +20,6 @@ class DuendeRenderer:
             "voando": [],
             "descendo_para_dormir": [],
             "dormindo": [],
-            "comendo_esfera": [],
         }
 
         self._fila = self._criar_fila()
@@ -35,7 +33,6 @@ class DuendeRenderer:
 
         definicoes = [
             ("voando", "assistente/voando/assistente_{:04d}.webp", 15),
-            ("comendo_esfera", "assistente/comendo_esfera/assistente_{:04d}.webp", 60),
         ]
 
         for grupo, mascara, total in definicoes:

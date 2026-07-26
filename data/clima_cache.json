@@ -1,13 +1,13 @@
 {
-    "cloudiness": 100,
-    "wind_speed": 5.4,
-    "wind_direction": 126,
-    "future_cloudiness_1h": 100,
-    "future_cloudiness_2h": 100,
-    "future_cloudiness_3h": 100,
-    "is_day": 0,
-    "condition_code": 1009,
-    "condition_text": "Overcast",
-    "temperature": 15.1,
-    "humidity": 93
+    "cloudiness": 3,
+    "wind_speed": 4.0,
+    "wind_direction": 175,
+    "future_cloudiness_1h": 2,
+    "future_cloudiness_2h": 3,
+    "future_cloudiness_3h": 4,
+    "is_day": 1,
+    "condition_code": 1000,
+    "condition_text": "Sunny",
+    "temperature": 24.6,
+    "humidity": 45
 }

@@ -1,5 +1,4 @@
 from domains.construcao.entity import criar_construcao
-from domains.personagem.entity import criar_personagem
 
 
 class ConstruirUseCase:
@@ -13,10 +12,8 @@ class ConstruirUseCase:
         if not cenario.construcao_desbloqueada(construcao):
             return
 
-        if construcao.nome == "Castelo" and cenario.possui_castelo:
-            return
-
-        construcao = criar_construcao(construcao.nome)
+        nome = construcao.nome.removeprefix("avatar_")
+        construcao = criar_construcao(nome)
         construcao.x, construcao.y = pos
 
         cenario.construcao_arrastando = construcao
@@ -25,10 +22,8 @@ class ConstruirUseCase:
         if not cenario.construcao_desbloqueada(personagem):
             return
 
-        personagem = criar_personagem(personagem.nome)
-        personagem.x, personagem.y = pos
-
-        cenario.personagem_arrastando = personagem
+        nome = personagem.nome.removeprefix("avatar_")
+        cenario.carregar_entidade(nome, *pos)
 
     def atualizar_arraste(
         self,
@@ -72,8 +67,10 @@ class ConstruirUseCase:
 
         if cenario.construcao_arrastando is not None:
             cenario.construcoes.append(item)
+            cenario.menu_construcoes.aberto = not cenario.menu_construcoes.aberto
         else:
             cenario.adicionar_personagem(item)
+            cenario.menu_casa_renderer.aberto = not cenario.menu_casa_renderer.aberto
 
         cenario.construcao_arrastando = None
         cenario.personagem_arrastando = None

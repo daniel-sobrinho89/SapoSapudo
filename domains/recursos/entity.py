@@ -7,6 +7,7 @@ class Recurso:
         self.transform = transform
         self.x = x
         self.y = y
+        self.vida = 0
         self.animacoes = Animacoes(nome)
 
     def atualizar(self, dt):

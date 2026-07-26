@@ -85,10 +85,10 @@ class SpriteAnimadoRenderer:
     # LAYOUT
     # =====================================
 
-    def obter_tamanho(self, frame, escala=1.0):
+    def obter_tamanho(self, frame, escala=1.0, escala_x=1.0, escala_y=1.0):
         return (
-            max(1, int(frame.get_width() * self.escala * escala)),
-            max(1, int(frame.get_height() * self.escala * escala)),
+            max(1, int(frame.get_width() * self.escala * escala * escala_x)),
+            max(1, int(frame.get_height() * self.escala * escala * escala_y)),
         )
 
     def calcular_layout(self):
@@ -135,7 +135,12 @@ class SpriteAnimadoRenderer:
         if frame is None:
             return
 
-        largura, altura = self.obter_tamanho(frame, escala)
+        largura, altura = self.obter_tamanho(
+            frame,
+            escala,
+            getattr(entidade, "escala_x", 1.0),
+            getattr(entidade, "escala_y", 1.0),
+        )
 
         if not camera.visivel(
             entidade.x,

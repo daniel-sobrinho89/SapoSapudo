@@ -90,10 +90,6 @@ class GameWidget(Widget):
         return self.gerenciador_cenarios.cenario_principal
 
     @property
-    def tem_duende(self):
-        return self.gerenciador_cenarios.tem_duende
-
-    @property
     def reconhecedor_voz(self):
         return self.controlador_voz_musical.reconhecedor_voz
 
@@ -203,7 +199,7 @@ class GameWidget(Widget):
         pos_virtual = real_to_virtual(touch.pos)
 
         # Atualizar Arrastes
-        if self.tem_duende and self.cenario.duende.arrastando:
+        if self.gerenciador_cenarios.tem_duende and self.cenario.duende.arrastando:
             self.cenario.duende.mover_arraste(*pos_virtual)
 
         self.controlador_voz_musical.processar_on_touch_move(pos_virtual)
@@ -272,7 +268,6 @@ class GameWidget(Widget):
         if not self.controlador_voz_musical.inicializado and self.cenario.carregado:
             self.controlador_voz_musical = ControladorVozMusical(
                 self.sapo,
-                self.cenario.duende,
                 self.spotify,
                 self.audio,
                 self.controle_renderer,

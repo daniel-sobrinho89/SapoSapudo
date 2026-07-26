@@ -1,6 +1,15 @@
 {
     "aldeao": {
         "maquina": "MaquinaEstadoAldeao",
+        "classe":"criar_aldeao",
+        "grupo":"personagens",
+        "renderer":{
+            "escala":1,
+            "frames_carregamento":10
+        },
+        "spawn":[
+                { "x":400,"y":450 }
+            ],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -68,6 +77,13 @@
 
     "soldado": {
         "maquina": "MaquinaEstadoSoldado",
+        "classe":"criar_soldado",
+        "grupo":"personagens",
+        "renderer":{
+            "escala":1,
+            "frames_carregamento":5
+        },
+        "spawn":[],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -159,6 +175,18 @@
                 "arquivo": "construcoes/casa.png",
                 "frames": 1,
                 "tempo": 0.20
+            }
+        }
+    },
+
+    "casa_goblin": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/casa_goblin.png",
+                "frames": 16,
+                "tempo": 0.25
             }
         }
     },
@@ -310,6 +338,65 @@
                 "arquivo": "ouro/mina_ouro_006.png",
                 "frames": 6,
                 "tempo": 0.45
+            }
+        }
+    },
+
+    "poeira_grande": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/poeira_grande.png",
+                "frames": 10,
+                "tempo": 0.20
+            }
+        }
+    },
+
+    "barra_vida": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/barra_vida.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "barra_vida_base": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/barra_vida_base.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+
+    "avatar_aldeao": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/avateres/aldeao.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+
+    "avatar_soldado": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/avateres/soldado.png",
+                "frames": 1,
+                "tempo": 0
             }
         }
     }

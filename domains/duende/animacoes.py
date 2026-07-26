@@ -21,9 +21,6 @@ class AnimacoesDuende:
     SAINDO_DA_CASA = "saindo_da_casa"
     INDO_PARA_CASA = "indo_para_casa"
     DESCENDO_PARA_DORMIR = "descendo_para_dormir"
-    INDO_ATRAS_ESFERA = "indo_atras_esfera"
-    PERSEGUINDO_ESFERA = "perseguindo_esfera"
-    COMENDO_ESFERA = "comendo_esfera"
     TELEPORTANDO = "teleportando"
 
     def __init__(self):
@@ -41,7 +38,6 @@ class AnimacoesDuende:
         self.animacao_voando = AnimacaoMovimento(15, 0.20)
         self.animacao_dormindo = AnimacaoMovimento(1, 0.20)
         self.animacao_descendo_para_dormir = AnimacaoMovimento(10, 0.20)
-        self.animacao_comendo_esfera = AnimacaoMovimento(60, 0.20)
 
     # =====================================
     # ESTADO
@@ -84,16 +80,8 @@ class AnimacoesDuende:
         return self.maquina.eh(self.VOANDO)
 
     @property
-    def comendo_esfera(self):
-        return self.maquina.eh(self.COMENDO_ESFERA)
-
-    @property
     def teleportando(self):
         return self.maquina.eh(self.TELEPORTANDO)
-
-    @property
-    def indo_atras_esfera(self):
-        return self.maquina.eh(self.INDO_ATRAS_ESFERA)
 
     @property
     def atras_da_casa(self):
@@ -133,13 +121,6 @@ class AnimacoesDuende:
         self.estado = self.VOANDO
         event_bus.publicar("voo_iniciado")
 
-    def iniciar_perseguindo_esfera(self):
-        self.estado = self.PERSEGUINDO_ESFERA
-
-    def iniciar_comer_esfera(self):
-        self.animacao_comendo_esfera.reset()
-        self.estado = self.COMENDO_ESFERA
-
     def iniciar_teleportando(self):
         self.estado = self.TELEPORTANDO
 
@@ -150,8 +131,6 @@ class AnimacoesDuende:
             return "descendo_para_dormir", self.animacao_descendo_para_dormir.frame
         if self.indo_para_casa:
             return "indo_para_casa", self.animacao_descendo_para_dormir.frame
-        if self.comendo_esfera:
-            return "comendo_esfera", self.animacao_comendo_esfera.frame
 
         return "voando", self.animacao_voando.frame
 
@@ -164,7 +143,7 @@ class AnimacoesDuende:
         self._atualizar_animacoes(dt)
 
     def _atualizar_animacoes(self, dt):
-        if self.voando or self.indo_atras_esfera:
+        if self.voando:
             self.animacao_voando.atualizar(dt)
         elif self.dormindo:
             self.animacao_dormindo.atualizar(dt)

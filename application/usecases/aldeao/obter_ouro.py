@@ -117,6 +117,7 @@ class ObterOuroUseCase:
             recurso_y = self.aldeao.y
 
             self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "ouro")
+            self.cenario_principal.adicionar_estoque("ouro", 1)
 
             if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
                 self.cenario_principal.remover_recurso(self.entidade_alvo)

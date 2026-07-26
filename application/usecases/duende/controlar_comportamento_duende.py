@@ -12,7 +12,6 @@ class ControlarComportamentoDuendeUseCase:
     EXPLORANDO = "explorando"
     ORBITANDO = "orbitando"
     FUGINDO = "fugindo"
-    PERSEGUINDO_ESFERA = "perseguindo_esfera"
 
     def __init__(self, duende, sapo):
         self.duende = duende
@@ -31,7 +30,6 @@ class ControlarComportamentoDuendeUseCase:
         self.pote_x = self.centro_x - 260
         self.pote_y = self.centro_y + 40
         self.interesses = {
-            self.PERSEGUINDO_ESFERA: 10,
             self.EXPLORANDO: 30,
             self.ORBITANDO: 20,
             self.FUGINDO: 15,
@@ -42,9 +40,7 @@ class ControlarComportamentoDuendeUseCase:
     def executar(self, dt):
         estado = self._decidir_proximo_estado(dt)
 
-        if estado == self.PERSEGUINDO_ESFERA:
-            pass
-        elif estado == self.ORBITANDO:
+        if estado == self.ORBITANDO:
             self.orbita_angulo += dt * 1.8
             self.duende.alvo_x = (
                 self.sapo.x + math.cos(self.orbita_angulo) * self.orbita_raio
@@ -62,9 +58,7 @@ class ControlarComportamentoDuendeUseCase:
             self.proxima_decisao = random.uniform(4.0, 8.0)
 
             self.estado = self._escolher_estado()
-            if self.estado == self.PERSEGUINDO_ESFERA:
-                self.duende.animacoes.estado = self.duende.animacoes.INDO_ATRAS_ESFERA
-            elif self.estado == self.EXPLORANDO:
+            if self.estado == self.EXPLORANDO:
                 destino_x, destino_y = self._obter_destino_teleporte()
                 self.duende.teleportar(
                     destino_x,

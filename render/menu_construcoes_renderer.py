@@ -1,33 +1,14 @@
 import kivy_adapter
 from core.mouse_events import Hover
-from domains.construcao.entity import criar_casa, criar_castelo, criar_quartel
 from render.menu_renderer import MenuRenderer
-from render.sprite_animado_renderer import SpriteAnimadoRenderer
 
 
 class MenuConstrucoesRenderer:
-    def __init__(
-        self,
-        tela,
-        assets,
-        transform,
-    ):
+    def __init__(self, tela, assets, transform, cenario):
         self.tela = tela
         self.assets = assets
         self.transform = transform
-
-        self.castelo = criar_castelo()
-        self.renderer_castelo = SpriteAnimadoRenderer(
-            tela, assets, transform, "castelo", 0.25
-        )
-        self.casa = criar_casa()
-        self.renderer_casa = SpriteAnimadoRenderer(
-            tela, assets, transform, "casa", 0.25
-        )
-        self.quartel = criar_quartel()
-        self.renderer_quartel = SpriteAnimadoRenderer(
-            tela, assets, transform, "quartel", 0.25
-        )
+        self.aberto = False
 
         self.menu_renderer = MenuRenderer(
             tela,
@@ -36,24 +17,21 @@ class MenuConstrucoesRenderer:
         )
         self.opcoes = [
             {
-                "construcao": self.castelo,
-                "renderer": self.renderer_castelo,
+                "construcao": cenario.castelo,
+                "renderer": cenario.renderer_castelo,
             },
             {
-                "construcao": self.casa,
-                "renderer": self.renderer_casa,
+                "construcao": cenario.casa,
+                "renderer": cenario.renderer_casa,
             },
             {
-                "construcao": self.quartel,
-                "renderer": self.renderer_quartel,
+                "construcao": cenario.quartel,
+                "renderer": cenario.renderer_quartel,
             },
         ]
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
-        self.renderer_castelo.atualizar_carregamento()
-        self.renderer_casa.atualizar_carregamento()
-        self.renderer_quartel.atualizar_carregamento()
 
     def obter_opcao_clicada(self, pos):
         for opcao in self.opcoes:
@@ -63,18 +41,12 @@ class MenuConstrucoesRenderer:
 
         return None
 
-    def obter_renderer(self, construcao):
-        for opcao in self.opcoes:
-            if opcao["construcao"].nome == construcao.nome:
-                return opcao["renderer"]
-
     def renderizar(
         self,
-        aldeao,
         cenario,
         camera,
     ):
-        if not aldeao.menu_construcoes_aberto:
+        if not self.aberto:
             return
 
         MENU_X = self.tela.get_width() - 220
@@ -94,9 +66,6 @@ class MenuConstrucoesRenderer:
             construcao.y = slot.centery
 
             alpha = 255 if cenario.construcao_desbloqueada(construcao) else 90
-
-            if construcao.nome == "Castelo" and cenario.possui_castelo:
-                alpha = 90
 
             camera_x = camera.x
             camera_y = camera.y
