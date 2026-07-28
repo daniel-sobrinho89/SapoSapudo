@@ -21,16 +21,16 @@ class CortarArvoreUseCase:
 
     def iniciar(self, arvore, personagem):
         self.entidade_alvo = arvore
-        self.aldeao = personagem
+        self.personagem = personagem
 
         self.tempo = 0.0
 
-        self.flip = arvore.x < self.aldeao.x
+        self.flip = arvore.x < self.personagem.x
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO
 
     # --------------------------------------------------------
 
@@ -38,9 +38,9 @@ class CortarArvoreUseCase:
         if self.entidade_alvo is None:
             return
 
-        if self.aldeao.animacoes.maquina.cortando_arvore():
+        if self.personagem.animacoes.maquina.cortando_arvore():
             self._obter(dt)
-        elif self.aldeao.animacoes.maquina.entregando_madeira():
+        elif self.personagem.animacoes.maquina.entregando_madeira():
             self._entregar(dt)
         else:
             self._andar(dt)
@@ -57,8 +57,8 @@ class CortarArvoreUseCase:
 
         destino_y = rect.bottom - 25
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
@@ -66,15 +66,15 @@ class CortarArvoreUseCase:
             self.tempo = 0.0
 
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_MACHADO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_MACHADO_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_MACHADO
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_MACHADO
 
             return
 
         if distancia > 0:
-            self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-            self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+            self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+            self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
 
     # --------------------------------------------------------
 
@@ -84,47 +84,53 @@ class CortarArvoreUseCase:
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.guardar_recurso_x < self.aldeao.x
+        self.flip = self.guardar_recurso_x < self.personagem.x
         self.entidade_alvo.obter_madeira()
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA
 
     def _entregar(self, dt):
+        if self.entidade_alvo.animacoes.estado == EstadoArvore.CORTADA:
+            self.cenario_principal.parar_acao_global(
+                self.entidade_alvo,
+                ignorar=self.personagem,
+            )
+
         destino_x = self.guardar_recurso_x - 40
         destino_y = self.guardar_recurso_y + 150
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
             OFFSET = 40
 
             if self.flip:
-                recurso_x = self.aldeao.x - OFFSET
+                recurso_x = self.personagem.x - OFFSET
             else:
-                recurso_x = self.aldeao.x + OFFSET
+                recurso_x = self.personagem.x + OFFSET
 
-            recurso_y = self.aldeao.y
+            recurso_y = self.personagem.y
 
-            self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "madeira")
+            self.cenario_principal.carregar_entidade("madeira", recurso_x, recurso_y)
             self.cenario_principal.adicionar_estoque("madeira", 1)
 
             if self.entidade_alvo.animacoes.estado == EstadoArvore.CORTADA:
                 self.entidade_alvo = None
             else:
-                self.iniciar(self.entidade_alvo, self.aldeao)
+                self.iniciar(self.entidade_alvo, self.personagem)
 
             return
 
-        self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt

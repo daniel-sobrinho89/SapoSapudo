@@ -93,6 +93,7 @@ class CoordenadorEstadoJogo:
                     self.gerenciador_cenarios.menu_construcoes.aberto = (
                         not self.gerenciador_cenarios.menu_construcoes.aberto
                     )
+                    self.gerenciador_cenarios.menu_casa_renderer.aberto = False
                     return
 
                 if not personagem.animacoes.maquina.carregando_recuso():
@@ -144,27 +145,32 @@ class CoordenadorEstadoJogo:
                 self.gerenciador_cenarios.menu_casa_renderer.aberto = (
                     not self.gerenciador_cenarios.menu_casa_renderer.aberto
                 )
+                self.gerenciador_cenarios.menu_construcoes.aberto = False
                 return
 
-        construcao = self.gerenciador_cenarios.menu_construcoes.obter_opcao_clicada(
-            pos_virtual
-        )
-
-        if construcao:
-            self.construir.iniciar_arraste(
-                mouse_mundo, self.gerenciador_cenarios, construcao=construcao
+        if self.gerenciador_cenarios.menu_construcoes.aberto:
+            construcao = self.gerenciador_cenarios.menu_construcoes.obter_opcao_clicada(
+                pos_virtual
             )
-            return
 
-        personagem = self.gerenciador_cenarios.menu_casa_renderer.obter_opcao_clicada(
-            pos_virtual, self.gerenciador_cenarios
-        )
+            if construcao:
+                self.construir.iniciar_arraste(
+                    mouse_mundo, self.gerenciador_cenarios, construcao=construcao
+                )
+                return
 
-        if personagem:
-            self.construir.iniciar_arraste(
-                mouse_mundo, self.gerenciador_cenarios, personagem=personagem
+        if self.gerenciador_cenarios.menu_casa_renderer.aberto:
+            personagem = (
+                self.gerenciador_cenarios.menu_casa_renderer.obter_opcao_clicada(
+                    pos_virtual
+                )
             )
-            return
+
+            if personagem:
+                self.construir.iniciar_arraste(
+                    mouse_mundo, self.gerenciador_cenarios, personagem=personagem
+                )
+                return
 
         camera = self.gerenciador_cenarios.camera
         camera.arrastando = True

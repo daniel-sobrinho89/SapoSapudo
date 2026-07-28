@@ -7,6 +7,7 @@ from domains.ouro.maquina_estado import MaquinaEstadoOuro
 from domains.ovelha.maquina_estado import MaquinaEstadoOvelha
 from domains.personagem.maquina_estado import MaquinaEstadoAldeao
 from domains.personagem.maquina_estado_goblin_tocha import MaquinaEstadoGoblinTocha
+from domains.personagem.maquina_estado_sapudo import MaquinaEstadoSapudo
 from domains.personagem.maquina_estado_soldado import MaquinaEstadoSoldado
 from domains.recursos.maquina_estado import MaquinaEstadoRecurso
 from utils.paths import BASE_DIR
@@ -20,6 +21,7 @@ MAQUINAS = {
     "MaquinaEstadoOuro": MaquinaEstadoOuro,
     "MaquinaEstadoOvelha": MaquinaEstadoOvelha,
     "MaquinaEstadoRecurso": MaquinaEstadoRecurso,
+    "MaquinaEstadoSapudo": MaquinaEstadoSapudo,
 }
 
 

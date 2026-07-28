@@ -20,46 +20,31 @@ class Construcao:
 
 def criar_construcao(nome, x=0, y=0):
     if nome == "castelo":
-        return criar_castelo()
+        return criar_castelo(nome, x, y)
     elif nome == "casa":
-        return criar_casa()
+        return criar_casa(nome, x, y)
     elif nome == "quartel":
-        return criar_quartel()
+        return criar_quartel(nome, x, y)
     elif nome == "casa_goblin":
-        return criar_casa_goblin(x, y)
+        return criar_casa_goblin(nome, x, y)
 
 
-def criar_castelo():
+def criar_castelo(nome, x=0, y=0):
+    return Construcao(nome, madeira=0, ouro=0, x=x, y=y)
+
+
+def criar_casa(nome, x=0, y=0):
+    return Construcao(nome, madeira=0, ouro=0, x=x, y=y)
+
+
+def criar_casa_goblin(nome, x=0, y=0):
+    return Construcao(nome, x=x, y=y)
+
+
+def criar_quartel(nome, x=0, y=0):
     return Construcao(
-        "castelo",
+        nome,
         madeira=0,
         ouro=0,
+        x=x,
     )
-
-
-def criar_casa():
-    return Construcao(
-        "casa",
-        madeira=0,
-        ouro=0,
-    )
-
-
-def criar_casa_goblin(x=0, y=0):
-    return Construcao("casa_goblin", x=x, y=y)
-
-
-def criar_quartel():
-    return Construcao(
-        "quartel",
-        madeira=0,
-        ouro=0,
-    )
-
-
-# def criar_quartel():
-#     return Construcao(
-#         "Quartel",
-#         madeira=20,
-#         ouro=10,
-#     )

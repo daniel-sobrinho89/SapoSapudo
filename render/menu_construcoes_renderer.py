@@ -1,4 +1,5 @@
 import kivy_adapter
+from core.game_config import obter_config
 from core.mouse_events import Hover
 from render.menu_renderer import MenuRenderer
 
@@ -15,19 +16,11 @@ class MenuConstrucoesRenderer:
             assets,
             transform,
         )
+
         self.opcoes = [
-            {
-                "construcao": cenario.castelo,
-                "renderer": cenario.renderer_castelo,
-            },
-            {
-                "construcao": cenario.casa,
-                "renderer": cenario.renderer_casa,
-            },
-            {
-                "construcao": cenario.quartel,
-                "renderer": cenario.renderer_quartel,
-            },
+            cenario.carregar_entidade("castelo"),
+            cenario.carregar_entidade("casa"),
+            cenario.carregar_entidade("quartel"),
         ]
 
     def atualizar_carregamento(self):
@@ -35,9 +28,8 @@ class MenuConstrucoesRenderer:
 
     def obter_opcao_clicada(self, pos):
         for opcao in self.opcoes:
-            construcao = opcao["construcao"]
-            if construcao.corpo_rect and construcao.corpo_rect.collidepoint(pos):
-                return construcao
+            if opcao.corpo_rect and opcao.corpo_rect.collidepoint(pos):
+                return opcao
 
         return None
 
@@ -59,13 +51,12 @@ class MenuConstrucoesRenderer:
         )
 
         for slot, opcao in zip(slots, self.opcoes):
-            construcao = opcao["construcao"]
-            renderer = opcao["renderer"]
+            renderer = cenario.renderers[opcao.nome]
 
-            construcao.x = slot.centerx
-            construcao.y = slot.centery
+            opcao.x = slot.centerx
+            opcao.y = slot.centery
 
-            alpha = 255 if cenario.construcao_desbloqueada(construcao) else 90
+            alpha = 255 if cenario.construcao_desbloqueada(opcao) else 90
 
             camera_x = camera.x
             camera_y = camera.y
@@ -73,20 +64,18 @@ class MenuConstrucoesRenderer:
             camera.x = 0
             camera.y = 0
 
-            renderer.renderizar(
-                construcao,
-                construcao.animacoes,
-                camera,
-                alpha,
-            )
+            config = obter_config(opcao.nome)
+            escala = config["renderer"]["escala_menu"]
+
+            renderer.renderizar(opcao, opcao.animacoes, camera, alpha, escala)
 
             camera.x = camera_x
             camera.y = camera_y
 
-            if Hover.esta_sobre(construcao.corpo_rect):
+            if Hover.esta_sobre(opcao.corpo_rect):
                 kivy_adapter.draw.text(
                     self.tela,
-                    f"Madeira {cenario.total_madeira}/{construcao.custo_madeira}",
+                    f"Madeira {cenario.total_madeira}/{opcao.custo_madeira}",
                     (slot.left - 20, slot.bottom + 5),
                     (255, 255, 255),
                     15,
@@ -94,7 +83,7 @@ class MenuConstrucoesRenderer:
 
                 kivy_adapter.draw.text(
                     self.tela,
-                    f"Ouro {cenario.total_ouro}/{construcao.custo_ouro}",
+                    f"Ouro {cenario.total_ouro}/{opcao.custo_ouro}",
                     (slot.left - 20, slot.bottom + 22),
                     (255, 255, 255),
                     15,

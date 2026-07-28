@@ -3,7 +3,7 @@ from math import hypot
 from domains.personagem.maquina_estado_goblin_tocha import EstadoGoblinTocha
 
 
-class AtacarUseCase:
+class AtacarGoblinUseCase:
     VELOCIDADE = 110
     DISTANCIA_PARADA = 18
     DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40

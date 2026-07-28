@@ -1,3 +1,4 @@
+from core.game_config import obter_config
 from domains.efeitos.entity import criar_efeitos
 
 
@@ -13,7 +14,6 @@ class MortePersonagemUseCase:
         for outra_acao in ctrl["acoes"].values():
             outra_acao["usecase"].entidade_alvo = None
 
-        # self.personagem_removido = False
         self.entidade_alvo = personagem
         self.poeira_grande = criar_efeitos("poeira_grande")
         self.poeira_grande.x = personagem.x
@@ -23,29 +23,18 @@ class MortePersonagemUseCase:
 
         self.cenario_principal.adicionar_efeito(self.poeira_grande)
 
-    # --------------------------------------------------------
-
     def executar(self, dt):
         if self.entidade_alvo is None:
             return
 
-        # if self.poeira_grande.finalizado:
-        #     if not self.personagem_removido:
-        #         self.cenario_principal._remover_personagem(self.entidade_alvo)
-        #         self._remover_personagem(self.poeira_grande)
+        drops = self._dropar_itens()
+        self._redirecionar_alvos(drops)
 
-        #     return
-        # print(self.poeira_grande.animacoes.ocioso.progresso)
-        # if (
-        #     self.poeira_grande.animacoes.ocioso.progresso
-        #     >= self.PROGRESSO_PARA_REMOVER_PERSONAGEM
-        # ):
         self.cenario_principal.remover_personagem(self.entidade_alvo)
-        # self.personagem_removido = True
 
     def _ajustar_tamanho_poeira(self, poeira, personagem):
-        renderer_personagem = self.cenario_principal.obter_renderer(personagem)
-        renderer_poeira_grande = self.cenario_principal.renderer_poeira_grande
+        renderer_personagem = self.cenario_principal.renderers.get(personagem.nome)
+        renderer_poeira_grande = self.cenario_principal.renderers.get("poeira_grande")
 
         frame_personagem = renderer_personagem.obter_frame_animacao(
             personagem.animacoes
@@ -101,3 +90,47 @@ class MortePersonagemUseCase:
 
         poeira.x = centro_personagem_x - centro_poeira_x
         poeira.y = centro_personagem_y - centro_poeira_y
+
+    def _dropar_itens(self):
+        config = obter_config(self.entidade_alvo.nome)
+
+        drop = config.get("drop")
+        if not drop:
+            return []
+
+        itens = []
+
+        for _ in range(drop.get("quantidade", 1)):
+            itens.append(
+                self.cenario_principal.carregar_entidade(
+                    drop["tipo"],
+                    self.entidade_alvo.x,
+                    self.entidade_alvo.y,
+                )
+            )
+
+        return itens
+
+    def _redirecionar_alvos(self, drops):
+        if not drops:
+            return
+
+        for ctrl in self.cenario_principal.controladores.values():
+            for acao in ctrl["acoes"].values():
+                usecase = acao["usecase"]
+
+                if usecase.entidade_alvo is not self.entidade_alvo:
+                    continue
+
+                if usecase.__class__.__name__ != "ObterCarneUseCase":
+                    continue
+
+                for drop in drops:
+                    if self.cenario_principal.reservar_drop(
+                        drop,
+                        usecase.personagem,
+                    ):
+                        usecase.iniciar(drop, usecase.personagem)
+                        break
+                else:
+                    usecase.cancelar()

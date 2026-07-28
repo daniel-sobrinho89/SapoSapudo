@@ -15,28 +15,17 @@ class MenuCasaRenderer:
         )
 
         self.opcoes = [
-            {
-                "personagem": cenario.avatar_aldeao,
-                "renderer": cenario.renderer_avatar_aldeao,
-            },
-            {
-                "personagem": cenario.avatar_soldado,
-                "renderer": cenario.renderer_avatar_soldado,
-            },
+            cenario.carregar_entidade("avatar_aldeao"),
+            cenario.carregar_entidade("avatar_soldado"),
         ]
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
 
-    def obter_opcao_clicada(self, pos, cenario):
+    def obter_opcao_clicada(self, pos):
         for opcao in self.opcoes:
-            personagem = opcao["personagem"]
-
-            if not cenario.personagem_desbloqueado(personagem):
-                continue
-
-            if personagem.corpo_rect and personagem.corpo_rect.collidepoint(pos):
-                return personagem
+            if opcao.corpo_rect and opcao.corpo_rect.collidepoint(pos):
+                return opcao
 
         return None
 
@@ -45,7 +34,7 @@ class MenuCasaRenderer:
             return
 
         MENU_X = self.tela.get_width() - 220
-        MENU_Y = 40
+        MENU_Y = 20
 
         slots = self.menu_renderer.renderizar(
             MENU_X,
@@ -54,13 +43,12 @@ class MenuCasaRenderer:
         )
 
         for slot, opcao in zip(slots, self.opcoes):
-            personagem = opcao["personagem"]
-            renderer = opcao["renderer"]
+            renderer = cenario.renderers[opcao.nome]
 
-            personagem.x = slot.centerx
-            personagem.y = slot.centery
+            opcao.x = slot.centerx
+            opcao.y = slot.centery
 
-            alpha = 255 if cenario.personagem_desbloqueado(personagem) else 90
+            alpha = 255 if cenario.personagem_desbloqueado(opcao) else 90
 
             camera_x = camera.x
             camera_y = camera.y
@@ -68,20 +56,15 @@ class MenuCasaRenderer:
             camera.x = 0
             camera.y = 0
 
-            renderer.renderizar(
-                personagem,
-                personagem.animacoes,
-                camera,
-                alpha,
-            )
+            renderer.renderizar(opcao, opcao.animacoes, camera, alpha)
 
             camera.x = camera_x
             camera.y = camera_y
 
-            if Hover.esta_sobre(personagem.corpo_rect):
+            if Hover.esta_sobre(opcao.corpo_rect):
                 kivy_adapter.draw.text(
                     self.tela,
-                    f"Carne {cenario.total_carne}/{personagem.custo_carne}",
+                    f"Carne {cenario.total_carne}/{opcao.custo_carne}",
                     (slot.left - 20, slot.bottom + 5),
                     (255, 255, 255),
                     15,

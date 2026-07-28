@@ -1,6 +1,3 @@
-from domains.construcao.entity import criar_construcao
-
-
 class ConstruirUseCase:
     def iniciar_arraste(self, pos, cenario, construcao=None, personagem=None):
         if construcao is not None:
@@ -13,17 +10,20 @@ class ConstruirUseCase:
             return
 
         nome = construcao.nome.removeprefix("avatar_")
-        construcao = criar_construcao(nome)
-        construcao.x, construcao.y = pos
+        entidade = cenario.carregar_entidade(nome, *pos)
+        # construcao = criar_construcao(nome)
+        # construcao.x, construcao.y = pos
 
-        cenario.construcao_arrastando = construcao
+        cenario.construcao_arrastando = entidade
 
     def _arrastando_personagem(self, pos, cenario, personagem):
         if not cenario.construcao_desbloqueada(personagem):
             return
 
         nome = personagem.nome.removeprefix("avatar_")
-        cenario.carregar_entidade(nome, *pos)
+        entidade = cenario.carregar_entidade(nome, *pos)
+
+        cenario.personagem_arrastando = entidade
 
     def atualizar_arraste(
         self,
@@ -59,25 +59,21 @@ class ConstruirUseCase:
             item.x,
             item.y,
         ):
+            personagem = cenario.construcao_arrastando or cenario.personagem_arrastando
+            cenario.remover_personagem(personagem)
             cenario.construcao_arrastando = None
             cenario.personagem_arrastando = None
             return
 
         self._consumir_recursos(cenario)
 
-        if cenario.construcao_arrastando is not None:
-            cenario.construcoes.append(item)
-            cenario.menu_construcoes.aberto = not cenario.menu_construcoes.aberto
-        else:
-            cenario.adicionar_personagem(item)
-            cenario.menu_casa_renderer.aberto = not cenario.menu_casa_renderer.aberto
+        cenario.menu_construcoes.aberto = False
+        cenario.menu_casa_renderer.aberto = False
 
         cenario.construcao_arrastando = None
         cenario.personagem_arrastando = None
 
     def _consumir_recursos(self, cenario):
-        novos = []
-
         if cenario.construcao_arrastando is not None:
             madeiras = cenario.construcao_arrastando.custo_madeira
             ouros = cenario.construcao_arrastando.custo_ouro
@@ -87,22 +83,9 @@ class ConstruirUseCase:
             ouros = cenario.personagem_arrastando.custo_ouro
             carnes = cenario.personagem_arrastando.custo_carne
 
-        for renderer in cenario.renderers_recursos:
-            if renderer.tipo == "madeira" and madeiras:
-                madeiras -= 1
-                continue
-
-            if renderer.tipo == "ouro" and ouros:
-                ouros -= 1
-                continue
-
-            if renderer.tipo == "carne" and carnes:
-                carnes -= 1
-                continue
-
-            novos.append(renderer)
-
-        cenario.renderers_recursos = novos
+        cenario.estoque["madeira"] -= madeiras
+        cenario.estoque["ouro"] -= ouros
+        cenario.estoque["carne"] -= carnes
 
         for personagem in cenario.personagens:
             personagem.construcao_selecionada = None

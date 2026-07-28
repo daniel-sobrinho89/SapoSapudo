@@ -40,10 +40,10 @@ class SapoRenderer:
         fila = []
 
         definicoes = [
-            ("parado", "sapudo/parado/sapudo_{:04d}.webp", 60),
-            ("acordar", "sapudo/acordar/sapudo_{:04d}.webp", 60),
-            ("andar_esquerda", "sapudo/andar_esquerda/sapudo_{:04d}.webp", 10),
-            ("conversar", "sapudo/conversar/sapudo_{:04d}.webp", 60),
+            ("parado", "sapudo_old/parado/sapudo_{:04d}.webp", 60),
+            ("acordar", "sapudo_old/acordar/sapudo_{:04d}.webp", 60),
+            ("andar_esquerda", "sapudo_old/andar_esquerda/sapudo_{:04d}.webp", 10),
+            ("conversar", "sapudo_old/conversar/sapudo_{:04d}.webp", 60),
         ]
 
         for grupo, mascara, total in definicoes:

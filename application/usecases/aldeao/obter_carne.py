@@ -1,6 +1,5 @@
 from math import hypot
 
-from domains.ovelha.maquina_estado import EstadoOvelha
 from domains.personagem.maquina_estado import EstadoAldeao
 
 
@@ -9,7 +8,6 @@ class ObterCarneUseCase:
     DISTANCIA_PARADA = 18
     DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
     DISTANCIA_LATERAL_ATAQUE = 40
-    TEMPO_OBTENDO = 4.0
     TEMPO_MINIMO_ATAQUE = 0.25
 
     def __init__(self, cenario_principal):
@@ -21,11 +19,13 @@ class ObterCarneUseCase:
         self.tempo = 0.0
         self.flip = False
         self.posicao_alvo_no_inicio_ataque = None
+        self.item_carregado = None
 
     def iniciar(self, animal, personagem):
         self.entidade_alvo = animal
         self.personagem = personagem
         self.posicao_alvo_no_inicio_ataque = None
+        self.item_carregado = None
 
         self.tempo = 0.0
 
@@ -36,6 +36,15 @@ class ObterCarneUseCase:
         else:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
+    def cancelar(self):
+        self.entidade_alvo = None
+        self.item_carregado = None
+
+        if self.flip:
+            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+        else:
+            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+
     # --------------------------------------------------------
 
     def executar(self, dt):
@@ -43,7 +52,11 @@ class ObterCarneUseCase:
             return
 
         if self.personagem.animacoes.maquina.obtendo_carne():
-            self._obter(dt)
+            if self.entidade_alvo.nome == "carne":
+                self._obter()
+            elif self.entidade_alvo.vida > 0:
+                self._atacar()
+
         elif self.personagem.animacoes.maquina.entregando_carne():
             self._entregar(dt)
         else:
@@ -98,49 +111,49 @@ class ObterCarneUseCase:
         self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
         self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
 
-    def _obter(self, dt):
-        if self.entidade_alvo.vida > 0:
-            animacao = self.personagem.animacoes.animacao_atual
+    def _atacar(self):
+        animacao = self.personagem.animacoes.animacao_atual
 
-            if not self._alvo_ainda_esta_no_alcance():
-                if not animacao.golpe_executado:
-                    return
-
-                self.flip = self.entidade_alvo.x < self.personagem.x
-
-                if self.flip:
-                    self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
-                else:
-                    self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
-
-                self.posicao_alvo_no_inicio_ataque = None
-                return
-
+        if not self._alvo_ainda_esta_no_alcance():
             if not animacao.golpe_executado:
                 return
 
-            destino = self.cenario_principal.navegacao.fugir(
-                self.entidade_alvo.x,
-                self.entidade_alvo.y,
-                self.personagem.x,
-                self.personagem.y,
-            )
+            self.flip = self.entidade_alvo.x < self.personagem.x
 
-            self.entidade_alvo.receber_golpe(
-                self.personagem.x,
-                *destino,
-            )
+            if self.flip:
+                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+            else:
+                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
+            self.posicao_alvo_no_inicio_ataque = None
             return
 
-        self.tempo += dt
-
-        if self.tempo < self.TEMPO_OBTENDO:
+        if not animacao.golpe_executado:
             return
 
+        destino = self.cenario_principal.navegacao.fugir(
+            self.entidade_alvo.x,
+            self.entidade_alvo.y,
+            self.personagem.x,
+            self.personagem.y,
+        )
+
+        self.entidade_alvo.receber_golpe(
+            self.personagem.x,
+            *destino,
+        )
+
+    def _obter(self):
         self.flip = self.guardar_recurso_x < self.personagem.x
 
-        self.entidade_alvo.obter_carne()
+        if not self.cenario_principal.coletar_recurso(
+            self.entidade_alvo,
+            self.personagem,
+        ):
+            self.cancelar()
+            return
+
+        self.item_carregado = self.entidade_alvo
 
         if self.flip:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_CARNE_FLIP
@@ -162,22 +175,17 @@ class ObterCarneUseCase:
             else:
                 self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
-            OFFSET = 40
-
-            if self.flip:
-                recurso_x = self.personagem.x - OFFSET
-            else:
-                recurso_x = self.personagem.x + OFFSET
-
-            recurso_y = self.personagem.y
-
-            self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "carne")
             self.cenario_principal.adicionar_estoque("carne", 1)
 
-            if self.entidade_alvo.animacoes.estado == EstadoOvelha.OBTIDO:
-                self.entidade_alvo = None
+            proxima_carne = self.cenario_principal.reservar_recurso(
+                "carne",
+                self.personagem,
+            )
+
+            if proxima_carne is None:
+                self.cancelar()
             else:
-                self.iniciar(self.entidade_alvo, self.personagem)
+                self.iniciar(proxima_carne, self.personagem)
 
             return
 

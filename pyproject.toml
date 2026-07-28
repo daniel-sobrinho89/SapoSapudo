@@ -19,3 +19,4 @@ ignore = [
 "core/event_bus.py" = ["UP006", "UP035"]
 "domains/conversas/personalidade_sapudo.py" = ["E501"]
 "domains/clima/livro_climatico.py" = ["E501"]
+"application/fabrica_controladores.py" = ["E501"]

@@ -8,3 +8,7 @@ with open(BASE_DIR / "data/sprites_config.json", encoding="utf8") as f:
 
 def obter_config(nome):
     return CONFIG[nome.lower()]
+
+
+def obter_tipos():
+    return CONFIG.keys()

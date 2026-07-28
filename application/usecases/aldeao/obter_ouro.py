@@ -21,16 +21,16 @@ class ObterOuroUseCase:
 
     def iniciar(self, mina, personagem):
         self.entidade_alvo = mina
-        self.aldeao = personagem
+        self.personagem = personagem
 
         self.tempo = 0.0
 
-        self.flip = mina.x < self.aldeao.x
+        self.flip = mina.x < self.personagem.x
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA
 
     # --------------------------------------------------------
 
@@ -38,9 +38,9 @@ class ObterOuroUseCase:
         if self.entidade_alvo is None:
             return
 
-        if self.aldeao.animacoes.maquina.obtendo_ouro():
+        if self.personagem.animacoes.maquina.obtendo_ouro():
             self._obter(dt)
-        elif self.aldeao.animacoes.maquina.entregando_ouro():
+        elif self.personagem.animacoes.maquina.entregando_ouro():
             self._entregar(dt)
         else:
             self._andar(dt)
@@ -51,14 +51,14 @@ class ObterOuroUseCase:
         rect = self.entidade_alvo.corpo_rect
 
         if self.flip:
-            destino_x = rect.right - 5
+            destino_x = rect.right + 18.5
         else:
             destino_x = rect.left - 40
 
         destino_y = rect.bottom - 35
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
@@ -66,15 +66,15 @@ class ObterOuroUseCase:
             self.tempo = 0.0
 
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_PICARETA_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_PICARETA_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.USANDO_PICARETA
+                self.personagem.animacoes.estado = EstadoAldeao.USANDO_PICARETA
 
             return
 
         if distancia > 0:
-            self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-            self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+            self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+            self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
 
     # --------------------------------------------------------
 
@@ -84,48 +84,52 @@ class ObterOuroUseCase:
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.guardar_recurso_x < self.aldeao.x
+        self.flip = self.guardar_recurso_x < self.personagem.x
         self.entidade_alvo.obter_ouro()
 
         if self.flip:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_OURO_FLIP
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_OURO_FLIP
         else:
-            self.aldeao.animacoes.estado = EstadoAldeao.CORRENDO_OURO
+            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_OURO
 
     def _entregar(self, dt):
+        if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
+            self.cenario_principal.remover_personagem(
+                self.entidade_alvo, ignorar=self.personagem
+            )
+
         destino_x = self.guardar_recurso_x - 40
         destino_y = self.guardar_recurso_y + 150
 
-        dx = destino_x - self.aldeao.x
-        dy = destino_y - self.aldeao.y
+        dx = destino_x - self.personagem.x
+        dy = destino_y - self.personagem.y
 
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
             else:
-                self.aldeao.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
             OFFSET = 40
 
             if self.flip:
-                recurso_x = self.aldeao.x - OFFSET
+                recurso_x = self.personagem.x - OFFSET
             else:
-                recurso_x = self.aldeao.x + OFFSET
+                recurso_x = self.personagem.x + OFFSET
 
-            recurso_y = self.aldeao.y
+            recurso_y = self.personagem.y
 
-            self.cenario_principal.adicionar_recurso(recurso_x, recurso_y, "ouro")
+            self.cenario_principal.carregar_entidade("ouro", recurso_x, recurso_y)
             self.cenario_principal.adicionar_estoque("ouro", 1)
 
             if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
-                self.cenario_principal.remover_recurso(self.entidade_alvo)
                 self.entidade_alvo = None
             else:
-                self.iniciar(self.entidade_alvo, self.aldeao)
+                self.iniciar(self.entidade_alvo, self.personagem)
 
             return
 
-        self.aldeao.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.aldeao.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
+        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
