@@ -86,7 +86,7 @@ class PensamentoSapoRenderer:
     # =====================================
     # RENDER
     # =====================================
-    def renderizar(self, tela, sapo, dt):
+    def renderizar(self, tela, dt):
         pensamento = self.view_model
 
         if not pensamento.texto:
@@ -105,10 +105,6 @@ class PensamentoSapoRenderer:
         largura_caixa = largura_texto + self.padding_x * 2
 
         altura_caixa = len(linhas) * altura_linha + self.padding_y * 2
-
-        x = sapo.x - largura_caixa // 2
-
-        y = sapo.y - 100
 
         alpha = self.obter_alpha(pensamento.tempo_restante)
 
@@ -155,6 +151,6 @@ class PensamentoSapoRenderer:
 
             pos_y += altura_linha
 
-        tela.blit(surface, (int(x), int(y)))
+        # tela.blit(surface, (int(x), int(y)))
 
         self.view_model.atualizar(dt)

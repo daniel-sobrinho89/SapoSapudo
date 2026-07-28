@@ -2,8 +2,7 @@ import math
 
 
 class ControlarSonoDuendeUseCase:
-    def __init__(self, sapo, duende, clima_service):
-        self.sapo = sapo
+    def __init__(self, duende, clima_service):
         self.duende = duende
         self.animacoes = self.duende.animacoes
         self.clima_service = clima_service

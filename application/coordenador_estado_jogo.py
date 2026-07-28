@@ -8,13 +8,11 @@ from core.mouse_events import DoubleClickDetector
 class CoordenadorEstadoJogo:
     def __init__(
         self,
-        sapo,
         clima_service,
         spotify,
         audio,
         gerenciador_cenarios,
     ):
-        self.sapo = sapo
         self.duende = gerenciador_cenarios.duende
         self.clima_service = clima_service
         self.spotify = spotify

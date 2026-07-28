@@ -13,9 +13,8 @@ class ControlarComportamentoDuendeUseCase:
     ORBITANDO = "orbitando"
     FUGINDO = "fugindo"
 
-    def __init__(self, duende, sapo):
+    def __init__(self, duende):
         self.duende = duende
-        self.sapo = sapo
 
         self.estado = self.EXPLORANDO
         self.tempo_estado = 0
@@ -41,11 +40,7 @@ class ControlarComportamentoDuendeUseCase:
         estado = self._decidir_proximo_estado(dt)
 
         if estado == self.ORBITANDO:
-            self.orbita_angulo += dt * 1.8
-            self.duende.alvo_x = (
-                self.sapo.x + math.cos(self.orbita_angulo) * self.orbita_raio
-            )
-            self.duende.alvo_y = self.sapo.y - 140 + math.sin(self.orbita_angulo) * 35
+            pass
         elif estado == self.FUGINDO:
             self.duende.alvo_x = random.randint(80, 1150)
             self.duende.alvo_y = random.randint(50, 220)
@@ -113,12 +108,7 @@ class ControlarComportamentoDuendeUseCase:
         while True:
             escolha = random.randint(0, 5)
 
-            if escolha == 0:
-                # Perto do sapo
-                destino_x = self.sapo.x + random.randint(-80, 80)
-                destino_y = self.sapo.y - random.randint(140, 200)
-
-            elif escolha == 1:
+            if escolha == 1:
                 # Perto do pote
                 destino_x = self.pote_x + random.randint(-70, 70)
                 destino_y = self.pote_y - random.randint(90, 170)

@@ -8,11 +8,9 @@ from .controlar_comportamento_ovelha import ControlarComportamentoOvelhaUseCase
 from .duende.controlar_comportamento_duende import ControlarComportamentoDuendeUseCase
 from .duende.controlar_sono_duende import ControlarSonoDuendeUseCase
 from .processar_comando_spotify import ProcessarComandoSpotifyUseCase
-from .sapudo.controlar_comportamento_sapo import ControlarComportamentoSapoUseCase
 
 __all__ = [
     "ControlarComportamentoDuendeUseCase",
-    "ControlarComportamentoSapoUseCase",
     "ControlarComportamentoAldeaoUseCase",
     "ControlarSonoDuendeUseCase",
     "AtualizarFluxoSpotifyUseCase",

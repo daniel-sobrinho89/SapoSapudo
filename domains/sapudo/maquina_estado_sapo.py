@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 class StateMachine:
     def __init__(self, estado_inicial=None, transicoes_validas=None):
         self.estado = estado_inicial
@@ -62,20 +59,3 @@ class StateMachine:
 
     def em_estado(self, *estados):
         return self.estado in estados
-
-
-class EstadoSapo(Enum):
-    PARADO = "parado"
-
-    ADORMECENDO = "adormecendo"
-    DORMINDO = "dormindo"
-    ACORDANDO = "acordando"
-
-    ANDANDO_ESQUERDA = "andando_esquerda"
-    ANDANDO_DIREITA = "andando_direita"
-    CONVERSAR = "conversar"
-
-
-class MaquinaEstadoSapo(StateMachine):
-    def __init__(self):
-        super().__init__(EstadoSapo.PARADO)

@@ -15,7 +15,7 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import kivy_adapter
-from config import ALTURA, CENTRO_Y, FPS, IS_ANDROID, LARGURA
+from config import ALTURA, FPS, IS_ANDROID, LARGURA
 from core.ambiente import Ambiente
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
@@ -26,7 +26,6 @@ from domains.clima.nuvem import Nuvem
 from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
 from domains.conversas.qwen_local_client import QwenLocalClient
-from domains.sapudo.entity import Sapo
 from domains.spotify.controller import ControladorVozMusical, ControladorVozMusicalNulo
 from domains.spotify.spotify_manager import SpotifyManager
 from domains.voz.tts_service import TTSService
@@ -103,7 +102,6 @@ class GameWidget(Widget):
 
         self.double_click = DoubleClickDetector()
         self._inicializar_audio_spotify()
-        self._inicializar_controles()
         self._inicializar_sistemas_base()
         self._inicializar_clima_e_ambiente()
         self._inicializar_interacao()
@@ -121,11 +119,6 @@ class GameWidget(Widget):
 
         Clock.schedule_once(lambda dt: self.audio.iniciar(), 2)
 
-    def _inicializar_controles(self):
-        self.tecla_esquerda_pressionada = False
-        self.tecla_direita_pressionada = False
-        Window.bind(on_key_down=self.on_key_down, on_key_up=self.on_key_up)
-
     def _inicializar_sistemas_base(self):
         self.transform = TransformUtils()
         self.ambiente = Ambiente()
@@ -142,21 +135,12 @@ class GameWidget(Widget):
         self.sistema_nuvens = SistemaNuvens(self.transform)
 
     def _inicializar_interacao(self):
-        self.sapo = Sapo(
-            centro_x,
-            CENTRO_Y,
-            self.spotify,
-            self.clima_service,
-        )
-        self.sapo.background_renderer = self.background_renderer
-
         self.gerenciador_cenarios = GerenciadorCenarios(
             tela,
             self.transform,
             self.clima_service,
             self.background_renderer,
             self.sistema_nuvens,
-            self.sapo,
             self.ambiente,
         )
 
@@ -204,45 +188,10 @@ class GameWidget(Widget):
 
         self.controlador_voz_musical.processar_on_touch_move(pos_virtual)
 
-        # Resetar estados visuais dos botões se sair da área
-        if not self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
-            self.controle_renderer.botao_esquerda_pressionado = False
-
-        if not self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
-            self.controle_renderer.botao_direita_pressionado = False
-
     def on_touch_up(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        # Resetar Controles do Sapo
-        self.controle_renderer.botao_esquerda_pressionado = False
-        self.controle_renderer.botao_direita_pressionado = False
-
         self.controlador_voz_musical.processar_toque_up(pos_virtual)
-
-    def on_key_down(self, window, key, scancode, codepoint, modifiers):
-        # seta esquerda
-        if key == 276:
-            self.tecla_esquerda_pressionada = True
-            self.controlador_voz_musical.iniciar_controle_esquerda()
-
-        # seta direita
-        if key == 275:
-            self.tecla_direita_pressionada = True
-            self.controlador_voz_musical.iniciar_controle_direita()
-
-        return True
-
-    def on_key_up(self, window, key, scancode):
-        if key == 276:
-            self.tecla_esquerda_pressionada = False
-            self.controlador_voz_musical.parar_controle_esquerda()
-
-        if key == 275:
-            self.tecla_direita_pressionada = False
-            self.controlador_voz_musical.parar_controle_direita()
-
-        return True
 
     def _atualizar_clima(self, dt):
         if self.clima_service.precisa_atualizar():
@@ -258,7 +207,6 @@ class GameWidget(Widget):
         dt = min(dt, 0.05)
 
         self._atualizar_clima(dt)
-        self.sapo.atualizar(dt)
 
         if self.clima_service.precisa_atualizar():
             event_bus.publicar("clima_atualizado", clima_data=self.clima_service)
@@ -267,7 +215,6 @@ class GameWidget(Widget):
 
         if not self.controlador_voz_musical.inicializado and self.cenario.carregado:
             self.controlador_voz_musical = ControladorVozMusical(
-                self.sapo,
                 self.spotify,
                 self.audio,
                 self.controle_renderer,
@@ -295,7 +242,7 @@ class GameWidget(Widget):
         )
 
         self.gerenciador_cenarios.renderizar(dt)
-        self.pensamento_renderer.renderizar(tela, self.sapo, dt)
+        self.pensamento_renderer.renderizar(tela, dt)
 
         # escalonar e apresentar
         img = tela._img

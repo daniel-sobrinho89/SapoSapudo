@@ -3,10 +3,7 @@ import threading
 from kivy.clock import Clock
 
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
-from application.usecases import (
-    AtualizarFluxoSpotifyUseCase,
-    ControlarComportamentoSapoUseCase,
-)
+from application.usecases import AtualizarFluxoSpotifyUseCase
 from config import IS_ANDROID
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
@@ -21,7 +18,6 @@ class ControladorVozMusical:
 
     def __init__(
         self,
-        sapo,
         spotify,
         audio,
         controle_renderer,
@@ -30,7 +26,6 @@ class ControladorVozMusical:
         conversa_sapudo,
         tts,
     ):
-        self.sapo = sapo
         self.spotify = spotify
         self.audio = audio
         self.controle_renderer = controle_renderer
@@ -51,16 +46,7 @@ class ControladorVozMusical:
 
         self.atualizar_fluxo_spotify = AtualizarFluxoSpotifyUseCase(self.spotify)
 
-        self.controlar_comportamento_sapo = ControlarComportamentoSapoUseCase(
-            self.sapo,
-            self.spotify,
-            self.audio,
-            clima_service=self.clima_service,
-            tts_service=self.tts,
-        )
-
         self.coordenador_estado_jogo = CoordenadorEstadoJogo(
-            self.sapo,
             self.clima_service,
             self.spotify,
             self.audio,
@@ -107,21 +93,9 @@ class ControladorVozMusical:
         if self.processar_toque_microfone(pos_virtual):
             return
 
-        # Controles de Movimento do Sapo
-        if self.controle_renderer.rect_clique_esquerda.collidepoint(pos_virtual):
-            self.iniciar_controle_esquerda()
-            return
-
-        if self.controle_renderer.rect_clique_direita.collidepoint(pos_virtual):
-            self.controle_renderer.botao_direita_pressionado = True
-            self.iniciar_controle_direita()
-            return
-
         self.coordenador_estado_jogo.processar_toque_down(pos_virtual)
 
     def processar_toque_up(self, pos_virtual):
-        self.parar_controle_esquerda()
-        self.parar_controle_direita()
         self.coordenador_estado_jogo.processar_toque_up(pos_virtual)
 
     def processar_on_touch_move(self, pos_virtual):
@@ -150,21 +124,8 @@ class ControladorVozMusical:
                 if self.tempo_sem_audio > 10:
                     self.desligar_microfone()
 
-        self.controlar_comportamento_sapo.executar(dt)
         self.atualizar_fluxo_spotify.executar(dt)
         self.coordenador_estado_jogo.executar(dt)
-
-    def iniciar_controle_esquerda(self):
-        self.controlar_comportamento_sapo.iniciar_controle_esquerda()
-
-    def parar_controle_esquerda(self):
-        self.controlar_comportamento_sapo.parar_controle_esquerda()
-
-    def iniciar_controle_direita(self):
-        self.controlar_comportamento_sapo.iniciar_controle_direita()
-
-    def parar_controle_direita(self):
-        self.controlar_comportamento_sapo.parar_controle_direita()
 
     def _processar_conversa(self, texto):
         if not self.conversa_sapudo.modelo_pronto:
@@ -282,16 +243,4 @@ class ControladorVozMusicalNulo:
         pass
 
     def processar_toque_microfone(self, *args):
-        pass
-
-    def iniciar_controle_esquerda(self):
-        pass
-
-    def parar_controle_esquerda(self):
-        pass
-
-    def iniciar_controle_direita(self):
-        pass
-
-    def parar_controle_direita(self):
         pass

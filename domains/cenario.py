@@ -7,13 +7,28 @@ from config import ALTURA, CENTRO_OFFSET_Y, ESCALA
 from core.camera import Camera
 from core.game_config import obter_config, obter_tipos
 from core.navegacao_mapa import NavegacaoMapa
+from domains.construcao.entity import (  # noqa: F401
+    criar_casa,
+    criar_casa_goblin,
+    criar_castelo,
+    criar_quartel,
+)
 from domains.duende.entity import DuendeNeblina
+from domains.efeitos.entity import criar_efeitos  # noqa: F401
+from domains.personagem.entity import (  # noqa: F401
+    criar_aldeao,
+    criar_arvore,
+    criar_goblin_tocha,
+    criar_mina_ouro,
+    criar_ovelha,
+    criar_recurso,
+    criar_soldado,
+)
 from domains.personagem.maquina_estado import EstadoAldeao
 from render.asset_manager import asset_manager
 from render.duende_renderer import DuendeRenderer
 from render.menu_casa_renderer import MenuCasaRenderer
 from render.menu_construcoes_renderer import MenuConstrucoesRenderer
-from render.sapo_renderer import SapoRenderer
 from render.sprite_animado_renderer import SpriteAnimadoRenderer
 from render.tilemap_renderer import TileMapRenderer
 
@@ -28,7 +43,6 @@ class CenarioBase:
         navegacao,
         tilemap_renderer,
         sistema_nuvens,
-        sapo,
         ambiente,
         camera,
         estado,
@@ -38,7 +52,6 @@ class CenarioBase:
         self.clima_service = clima_service
         self.background_renderer = background_renderer
         self.sistema_nuvens = sistema_nuvens
-        self.sapo = sapo
         self.ambiente = ambiente
         self.camera = camera
         self.navegacao = navegacao
@@ -67,7 +80,6 @@ class CenarioPrincipal(CenarioBase):
         self.personagens = []
         self.personagens_hostis = []
         self.controladores = {}
-        self.sapo_renderer = None
         self.menu_construcoes = None
         self.menu_casa_renderer = None
         self.duende = None
@@ -224,8 +236,6 @@ class CenarioPrincipal(CenarioBase):
         return False
 
     def carregar(self):
-        self.sapo_renderer = SapoRenderer(self.tela, asset_manager, self.transform)
-
         self.entidades = []
 
         for tipo in obter_tipos():
@@ -401,8 +411,6 @@ class CenarioPrincipal(CenarioBase):
                 self.camera,
             )
 
-        self.sapo_renderer.renderizar(self.sapo.x, self.sapo.y, self.sapo.animacoes)
-
         if self.menu_casa_renderer.aberto:
             self.menu_casa_renderer.renderizar(self, self.camera)
 
@@ -467,7 +475,6 @@ class GerenciadorCenarios:
         clima_service,
         background_renderer,
         sistema_nuvens,
-        sapo,
         ambiente,
     ):
         self.camera = Camera()
@@ -476,7 +483,6 @@ class GerenciadorCenarios:
         self.clima_service = clima_service
         self.background_renderer = background_renderer
         self.sistema_nuvens = sistema_nuvens
-        self.sapo = sapo
         self.ambiente = ambiente
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.estado = EstadoJogo.ABERTURA
@@ -495,7 +501,6 @@ class GerenciadorCenarios:
             self.navegacao,
             self.tilemap_renderer,
             sistema_nuvens,
-            sapo,
             ambiente,
             self.camera,
             self.estado,
@@ -523,12 +528,11 @@ class GerenciadorCenarios:
                 )
 
                 self.controlar_sono_duende = ControlarSonoDuendeUseCase(
-                    self.sapo,
                     self.duende,
                     self.clima_service,
                 )
                 self.controlar_comportamento_duende = (
-                    ControlarComportamentoDuendeUseCase(self.duende, self.sapo)
+                    ControlarComportamentoDuendeUseCase(self.duende)
                 )
 
             self.duende.atualizar(dt)

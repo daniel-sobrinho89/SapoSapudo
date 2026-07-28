@@ -9,7 +9,7 @@
             "frames_carregamento":10
         },
         "spawn":[
-                { "x":450,"y":500 }
+                { "x":550,"y":400 }
             ],
         "flip": true,
         "animacoes": {
