@@ -259,7 +259,7 @@ android.manifest.launch_mode = singleTask
 # (list) Android additional libraries to copy into libs/armeabi
 #android.add_libs_armeabi = libs/android/*.so
 android.add_libs_armeabi_v7a = 
-android.add_libs_arm64_v8a = domains/conversas/libs/arm64-v8a/*.so
+#android.add_libs_arm64_v8a = domains/conversas/libs/arm64-v8a/*.so
 #android.add_libs_x86 = libs/android-x86/*.so
 #android.add_libs_mips = libs/android-mips/*.so
 
