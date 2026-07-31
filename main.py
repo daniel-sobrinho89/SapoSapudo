@@ -14,26 +14,22 @@ from kivy.graphics import Rectangle
 from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
-import kivy_adapter
-from config import ALTURA, FPS, IS_ANDROID, LARGURA
-from core.ambiente import Ambiente
+import utils.kivy_adapter as kivy_adapter
 from core.audio_manager import AudioManager
 from core.event_bus import event_bus
 from core.mouse_events import DoubleClickDetector
 from domains.cenario import EstadoJogo, GerenciadorCenarios
 from domains.clima.clima_service import ClimaService
-from domains.clima.nuvem import Nuvem
-from domains.clima.sistema_nuvens import SistemaNuvens
 from domains.conversas.conversa_sapudo import ConversaSapudo
 from domains.conversas.qwen_local_client import QwenLocalClient
 from domains.spotify.controller import ControladorVozMusical, ControladorVozMusicalNulo
 from domains.spotify.spotify_manager import SpotifyManager
 from domains.voz.tts_service import TTSService
 from render.asset_manager import asset_manager
-from render.background_renderer import BackgroundRenderer
 from render.controle_renderer import ControleRenderer
 from render.pensamento_sapo_renderer import PensamentoSapoRenderer
 from render.transform_utils import TransformUtils
+from utils.config import ALTURA, FPS, IS_ANDROID, LARGURA
 from utils.input import init_scaling, real_to_virtual
 
 logging.getLogger().setLevel(logging.INFO)
@@ -103,7 +99,7 @@ class GameWidget(Widget):
         self.double_click = DoubleClickDetector()
         self._inicializar_audio_spotify()
         self._inicializar_sistemas_base()
-        self._inicializar_clima_e_ambiente()
+        self._inicializar_clima()
         self._inicializar_interacao()
         self._configurar_graficos()
 
@@ -121,27 +117,18 @@ class GameWidget(Widget):
 
     def _inicializar_sistemas_base(self):
         self.transform = TransformUtils()
-        self.ambiente = Ambiente()
         self.pensamento_renderer = PensamentoSapoRenderer()
         self.tts = TTSService()
 
-    def _inicializar_clima_e_ambiente(self):
+    def _inicializar_clima(self):
         self.clima_service = ClimaService()
-
-        self.background_renderer = BackgroundRenderer(
-            tela, LARGURA, ALTURA, self.transform, self.clima_service, self.ambiente
-        )
         self.controle_renderer = ControleRenderer(tela, asset_manager, self.transform)
-        self.sistema_nuvens = SistemaNuvens(self.transform)
 
     def _inicializar_interacao(self):
         self.gerenciador_cenarios = GerenciadorCenarios(
             tela,
             self.transform,
             self.clima_service,
-            self.background_renderer,
-            self.sistema_nuvens,
-            self.ambiente,
         )
 
         self.gerenciador_cenarios.cenario_principal.carregar()
@@ -225,21 +212,7 @@ class GameWidget(Widget):
             )
 
         self.controlador_voz_musical.atualizar(dt)
-
-        self.ambiente.atualizar(dt, self.clima_service)
         self.gerenciador_cenarios.atualizar(dt)
-        self.sistema_nuvens.atualizar_area_interna()
-
-        Nuvem.finalizar_carregamento()
-        self.sistema_nuvens.atualizar(
-            dt,
-            self.clima_service.cloudiness_visual,
-            self.clima_service.future_cloudiness_1h,
-            self.clima_service.future_cloudiness_2h,
-            self.clima_service.future_cloudiness_3h,
-            self.clima_service.wind_direction,
-            self.clima_service.wind_speed,
-        )
 
         self.gerenciador_cenarios.renderizar(dt)
         self.pensamento_renderer.renderizar(tela, dt)

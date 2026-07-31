@@ -32,7 +32,7 @@ class Personagem:
 
     def receber_golpe(
         self,
-        atacante_x,
+        atacante,
         destino_x,
         destino_y,
     ):
@@ -49,7 +49,7 @@ class Personagem:
 
             estado = self.animacoes.estado.__class__
 
-            if atacante_x < self.x:
+            if atacante.x < self.x:
                 self.animacoes.estado = estado.CORRENDO
             else:
                 self.animacoes.estado = estado.CORRENDO_FLIP

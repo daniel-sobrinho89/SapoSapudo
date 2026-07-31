@@ -1,4 +1,4 @@
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 
 
 class TransformUtils:
@@ -16,22 +16,6 @@ class TransformUtils:
             return self.cache_escalas[key]
 
         escalada = kivy_adapter.transform.smoothscale(imagem, (largura, altura))
-
-        self.cache_escalas[key] = escalada
-
-        return escalada
-
-    def escalar_nuvem(self, imagem, tamanho):
-        largura, altura = tamanho
-
-        key = ("nuvem", id(imagem), largura, altura)
-
-        if key in self.cache_escalas:
-            return self.cache_escalas[key]
-
-        escalada = kivy_adapter.transform.scale(
-            imagem, (largura, altura)
-        ).convert_alpha()
 
         self.cache_escalas[key] = escalada
 

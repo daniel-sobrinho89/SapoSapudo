@@ -1,4 +1,4 @@
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 from utils.paths import BASE_DIR
 
 

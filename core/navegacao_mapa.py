@@ -1,7 +1,7 @@
 from math import atan2, cos, hypot, sin
 from random import choice, randint, uniform
 
-from config import TILE_SIZE
+from utils.config import TILE_SIZE
 
 
 class NavegacaoMapa:

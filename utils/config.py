@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 LARGURA = 1024
 ALTURA = 600
@@ -40,3 +41,9 @@ CENTRO_Y = ALTURA // 2 + CENTRO_OFFSET_Y
 
 IS_ANDROID = "ANDROID_ARGUMENT" in os.environ
 TILE_SIZE = 64
+
+
+def obter_hora_decimal():
+    """Retorna a hora atual em formato decimal (ex: 14.5 para 14:30)."""
+    agora = datetime.now()
+    return agora.hour + (agora.minute / 60)

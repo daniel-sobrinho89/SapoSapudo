@@ -11,8 +11,6 @@ class ConstruirUseCase:
 
         nome = construcao.nome.removeprefix("avatar_")
         entidade = cenario.carregar_entidade(nome, *pos)
-        # construcao = criar_construcao(nome)
-        # construcao.x, construcao.y = pos
 
         cenario.construcao_arrastando = entidade
 

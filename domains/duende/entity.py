@@ -5,9 +5,8 @@
 import math
 import random
 
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 from domains.duende.animacoes import AnimacoesDuende
-from domains.duende.arraste_duende import ArrasteDuende
 
 # Novos componentes
 from domains.duende.teleporte_duende import TeleporteDuende
@@ -44,7 +43,6 @@ class DuendeNeblina:
         # =================================
         self.animacoes = AnimacoesDuende()
         self.teleporte = TeleporteDuende()
-        self.arraste = ArrasteDuende()
 
         # =================================
         # HITBOXES
@@ -52,29 +50,12 @@ class DuendeNeblina:
         self.corpo_rect = kivy_adapter.Rect(0, 0, 0, 0)
         self.cabeca_rect = kivy_adapter.Rect(0, 0, 0, 0)
 
-    @property
-    def arrastando(self):
-        return self.arraste.ativo
-
     def esta_dentro_da_casa(self, area_casa):
         return area_casa.collidepoint(int(self.x), int(self.y))
 
     # =====================================
     # INTERAÇÃO (Delegação)
     # =====================================
-    def iniciar_arraste(self, mouse_x, mouse_y):
-        self.arraste.iniciar(self.x, self.y, mouse_x, mouse_y)
-
-    def mover_arraste(self, mouse_x, mouse_y):
-        self.arraste.mover(mouse_x, mouse_y, self)
-
-    def processar_toque_down(self, pos_virtual):
-        return self.arraste.processar_toque_down(
-            pos_virtual, self.corpo_rect, self.x, self.y
-        )
-
-    def processar_toque_move(self, pos_virtual):
-        return self.arraste.processar_toque_move(pos_virtual, self)
 
     def atualizar_hitboxes(self, body_x, body_y, body_width, body_height):
         cabeca_w = int(body_width * 0.30)
@@ -95,9 +76,6 @@ class DuendeNeblina:
             self.escolher_novo_destino()
 
     def _atualizar_movimento(self, dt):
-        if self.arraste.ativo:
-            return
-
         dx = self.alvo_x - self.x
         dy = self.alvo_y - self.y
         distancia = math.hypot(dx, dy)
@@ -136,12 +114,6 @@ class DuendeNeblina:
     # =====================================
     def atualizar(self, dt):
         self.tempo += dt
-
-        # 3. Arraste (bloqueia movimento livre)
-        if self.arrastando:
-            self.velocidade_x = 0
-            self.velocidade_y = 0
-            return
 
         self.animacoes.atualizar(dt)
 

@@ -3,7 +3,6 @@ from application.usecases.duende.controlar_comportamento_duende import (
     ControlarComportamentoDuendeUseCase,
 )
 from application.usecases.duende.controlar_sono_duende import ControlarSonoDuendeUseCase
-from config import ALTURA, CENTRO_OFFSET_Y, ESCALA
 from core.camera import Camera
 from core.game_config import obter_config, obter_tipos
 from core.navegacao_mapa import NavegacaoMapa
@@ -26,11 +25,13 @@ from domains.personagem.entity import (  # noqa: F401
 )
 from domains.personagem.maquina_estado import EstadoAldeao
 from render.asset_manager import asset_manager
+from render.background_renderer import CeuRenderer
 from render.duende_renderer import DuendeRenderer
 from render.menu_casa_renderer import MenuCasaRenderer
 from render.menu_construcoes_renderer import MenuConstrucoesRenderer
 from render.sprite_animado_renderer import SpriteAnimadoRenderer
 from render.tilemap_renderer import TileMapRenderer
+from utils.config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA
 
 
 class CenarioBase:
@@ -39,20 +40,16 @@ class CenarioBase:
         tela,
         transform,
         clima_service,
-        background_renderer,
+        ceu_renderer,
         navegacao,
         tilemap_renderer,
-        sistema_nuvens,
-        ambiente,
         camera,
         estado,
     ):
         self.tela = tela
         self.transform = transform
         self.clima_service = clima_service
-        self.background_renderer = background_renderer
-        self.sistema_nuvens = sistema_nuvens
-        self.ambiente = ambiente
+        self.ceu_renderer = ceu_renderer
         self.camera = camera
         self.navegacao = navegacao
         self.tilemap_renderer = tilemap_renderer
@@ -77,6 +74,7 @@ class CenarioPrincipal(CenarioBase):
         self.efeitos = []
         self.ovelhas = []
         self.construcoes = []
+        self.construcoes_hostis = []
         self.personagens = []
         self.personagens_hostis = []
         self.controladores = {}
@@ -271,13 +269,16 @@ class CenarioPrincipal(CenarioBase):
 
             renderer = self._obter_renderer(tipo, config)
 
+            grupo = config["grupo"]
+            faccao = config.get("faccao", None)
             self.registrar_entidade(
                 entidade,
                 renderer,
+                grupo,
+                faccao,
                 frames_carregamento=config["renderer"]["frames_carregamento"],
             )
 
-            grupo = config["grupo"]
             colecao = config["renderer"]["colecao"]
             if grupo != "efeitos":
                 self.adicionar_personagem(entidade, colecao)
@@ -288,6 +289,15 @@ class CenarioPrincipal(CenarioBase):
             return entidades
         else:
             return entidades[0]
+
+    def carregar_entidade_temporaria(self, tipo):
+        config = obter_config(tipo)
+        criador = globals()[config["classe"]]
+
+        entidade = criador(tipo)
+        self._obter_renderer(tipo, config)
+
+        return entidade
 
     def _obter_renderer(self, tipo, config):
         renderer = self.renderers.get(tipo)
@@ -316,6 +326,8 @@ class CenarioPrincipal(CenarioBase):
         self,
         entidade,
         renderer,
+        grupo,
+        faccao,
         frames_carregamento,
         lista=None,
         lista_renderers=None,
@@ -330,8 +342,16 @@ class CenarioPrincipal(CenarioBase):
             {
                 "entidade": entidade,
                 "renderer": renderer,
+                "grupo": grupo,
+                "faccao": faccao,
                 "frames_carregamento": frames_carregamento,
             }
+        )
+
+    def obter_entidade(self, entidade):
+        return next(
+            (item for item in self.entidades if item["entidade"] is entidade),
+            None,
         )
 
     def atualizar(self, dt):
@@ -473,17 +493,12 @@ class GerenciadorCenarios:
         tela,
         transform,
         clima_service,
-        background_renderer,
-        sistema_nuvens,
-        ambiente,
     ):
         self.camera = Camera()
         self.tela = tela
         self.transform = transform
         self.clima_service = clima_service
-        self.background_renderer = background_renderer
-        self.sistema_nuvens = sistema_nuvens
-        self.ambiente = ambiente
+        self.ceu_renderer = CeuRenderer(tela, LARGURA, ALTURA)
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.estado = EstadoJogo.ABERTURA
         self.tilemap_renderer = TileMapRenderer(
@@ -497,11 +512,9 @@ class GerenciadorCenarios:
             tela,
             transform,
             clima_service,
-            background_renderer,
+            self.ceu_renderer,
             self.navegacao,
             self.tilemap_renderer,
-            sistema_nuvens,
-            ambiente,
             self.camera,
             self.estado,
         )
@@ -519,7 +532,7 @@ class GerenciadorCenarios:
         self.tela.fill((0, 0, 0, 0))
 
         if self.estado == EstadoJogo.ABERTURA:
-            self.background_renderer.desenhar(dt, self.camera)
+            self.ceu_renderer.desenhar()
 
             if not hasattr(self, "duende"):
                 self.duende = DuendeNeblina()
@@ -544,11 +557,6 @@ class GerenciadorCenarios:
             self.tilemap_renderer.atualizar_carregamento()
 
             self.cenario_atual.renderizar(dt)
-
-            self.sistema_nuvens.renderizar(
-                self.tela,
-                self.background_renderer.eh_dia(),
-            )
 
     def _executar_fluxo_duende(self, dt):
         # TODO! Ajustar para verificar se duende existe

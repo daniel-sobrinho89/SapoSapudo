@@ -2,84 +2,13 @@ import math
 import random
 from datetime import datetime
 
-import kivy_adapter
-from render.asset_manager import asset_manager
-
-
-class BackgroundRenderer:
-    def __init__(self, tela, largura, altura, transform, clima_service, ambiente):
-        self.tela = tela
-        self.transform = transform
-        self.clima_service = clima_service
-        self.ambiente = ambiente
-        self.ceu_renderer = CeuRenderer(
-            tela,
-            largura,
-            altura,
-            ambiente,
-        )
-        # =====================================
-        # BACKGROUND MANHÃ
-        # =====================================
-
-        background_manha = asset_manager.carregar("background_manha.webp")
-
-        self.background_manha = self.transform.escalar(
-            background_manha, (largura, altura)
-        )
-
-        # =====================================
-        # BACKGROUND DIA
-        # =====================================
-
-        background_day = asset_manager.carregar("background.webp")
-
-        self.background_day = self.transform.escalar(background_day, (largura, altura))
-
-        # =====================================
-        # BACKGROUND FINAL TARDE
-        # =====================================
-
-        background_final_tarde = asset_manager.carregar("background_final_tarde.webp")
-
-        self.background_final_tarde = self.transform.escalar(
-            background_final_tarde, (largura, altura)
-        )
-
-        # =====================================
-        # BACKGROUND NOITE
-        # =====================================
-
-        background_night = asset_manager.carregar("background_night_19h.webp")
-
-        self.background_night = self.transform.escalar(
-            background_night, (largura, altura)
-        )
-
-        # =====================================
-        # CHUVA
-        # =====================================
-
-        background_chuva = asset_manager.carregar("background_chuva.webp")
-
-        self.background_chuva = self.transform.escalar(
-            background_chuva, (largura, altura)
-        )
-
-    def eh_dia(self):
-        return self.ambiente.eh_dia()
-
-    def esta_chovendo(self):
-        return self.ambiente.esta_chovendo(self.clima_service)
-
-    def desenhar(self, dt, camera):
-        self.ceu_renderer.desenhar()
+import utils.kivy_adapter as kivy_adapter
+from utils.config import obter_hora_decimal
 
 
 class CeuRenderer:
-    def __init__(self, tela, largura, altura, ambiente):
+    def __init__(self, tela, largura, altura):
         self.tela = tela
-        self.ambiente = ambiente
 
         self.largura = largura
         self.altura = altura
@@ -275,7 +204,7 @@ class CeuRenderer:
     # DESENHA O DEGRADÊ
     # =======================================================
     def desenhar(self):
-        self.hora = self.ambiente.obter_hora_decimal()
+        self.hora = obter_hora_decimal()
 
         topo, baixo = self.obter_cores()
 

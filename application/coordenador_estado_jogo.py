@@ -48,6 +48,13 @@ class CoordenadorEstadoJogo:
             else:
                 ctrl["padrao"].executar(dt, personagem)
 
+        for entidade in (
+            self.gerenciador_cenarios.construcoes
+            + self.gerenciador_cenarios.construcoes_hostis
+        ):
+            ctrl = self.gerenciador_cenarios.controladores[entidade]
+            ctrl["padrao"].executar(dt)
+
     def _executar_fluxo_personagem(self, personagem, dt):
         ctrl = self.gerenciador_cenarios.controladores[personagem]
 
@@ -119,17 +126,25 @@ class CoordenadorEstadoJogo:
                 outra_acao["usecase"].entidade_alvo = None
 
             for acao in ctrl["acoes"].values():
-                for item in acao["itens"]:
-                    if item.corpo_rect is not None and item.corpo_rect.collidepoint(
-                        mouse_mundo
-                    ):
-                        acao["usecase"].iniciar(
-                            item,
-                            personagem,
-                        )
+                itens = acao["itens"]
 
-                        personagem.selecionado = False
-                        return
+                if itens and isinstance(itens[0], list):
+                    listas = itens
+                else:
+                    listas = [itens]
+
+                for lista in listas:
+                    for item in lista:
+                        if item.corpo_rect is not None and item.corpo_rect.collidepoint(
+                            mouse_mundo
+                        ):
+                            acao["usecase"].iniciar(
+                                item,
+                                personagem,
+                            )
+
+                            personagem.selecionado = False
+                            return
 
         # ==========================================================
         # Construções

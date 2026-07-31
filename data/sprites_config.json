@@ -5,7 +5,7 @@
         "grupo":"personagens",
         "renderer":{
             "colecao": "personagens",
-            "escala":0.5,
+            "escala":0.45,
             "frames_carregamento":10
         },
         "spawn":[
@@ -162,10 +162,12 @@
         "ia": {
             "padrao": "ControlarComportamentoSoldadoUseCase",
             "morte": "MortePersonagemUseCase",
-
             "acoes": {
                 "atacar": {
-                    "alvos": "personagens_hostis",
+                    "alvos": [
+                        "personagens_hostis",
+                        "construcoes_hostis"
+                    ],
                     "usecase": "AtacarSoldadoUseCase"
                 }
             }
@@ -176,6 +178,7 @@
         "maquina": "MaquinaEstadoGoblinTocha",
         "classe":"criar_goblin_tocha",
         "grupo":"hostis",
+        "faccao":"goblin",
         "renderer":{
             "colecao": "personagens_hostis",
             "escala":1,
@@ -205,7 +208,6 @@
         "ia": {
             "padrao": "ControlarComportamentoGoblinTochaUseCase",
             "morte": "MortePersonagemUseCase",
-
             "acoes": {
                 "atacar": {
                     "alvos": "personagens",
@@ -292,6 +294,11 @@
                 "frames": 1,
                 "tempo": 0.20
             }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {}
         }
     },
     "casa": {
@@ -312,6 +319,11 @@
                 "frames": 1,
                 "tempo": 0.20
             }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {}
         }
     },
     "quartel": {
@@ -332,14 +344,20 @@
                 "frames": 1,
                 "tempo": 0.20
             }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {}
         }
     },
     "casa_goblin": {
         "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_casa_goblin",
         "grupo": "construcoes",
+        "faccao":"goblin",
         "renderer": {
-            "colecao": "construcoes",
+            "colecao": "construcoes_hostis",
             "escala": 0.9,
             "escala_menu":0.25,
             "frames_carregamento": 16
@@ -354,6 +372,11 @@
                 "frames": 16,
                 "tempo": 0.25
             }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {}
         }
     },
 
@@ -574,7 +597,44 @@
             }
         }
     },
-
+    "fogo1": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "colecao": "efeitos",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "spawn": [],
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/fogo_001.png",
+                "frames": 8,
+                "tempo": 0.06
+            }
+        }
+    },
+    "fogo2": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "colecao": "efeitos",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "spawn": [],
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/fogo_002.png",
+                "frames": 10,
+                "tempo": 0.20
+            }
+        }
+    },
     "barra_vida": {
         "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",

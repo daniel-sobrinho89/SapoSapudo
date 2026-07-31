@@ -1,4 +1,4 @@
-from config import IS_ANDROID
+from utils.config import IS_ANDROID
 
 ULTIMO_CODE = None
 

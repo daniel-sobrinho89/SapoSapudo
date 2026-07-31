@@ -1,6 +1,6 @@
 import json
 
-from core.animacao import AnimacaoMovimento
+from core.animacao_movimento import AnimacaoMovimento
 from domains.arvore.maquina_estado import MaquinaEstadoArvore
 from domains.construcao.maquina_estado import MaquinaEstadoConstrucao
 from domains.ouro.maquina_estado import MaquinaEstadoOuro
@@ -82,6 +82,17 @@ class Animacoes:
             return False
 
         return animacao.atualizar(dt)
+
+    def reset(self):
+        estado = self.maquina.estado.name.lower()
+        estado_animacao = estado.replace("_flip", "")
+
+        animacao = self.animacoes.get(estado_animacao)
+
+        if not animacao:
+            return
+
+        animacao.reset()
 
     def obter_selecao_frame(self):
         estado = self.maquina.estado.name.lower()

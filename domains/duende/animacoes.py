@@ -4,7 +4,7 @@
 
 import random
 
-from core.animacao import AnimacaoMovimento
+from core.animacao_movimento import AnimacaoMovimento
 from core.event_bus import event_bus
 from domains.sapudo.maquina_estado_sapo import StateMachine
 

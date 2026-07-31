@@ -1,5 +1,5 @@
-import kivy_adapter
-from config import AUDIO_HABILITADO, MUSICA_FUNDO, VOLUME_MUSICA
+import utils.kivy_adapter as kivy_adapter
+from utils.config import AUDIO_HABILITADO, MUSICA_FUNDO, VOLUME_MUSICA
 from utils.paths import BASE_DIR
 
 

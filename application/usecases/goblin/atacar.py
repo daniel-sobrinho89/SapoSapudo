@@ -33,8 +33,6 @@ class AtacarGoblinUseCase:
         else:
             self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
 
-    # --------------------------------------------------------
-
     def executar(self, dt):
         if self.entidade_alvo is None:
             return
@@ -155,7 +153,7 @@ class AtacarGoblinUseCase:
         )
 
         self.entidade_alvo.receber_golpe(
-            self.personagem.x,
+            self.personagem,
             *destino,
         )
 
@@ -164,13 +162,7 @@ class AtacarGoblinUseCase:
         if ctrl is not None:
             atacar = ctrl["acoes"].get("atacar")
 
-            alvo_atual = atacar["usecase"].entidade_alvo if atacar else None
-
-            if (
-                atacar is not None
-                and not self._esta_correndo(self.entidade_alvo)
-                and (alvo_atual is None or self._esta_correndo(alvo_atual))
-            ):
+            if atacar is not None and not self._esta_correndo(self.entidade_alvo):
                 atacar["usecase"].iniciar(
                     self.personagem,
                     self.entidade_alvo,

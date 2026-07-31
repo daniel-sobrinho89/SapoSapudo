@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 
 LARGURA = 1024
 ALTURA = 600

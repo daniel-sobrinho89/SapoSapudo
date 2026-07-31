@@ -2,6 +2,9 @@ from core.animacoes import Animacoes
 
 
 class Construcao:
+    VIDA_MAXIMA = 500
+    TEMPO_EXIBIR_BARRA_VIDA = 3.0
+
     def __init__(self, nome, madeira=0, ouro=0, carne=0, x=0, y=0):
         self.nome = nome
 
@@ -12,10 +15,19 @@ class Construcao:
         self.corpo_rect = None
         self.x = x
         self.y = y
-        self.vida = 1000
+        self.vida = self.VIDA_MAXIMA
+        self.tempo_barra_vida = 0.0
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)
+        self.tempo_barra_vida = max(0.0, self.tempo_barra_vida - dt)
+
+    def receber_golpe(self):
+        if self.vida <= 0:
+            return
+
+        self.vida -= 1
+        self.tempo_barra_vida = self.TEMPO_EXIBIR_BARRA_VIDA
 
 
 def criar_construcao(nome, x=0, y=0):

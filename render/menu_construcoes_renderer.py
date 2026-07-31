@@ -1,4 +1,4 @@
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 from core.game_config import obter_config
 from core.mouse_events import Hover
 from render.menu_renderer import MenuRenderer
@@ -18,9 +18,9 @@ class MenuConstrucoesRenderer:
         )
 
         self.opcoes = [
-            cenario.carregar_entidade("castelo"),
-            cenario.carregar_entidade("casa"),
-            cenario.carregar_entidade("quartel"),
+            cenario.carregar_entidade_temporaria("castelo"),
+            cenario.carregar_entidade_temporaria("casa"),
+            cenario.carregar_entidade_temporaria("quartel"),
         ]
 
     def atualizar_carregamento(self):

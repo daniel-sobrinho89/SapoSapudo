@@ -1,8 +1,8 @@
 import random
 
 from application.usecases.mover_personagem import MoverPersonagemUseCase
-from config import LARGURA
 from domains.personagem.maquina_estado_goblin_tocha import EstadoGoblinTocha
+from utils.config import LARGURA
 
 
 class ControlarComportamentoGoblinTochaUseCase:

@@ -1,4 +1,4 @@
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 from core.mouse_events import Hover
 from render.menu_renderer import MenuRenderer
 
@@ -15,8 +15,8 @@ class MenuCasaRenderer:
         )
 
         self.opcoes = [
-            cenario.carregar_entidade("avatar_aldeao"),
-            cenario.carregar_entidade("avatar_soldado"),
+            cenario.carregar_entidade_temporaria("avatar_aldeao"),
+            cenario.carregar_entidade_temporaria("avatar_soldado"),
         ]
 
     def atualizar_carregamento(self):

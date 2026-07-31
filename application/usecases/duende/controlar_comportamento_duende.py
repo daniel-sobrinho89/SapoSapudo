@@ -1,7 +1,7 @@
 import math
 import random
 
-from config import ALTURA, CENTRO_OFFSET_Y, LARGURA
+from utils.config import ALTURA, CENTRO_OFFSET_Y, LARGURA
 
 
 class ControlarComportamentoDuendeUseCase:

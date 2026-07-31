@@ -156,16 +156,21 @@ class AtacarSoldadoUseCase:
             self.personagem.y,
         )
 
-        self.entidade_alvo.receber_golpe(
-            self.personagem.x,
-            *destino,
-        )
-
         ctrl = self.cenario_principal.controladores.get(self.entidade_alvo)
+        entity = self.cenario_principal.obter_entidade(self.entidade_alvo)
 
-        if ctrl is not None:
+        if entity["grupo"] == "construcoes":
+            self.entidade_alvo.receber_golpe()
+
+            defender = ctrl["padrao"]
+            defender.iniciar(self.entidade_alvo, self.personagem, entity["faccao"])
+        else:
+            self.entidade_alvo.receber_golpe(
+                self.personagem,
+                *destino,
+            )
+
             atacar = ctrl["acoes"].get("atacar")
-
             alvo_atual = atacar["usecase"].entidade_alvo if atacar else None
 
             if (

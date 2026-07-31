@@ -139,7 +139,7 @@ class ObterCarneUseCase:
         )
 
         self.entidade_alvo.receber_golpe(
-            self.personagem.x,
+            self.personagem,
             *destino,
         )
 

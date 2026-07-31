@@ -1,5 +1,5 @@
-from config import ALTURA, LARGURA
-from kivy_adapter import Rect
+from utils.config import ALTURA, LARGURA
+from utils.kivy_adapter import Rect
 
 
 class Camera:

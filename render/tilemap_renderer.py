@@ -1,10 +1,11 @@
-from config import TILE_SIZE
+from utils.config import TILE_SIZE
 
 
 class TileMapRenderer:
     TIPO_GRAMA = "grama"
     TIPO_AGUA = "agua"
     TIPO_ROCHA = "rocha"
+    TIPO_VAZIO = None
 
     def __init__(self, tela, assets, transform):
         self.tela = tela
@@ -34,10 +35,13 @@ class TileMapRenderer:
 
         return [
             [
-                "agua" if y < 2 or x == 0 or x == largura - 1 else "grama"
-                for x in range(largura)
+                {
+                    "tipo": TileMapRenderer.TIPO_GRAMA,
+                    "altura": 1,
+                }
+                for _ in range(largura)
             ]
-            for y in range(altura)
+            for _ in range(altura)
         ]
 
     @staticmethod
@@ -66,24 +70,7 @@ class TileMapRenderer:
             colunas=16,
         )
 
-        self.tiles_agua = {
-            1: agua[0],
-            2: agua[1],
-            3: agua[2],
-            4: agua[3],
-            5: agua[4],
-            6: agua[5],
-            7: agua[6],
-            8: agua[7],
-            9: agua[8],
-            10: agua[9],
-            11: agua[10],
-            12: agua[11],
-            13: agua[12],
-            14: agua[13],
-            15: agua[14],
-            16: agua[15],
-        }
+        self.tiles_agua = agua
 
         spritesheet = self.assets.carregar("background/chao1.png")
 
@@ -97,6 +84,9 @@ class TileMapRenderer:
         )
 
         self.tiles = {
+            #
+            # topo
+            #
             1: tiles[0],
             2: tiles[1],
             3: tiles[2],
@@ -106,13 +96,36 @@ class TileMapRenderer:
             7: tiles[18],
             8: tiles[19],
             9: tiles[20],
+            #
+            # horizontal
+            #
             10: tiles[27],
             11: tiles[28],
             12: tiles[29],
+            #
+            # vertical
+            #
             13: tiles[3],
             14: tiles[12],
             15: tiles[21],
             16: tiles[30],
+            #
+            # penhasco
+            #
+            17: tiles[41],
+            18: tiles[42],
+            19: tiles[43],
+            20: tiles[44],
+            21: tiles[50],
+            22: tiles[51],
+            23: tiles[52],
+            24: tiles[53],
+            #
+            # topo penhasco
+            #
+            25: tiles[23],
+            26: tiles[24],
+            27: tiles[25],
         }
 
         self.carregado = True
@@ -133,19 +146,54 @@ class TileMapRenderer:
     # ==================================================
 
     def obter_tipo(self, coluna, linha):
-        if coluna < 0:
+        if coluna < 0 or coluna >= self.largura:
+            return self.TIPO_AGUA
+
+        if linha < 0 or linha >= self.altura:
+            return self.TIPO_AGUA
+
+        tile = self.mapa[linha][coluna]
+
+        if tile is None:
             return None
+
+        if isinstance(tile, str):
+            return tile
+
+        return tile["tipo"]
+
+    def obter_altura(self, coluna, linha):
+        if coluna < 0:
+            return 0
 
         if linha < 0:
-            return None
+            return 0
 
         if coluna >= self.largura:
-            return None
+            return 0
 
         if linha >= self.altura:
-            return None
+            return 0
 
-        return self.mapa[linha][coluna]
+        tile = self.mapa[linha][coluna]
+
+        if tile is None:
+            return 0
+
+        if isinstance(tile, str):
+            return 0
+
+        return tile.get("altura", 0)
+
+    def mesma_altura(self, coluna1, linha1, coluna2, linha2):
+        return self.obter_altura(coluna1, linha1) == self.obter_altura(coluna2, linha2)
+
+    def existe_grama(self, coluna, linha):
+        return (
+            0 <= coluna < self.largura
+            and 0 <= linha < self.altura
+            and self.obter_tipo(coluna, linha) == self.TIPO_GRAMA
+        )
 
     def eh_grama(self, x, y):
         coluna, linha = self.pixel_para_tile(x, y)
@@ -156,12 +204,10 @@ class TileMapRenderer:
         )
 
     def pode_andar(self, coluna, linha):
-        tipo = self.obter_tipo(coluna, linha)
-
-        if tipo is None:
+        if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
             return False
 
-        return tipo == self.TIPO_GRAMA
+        return not self.existe_penhasco(coluna, linha)
 
     # ==================================================
     # PIXEL
@@ -183,6 +229,47 @@ class TileMapRenderer:
     # AUTOTILE
     # ==================================================
 
+    def tem_grama_vizinha(self, coluna, linha):
+        # Verifica vizinhos diretos (cruz) e diagonais para incluir as quinas
+        for dx, dy in [
+            (0, -1),
+            (0, 1),
+            (-1, 0),
+            (1, 0),
+            (1, 1),
+            (-1, 1),
+            (1, -1),
+            (-1, -1),
+        ]:
+            if self.obter_tipo(coluna + dx, linha + dy) == self.TIPO_GRAMA:
+                return True
+        return False
+
+    def tem_vizinho_agua(self, coluna, linha):
+        # Mesma lógica da cruz para a água
+        for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+            if self.obter_tipo(coluna + dx, linha + dy) == self.TIPO_AGUA:
+                return True
+        return False
+
+    def existe_penhasco(self, coluna, linha):
+        if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
+            return False
+
+        return self.obter_altura(coluna, linha) > self.obter_altura(coluna, linha + 1)
+
+    def atualizar_animacao_agua(self, dt):
+        self.tempo_agua += dt
+
+        if self.tempo_agua < 0.08:
+            return
+
+        self.tempo_agua = 0
+        self.frame_agua += 1
+
+        if self.frame_agua > len(self.tiles_agua):
+            self.frame_agua = 1
+
     def obter_sprite(self, coluna, linha):
         tipo = self.obter_tipo(coluna, linha)
 
@@ -191,69 +278,183 @@ class TileMapRenderer:
 
         if tipo == self.TIPO_AGUA:
             return self.obter_sprite_agua(coluna, linha)
-        elif tipo == self.TIPO_ROCHA:
-            return self.tiles[40]
 
-        n = self.obter_tipo(coluna, linha - 1) == tipo
-        s = self.obter_tipo(coluna, linha + 1) == tipo
-        w = self.obter_tipo(coluna - 1, linha) == tipo
-        e = self.obter_tipo(coluna + 1, linha) == tipo
+        if tipo != self.TIPO_GRAMA:
+            return None
 
-        # ------------------------------------
-        # Ilha
-        # ------------------------------------
+        v = self.obter_vizinhos(coluna, linha, tipo)
 
-        if not n and not s and not w and not e:
-            return self.tiles[16]  # 16
+        n = v["n"]
+        s = v["s"]
+        e = v["e"]
+        w = v["w"]
 
-        # ------------------------------------
-        # Linha superior
-        # ------------------------------------
+        ne = v["ne"]
+        nw = v["nw"]
+        se = v["se"]
+        sw = v["sw"]
+
+        #
+        # ilha
+        #
+
+        if not n and not s and not e and not w:
+            return self.tiles[16]
+
+        #
+        # topo
+        #
 
         if not n:
             if not w:
-                return self.tiles[1]  # 1
+                return self.tiles[1]
 
             if not e:
-                return self.tiles[3]  # 3
+                return self.tiles[3]
 
-            return self.tiles[2]  # 2
+            return self.tiles[2]
 
-        # ------------------------------------
-        # Linha inferior
-        # ------------------------------------
+        #
+        # base
+        #
 
         if not s:
+            if self.existe_penhasco(coluna, linha):
+                return self.obter_sprite_topo_penhasco(
+                    coluna,
+                    linha,
+                )
+
             if not w:
-                return self.tiles[7]  # 7
+                return self.tiles[7]
 
             if not e:
-                return self.tiles[9]  # 9
+                return self.tiles[9]
 
-            return self.tiles[8]  # 8
+            return self.tiles[8]
 
-        # ------------------------------------
-        # Linha do meio
-        # ------------------------------------
+        #
+        # esquerda
+        #
 
         if not w:
-            return self.tiles[4]  # 4
+            return self.tiles[4]
+
+        #
+        # direita
+        #
 
         if not e:
-            return self.tiles[6]  # 6
+            return self.tiles[6]
 
-        return self.tiles[5]  # 5
+        #
+        # cantos internos
+        #
+
+        if not nw:
+            return self.tiles[13]
+
+        if not ne:
+            return self.tiles[14]
+
+        if not sw:
+            return self.tiles[15]
+
+        if not se:
+            return self.tiles[16]
+
+        #
+        # centro
+        #
+
+        return self.tiles[5]
+
+    def obter_sprite_topo_penhasco(self, coluna, linha):
+        v = self.obter_vizinhos_penhasco(
+            coluna,
+            linha,
+        )
+
+        w = v["w"]
+        e = v["e"]
+
+        if not w and not e:
+            return self.tiles[26]
+
+        if not w:
+            return self.tiles[25]
+
+        if not e:
+            return self.tiles[27]
+
+        return self.tiles[26]
 
     def obter_sprite_agua(self, coluna, linha):
-        for y in (-1, 0, 1):
-            for x in (-1, 0, 1):
-                if x == 0 and y == 0:
-                    continue
+        if self.tem_grama_vizinha(coluna, linha):
+            return self.tiles_agua[self.frame_agua - 1]
 
-                if self.obter_tipo(coluna + x, linha + y) == self.TIPO_GRAMA:
-                    return self.tiles_agua[self.frame_agua]
+        return None
 
-        return self.agua_parada
+    def obter_sprite_coluna(self, coluna, linha):
+        v = self.obter_vizinhos_penhasco(
+            coluna,
+            linha,
+        )
+
+        w = v["w"]
+        e = v["e"]
+
+        if not w and not e:
+            return self.tiles[24]
+
+        if not w:
+            return self.tiles[21]
+
+        if not e:
+            return self.tiles[23]
+
+        return self.tiles[22]
+
+    def obter_vizinhos(self, coluna, linha, tipo):
+        def igual(col, lin):
+            return self.obter_tipo(col, lin) == tipo
+
+        return {
+            "n": igual(coluna, linha - 1),
+            "ne": igual(coluna + 1, linha - 1),
+            "e": igual(coluna + 1, linha),
+            "se": igual(coluna + 1, linha + 1),
+            "s": igual(coluna, linha + 1),
+            "sw": igual(coluna - 1, linha + 1),
+            "w": igual(coluna - 1, linha),
+            "nw": igual(coluna - 1, linha - 1),
+        }
+
+    def obter_vizinhos_penhasco(self, coluna, linha):
+        return {
+            "w": self.existe_penhasco(coluna - 1, linha),
+            "e": self.existe_penhasco(coluna + 1, linha),
+        }
+
+    def desenhar_agua(self, coluna, linha, camera):
+        if self.existe_grama(coluna, linha):
+            return
+
+        if not self.tem_grama_vizinha(coluna, linha):
+            return
+
+        sprite = self.tiles_agua[self.frame_agua - 1]
+
+        x = self.offset_x + coluna * TILE_SIZE - camera.x
+        y = self.offset_y + linha * TILE_SIZE - camera.y
+
+        self.tela.blit(
+            sprite,
+            (
+                x,
+                y,
+            ),
+        )
 
     # ==================================================
     # RENDER
@@ -263,48 +464,84 @@ class TileMapRenderer:
         if not self.carregado:
             return
 
-        inicio_x = max(
-            0,
-            int(camera.x // TILE_SIZE),
-        )
+        self.atualizar_animacao_agua(dt)
+        self.renderizar_fundo(camera)
 
+        inicio_x = max(-2, int((camera.x - self.offset_x) // TILE_SIZE) - 2)
         fim_x = min(
-            self.largura,
-            int((camera.x + camera.largura) // TILE_SIZE) + 2,
+            self.largura + 2,
+            int((camera.x + camera.largura - self.offset_x) // TILE_SIZE) + 3,
         )
 
-        inicio_y = max(
-            0,
-            int(camera.y // TILE_SIZE),
-        )
-
+        inicio_y = max(-2, int((camera.y - self.offset_y) // TILE_SIZE) - 2)
         fim_y = min(
-            self.altura,
-            int((camera.y + camera.altura) // TILE_SIZE) + 2,
+            self.altura + 3,
+            int((camera.y + camera.altura - self.offset_y) // TILE_SIZE) + 4,
         )
 
+        # 1. Desenha a espuma tanto sob as bordas da grama quanto na água ao redor
         for linha in range(inicio_y, fim_y):
             for coluna in range(inicio_x, fim_x):
-                sprite = self.obter_sprite(coluna, linha)
+                tipo = self.obter_tipo(coluna, linha)
+                desenhar_espuma = False
 
-                if sprite is None:
-                    continue
+                if tipo == self.TIPO_AGUA:
+                    # Água vizinha da terra
+                    if self.tem_grama_vizinha(
+                        coluna, linha
+                    ) and not self.existe_penhasco(coluna, linha - 1):
+                        desenhar_espuma = True
+                elif tipo == self.TIPO_GRAMA and (
+                    self.tem_vizinho_agua(coluna, linha)
+                    and self.obter_tipo(coluna + 1, linha) != self.TIPO_AGUA
+                ):
+                    desenhar_espuma = True
 
-                x = self.offset_x + coluna * TILE_SIZE - camera.x
-                y = self.offset_y + linha * TILE_SIZE - camera.y
+                if desenhar_espuma:
+                    sprite = self.tiles_agua[self.frame_agua - 1]
+                    x = self.offset_x + coluna * TILE_SIZE - camera.x
+                    y = self.offset_y + linha * TILE_SIZE - camera.y
 
-                if sprite == self.agua_parada:
-                    x += self.offset_agua_parada_x
-                    y += self.offset_agua_parada_y
+                    self.tela.blit(sprite, (x, y))
 
-                self.tela.blit(sprite, (x, y))
+        # 2. Desenha todos os tiles de grama por cima da espuma
+        for linha in range(inicio_y, fim_y):
+            for coluna in range(inicio_x, fim_x):
+                if self.obter_tipo(coluna, linha) == self.TIPO_GRAMA:
+                    sprite = self.obter_sprite(coluna, linha)
+                    if sprite is not None:
+                        x = self.offset_x + coluna * TILE_SIZE - camera.x
+                        y = self.offset_y + linha * TILE_SIZE - camera.y
+                        self.tela.blit(sprite, (x, y))
 
-        self.tempo_agua += dt
+        # 3. Desenha os sprites de penhasco
+        for linha in range(inicio_y, fim_y):
+            for coluna in range(inicio_x, fim_x):
+                if self.existe_penhasco(coluna, linha):
+                    sprite = self.obter_sprite_coluna(coluna, linha)
+                    if sprite is not None:
+                        x = self.offset_x + coluna * TILE_SIZE - camera.x
+                        y = self.offset_y + linha * TILE_SIZE - camera.y
+                        self.tela.blit(sprite, (x, y + TILE_SIZE))
 
-        if self.tempo_agua >= 0.08:
-            self.tempo_agua = 0
+    def renderizar_fundo(self, camera):
+        sprite = self.agua_parada
 
-            self.frame_agua += 1
+        largura = sprite.get_width()
+        altura = sprite.get_height()
 
-            if self.frame_agua > 16:
-                self.frame_agua = 1
+        inicio_x = int(camera.x // largura) - 1
+        fim_x = int((camera.x + camera.largura) // largura) + 2
+
+        inicio_y = int(camera.y // altura) - 1
+        fim_y = int((camera.y + camera.altura) // altura) + 2
+
+        for y in range(inicio_y, fim_y):
+            for x in range(inicio_x, fim_x):
+                self.tela.blit(
+                    sprite,
+                    (
+                        x * largura - camera.x,
+                        y * altura - camera.y,
+                    ),
+                )

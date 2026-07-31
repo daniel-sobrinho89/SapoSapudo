@@ -1,8 +1,8 @@
 import random
 
-from config import LARGURA
 from core.animacoes import Animacoes
 from domains.ovelha.maquina_estado import EstadoOvelha
+from utils.config import LARGURA
 
 
 class Ovelha:
@@ -28,7 +28,7 @@ class Ovelha:
         self.animacoes.atualizar(dt)
         self.tempo_barra_vida = max(0.0, self.tempo_barra_vida - dt)
 
-    def receber_golpe(self, atacante_x, destino_x, destino_y):
+    def receber_golpe(self, atacante, destino_x, destino_y):
         if self.vida <= 0:
             return
 
@@ -38,7 +38,7 @@ class Ovelha:
         self.destino_x = destino_x
         self.destino_y = destino_y
 
-        if atacante_x < self.x:
+        if atacante.x < self.x:
             self.animacoes.estado = EstadoOvelha.CORRENDO
         else:
             self.animacoes.estado = EstadoOvelha.CORRENDO_FLIP

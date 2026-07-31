@@ -4,10 +4,10 @@ from kivy.clock import Clock
 
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from application.usecases import AtualizarFluxoSpotifyUseCase
-from config import IS_ANDROID
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
+from utils.config import IS_ANDROID
 
 
 class ControladorVozMusical:

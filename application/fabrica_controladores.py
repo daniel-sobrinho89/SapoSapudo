@@ -13,6 +13,7 @@ from application.usecases.controlar_comportamento_ovelha import (
 from application.usecases.controlar_comportamento_sapudo import (
     ControlarComportamentoSapudoUseCase,
 )
+from application.usecases.defender_construcao import DefenderConstrucaoUseCase
 from application.usecases.goblin.atacar import (
     AtacarGoblinUseCase,
 )
@@ -47,6 +48,7 @@ USECASES = {
     "ObterCarneUseCase": lambda c: ObterCarneUseCase(c),
     "AtacarSoldadoUseCase": lambda c: AtacarSoldadoUseCase(c),
     "AtacarGoblinUseCase": lambda c: AtacarGoblinUseCase(c),
+    "DefenderConstrucaoUseCase": lambda c: DefenderConstrucaoUseCase(c),
 }
 
 
@@ -66,8 +68,15 @@ class FabricaControladores:
         }
 
         for nome_acao, cfg in ia["acoes"].items():
+            alvos = cfg["alvos"]
+
+            if isinstance(alvos, str):
+                itens = getattr(cenario, alvos)
+            else:
+                itens = [getattr(cenario, nome) for nome in alvos]
+
             controlador["acoes"][nome_acao] = {
-                "itens": getattr(cenario, cfg["alvos"]),
+                "itens": itens,
                 "usecase": USECASES[cfg["usecase"]](cenario),
             }
 

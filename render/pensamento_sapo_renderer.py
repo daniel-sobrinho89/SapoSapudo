@@ -1,6 +1,6 @@
 from PIL import ImageDraw, ImageFont
 
-import kivy_adapter
+import utils.kivy_adapter as kivy_adapter
 from core.event_bus import PensamentoSapoEvent, event_bus
 from domains.sapudo.pensamentos_sapo import PensamentoViewModel
 
