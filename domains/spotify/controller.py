@@ -1,13 +1,8 @@
-import threading
-
-from kivy.clock import Clock
-
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from application.usecases import AtualizarFluxoSpotifyUseCase
 from domains.sapudo.pensamentos_sapo import PensamentosSapo
 from domains.voz.reconhecedor_android import ReconhecedorAndroid
 from domains.voz.roteador_voz import RoteadorVoz
-from utils.config import IS_ANDROID
 
 
 class ControladorVozMusical:
@@ -23,7 +18,6 @@ class ControladorVozMusical:
         controle_renderer,
         gerenciador_cenarios,
         clima_service,
-        conversa_sapudo,
         tts,
     ):
         self.spotify = spotify
@@ -31,7 +25,6 @@ class ControladorVozMusical:
         self.controle_renderer = controle_renderer
         self.gerenciador_cenarios = gerenciador_cenarios
         self.clima_service = clima_service
-        self.conversa_sapudo = conversa_sapudo
         self.tts = tts
         self._pensamento_event = None
         self._pensamentos_aguardo = [
@@ -52,8 +45,6 @@ class ControladorVozMusical:
             self.audio,
             self.gerenciador_cenarios,
         )
-
-        Clock.schedule_interval(self._atualizar_status_modelo, 1)
 
     @property
     def inicializado(self):
@@ -117,8 +108,6 @@ class ControladorVozMusical:
                         rota["dados"], self.desligar_microfone
                     )
 
-                elif rota["tipo"] == "conversa":
-                    self._processar_conversa(rota["texto"])
             else:
                 self.tempo_sem_audio += dt
                 if self.tempo_sem_audio > 10:
@@ -126,64 +115,6 @@ class ControladorVozMusical:
 
         self.atualizar_fluxo_spotify.executar(dt)
         self.coordenador_estado_jogo.executar(dt)
-
-    def _processar_conversa(self, texto):
-        if not self.conversa_sapudo.modelo_pronto:
-            PensamentosSapo.publicar(self.conversa_sapudo.model_manager.status, 5)
-            return
-
-        if self.conversa_sapudo.processando:
-            PensamentosSapo.publicar("Ainda estou pensando na pergunta anterior.", 5)
-            return
-
-        self.desligar_microfone()
-
-        PensamentosSapo.publicar("Escutando os ecos da lagoa...", 10)
-
-        self._iniciar_pensamentos_aguardo()
-
-        threading.Thread(
-            target=self._executar_client,
-            args=(texto,),
-            daemon=True,
-        ).start()
-
-    def _atualizar_status_modelo(self, dt):
-        if not IS_ANDROID:
-            return False
-
-        manager = self.conversa_sapudo.model_manager
-
-        if manager.pronto:
-            return False
-
-        PensamentosSapo.publicar(manager.status, 2)
-
-        return True
-
-    def _executar_client(self, texto):
-        try:
-            texto = texto.lower()
-
-            texto = texto.replace("sapado", "sapudo")
-            texto = texto.replace("sapo do", "sapudo")
-            texto = texto.replace("sabudo", "sapudo")
-
-            for palavra in ("sapudo", "sapo"):
-                if texto.startswith(palavra):
-                    texto = texto[len(palavra) :].strip()
-                    break
-
-            resposta = self.conversa_sapudo.conversar(texto)
-
-            Clock.schedule_once(lambda dt: self._mostrar_resposta(resposta["texto"]))
-        except Exception as ex:
-            print(f"[GEMINI] Erro: {ex}")
-
-            Clock.schedule_once(
-                lambda dt: self._mostrar_resposta("A lagoa ficou silenciosa.")
-            )
-            Clock.schedule_once(lambda dt: self._parar_pensamentos_aguardo())
 
     def _mostrar_resposta(self, resposta):
         self._parar_pensamentos_aguardo()
@@ -195,29 +126,6 @@ class ControladorVozMusical:
 
         if self.tts:
             self.tts.falar(resposta)
-
-    def _iniciar_pensamentos_aguardo(self):
-        self._parar_pensamentos_aguardo()
-        self._indice_pensamento = 0
-
-        def atualizar(dt):
-            if not self.conversa_sapudo.processando:
-                return False
-
-            self._indice_pensamento = (self._indice_pensamento + 1) % len(
-                self._pensamentos_aguardo
-            )
-
-            PensamentosSapo.publicar(
-                self._pensamentos_aguardo[self._indice_pensamento], 12
-            )
-
-            return True
-
-        self._pensamento_event = Clock.schedule_interval(
-            atualizar,
-            10,
-        )
 
     def _parar_pensamentos_aguardo(self):
         if self._pensamento_event:

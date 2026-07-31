@@ -61,28 +61,6 @@ jobs:
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Baixar libs llama
-        uses: dawidd6/action-download-artifact@v9
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build-llama.yml
-          workflow_conclusion: success
-          name: llama-android-b9752
-          path: .
-
-      - name: Extrair libs llama
-        run: |
-
-          mkdir -p domains/conversas/libs
-
-          unzip -o llama-android-b9752.zip
-
-          cp -r arm64-v8a domains/conversas/libs/
-
-          ls -lh domains/conversas/libs/arm64-v8a
-
-          find domains/conversas/libs -name "*.so"
-
       - name: Atualizar versão Android
         run: |
 

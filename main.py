@@ -20,8 +20,6 @@ from core.event_bus import event_bus
 from core.mouse_events import DoubleClickDetector
 from domains.cenario import EstadoJogo, GerenciadorCenarios
 from domains.clima.clima_service import ClimaService
-from domains.conversas.conversa_sapudo import ConversaSapudo
-from domains.conversas.qwen_local_client import QwenLocalClient
 from domains.spotify.controller import ControladorVozMusical, ControladorVozMusicalNulo
 from domains.spotify.spotify_manager import SpotifyManager
 from domains.voz.tts_service import TTSService
@@ -133,9 +131,6 @@ class GameWidget(Widget):
 
         self.gerenciador_cenarios.cenario_principal.carregar()
 
-        self.client = QwenLocalClient()
-        self.conversa_sapudo = ConversaSapudo(self.client)
-
         self.controlador_voz_musical = ControladorVozMusicalNulo()
 
     def _configurar_graficos(self):
@@ -207,7 +202,6 @@ class GameWidget(Widget):
                 self.controle_renderer,
                 self.cenario,
                 self.clima_service,
-                self.conversa_sapudo,
                 self.tts,
             )
 

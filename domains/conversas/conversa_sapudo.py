@@ -7,10 +7,6 @@ class ConversaSapudo:
         self.processando = False
 
     @property
-    def model_manager(self):
-        return self.client.model_manager
-
-    @property
     def modelo_pronto(self):
         return self.client.inicializado
 
