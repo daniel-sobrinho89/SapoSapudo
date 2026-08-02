@@ -157,7 +157,10 @@ class SpriteAnimadoRenderer:
 
         frame = self.transform.escalar(
             frame,
-            (largura, altura),
+            (
+                int(largura * camera.zoom),
+                int(altura * camera.zoom),
+            ),
         )
 
         frame.set_alpha(alpha)
@@ -168,6 +171,9 @@ class SpriteAnimadoRenderer:
             entidade.x,
             entidade.y,
         )
+
+        x *= camera.zoom
+        y *= camera.zoom
 
         rect = frame.get_rect(center=(x, y))
         entidade.render_rect = rect

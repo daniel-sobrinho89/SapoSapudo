@@ -1,0 +1,177 @@
+{
+    "colunas": 24,
+    "linhas": 11,
+
+    "biomas": [
+        {
+            "tilemap": "tilemap_color1",
+            "x": 0,
+            "y": 0,
+            "colunas": 8,
+            "linhas": 11
+        },
+        {
+            "tilemap": "tilemap_color3",
+            "x": 8,
+            "y": 0,
+            "colunas": 6,
+            "linhas": 5
+        },
+        {
+            "tilemap": "tilemap_color4",
+            "x": 14,
+            "y": 0,
+            "colunas": 10,
+            "linhas": 5
+        },
+        {
+            "tilemap": "tilemap_color5",
+            "x": 8,
+            "y": 5,
+            "colunas": 16,
+            "linhas": 6
+        }
+    ],
+
+    "relevos": [
+        {
+            "altura": 2,
+
+            "topo": {
+                "x": 2,
+                "y": 2,
+                "colunas": 4,
+                "linhas": 3
+            },
+
+            "parede": {
+                "x": 2,
+                "y": 5,
+                "colunas": 4,
+                "linhas": 1
+            }
+        },
+
+        {
+            "altura": 2,
+
+            "topo": {
+                "x": 9,
+                "y": 1,
+                "colunas": 4,
+                "linhas": 2
+            },
+
+            "parede": {
+                "x": 9,
+                "y": 3,
+                "colunas": 4,
+                "linhas": 1
+            }
+        },
+
+        {
+            "altura": 3,
+
+            "topo": {
+                "x": 16,
+                "y": 2,
+                "colunas": 5,
+                "linhas": 2
+            },
+
+            "parede": {
+                "x": 16,
+                "y": 4,
+                "colunas": 5,
+                "linhas": 2
+            }
+        },
+
+        {
+            "altura": 2,
+
+            "topo": {
+                "x": 11,
+                "y": 7,
+                "colunas": 5,
+                "linhas": 2
+            },
+
+            "parede": {
+                "x": 11,
+                "y": 9,
+                "colunas": 5,
+                "linhas": 1
+            }
+        }
+    ],
+
+    "spawns": [
+        {
+            "tipo": "sapudo",
+            "x": 13,
+            "y": 8
+        },
+        {
+            "tipo": "aldeao",
+            "x": 5,
+            "y": 8
+        },
+        {
+            "tipo": "aldeao",
+            "x": 6,
+            "y": 8
+        },
+        {
+            "tipo": "ovelha",
+            "x": 15,
+            "y": 8
+        },
+        {
+            "tipo": "ovelha",
+            "x": 16,
+            "y": 8
+        },
+        {
+            "tipo": "arvore",
+            "x": 3,
+            "y": 4
+        },
+        {
+            "tipo": "arvore",
+            "x": 4,
+            "y": 4
+        },
+        {
+            "tipo": "arvore",
+            "x": 5,
+            "y": 4
+        },
+        {
+            "tipo": "arvore",
+            "x": 10,
+            "y": 2
+        },
+        {
+            "tipo": "arvore",
+            "x": 11,
+            "y": 2
+        },
+        {
+            "tipo": "arvore",
+            "x": 18,
+            "y": 7
+        },
+        {
+            "tipo": "pedra",
+            "x": 17,
+            "y": 3
+        },
+        {
+            "tipo": "ouro",
+            "x": 18,
+            "y": 3
+        }
+    ]
+}

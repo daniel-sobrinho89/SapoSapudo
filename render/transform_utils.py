@@ -10,12 +10,18 @@ class TransformUtils:
     def escalar(self, imagem, tamanho):
         largura, altura = tamanho
 
+        largura = max(1, int(largura))
+        altura = max(1, int(altura))
+
         key = (id(imagem), largura, altura)
 
         if key in self.cache_escalas:
             return self.cache_escalas[key]
 
-        escalada = kivy_adapter.transform.smoothscale(imagem, (largura, altura))
+        escalada = kivy_adapter.transform.smoothscale(
+            imagem,
+            (largura, altura),
+        )
 
         self.cache_escalas[key] = escalada
 
