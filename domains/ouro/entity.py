@@ -3,10 +3,11 @@ from domains.ouro.maquina_estado import EstadoOuro
 
 
 class MinaOuro:
-    def __init__(self, nome, x, y):
+    def __init__(self, nome, x, y, altura):
         self.nome = nome
         self.x = x
         self.y = y
+        self.altura = altura
         self.animacoes = Animacoes(nome)
         self.minerio = 24
         self.vida = 24

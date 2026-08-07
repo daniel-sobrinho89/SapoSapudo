@@ -5,17 +5,18 @@ class Construcao:
     VIDA_MAXIMA = 500
     TEMPO_EXIBIR_BARRA_VIDA = 3.0
 
-    def __init__(self, nome, madeira=0, ouro=0, carne=0, x=0, y=0):
+    def __init__(self, nome, madeira=0, ouro=0, carne=0, x=0, y=0, altura=0):
         self.nome = nome
-
+        self.x = x
+        self.y = y
+        self.altura = altura
         self.custo_madeira = madeira
         self.custo_ouro = ouro
         self.custo_carne = carne
         self.animacoes = Animacoes(nome)
         self.corpo_rect = None
-        self.x = x
-        self.y = y
         self.vida = self.VIDA_MAXIMA
+
         self.tempo_barra_vida = 0.0
 
     def atualizar(self, dt):
@@ -30,33 +31,28 @@ class Construcao:
         self.tempo_barra_vida = self.TEMPO_EXIBIR_BARRA_VIDA
 
 
-def criar_construcao(nome, x=0, y=0):
+def criar_construcao(nome, x=0, y=0, altura=0):
     if nome == "castelo":
-        return criar_castelo(nome, x, y)
+        return criar_castelo(nome, x, y, altura)
     elif nome == "casa":
-        return criar_casa(nome, x, y)
+        return criar_casa(nome, x, y, altura)
     elif nome == "quartel":
-        return criar_quartel(nome, x, y)
+        return criar_quartel(nome, x, y, altura)
     elif nome == "casa_goblin":
-        return criar_casa_goblin(nome, x, y)
+        return criar_casa_goblin(nome, x, y, altura)
 
 
-def criar_castelo(nome, x=0, y=0):
-    return Construcao(nome, madeira=0, ouro=0, x=x, y=y)
+def criar_castelo(nome, x=0, y=0, altura=0):
+    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)
 
 
-def criar_casa(nome, x=0, y=0):
-    return Construcao(nome, madeira=0, ouro=0, x=x, y=y)
+def criar_casa(nome, x=0, y=0, altura=0):
+    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)
 
 
-def criar_casa_goblin(nome, x=0, y=0):
-    return Construcao(nome, x=x, y=y)
+def criar_casa_goblin(nome, x=0, y=0, altura=0):
+    return Construcao(nome, x=x, y=y, altura=altura)
 
 
-def criar_quartel(nome, x=0, y=0):
-    return Construcao(
-        nome,
-        madeira=0,
-        ouro=0,
-        x=x,
-    )
+def criar_quartel(nome, x=0, y=0, altura=0):
+    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)

@@ -28,15 +28,47 @@ class MoverPersonagemUseCase:
 
                 return False
 
-            novo_x = personagem.x + dx / distancia * velocidade * dt
-            novo_y = personagem.y + dy / distancia * velocidade * dt
+            x_antigo = personagem.x
+            y_antigo = personagem.y
+
+            alvo_x, alvo_y = personagem.destino_x, personagem.destino_y
+
+            if not navegacao.pode_andar(alvo_x, alvo_y, personagem.altura):
+                alvo_x, alvo_y = navegacao.ajustar_posicao(alvo_x, alvo_y) or (
+                    personagem.x,
+                    personagem.y,
+                )
 
             personagem.x, personagem.y = navegacao.limitar_movimento(
                 personagem.x,
                 personagem.y,
-                novo_x,
-                novo_y,
+                alvo_x,
+                alvo_y,
+                personagem.altura,
+                distancia_maxima=velocidade * dt,
             )
+
+            deslocamento = hypot(
+                personagem.x - x_antigo,
+                personagem.y - y_antigo,
+            )
+
+            if deslocamento < 1:
+                novo_destino = navegacao.encontrar_desvio(
+                    personagem.x,
+                    personagem.y,
+                    personagem.destino_x,
+                    personagem.destino_y,
+                    distancia_maxima=velocidade * dt,
+                )
+
+                if novo_destino != (
+                    personagem.destino_x,
+                    personagem.destino_y,
+                ):
+                    personagem.destino_x, personagem.destino_y = novo_destino
+
+                return True
 
             if dx >= 0:
                 personagem.animacoes.estado = estado_correndo

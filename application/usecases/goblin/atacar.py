@@ -94,18 +94,16 @@ class AtacarGoblinUseCase:
         else:
             self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
 
-        novo_x = self.personagem.x + ((dx / distancia) * self.VELOCIDADE * dt)
-
-        novo_y = self.personagem.y + ((dy / distancia) * self.VELOCIDADE * dt)
-
         (
             self.personagem.x,
             self.personagem.y,
         ) = self.cenario_principal.navegacao.limitar_movimento(
             self.personagem.x,
             self.personagem.y,
-            novo_x,
-            novo_y,
+            destino_x,
+            destino_y,
+            self.personagem.altura,
+            distancia_maxima=self.VELOCIDADE * dt,
         )
 
     def _interagir(self, dt):
@@ -150,6 +148,7 @@ class AtacarGoblinUseCase:
             self.entidade_alvo.y,
             self.personagem.x,
             self.personagem.y,
+            self.personagem.altura,
         )
 
         self.entidade_alvo.receber_golpe(

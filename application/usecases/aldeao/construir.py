@@ -53,10 +53,7 @@ class ConstruirUseCase:
 
         item.x, item.y = pos
 
-        if not cenario.tilemap.eh_grama(
-            item.x,
-            item.y,
-        ):
+        if not cenario.tilemap.eh_grama(item.x, item.y, 0):
             personagem = cenario.construcao_arrastando or cenario.personagem_arrastando
             cenario.remover_personagem(personagem)
             cenario.construcao_arrastando = None

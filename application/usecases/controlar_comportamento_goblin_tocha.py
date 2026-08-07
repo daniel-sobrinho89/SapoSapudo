@@ -48,6 +48,7 @@ class ControlarComportamentoGoblinTochaUseCase:
                 ) = self.navegacao.ponto_aleatorio_no_raio(
                     self.personagem.x,
                     self.personagem.y,
+                    self.personagem.altura,
                     40,
                     180,
                 )
@@ -64,6 +65,7 @@ class ControlarComportamentoGoblinTochaUseCase:
                 ) = self.navegacao.ponto_aleatorio_no_raio(
                     self.personagem.x,
                     self.personagem.y,
+                    self.personagem.altura,
                     40,
                     180,
                 )

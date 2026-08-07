@@ -9,7 +9,7 @@
             "frames_carregamento":10
         },
         "spawn":[
-                { "x":550,"y":400 }
+                { "x":550,"y":400, "altura": 0 }
             ],
         "flip": true,
         "animacoes": {
@@ -41,7 +41,7 @@
             "frames_carregamento":10
         },
         "spawn":[
-                { "x":400,"y":450 }
+                { "x":400,"y":450, "altura": 0 }
             ],
         "flip": true,
         "animacoes": {
@@ -185,7 +185,8 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":1200,"y":240 }
+                { "x":1200,"y":80, "altura": 1 },
+                { "x":1100,"y":150, "altura": 1 }
             ],
         "flip": true,
         "animacoes": {
@@ -363,7 +364,7 @@
             "frames_carregamento": 16
         },
         "spawn": [
-                { "x":1250,"y":150}
+                { "x":1280,"y":150, "altura": 1}
             ],
         "flip": false,
         "animacoes": {
@@ -390,7 +391,7 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":230,"y":340 }
+                { "x":230,"y":340, "altura":0 }
             ],
         "flip": false,
         "animacoes": {
@@ -417,7 +418,7 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":300,"y":315 }
+                { "x":300,"y":315, "altura":0 }
             ],
         "flip": false,
         "animacoes": {
@@ -444,7 +445,7 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":370,"y":355 }
+                { "x":370,"y":355, "altura":0 }
             ],
         "flip": false,
         "animacoes": {
@@ -471,7 +472,7 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":285,"y":405 }
+                { "x":285,"y":405, "altura":0 }
             ],
         "flip": false,
         "animacoes": {
@@ -498,9 +499,9 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":180,"y":420 },
-                { "x":620,"y":435 },
-                { "x":350,"y":455 }
+                { "x":180,"y":420, "altura": 0 },
+                { "x":620,"y":435, "altura": 0 },
+                { "x":350,"y":455, "altura": 0 }
             ],
         "drop": {
             "tipo": "carne",
@@ -541,8 +542,8 @@
             "frames_carregamento":5
         },
         "spawn":[
-                { "x":145,"y":510 },
-                { "x":160,"y":540 }
+                { "x":145,"y":510, "altura":0 },
+                { "x":160,"y":540, "altura":0 }
             ],
         "flip": false,
         "animacoes": {

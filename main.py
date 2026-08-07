@@ -94,6 +94,8 @@ class GameWidget(Widget):
             10,
         )
 
+        self._toques = {}
+        self._distancia_pinca = None
         self.double_click = DoubleClickDetector()
         self._inicializar_audio_spotify()
         self._inicializar_sistemas_base()
@@ -148,7 +150,19 @@ class GameWidget(Widget):
         self.rect.pos = self.pos
 
     def on_touch_down(self, touch):
+        self._toques[touch.uid] = touch
         pos_virtual = real_to_virtual(touch.pos)
+
+        camera = self.cenario.camera
+        # Scroll do mouse
+        if "button" in touch.profile:
+            if touch.button == "scrolldown":
+                camera.afastar()
+                return True
+
+            if touch.button == "scrollup":
+                camera.aproximar()
+                return True
 
         if (
             self.gerenciador_cenarios.estado == EstadoJogo.ABERTURA
@@ -164,14 +178,35 @@ class GameWidget(Widget):
     def on_touch_move(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
 
-        # Atualizar Arrastes
-        if self.gerenciador_cenarios.tem_duende and self.cenario.duende.arrastando:
-            self.cenario.duende.mover_arraste(*pos_virtual)
+        self._toques[touch.uid] = touch
+
+        if len(self._toques) == 2:
+            dedos = list(self._toques.values())
+
+            x1, y1 = dedos[0].pos
+            x2, y2 = dedos[1].pos
+
+            distancia = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+
+            if self._distancia_pinca is not None:
+                delta = distancia - self._distancia_pinca
+
+                if abs(delta) > 10:
+                    camera = self.cenario.camera
+
+                    camera.definir_zoom(camera.zoom + delta * 0.002)
+
+            self._distancia_pinca = distancia
 
         self.controlador_voz_musical.processar_on_touch_move(pos_virtual)
 
     def on_touch_up(self, touch):
         pos_virtual = real_to_virtual(touch.pos)
+
+        self._toques.pop(touch.uid, None)
+
+        if len(self._toques) < 2:
+            self._distancia_pinca = None
 
         self.controlador_voz_musical.processar_toque_up(pos_virtual)
 

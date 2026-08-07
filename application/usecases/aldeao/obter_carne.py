@@ -108,8 +108,16 @@ class ObterCarneUseCase:
         else:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
-        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.personagem.x, self.personagem.y = (
+            self.cenario_principal.navegacao.limitar_movimento(
+                self.personagem.x,
+                self.personagem.y,
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
+                self.personagem.altura,
+                distancia_maxima=self.VELOCIDADE * dt,
+            )
+        )
 
     def _atacar(self):
         animacao = self.personagem.animacoes.animacao_atual
@@ -136,6 +144,7 @@ class ObterCarneUseCase:
             self.entidade_alvo.y,
             self.personagem.x,
             self.personagem.y,
+            self.personagem.altura,
         )
 
         self.entidade_alvo.receber_golpe(

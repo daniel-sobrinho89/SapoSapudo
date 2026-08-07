@@ -1,15 +1,22 @@
 import random
 
 from application.usecases.mover_personagem import MoverPersonagemUseCase
-from domains.ovelha.maquina_estado import EstadoOvelha
+from domains.personagem.maquina_estado_ovelha import EstadoOvelha
+from utils.input import LARGURA
 
 
 class ControlarComportamentoOvelhaUseCase:
     def __init__(self, navegacao):
         self.navegacao = navegacao
-        self.velocidade = 35
-        self.distancia_minima = 40
         self.mover = MoverPersonagemUseCase()
+        self.tempo = 0.0
+        self.proxima_acao = random.uniform(3, 8)
+        self.velocidade = 35
+
+        self.limite_esquerdo = 30
+        self.limite_direito = LARGURA - 220
+
+        self.distancia_minima = 40
 
     def executar(self, dt, ovelha):
         self.ovelha = ovelha
@@ -21,13 +28,13 @@ class ControlarComportamentoOvelhaUseCase:
             self._andar(dt)
             return
 
-        self.ovelha.tempo += dt
+        self.tempo += dt
 
-        if self.ovelha.tempo < self.ovelha.proxima_acao:
+        if self.tempo < self.proxima_acao:
             return
 
-        self.ovelha.tempo = 0
-        self.ovelha.proxima_acao = random.uniform(3, 8)
+        self.tempo = 0
+        self.proxima_acao = random.uniform(3, 8)
         self._escolher_proxima_acao()
 
     def _escolher_proxima_acao(self):
@@ -48,6 +55,7 @@ class ControlarComportamentoOvelhaUseCase:
                 ) = self.navegacao.ponto_aleatorio_no_raio(
                     self.ovelha.x,
                     self.ovelha.y,
+                    self.ovelha.altura,
                     40,
                     180,
                 )
@@ -71,6 +79,7 @@ class ControlarComportamentoOvelhaUseCase:
                 ) = self.navegacao.ponto_aleatorio_no_raio(
                     self.ovelha.x,
                     self.ovelha.y,
+                    self.ovelha.altura,
                     40,
                     180,
                 )

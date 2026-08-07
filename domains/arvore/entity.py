@@ -3,10 +3,11 @@ from domains.arvore.maquina_estado import EstadoArvore
 
 
 class Arvore:
-    def __init__(self, nome, x, y):
+    def __init__(self, nome, x, y, altura):
         self.nome = nome
         self.x = x
         self.y = y
+        self.altura = altura
         self.animacoes = Animacoes(nome)
         self.madeira = 8
         self.vida = 8

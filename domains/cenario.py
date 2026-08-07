@@ -258,14 +258,10 @@ class CenarioPrincipal(CenarioBase):
 
             return entidade
 
-        spawns = spawns or [{"x": x, "y": y}]
+        spawns = spawns or [{"x": x, "y": y, "altura": 0}]
 
         for spawn in spawns:
-            entidade = criador(
-                tipo,
-                x=spawn["x"],
-                y=spawn["y"],
-            )
+            entidade = criador(tipo, x=spawn["x"], y=spawn["y"], altura=spawn["altura"])
 
             renderer = self._obter_renderer(tipo, config)
 

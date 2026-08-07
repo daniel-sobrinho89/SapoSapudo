@@ -4,9 +4,9 @@ from core.animacao_movimento import AnimacaoMovimento
 from domains.arvore.maquina_estado import MaquinaEstadoArvore
 from domains.construcao.maquina_estado import MaquinaEstadoConstrucao
 from domains.ouro.maquina_estado import MaquinaEstadoOuro
-from domains.ovelha.maquina_estado import MaquinaEstadoOvelha
 from domains.personagem.maquina_estado import MaquinaEstadoAldeao
 from domains.personagem.maquina_estado_goblin_tocha import MaquinaEstadoGoblinTocha
+from domains.personagem.maquina_estado_ovelha import MaquinaEstadoOvelha
 from domains.personagem.maquina_estado_sapudo import MaquinaEstadoSapudo
 from domains.personagem.maquina_estado_soldado import MaquinaEstadoSoldado
 from domains.recursos.maquina_estado import MaquinaEstadoRecurso
