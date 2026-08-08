@@ -18,6 +18,10 @@ class MaquinaEstadoSoldado(StateMachine):
     def __init__(self):
         super().__init__(EstadoSoldado.OCIOSO)
 
+    @property
+    def flip(self):
+        return self.estado.name.endswith("_FLIP")
+
     def carregando_recuso(self):
         return False
 

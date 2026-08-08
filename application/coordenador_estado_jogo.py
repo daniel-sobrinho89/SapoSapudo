@@ -1,6 +1,7 @@
 from application.usecases import (
     ConstruirUseCase,
     ProcessarComandoSpotifyUseCase,
+    TrocarComportamentoUseCase,
 )
 from core.mouse_events import DoubleClickDetector
 
@@ -23,10 +24,9 @@ class CoordenadorEstadoJogo:
         self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(self.spotify)
 
         self.construir = ConstruirUseCase()
+        self.trocar_comportamento = TrocarComportamentoUseCase()
 
     def executar(self, dt):
-        self._executar_fluxo_sapudo(dt)
-
         for personagem in (
             self.gerenciador_cenarios.personagens
             + self.gerenciador_cenarios.personagens_hostis
@@ -79,9 +79,6 @@ class CoordenadorEstadoJogo:
 
         ctrl["padrao"].executar(dt, personagem)
 
-    def _executar_fluxo_sapudo(self, dt):
-        pass
-
     def executar_comando_spotify(self, rota, finalizar_comando):
         self.processar_comando_spotify.executar(rota["dados"], finalizar_comando)
 
@@ -99,6 +96,7 @@ class CoordenadorEstadoJogo:
                         not self.gerenciador_cenarios.menu_construcoes.aberto
                     )
                     self.gerenciador_cenarios.menu_casa_renderer.aberto = False
+                    personagem.selecionado = False
                     return
 
                 if not personagem.animacoes.maquina.carregando_recuso():
@@ -145,6 +143,21 @@ class CoordenadorEstadoJogo:
 
                             personagem.selecionado = False
                             return
+
+        # ==========================================================
+        # Clique no chão
+        # ==========================================================
+        if personagem and not personagem.animacoes.maquina.carregando_recuso():
+            self.trocar_comportamento.executar(
+                controlador=ctrl,
+                personagem=personagem,
+                navegacao=self.gerenciador_cenarios.navegacao,
+                destino_x=mouse_mundo[0],
+                destino_y=mouse_mundo[1],
+            )
+
+            personagem.selecionado = False
+            return
 
         # ==========================================================
         # Construções

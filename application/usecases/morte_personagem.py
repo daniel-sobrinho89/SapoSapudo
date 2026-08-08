@@ -133,4 +133,4 @@ class MortePersonagemUseCase:
                         usecase.iniciar(drop, usecase.personagem)
                         break
                 else:
-                    usecase.cancelar()
+                    usecase.cancelar_coleta()

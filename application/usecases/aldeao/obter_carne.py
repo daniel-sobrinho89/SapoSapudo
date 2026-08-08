@@ -40,6 +40,9 @@ class ObterCarneUseCase:
         self.entidade_alvo = None
         self.item_carregado = None
 
+    def cancelar_coleta(self):
+        self.cancelar()
+
         if self.flip:
             self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
         else:
@@ -108,15 +111,13 @@ class ObterCarneUseCase:
         else:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
-        self.personagem.x, self.personagem.y = (
-            self.cenario_principal.navegacao.limitar_movimento(
-                self.personagem.x,
-                self.personagem.y,
-                self.entidade_alvo.x,
-                self.entidade_alvo.y,
-                self.personagem.altura,
-                distancia_maxima=self.VELOCIDADE * dt,
-            )
+        self.cenario_principal.mover_personagem.ir_para(
+            personagem=self.personagem,
+            navegacao=self.cenario_principal.navegacao,
+            destino_x=destino_x,
+            destino_y=destino_y,
+            velocidade=self.VELOCIDADE,
+            dt=dt,
         )
 
     def _atacar(self):
@@ -159,7 +160,7 @@ class ObterCarneUseCase:
             self.entidade_alvo,
             self.personagem,
         ):
-            self.cancelar()
+            self.cancelar_coleta()
             return
 
         self.item_carregado = self.entidade_alvo
@@ -175,7 +176,6 @@ class ObterCarneUseCase:
 
         dx = destino_x - self.personagem.x
         dy = destino_y - self.personagem.y
-
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
@@ -192,11 +192,17 @@ class ObterCarneUseCase:
             )
 
             if proxima_carne is None:
-                self.cancelar()
+                self.cancelar_coleta()
             else:
                 self.iniciar(proxima_carne, self.personagem)
 
             return
 
-        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.cenario_principal.mover_personagem.ir_para(
+            personagem=self.personagem,
+            navegacao=self.cenario_principal.navegacao,
+            destino_x=destino_x,
+            destino_y=destino_y,
+            velocidade=self.VELOCIDADE,
+            dt=dt,
+        )

@@ -8,18 +8,23 @@ from utils.config import TILE_SIZE
 class NavegacaoMapa:
     def __init__(self, tilemap):
         self.tilemap = tilemap
-        self.pontos_grama = [
-            (
-                coluna * TILE_SIZE + TILE_SIZE // 2,
-                linha * TILE_SIZE + TILE_SIZE // 2,
-            )
-            for linha, tiles in enumerate(self.tilemap.tiles)
-            for coluna, tile in enumerate(tiles)
-            if tile == self.tilemap.TIPO_GRAMA
-        ]
+        self.pontos_grama = []
+
+        for linha in range(self.tilemap.altura):
+            for coluna in range(self.tilemap.largura):
+                if self.tilemap.pode_andar(coluna, linha, 0):
+                    x, y = self.tilemap.tile_para_pixel(coluna, linha)
+
+                    self.pontos_grama.append(
+                        (
+                            x + TILE_SIZE // 2,
+                            y + TILE_SIZE // 2,
+                        )
+                    )
 
     def pode_andar(self, x, y, altura):
-        return self.tilemap.eh_grama(x, y, altura)
+        coluna, linha = self.tilemap.pixel_para_tile(x, y)
+        return self.tilemap.pode_andar(coluna, linha, altura)
 
     def fugir(
         self,
@@ -86,16 +91,26 @@ class NavegacaoMapa:
             distancia_maxima=passo,
         )
 
-        if desvio != (x1, y1):
+        if desvio is not None:
             return self._limitar_distancia(
-                x0, y0, desvio[0], desvio[1], distancia_maxima
+                x0,
+                y0,
+                desvio[0],
+                desvio[1],
+                distancia_maxima,
             )
 
         destino = self._procurar_grama_mais_proxima(x1, y1, altura)
         if destino is None:
-            return x0, y0
+            return None
 
-        return self._limitar_distancia(x0, y0, destino[0], destino[1], distancia_maxima)
+        return self._limitar_distancia(
+            x0,
+            y0,
+            destino[0],
+            destino[1],
+            distancia_maxima,
+        )
 
     def destino_aleatorio(self, max_tentativas=200):
         for _ in range(max_tentativas):
@@ -232,10 +247,10 @@ class NavegacaoMapa:
             destino_x, destino_y
         )
 
-        if not self._está_em_grade(origem_coluna, origem_linha):
+        if not self._esta_em_grade(origem_coluna, origem_linha):
             origem_coluna, origem_linha = self._ajustar_para_grade(origem_x, origem_y)
 
-        if not self._está_em_grade(destino_coluna, destino_linha):
+        if not self._esta_em_grade(destino_coluna, destino_linha):
             destino_coluna, destino_linha = self._ajustar_para_grade(
                 destino_x, destino_y
             )
@@ -249,7 +264,11 @@ class NavegacaoMapa:
         )
 
         if not rota:
-            return destino_x, destino_y
+            return self.ajustar_posicao(
+                destino_x,
+                destino_y,
+                altura,
+            )
 
         for coluna, linha in rota:
             ponto = self._ponto_para_tile_seguro(coluna, linha, altura)
@@ -266,7 +285,18 @@ class NavegacaoMapa:
                 return xx, yy
 
         ultimo = rota[-1]
-        return self._ponto_para_tile_seguro(ultimo[0], ultimo[1], altura)
+
+        ponto = self._ponto_para_tile_seguro(
+            ultimo[0],
+            ultimo[1],
+            altura,
+        )
+
+        return self.ajustar_posicao(
+            ponto[0],
+            ponto[1],
+            altura,
+        )
 
     def _ponto_para_tile_seguro(self, coluna, linha, altura):
         xx, yy = self.tilemap.tile_para_pixel(coluna, linha)
@@ -312,13 +342,6 @@ class NavegacaoMapa:
 
         return x, y
 
-    def _eh_penhasco(self, coluna, linha):
-        if self.tilemap.obter_tipo(coluna, linha) != self.tilemap.TIPO_GRAMA:
-            return False
-        return self.tilemap.obter_altura(coluna, linha) > self.tilemap.obter_altura(
-            coluna, linha + 1
-        )
-
     def _limitar_distancia(self, x0, y0, x1, y1, distancia_maxima=None):
         if distancia_maxima is None:
             return x1, y1
@@ -334,7 +357,7 @@ class NavegacaoMapa:
             y0 + sin(angulo) * distancia_maxima,
         )
 
-    def _está_em_grade(self, coluna, linha):
+    def _esta_em_grade(self, coluna, linha):
         return isinstance(coluna, int) and isinstance(linha, int)
 
     def _ajustar_para_grade(self, x, y):

@@ -32,7 +32,8 @@ class ObterOuroUseCase:
         else:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA
 
-    # --------------------------------------------------------
+    def cancelar(self):
+        self.entidade_alvo = None
 
     def executar(self, dt):
         if self.entidade_alvo is None:
@@ -59,7 +60,6 @@ class ObterOuroUseCase:
 
         dx = destino_x - self.personagem.x
         dy = destino_y - self.personagem.y
-
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
@@ -73,8 +73,14 @@ class ObterOuroUseCase:
             return
 
         if distancia > 0:
-            self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
-            self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
+            self.cenario_principal.mover_personagem.ir_para(
+                personagem=self.personagem,
+                navegacao=self.cenario_principal.navegacao,
+                destino_x=destino_x,
+                destino_y=destino_y,
+                velocidade=self.VELOCIDADE,
+                dt=dt,
+            )
 
     # --------------------------------------------------------
 
@@ -103,7 +109,6 @@ class ObterOuroUseCase:
 
         dx = destino_x - self.personagem.x
         dy = destino_y - self.personagem.y
-
         distancia = hypot(dx, dy)
 
         if distancia <= self.DISTANCIA_PARADA:
@@ -131,5 +136,11 @@ class ObterOuroUseCase:
 
             return
 
-        self.personagem.x += (dx / distancia) * self.VELOCIDADE * dt
-        self.personagem.y += (dy / distancia) * self.VELOCIDADE * dt
+        self.cenario_principal.mover_personagem.ir_para(
+            personagem=self.personagem,
+            navegacao=self.cenario_principal.navegacao,
+            destino_x=destino_x,
+            destino_y=destino_y,
+            velocidade=self.VELOCIDADE,
+            dt=dt,
+        )

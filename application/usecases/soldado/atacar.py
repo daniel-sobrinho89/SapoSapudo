@@ -35,7 +35,8 @@ class AtacarSoldadoUseCase:
         else:
             self.personagem.animacoes.estado = EstadoSoldado.CORRENDO
 
-    # --------------------------------------------------------
+    def cancelar(self):
+        self.entidade_alvo = None
 
     def executar(self, dt):
         if self.entidade_alvo is None:
@@ -93,21 +94,18 @@ class AtacarSoldadoUseCase:
 
             return
 
-        if self.flip:
-            self.personagem.animacoes.estado = EstadoSoldado.CORRENDO_FLIP
-        else:
-            self.personagem.animacoes.estado = EstadoSoldado.CORRENDO
+        self.personagem.destino_x = destino_x
+        self.personagem.destino_y = destino_y
 
-        (
-            self.personagem.x,
-            self.personagem.y,
-        ) = self.cenario_principal.navegacao.limitar_movimento(
-            self.personagem.x,
-            self.personagem.y,
-            destino_x,
-            destino_y,
-            self.personagem.altura,
-            distancia_maxima=self.VELOCIDADE * dt,
+        self.cenario_principal.mover_personagem.executar(
+            personagem=self.personagem,
+            navegacao=self.cenario_principal.navegacao,
+            velocidade=self.VELOCIDADE,
+            estado_correndo=EstadoSoldado.CORRENDO,
+            estado_correndo_flip=EstadoSoldado.CORRENDO_FLIP,
+            estado_parado=EstadoSoldado.OCIOSO,
+            estado_parado_flip=EstadoSoldado.OCIOSO_FLIP,
+            dt=dt,
         )
 
     def _interagir(self, dt):

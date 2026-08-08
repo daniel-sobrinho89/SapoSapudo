@@ -8,6 +8,7 @@ from .controlar_comportamento_ovelha import ControlarComportamentoOvelhaUseCase
 from .duende.controlar_comportamento_duende import ControlarComportamentoDuendeUseCase
 from .duende.controlar_sono_duende import ControlarSonoDuendeUseCase
 from .processar_comando_spotify import ProcessarComandoSpotifyUseCase
+from .trocar_comportamento import TrocarComportamentoUseCase
 
 __all__ = [
     "ControlarComportamentoDuendeUseCase",
@@ -20,4 +21,5 @@ __all__ = [
     "ControlarComportamentoOvelhaUseCase",
     "ConstruirUseCase",
     "ObterCarneUseCase",
+    "TrocarComportamentoUseCase",
 ]

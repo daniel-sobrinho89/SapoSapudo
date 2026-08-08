@@ -33,6 +33,9 @@ class AtacarGoblinUseCase:
         else:
             self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
 
+    def cancelar(self):
+        self.entidade_alvo = None
+
     def executar(self, dt):
         if self.entidade_alvo is None:
             return
@@ -94,16 +97,18 @@ class AtacarGoblinUseCase:
         else:
             self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
 
-        (
-            self.personagem.x,
-            self.personagem.y,
-        ) = self.cenario_principal.navegacao.limitar_movimento(
-            self.personagem.x,
-            self.personagem.y,
-            destino_x,
-            destino_y,
-            self.personagem.altura,
-            distancia_maxima=self.VELOCIDADE * dt,
+        self.personagem.destino_x = destino_x
+        self.personagem.destino_y = destino_y
+
+        self.cenario_principal.mover_personagem.executar(
+            personagem=self.personagem,
+            navegacao=self.cenario_principal.navegacao,
+            velocidade=self.VELOCIDADE,
+            estado_correndo=EstadoGoblinTocha.CORRENDO,
+            estado_correndo_flip=EstadoGoblinTocha.CORRENDO_FLIP,
+            estado_parado=EstadoGoblinTocha.OCIOSO,
+            estado_parado_flip=EstadoGoblinTocha.OCIOSO_FLIP,
+            dt=dt,
         )
 
     def _interagir(self, dt):

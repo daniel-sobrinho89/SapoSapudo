@@ -3,6 +3,7 @@ from application.usecases.duende.controlar_comportamento_duende import (
     ControlarComportamentoDuendeUseCase,
 )
 from application.usecases.duende.controlar_sono_duende import ControlarSonoDuendeUseCase
+from application.usecases.mover_personagem import MoverPersonagemUseCase
 from core.camera import Camera
 from core.game_config import obter_config, obter_tipos
 from core.navegacao_mapa import NavegacaoMapa
@@ -42,6 +43,7 @@ class CenarioBase:
         clima_service,
         ceu_renderer,
         navegacao,
+        mover_personagem,
         tilemap_renderer,
         camera,
         estado,
@@ -52,6 +54,7 @@ class CenarioBase:
         self.ceu_renderer = ceu_renderer
         self.camera = camera
         self.navegacao = navegacao
+        self.mover_personagem = mover_personagem
         self.tilemap_renderer = tilemap_renderer
         self.estado = estado
 
@@ -503,6 +506,7 @@ class GerenciadorCenarios:
             transform,
         )
         self.navegacao = NavegacaoMapa(self.tilemap_renderer)
+        self.mover_personagem = MoverPersonagemUseCase()
 
         self.cenario_principal = CenarioPrincipal(
             tela,
@@ -510,6 +514,7 @@ class GerenciadorCenarios:
             clima_service,
             self.ceu_renderer,
             self.navegacao,
+            self.mover_personagem,
             self.tilemap_renderer,
             self.camera,
             self.estado,

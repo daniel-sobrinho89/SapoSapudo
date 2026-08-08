@@ -34,6 +34,10 @@ class MaquinaEstadoAldeao(StateMachine):
     def __init__(self):
         super().__init__(EstadoAldeao.OCIOSO)
 
+    @property
+    def flip(self):
+        return self.estado.name.endswith("_FLIP")
+
     def interagindo_arvore(self):
         return self.em_estado(
             EstadoAldeao.CORRENDO_MACHADO,

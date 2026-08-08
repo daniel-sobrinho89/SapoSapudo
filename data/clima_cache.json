@@ -1,13 +1,13 @@
 {
-    "cloudiness": 22,
-    "wind_speed": 7.2,
-    "wind_direction": 352,
-    "future_cloudiness_1h": 12,
-    "future_cloudiness_2h": 15,
-    "future_cloudiness_3h": 82,
+    "cloudiness": 56,
+    "wind_speed": 8.3,
+    "wind_direction": 271,
+    "future_cloudiness_1h": 67,
+    "future_cloudiness_2h": 76,
+    "future_cloudiness_3h": 76,
     "is_day": 0,
-    "condition_code": 1000,
-    "condition_text": "Clear",
-    "temperature": 22.4,
-    "humidity": 45
+    "condition_code": 1240,
+    "condition_text": "Light rain shower",
+    "temperature": 19.0,
+    "humidity": 87
 }

@@ -66,7 +66,7 @@ class TileMapRenderer:
         self.alturas = {}
         self.topos_penhasco = set()
         self.paredes_penhasco = {}
-
+        self.tiles_bloqueados = set()
         self.largura = 0
         self.altura = 0
         self.offset_y = 0
@@ -213,6 +213,7 @@ class TileMapRenderer:
 
                 # Marca a altura na célula onde o sprite realmente aparece
                 self.alturas[(coluna, linha - 1)] = altura
+                self.tiles_bloqueados.add((coluna, linha - 1))
 
     def atualizar_carregamento(self):
         if self.carregado:
@@ -286,15 +287,21 @@ class TileMapRenderer:
             and self.obter_tipo(coluna, linha + 2) == self.TIPO_GRAMA
         )
 
+    def eh_grama(self, x, y, altura):
+        coluna, linha = self.pixel_para_tile(x, y)
+        return self.pode_andar(coluna, linha, altura)
+
     def pode_andar(self, coluna, linha, altura):
+        if not self._coordenada_valida(coluna, linha):
+            return False
+
+        if (coluna, linha) in self.tiles_bloqueados:
+            return False
+
         if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
             return False
 
         return self.obter_altura(coluna, linha) == altura
-
-    def eh_grama(self, x, y, altura):
-        coluna, linha = self.pixel_para_tile(x, y)
-        return self.pode_andar(coluna, linha, altura)
 
     # ==================================================
     # CONVERSÃO DE COORDENADAS E SPRITES
@@ -570,6 +577,15 @@ class TileMapRenderer:
                 if self.eh_penhasco_interno(coluna, linha)
                 else TILE_SIZE * linhas_penhasco
             )
+
+            linha_bloqueada = linha + (
+                linhas_penhasco + 1
+                if self.eh_penhasco_interno(coluna, linha)
+                else linhas_penhasco
+            )
+
+            self.tiles_bloqueados.add((coluna, linha_bloqueada))
+
             self._desenhar_sprite_cenario(
                 parede_sprite, coluna, linha, camera, penhasco_size=altura_final
             )

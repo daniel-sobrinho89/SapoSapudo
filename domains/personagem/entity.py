@@ -21,6 +21,7 @@ class Personagem:
 
         self.selecionado = False
         self.destino_x = self.x
+        self.destino_y = self.y
         self.construcao_selecionada = None
         self.fugindo = False
         self.tempo_barra_vida = 0.0
