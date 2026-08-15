@@ -31,12 +31,6 @@ if not IS_ANDROID:
     os.environ["SDL_AUDIODRIVER"] = "alsa"
     os.environ["AUDIODEV"] = "hw:2,0"
 
-if IS_ANDROID:
-    from android.permissions import Permission, request_permissions
-
-    request_permissions([Permission.RECORD_AUDIO])
-
-
 # =========================================
 # INIT
 # =========================================
@@ -73,10 +67,6 @@ class GameWidget(Widget):
     @property
     def cenario(self):
         return self.gerenciador_cenarios.cenario_principal
-
-    @property
-    def reconhecedor_voz(self):
-        return self.controlador_voz_musical.reconhecedor_voz
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

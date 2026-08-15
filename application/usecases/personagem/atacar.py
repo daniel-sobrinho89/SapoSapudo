@@ -1,5 +1,9 @@
 from math import hypot
 
+from application.usecases.personagem.chamar_defensores import (
+    ChamarDefensoresUseCase,
+)
+
 
 class AtacarPersonagemUseCase:
     VELOCIDADE = 110
@@ -8,8 +12,6 @@ class AtacarPersonagemUseCase:
     DISTANCIA_LATERAL_ATAQUE = 45
     TEMPO_MINIMO_ATAQUE = 0.25
 
-    # Sequência global apenas para ordenar quem começou a atacar primeiro.
-    # Cada instância mantém a sua ordem atual.
     _sequencia_ataques = 0
 
     def __init__(self, cenario_principal):
@@ -22,6 +24,7 @@ class AtacarPersonagemUseCase:
         self.posicao_alvo_no_inicio_ataque = None
         self.ordem_ataque = None
         self.atacantes_recebidos = {}
+        self.chamar_defensores = ChamarDefensoresUseCase(cenario_principal)
 
     @classmethod
     def _proxima_ordem_ataque(cls):
@@ -29,8 +32,6 @@ class AtacarPersonagemUseCase:
         return cls._sequencia_ataques
 
     def iniciar(self, personagemalvo, personagem):
-        # Se já está atacando exatamente este mesmo alvo, não cria uma nova
-        # ordem de ataque. Isso evita que cada golpe renove a prioridade.
         mesmo_alvo = self.entidade_alvo is personagemalvo
 
         self.tempo = 0.0
@@ -52,8 +53,6 @@ class AtacarPersonagemUseCase:
         if self.entidade_alvo is None:
             return
 
-        # Antes de executar o ataque atual, verifica se este personagem está
-        # sendo atacado por outros personagens e decide qual deve ser o alvo.
         self._atualizar_alvo_por_ataques_recebidos()
 
         if self.entidade_alvo is None:
@@ -69,13 +68,6 @@ class AtacarPersonagemUseCase:
     # ============================================================
 
     def registrar_atacante(self, atacante):
-        """
-        Registra um personagem que efetivamente acertou este personagem.
-
-        A ordem usada é a ordem em que o atacante iniciou o ataque. Isso
-        permite preservar o primeiro agressor mesmo quando novos golpes
-        são desferidos pelos outros atacantes.
-        """
         if atacante is None or atacante is self.personagem:
             return
 
@@ -104,9 +96,6 @@ class AtacarPersonagemUseCase:
         if getattr(atacante, "vida", 0) <= 0:
             return False
 
-        # Enquanto estiver fugindo, continua sendo uma ameaça válida para a
-        # regra de combate. Isso é necessário porque o coordenador limpa a
-        # ação de ataque do personagem quando ele entra em fuga.
         if self._esta_fugindo_entidade(atacante):
             return True
 
@@ -128,12 +117,6 @@ class AtacarPersonagemUseCase:
         return usecase.entidade_alvo is self.personagem
 
     def _obter_atacantes(self):
-        """
-        Retorna os atacantes ainda envolvidos no combate, em ordem de início.
-
-        O histórico existe justamente para que um atacante que começou a
-        fugir continue podendo ser perseguido quando ele era o único agressor.
-        """
         removidos = []
 
         for atacante in self.atacantes_recebidos:
@@ -168,7 +151,6 @@ class AtacarPersonagemUseCase:
 
         alvo_atual = self.entidade_alvo
 
-        # Apenas um atacante: continua focado nele, inclusive durante a fuga.
         if len(atacantes) == 1:
             escolhido = atacantes[0]
 
@@ -177,8 +159,6 @@ class AtacarPersonagemUseCase:
 
             return
 
-        # Mais de um atacante: primeiro tenta achar o primeiro que não esteja
-        # fugindo. A ordenação original já representa quem começou primeiro.
         escolhido = next(
             (
                 atacante
@@ -204,9 +184,6 @@ class AtacarPersonagemUseCase:
 
         self.flip = self.entidade_alvo.x < self.personagem.x
 
-        # Se ainda não está em uma animação de ataque, começa imediatamente a
-        # perseguir o novo alvo. Se está no meio do golpe, o golpe atual termina
-        # e o próximo ciclo já estará apontando para o novo alvo.
         if not self.personagem.animacoes.maquina.atacando():
             self._animacao_correndo()
 
@@ -339,6 +316,12 @@ class AtacarPersonagemUseCase:
 
             if atacar is not None:
                 atacar["usecase"].registrar_atacante(self.personagem)
+
+        self.chamar_defensores.executar(
+            self.entidade_alvo,
+            self.personagem,
+            entity["faccao"],
+        )
 
         if ctrl is not None:
             atacar = ctrl["acoes"].get("atacar")

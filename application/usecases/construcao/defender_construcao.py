@@ -1,4 +1,6 @@
-from core.game_config import obter_config
+from application.usecases.personagem.chamar_defensores import (
+    ChamarDefensoresUseCase,
+)
 from domains.efeitos.entity import criar_efeitos
 
 
@@ -11,6 +13,7 @@ class DefenderConstrucaoUseCase:
         self.entidade_alvo = None
         self.tempo = 0.0
         self.fogos = []
+        self.chamar_defensores = ChamarDefensoresUseCase(cenario_principal)
 
     def iniciar(self, construcao, entidade_alvo, faccao):
         if self.entidade_alvo is None:
@@ -21,23 +24,11 @@ class DefenderConstrucaoUseCase:
 
             self._atualizar_fogos()
 
-            for personagem, ctrl in self.cenario_principal.controladores.items():
-                config = obter_config(personagem.nome)
-
-                if (
-                    config.get("faccao") != faccao
-                    or config.get("grupo") == "construcoes"
-                ):
-                    continue
-
-                atacar = ctrl["acoes"].get("atacar")
-                usecase = atacar["usecase"]
-
-                if atacar["usecase"].entidade_alvo is None:
-                    usecase.iniciar(
-                        entidade_alvo,
-                        personagem,
-                    )
+            self.chamar_defensores.executar(
+                self.construcao,
+                self.entidade_alvo,
+                faccao,
+            )
 
     def executar(self, dt):
         self._atualizar_fogos()
