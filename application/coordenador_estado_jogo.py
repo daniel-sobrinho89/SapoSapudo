@@ -83,24 +83,41 @@ class CoordenadorEstadoJogo:
         ctrl["padrao"].executar(dt, personagem)
 
     def processar_toque_down(self, pos_virtual):
-        mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
-        # ==========================================================
-        # Seleção de aldeão / duplo clique na casa
-        # ==========================================================
+        menu = self.gerenciador_cenarios.menu_contextual
+        camera = self.gerenciador_cenarios.camera
+        mouse_mundo = camera.mundo(*pos_virtual)
+
+        if menu.aberto:
+            opcao = menu.obter_opcao_clicada(pos_virtual)
+
+            if opcao:
+                if menu.modo == "personagens":
+                    if self.double_click.detectar(pos_virtual):
+                        self.construir.criar_personagem_na_construcao(
+                            self.gerenciador_cenarios,
+                            opcao,
+                            menu.construcao_alvo,
+                        )
+                    return
+
+                # Construções continuam sendo posicionadas por arraste.
+                self.construir.iniciar_arraste(
+                    mouse_mundo,
+                    self.gerenciador_cenarios,
+                    construcao=opcao,
+                )
+                return
+
         for personagem in self.gerenciador_cenarios.personagens:
             if personagem.corpo_rect and personagem.corpo_rect.collidepoint(
                 mouse_mundo
             ):
                 if self.double_click.detectar(mouse_mundo):
-                    self.gerenciador_cenarios.menu_construcoes.aberto = (
-                        not self.gerenciador_cenarios.menu_construcoes.aberto
-                    )
-                    self.gerenciador_cenarios.menu_casa_renderer.aberto = False
+                    menu.abrir_construcoes()
                     personagem.selecionado = False
                     return
 
                 if not personagem.animacoes.maquina.carregando_recuso():
-                    # Apenas um aldeão fica selecionado
                     for p in self.gerenciador_cenarios.personagens:
                         p.selecionado = False
 
@@ -111,7 +128,8 @@ class CoordenadorEstadoJogo:
         # Descobre quem está selecionado
         # ==========================================================
         personagem = next(
-            (p for p in self.gerenciador_cenarios.personagens if p.selecionado), None
+            (p for p in self.gerenciador_cenarios.personagens if p.selecionado),
+            None,
         )
 
         # ==========================================================
@@ -160,7 +178,7 @@ class CoordenadorEstadoJogo:
             return
 
         # ==========================================================
-        # Construções
+        # Construções já existentes
         # ==========================================================
         for construcao in self.gerenciador_cenarios.construcoes:
             if (
@@ -168,37 +186,9 @@ class CoordenadorEstadoJogo:
                 and construcao.corpo_rect.collidepoint(mouse_mundo)
                 and self.double_click.detectar(mouse_mundo)
             ):
-                self.gerenciador_cenarios.menu_casa_renderer.aberto = (
-                    not self.gerenciador_cenarios.menu_casa_renderer.aberto
-                )
-                self.gerenciador_cenarios.menu_construcoes.aberto = False
+                menu.abrir_personagens(construcao)
                 return
 
-        if self.gerenciador_cenarios.menu_construcoes.aberto:
-            construcao = self.gerenciador_cenarios.menu_construcoes.obter_opcao_clicada(
-                pos_virtual
-            )
-
-            if construcao:
-                self.construir.iniciar_arraste(
-                    mouse_mundo, self.gerenciador_cenarios, construcao=construcao
-                )
-                return
-
-        if self.gerenciador_cenarios.menu_casa_renderer.aberto:
-            personagem = (
-                self.gerenciador_cenarios.menu_casa_renderer.obter_opcao_clicada(
-                    pos_virtual
-                )
-            )
-
-            if personagem:
-                self.construir.iniciar_arraste(
-                    mouse_mundo, self.gerenciador_cenarios, personagem=personagem
-                )
-                return
-
-        camera = self.gerenciador_cenarios.camera
         camera.arrastando = True
         camera.ultimo_mouse = pos_virtual
 
@@ -208,10 +198,7 @@ class CoordenadorEstadoJogo:
         camera.ultimo_mouse = None
         mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
 
-        if (
-            self.gerenciador_cenarios.construcao_arrastando
-            or self.gerenciador_cenarios.personagem_arrastando
-        ):
+        if self.gerenciador_cenarios.construcao_arrastando:
             self.construir.finalizar_arraste(
                 mouse_mundo,
                 self.gerenciador_cenarios,
@@ -232,10 +219,7 @@ class CoordenadorEstadoJogo:
 
         mouse_mundo = camera.mundo(*pos_virtual)
 
-        if (
-            self.gerenciador_cenarios.construcao_arrastando
-            or self.gerenciador_cenarios.personagem_arrastando
-        ):
+        if self.gerenciador_cenarios.construcao_arrastando:
             self.construir.atualizar_arraste(
                 mouse_mundo,
                 self.gerenciador_cenarios,

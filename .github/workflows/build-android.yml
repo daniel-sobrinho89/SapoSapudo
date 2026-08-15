@@ -74,17 +74,16 @@ jobs:
             -keystore saposapudo.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}"
 
+      - name: Limpar build anterior
+        run: |
+          buildozer appclean
+
       - name: Gerar Release
         env:
           P4A_RELEASE_KEYSTORE: ${{ github.workspace }}/saposapudo.keystore
           P4A_RELEASE_KEYSTORE_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
           P4A_RELEASE_KEYALIAS: saposapudo
           P4A_RELEASE_KEYALIAS_PASSWD: ${{ secrets.KEYSTORE_PASSWORD }}
-
-      - name: Limpar build anterior
-        run: |
-          buildozer appclean
-
         run: |
           buildozer android release
 

@@ -21,8 +21,7 @@ from domains.personagem.maquina_estado import EstadoAldeao
 from render.asset_manager import asset_manager
 from render.background_renderer import CeuRenderer
 from render.duende_renderer import DuendeRenderer
-from render.menu_casa_renderer import MenuCasaRenderer
-from render.menu_construcoes_renderer import MenuConstrucoesRenderer
+from render.menu_contextual_renderer import MenuContextualRenderer
 from render.sprite_animado_renderer import SpriteAnimadoRenderer
 from render.tilemap_renderer import TileMapRenderer
 from utils.config import ALTURA, CENTRO_OFFSET_Y, ESCALA, LARGURA
@@ -73,8 +72,7 @@ class CenarioPrincipal(CenarioBase):
         self.personagens = []
         self.personagens_hostis = []
         self.controladores = {}
-        self.menu_construcoes = None
-        self.menu_casa_renderer = None
+        self.menu_contextual = None
         self.duende = None
         self.renderer_duende = None
         self.carregado = False
@@ -86,7 +84,6 @@ class CenarioPrincipal(CenarioBase):
         self.renderers = {}
 
         self.construcao_arrastando = None
-        self.personagem_arrastando = None
 
     @property
     def total_madeira(self):
@@ -103,6 +100,26 @@ class CenarioPrincipal(CenarioBase):
     def construcao_desbloqueada(self, construcao):
         contrucao_unica = self._contrucao_unica(construcao.nome)
         return not contrucao_unica and self._possui_recursos(construcao)
+
+    def obter_posicao_proxima_construcao(self, construcao):
+        offsets = (
+            (72, 16),
+            (-72, 16),
+            (72, -48),
+            (-72, -48),
+            (0, 80),
+            (0, -80),
+            (96, 0),
+            (-96, 0),
+        )
+
+        for dx, dy in offsets:
+            x = construcao.x + dx
+            y = construcao.y + dy
+            if self.tilemap.eh_grama(x, y, 0):
+                return x, y
+
+        return construcao.x, construcao.y
 
     def personagem_desbloqueado(self, personagem):
         if personagem.nome == "avatar_aldeao":
@@ -232,10 +249,7 @@ class CenarioPrincipal(CenarioBase):
         for tipo in obter_tipos():
             self.carregar_entidade(tipo)
 
-        self.menu_construcoes = MenuConstrucoesRenderer(
-            self.tela, asset_manager, self.transform, self
-        )
-        self.menu_casa_renderer = MenuCasaRenderer(
+        self.menu_contextual = MenuContextualRenderer(
             self.tela, asset_manager, self.transform, self
         )
 
@@ -437,14 +451,8 @@ class CenarioPrincipal(CenarioBase):
                 self.camera,
             )
 
-        if self.menu_casa_renderer.aberto:
-            self.menu_casa_renderer.renderizar(self, self.camera)
-
-        if self.menu_construcoes.aberto:
-            self.menu_construcoes.renderizar(
-                self,
-                self.camera,
-            )
+        if self.menu_contextual.aberto:
+            self.menu_contextual.renderizar(self, self.camera)
 
         if self.construcao_arrastando:
             renderer = self.renderers[self.construcao_arrastando.nome]
@@ -461,17 +469,6 @@ class CenarioPrincipal(CenarioBase):
                 escala,
             )
 
-        if self.personagem_arrastando:
-            renderer = self.renderers[self.personagem_arrastando.nome]
-
-            renderer.renderizar(
-                self.personagem_arrastando,
-                self.personagem_arrastando.animacoes,
-                self.camera,
-                180,
-                escala=1,
-            )
-
     def _atualizar_carregamento_assets(self):
         if self.carregado:
             return
@@ -481,8 +478,7 @@ class CenarioPrincipal(CenarioBase):
                 entidade["frames_carregamento"],
             )
 
-        self.menu_construcoes.atualizar_carregamento()
-        self.menu_casa_renderer.atualizar_carregamento()
+        self.menu_contextual.atualizar_carregamento()
 
         self.carregado = all(
             entidade["renderer"].carregado for entidade in self.entidades

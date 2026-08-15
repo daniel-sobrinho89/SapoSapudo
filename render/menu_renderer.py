@@ -37,6 +37,7 @@ class MenuRenderer:
 
         self.passo_x = 0
         self.passo_y = 0
+        self.ultimo_slots = []
 
     def atualizar_carregamento(self):
         if self.carregado:
@@ -121,6 +122,7 @@ class MenuRenderer:
         linhas = linhas_slots + 2
 
         slots = []
+        deslocamento_coluna = (COLUNAS - min(COLUNAS, quantidade_itens)) // 2
 
         for linha in range(linhas):
             for coluna in range(COLUNAS):
@@ -144,9 +146,14 @@ class MenuRenderer:
                     (px, py),
                 )
 
+                indice_item = linha * COLUNAS + (coluna - deslocamento_coluna)
+
                 if (
                     linha < linhas_slots
-                    and (linha * COLUNAS + coluna) < quantidade_itens
+                    and 0 <= indice_item < quantidade_itens
+                    and deslocamento_coluna
+                    <= coluna
+                    < deslocamento_coluna + min(COLUNAS, quantidade_itens)
                 ):
                     SLOT_OFFSET_X = -13 if coluna == 2 else 14
 
@@ -166,4 +173,5 @@ class MenuRenderer:
 
                     slots.append(rect)
 
+        self.ultimo_slots = slots
         return slots
