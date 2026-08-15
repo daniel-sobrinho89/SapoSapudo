@@ -12,45 +12,45 @@ class TileMapRenderer:
     TIPO_VAZIO = None
 
     MAPA_INDICES_SPRITE = {
-        0: 0,
-        1: 1,
-        2: 2,
-        3: 3,
-        4: 5,
-        5: 6,
-        6: 7,
-        7: 8,
-        8: 9,
-        9: 10,
-        10: 11,
-        11: 18,
-        12: 19,
-        13: 20,
-        14: 27,
-        15: 28,
-        16: 29,
-        17: 0,
-        18: 12,
-        19: 21,
-        20: 30,
-        21: 41,
-        22: 42,
-        23: 43,
-        24: 44,
-        25: 50,
-        26: 51,
-        27: 52,
-        28: 53,
-        29: 23,
-        30: 24,
-        31: 25,
-        32: 14,
-        33: 16,
-        34: 36,
-        35: 45,
-        36: 39,
-        37: 48,
-        38: 15,
+        0: 0,  # borda superior esquerda grama agua
+        1: 1,  # borda superior meio grama agua
+        2: 2,  # borda superior direita grama agua
+        3: 3,  # vertical superior grama agua
+        4: 5,  # borda superior esquerda grama penhasco
+        5: 6,  # borda superior meio grama penhasco
+        6: 7,  # borda superior direita grama penhasco
+        7: 8,  # grama superior sozinha penhasco
+        8: 9,  # borda lateral esquerda grama agua
+        9: 10,  # meio grama agua
+        10: 11,  # borda lateral direita grama agua
+        11: 18,  # borda inferior esquerda grama agua
+        12: 19,  # borda inferior meio grama agua
+        13: 20,  # borda inferior direita grama agua
+        14: 27,  # horizontal esquerda grama agua
+        15: 28,  # horizontal meio grama agua
+        16: 29,  # horizontal direita grama agua
+        17: 35,  # sozinha grama penhasco
+        18: 12,  # vertical meio grama agua
+        19: 21,  # vertical inferior grama agua
+        20: 30,  # sozinha grama agua
+        21: 41,  # lateral esquerda penhasco
+        22: 42,  # meio penhasco
+        23: 43,  # lateral direita penhasco
+        24: 44,  # sozinho penhasco
+        25: 50,  # lateral esquerda penhasco agua
+        26: 51,  # meio penhasco agua
+        27: 52,  # lateral direita penhasco agua
+        28: 53,  # sozinho penhasco agua
+        29: 23,  # borda inferior esquerda grama penhasco
+        30: 24,  # borda inferior meio grama penhasco
+        31: 25,  # borda inferior direita grama penhasco
+        32: 14,  # borda lateral esquerda grama penhasco
+        33: 16,  # borda lateral direita grama penhasco
+        34: 36,  # borda superior esquerda degrau penhasco
+        35: 45,  # borda inferior esquerda degrau penhasco
+        36: 39,  # borda superior direita degrau penhasco
+        37: 48,  # borda inferior direita degrau penhasco
+        38: 15,  # meio grama penhasco
     }
 
     def __init__(self, tela, assets, transform):

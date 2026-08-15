@@ -210,7 +210,10 @@
             "morte": "MortePersonagemUseCase",
             "acoes": {
                 "atacar": {
-                    "alvos": "personagens",
+                    "alvos": [
+                        "personagens",
+                        "construcoes"
+                    ],
                     "usecase": "AtacarGoblinUseCase"
                 }
             }

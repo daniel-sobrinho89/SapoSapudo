@@ -3,6 +3,8 @@ from math import hypot
 from application.usecases.personagem.chamar_defensores import (
     ChamarDefensoresUseCase,
 )
+from core.game_config import obter_config
+from utils.config import TILE_SIZE
 
 
 class AtacarPersonagemUseCase:
@@ -11,6 +13,8 @@ class AtacarPersonagemUseCase:
     DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
     DISTANCIA_LATERAL_ATAQUE = 45
     TEMPO_MINIMO_ATAQUE = 0.25
+    RAIO_DETECCAO_INIMIGO_EM_TILES = 4
+    RAIO_DETECCAO_INIMIGO = RAIO_DETECCAO_INIMIGO_EM_TILES * TILE_SIZE
 
     _sequencia_ataques = 0
 
@@ -49,9 +53,178 @@ class AtacarPersonagemUseCase:
         self.posicao_alvo_no_inicio_ataque = None
         self.ordem_ataque = None
 
+    def _obter_inimigo_atacando_construcao(self, personagem):
+        faccao = obter_config(personagem.nome).get("faccao")
+        melhor_atacante = None
+        melhor_distancia = None
+
+        construcoes = (
+            self.cenario_principal.construcoes
+            + self.cenario_principal.construcoes_hostis
+        )
+
+        for construcao in construcoes:
+            ctrl_construcao = self.cenario_principal.controladores.get(construcao)
+
+            if ctrl_construcao is None:
+                continue
+
+            defender = ctrl_construcao.get("padrao")
+
+            if defender is None:
+                continue
+
+            atacante = getattr(defender, "entidade_alvo", None)
+
+            if atacante is None or atacante is personagem:
+                continue
+
+            if getattr(atacante, "vida", 0) <= 0:
+                continue
+
+            entity = self.cenario_principal.obter_entidade(atacante)
+
+            if entity is None:
+                continue
+
+            faccao_atacante = entity.get("faccao")
+
+            if faccao_atacante == faccao:
+                continue
+
+            if faccao is None and faccao_atacante is None:
+                continue
+
+            distancia = hypot(
+                atacante.x - personagem.x,
+                atacante.y - personagem.y,
+            )
+
+            if distancia > self.RAIO_DETECCAO_INIMIGO:
+                continue
+
+            if melhor_distancia is None or distancia < melhor_distancia:
+                melhor_atacante = atacante
+                melhor_distancia = distancia
+
+        return melhor_atacante
+
+    def _alvo_e_construcao(self, alvo):
+        if alvo is None:
+            return False
+
+        entity = self.cenario_principal.obter_entidade(alvo)
+
+        if entity is None:
+            return False
+
+        return entity.get("grupo") == "construcoes"
+
+    def tentar_adquirir_inimigo_proximo(self, personagem):
+        self.personagem = personagem
+
+        if self.entidade_alvo is not None:
+            return False
+
+        if personagem.vida <= 0:
+            return False
+
+        faccao = obter_config(personagem.nome).get("faccao")
+
+        # Se um inimigo estiver atacando uma construção, ele tem prioridade
+        # absoluta sobre a própria construção como alvo automático.
+        inimigo_atacando_construcao = self._obter_inimigo_atacando_construcao(
+            personagem
+        )
+
+        if inimigo_atacando_construcao is not None:
+            self.iniciar(inimigo_atacando_construcao, personagem)
+            return True
+
+        personagens = [
+            item["entidade"]
+            for item in self.cenario_principal.entidades
+            if item["grupo"] in ("personagens", "hostis")
+        ]
+
+        melhor_personagem = self._obter_melhor_alvo(
+            personagem,
+            personagens,
+            faccao,
+        )
+
+        if melhor_personagem is not None:
+            self.iniciar(melhor_personagem, personagem)
+            return True
+
+        construcoes = [
+            item["entidade"]
+            for item in self.cenario_principal.entidades
+            if item["grupo"] == "construcoes"
+        ]
+
+        melhor_construcao = self._obter_melhor_alvo(
+            personagem,
+            construcoes,
+            faccao,
+        )
+
+        if melhor_construcao is None:
+            return False
+
+        self.iniciar(melhor_construcao, personagem)
+        return True
+
+    def _obter_melhor_alvo(self, personagem, candidatos, faccao):
+        melhor_alvo = None
+        melhor_distancia = None
+
+        for candidato in candidatos:
+            if candidato is personagem:
+                continue
+
+            if getattr(candidato, "vida", 0) <= 0:
+                continue
+
+            entity = self.cenario_principal.obter_entidade(candidato)
+            if entity is None:
+                continue
+
+            faccao_alvo = entity.get("faccao")
+
+            if faccao_alvo == faccao:
+                continue
+
+            if faccao is None and faccao_alvo is None:
+                continue
+
+            distancia = hypot(
+                candidato.x - personagem.x,
+                candidato.y - personagem.y,
+            )
+
+            if distancia > self.RAIO_DETECCAO_INIMIGO:
+                continue
+
+            if melhor_distancia is None or distancia < melhor_distancia:
+                melhor_alvo = candidato
+                melhor_distancia = distancia
+
+        return melhor_alvo
+
     def executar(self, dt):
         if self.entidade_alvo is None:
             return
+
+        # Se estiver indo para uma construção e surgir/continuar existindo
+        # um inimigo atacando uma construção, interrompe o avanço e foca nele.
+        if self._alvo_e_construcao(self.entidade_alvo):
+            inimigo_atacando_construcao = self._obter_inimigo_atacando_construcao(
+                self.personagem
+            )
+
+            if inimigo_atacando_construcao is not None:
+                self._trocar_alvo_combate(inimigo_atacando_construcao)
 
         self._atualizar_alvo_por_ataques_recebidos()
 

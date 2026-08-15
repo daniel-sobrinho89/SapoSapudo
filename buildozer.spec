@@ -103,7 +103,7 @@ fullscreen = 1
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions.html for all the supported syntaxes and properties)
-android.permissions = INTERNET,RECORD_AUDIO,QUERY_ALL_PACKAGES,WAKE_LOCK
+android.permissions = INTERNET,WAKE_LOCK
 # android.manifest_queries = package:com.spotify.music
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
@@ -337,7 +337,7 @@ android.release_artifact = apk
 #p4a.fork = kivy
 
 # (str) python-for-android branch to use, defaults to master
-#p4a.branch = 2024.01.21
+p4a.branch = master
 
 # (str) python-for-android specific commit to use, defaults to HEAD, must be within p4a.branch
 #p4a.commit = 957a3e5f8c270f7aa648ba185e5a68c1077a798d

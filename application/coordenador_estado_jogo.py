@@ -68,11 +68,19 @@ class CoordenadorEstadoJogo:
                 return
 
         for acao in ctrl["acoes"].values():
-            if acao["usecase"].entidade_alvo:
-                acao["usecase"].executar(dt)
+            usecase = acao["usecase"]
+
+            if usecase.entidade_alvo:
+                usecase.executar(dt)
                 return
-        else:
-            ctrl["padrao"].executar(dt, personagem)
+
+            adquirir_alvo = getattr(usecase, "tentar_adquirir_inimigo_proximo", None)
+
+            if adquirir_alvo is not None and adquirir_alvo(personagem):
+                usecase.executar(dt)
+                return
+
+        ctrl["padrao"].executar(dt, personagem)
 
     def processar_toque_down(self, pos_virtual):
         mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)
