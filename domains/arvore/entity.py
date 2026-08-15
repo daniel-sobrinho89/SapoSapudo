@@ -11,6 +11,7 @@ class Arvore:
         self.animacoes = Animacoes(nome)
         self.madeira = 8
         self.vida = 8
+        self.corpo_rect = None
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)

@@ -1,6 +1,5 @@
 from application.usecases import (
     ConstruirUseCase,
-    ProcessarComandoSpotifyUseCase,
     TrocarComportamentoUseCase,
 )
 from core.mouse_events import DoubleClickDetector
@@ -9,19 +8,11 @@ from core.mouse_events import DoubleClickDetector
 class CoordenadorEstadoJogo:
     def __init__(
         self,
-        clima_service,
-        spotify,
-        audio,
         gerenciador_cenarios,
     ):
-        self.duende = gerenciador_cenarios.duende
-        self.clima_service = clima_service
-        self.spotify = spotify
-        self.audio = audio
         self.gerenciador_cenarios = gerenciador_cenarios
         self.double_click = DoubleClickDetector()
         self.controladores = {}
-        self.processar_comando_spotify = ProcessarComandoSpotifyUseCase(self.spotify)
 
         self.construir = ConstruirUseCase()
         self.trocar_comportamento = TrocarComportamentoUseCase()
@@ -53,34 +44,35 @@ class CoordenadorEstadoJogo:
             + self.gerenciador_cenarios.construcoes_hostis
         ):
             ctrl = self.gerenciador_cenarios.controladores[entidade]
+
+            if entidade.vida <= 0:
+                if ctrl["morte"].entidade_alvo is None:
+                    ctrl["morte"].iniciar(entidade)
+                else:
+                    ctrl["morte"].executar(dt)
+
             ctrl["padrao"].executar(dt)
 
     def _executar_fluxo_personagem(self, personagem, dt):
         ctrl = self.gerenciador_cenarios.controladores[personagem]
 
-        if personagem.vida <= 0:
-            if ctrl["morte"].entidade_alvo is None:
-                ctrl["morte"].iniciar(personagem)
-            else:
-                ctrl["morte"].executar(dt)
-            return
-
-        if personagem.fugindo:
+        if personagem.vida < personagem.VIDA_MINIMA:
             for acao in ctrl["acoes"].values():
                 acao["usecase"].entidade_alvo = None
 
-            ctrl["padrao"].executar(dt, personagem)
-            return
+            if personagem.vida <= 0 and ctrl["morte"].entidade_alvo is None:
+                ctrl["morte"].iniciar(personagem)
+                return
+            elif personagem.vida <= 0:
+                ctrl["morte"].executar(dt)
+                return
 
         for acao in ctrl["acoes"].values():
             if acao["usecase"].entidade_alvo:
                 acao["usecase"].executar(dt)
                 return
-
-        ctrl["padrao"].executar(dt, personagem)
-
-    def executar_comando_spotify(self, rota, finalizar_comando):
-        self.processar_comando_spotify.executar(rota["dados"], finalizar_comando)
+        else:
+            ctrl["padrao"].executar(dt, personagem)
 
     def processar_toque_down(self, pos_virtual):
         mouse_mundo = self.gerenciador_cenarios.camera.mundo(*pos_virtual)

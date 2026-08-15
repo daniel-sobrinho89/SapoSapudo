@@ -1,7 +1,6 @@
 import json
 
 from utils.config import TILE_SIZE
-from utils.kivy_adapter import draw
 
 
 class TileMapRenderer:
@@ -12,7 +11,6 @@ class TileMapRenderer:
     TIPO_ROCHA = "rocha"
     TIPO_VAZIO = None
 
-    # Mapeamento estático dos índices lógicos para os reais na spritesheet
     MAPA_INDICES_SPRITE = {
         0: 0,
         1: 1,
@@ -48,6 +46,11 @@ class TileMapRenderer:
         31: 25,
         32: 14,
         33: 16,
+        34: 36,
+        35: 45,
+        36: 39,
+        37: 48,
+        38: 15,
     }
 
     def __init__(self, tela, assets, transform):
@@ -62,11 +65,17 @@ class TileMapRenderer:
         self.cache_tiles = {}
         self.espumas = {}
         self.relevos_agua = set()
+        self._relevos_agua_config = []
+        self.ambiente = []
 
         self.alturas = {}
         self.topos_penhasco = set()
         self.paredes_penhasco = {}
+        self.relevos_flags = {}
+        self.degraus = {}
+        self.degraus_por_relevo = {}
         self.tiles_bloqueados = set()
+
         self.largura = 0
         self.altura = 0
         self.offset_y = 0
@@ -87,20 +96,23 @@ class TileMapRenderer:
         with open(caminho, encoding="utf-8") as arquivo:
             dados = json.load(arquivo)
 
+        self.ambiente = dados.get("ambiente", [])
         self.largura = dados.get("colunas", 0)
         self.altura = dados.get("linhas", 0)
         self.offset_y = self.altura - 96
 
         self._processar_biomas(dados.get("biomas", []), dados.get("transicoes", []))
         self._processar_relevos(dados.get("relevos", []))
+        self._processar_degraus(dados.get("degraus", []))
         self._processar_relevos_agua(dados.get("relevos_agua", []))
+
         self._construir_grid_mapa()
         self._aplicar_rios(dados.get("rios", []))
         self._processar_espumas(dados.get("espumas", []))
+        self._pre_calcular_autotiling()
 
     def _processar_biomas(self, biomas, transicoes):
         self.tiles_bioma.clear()
-
         for bioma in biomas:
             nome = bioma["tilemap"]
             for linha in range(bioma["y"], bioma["y"] + bioma["linhas"]):
@@ -113,121 +125,200 @@ class TileMapRenderer:
                 self.tiles_bioma[(coluna, linha)] = destino
 
     def _processar_relevos(self, relevos):
+        self._relevos_config = relevos
         self.alturas.clear()
         self.topos_penhasco.clear()
         self.paredes_penhasco.clear()
+        self.relevos_flags.clear()
 
         for relevo in relevos:
-            altura = relevo["altura"]
-            topo = relevo["topo"]
-            parede = relevo["parede"]
+            altura = relevo.get("altura", 1)
+            x = relevo["x"]
+            y = relevo["y"]
+            colunas_x = relevo["colunas"]
+            linhas = relevo["linhas"]
 
-            linhas_parede = parede["linhas"]
-            linha_borda = topo["y"] + topo["linhas"] - 1
-            colunas_x = topo["colunas"]
+            tem_esq = relevo.get("tem_borda_esquerda", True)
+            tem_dir = relevo.get("tem_borda_direita", True)
+            tem_sup = relevo.get("tem_borda_superior", True)
+            tem_inf = relevo.get("tem_borda_inferior", True)  # Lendo a nova propriedade
 
-            linha_inicio_topo = topo["y"] + 1
+            linha_borda = y + 1
 
-            for linha in range(linha_inicio_topo, topo["y"] + topo["linhas"]):
-                for coluna in range(topo["x"], topo["x"] + colunas_x):
-                    self.alturas[(coluna, linha)] = altura
-                    self.topos_penhasco.add((coluna, linha))
+            for coluna in range(x, x + colunas_x):
+                self.alturas[(coluna, linha_borda)] = altura
+                self.topos_penhasco.add((coluna, linha_borda))
+                self.paredes_penhasco[(coluna, linha_borda)] = linhas
 
-                    if linha == topo["y"] + topo["linhas"] - 1:
-                        self.paredes_penhasco[(coluna, linha)] = linhas_parede
+                self.relevos_flags[(coluna, linha_borda)] = {
+                    "esq": tem_esq,
+                    "dir": tem_dir,
+                    "sup": tem_sup,
+                    "inf": tem_inf,
+                    "primeira_col": x,
+                    "ultima_col": x + colunas_x - 1,
+                }
 
             linha_inicio_parede = linha_borda + 1
-
-            for linha in range(
-                linha_inicio_parede, linha_inicio_parede + linhas_parede + 1
-            ):
-                for coluna in range(topo["x"], topo["x"] + colunas_x):
+            for linha in range(linha_inicio_parede, linha_inicio_parede + linhas + 1):
+                for coluna in range(x, x + colunas_x):
                     self.alturas[(coluna, linha)] = altura
+
+    def _processar_degraus(self, degraus):
+        self.degraus.clear()
+        self.degraus_por_relevo.clear()
+
+        relevos_dit = {r["id"]: r for r in self._relevos_config}
+
+        for grupo in degraus:
+            relevo_id = grupo["relevo_id"]
+            relevo = relevos_dit.get(relevo_id)
+
+            if not relevo:
+                continue
+
+            altura_alta = relevo["altura"]
+            altura_baixa = altura_alta - 1
+
+            for coluna, linha in grupo.get("tiles", []):
+                self.degraus[(coluna, linha)] = {
+                    "relevo_id": relevo_id,
+                    "direcao": grupo["direcao"],
+                    "altura_baixa": altura_baixa,
+                    "altura_alta": altura_alta,
+                }
+                self.degraus_por_relevo.setdefault(relevo_id, []).append(
+                    (coluna, linha)
+                )
+                self.tiles_bloqueados.discard((coluna, linha))
+                self.tiles_bloqueados.discard((coluna, linha - 1))
+
+    def _processar_relevos_agua(self, relevos):
+        self.relevos_agua.clear()
+        self._relevos_agua_config = relevos
+        for relevo in relevos:
+            altura = relevo.get("altura", -1)
+            x = relevo["x"]
+            y = relevo["y"]
+            colunas = relevo["colunas"]
+
+            for coluna in range(x, x + colunas):
+                self.relevos_agua.add((coluna, y))
+                self.alturas[(coluna, y - 1)] = altura
+                self.tiles_bloqueados.add((coluna, y - 1))
 
     def _construir_grid_mapa(self):
         self.mapa = []
-
         for linha in range(self.altura):
             linha_mapa = []
-
             for coluna in range(self.largura):
-                tipo = self.TIPO_GRAMA
-
-                # Última linha do mapa é água de fundo
-                if linha == self.altura - 1:
-                    tipo = self.TIPO_AGUA_FUNDO
-
+                tipo = (
+                    self.TIPO_AGUA_FUNDO
+                    if linha == self.altura - 1
+                    else self.TIPO_GRAMA
+                )
                 linha_mapa.append(
                     {
                         "tipo": tipo,
                         "altura": self.alturas.get((coluna, linha), 0),
+                        "sprite_index": 9,
                     }
                 )
-
             self.mapa.append(linha_mapa)
 
     def _aplicar_rios(self, rios):
         for rio in rios:
-            largura = rio["largura"]
-            pontos = rio["pontos"]
+            x_inicial = rio.get("x", 0)
+            y_inicial = rio.get("y", 0)
+            colunas = rio.get("colunas", 1)
+            linhas = rio.get("linhas", 1)
 
-            for i in range(len(pontos) - 1):
-                x0, y0 = pontos[i]
-                x1, y1 = pontos[i + 1]
-                dx, dy = x1 - x0, y1 - y0
-                passos = max(abs(dx), abs(dy))
-
-                if passos == 0:
-                    continue
-
-                for passo in range(passos + 1):
-                    x = round(x0 + dx * passo / passos)
-                    y = round(y0 + dy * passo / passos)
-
-                    for oy in range(-largura + 1, largura):
-                        for ox in range(-largura + 1, largura):
-                            if self._coordenada_valida(x + ox, y + oy):
-                                self.mapa[y + oy][x + ox]["tipo"] = self.TIPO_AGUA_FUNDO
+            for linha in range(y_inicial, y_inicial + linhas):
+                for coluna in range(x_inicial, x_inicial + colunas):
+                    if self._coordenada_valida(coluna, linha):
+                        self.mapa[linha][coluna]["tipo"] = self.TIPO_AGUA_FUNDO
 
     def _processar_espumas(self, espumas):
         self.espumas = {}
-
         for grupo in espumas:
             offset_x = grupo.get("offset_x", 0)
             offset_y = grupo.get("offset_y", 0)
 
-            for coluna, linha in grupo.get("tiles", []):
-                self.espumas[(coluna, linha)] = {
-                    "offset_x": offset_x,
-                    "offset_y": offset_y,
-                }
+            x_inicial = grupo.get("x", 0)
+            y_inicial = grupo.get("y", 0)
+            colunas = grupo.get("colunas", 1)
+            linhas = grupo.get("linhas", 1)
 
-    def _processar_relevos_agua(self, relevos):
-        self.relevos_agua.clear()
+            for linha in range(y_inicial, y_inicial + linhas):
+                for coluna in range(x_inicial, x_inicial + colunas):
+                    self.espumas[(coluna, linha)] = {
+                        "offset_x": offset_x,
+                        "offset_y": offset_y,
+                    }
 
-        for relevo in relevos:
-            altura = relevo.get("altura", -1)
+    def _pre_calcular_autotiling(self):
+        for linha in range(self.altura):
+            for coluna in range(self.largura):
+                if self.obter_tipo(coluna, linha) == self.TIPO_GRAMA:
+                    self.mapa[linha][coluna]["sprite_index"] = (
+                        self._calcular_indice_grama(coluna, linha)
+                    )
 
-            for coluna, linha in relevo["tiles"]:
-                self.relevos_agua.add((coluna, linha))
+    def _calcular_indice_grama(self, coluna, linha):
+        v = self.obter_vizinhos_logicos(coluna, linha, self.TIPO_GRAMA)
 
-                # Marca a altura na célula onde o sprite realmente aparece
-                self.alturas[(coluna, linha - 1)] = altura
-                self.tiles_bloqueados.add((coluna, linha - 1))
+        # Ilha / Isolado
+        if not (v["n"] or v["s"] or v["e"] or v["w"]):
+            return 16
+
+        # Bordas Superiores
+        if not v["n"]:
+            return 0 if not v["w"] else (2 if not v["e"] else 1)
+
+        # Bordas Inferiores
+        if not v["s"]:
+            if (coluna, linha + 2) in self.relevos_agua:
+                if not v["w"] and not v["e"]:
+                    return 30
+                return 29 if not v["w"] else (31 if not v["e"] else 30)
+            return 11 if not v["w"] else (13 if not v["e"] else 12)
+
+        # Bordas Laterais
+        if not v["w"]:
+            return 8
+        if not v["e"]:
+            return 10
+
+        if v["n"] and v["s"] and v["w"] and v["e"] and (not v["nw"] or not v["sw"]):
+            return 9
+
+        # Cantos internos e preenchimento
+        if v["n"] and v["s"] and v["w"] and v["e"]:
+            if not v["nw"]:
+                return 3
+            if not v["ne"]:
+                return 18
+            if not v["sw"]:
+                return 19
+            if not v["se"]:
+                return 20
+            return 9
+
+        return 9
 
     def atualizar_carregamento(self):
         if self.carregado:
             return
 
         self.agua_parada = self.assets.carregar("background/agua_parada.png")
+        self.sombra = self.assets.carregar("background/sombra.png")
         spritesheet_agua = self.assets.carregar("background/agua.png")
         self.tiles_agua = self.transform.recortar_spritesheet(
             spritesheet_agua, linhas=1, colunas=16
         )
 
-        nomes_tilemaps = [f"tilemap_color{i}" for i in range(1, 6)]
-
-        for nome in nomes_tilemaps:
+        for i in range(1, 6):
+            nome = f"tilemap_color{i}"
             spritesheet = self.assets.carregar(f"background/{nome}.png")
             colunas = spritesheet.get_width() // TILE_SIZE
             linhas = spritesheet.get_height() // TILE_SIZE
@@ -261,7 +352,6 @@ class TileMapRenderer:
     def obter_tipo(self, coluna, linha):
         if not self._coordenada_valida(coluna, linha):
             return self.TIPO_AGUA_FUNDO
-
         tile = self.mapa[linha][coluna]
         return tile if isinstance(tile, str) or tile is None else tile.get("tipo")
 
@@ -269,17 +359,13 @@ class TileMapRenderer:
         return self.alturas.get((coluna, linha), 0)
 
     def _verificar_vizinhos_por_tipo(self, coluna, linha, tipo_alvo):
-        direcoes = [(1, 1)]
-
-        for dx, dy in direcoes:
-            if self.obter_tipo(coluna + dx, linha + dy) == tipo_alvo:
-                return True
-        return False
+        return self.obter_tipo(coluna + 1, linha + 1) == tipo_alvo
 
     def existe_penhasco(self, coluna, linha):
-        if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
-            return False
-        return (coluna, linha) in self.paredes_penhasco
+        return (
+            self.obter_tipo(coluna, linha) == self.TIPO_GRAMA
+            and (coluna, linha) in self.paredes_penhasco
+        )
 
     def eh_penhasco_interno(self, coluna, linha):
         return (
@@ -292,16 +378,62 @@ class TileMapRenderer:
         return self.pode_andar(coluna, linha, altura)
 
     def pode_andar(self, coluna, linha, altura):
-        if not self._coordenada_valida(coluna, linha):
+        if (
+            not self._coordenada_valida(coluna, linha)
+            or (coluna, linha) in self.tiles_bloqueados
+        ):
             return False
-
-        if (coluna, linha) in self.tiles_bloqueados:
-            return False
-
         if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
             return False
+        if self.obter_altura(coluna, linha) == altura:
+            return True
 
-        return self.obter_altura(coluna, linha) == altura
+        degrau = self.obter_degrau(coluna, linha)
+        if degrau:
+            return altura in (degrau["altura_baixa"], degrau["altura_alta"])
+        return False
+
+    def obter_degrau(self, coluna, linha):
+        return self.degraus.get((coluna, linha))
+
+    def eh_degrau(self, coluna, linha):
+        return (coluna, linha) in self.degraus
+
+    def obter_transicao_degrau(
+        self, origem_coluna, origem_linha, destino_coluna, destino_linha, altura
+    ):
+        coord_degrau = (
+            (origem_coluna, origem_linha)
+            if (origem_coluna, origem_linha) in self.degraus
+            else (destino_coluna, destino_linha)
+            if (destino_coluna, destino_linha) in self.degraus
+            else None
+        )
+
+        if not coord_degrau:
+            return None
+
+        degrau = self.degraus[coord_degrau]
+        offset = 1 if degrau["direcao"] == "direita" else -1
+        lado_baixo = (coord_degrau[0] - offset, coord_degrau[1])
+        lado_alto = (coord_degrau[0] + offset, coord_degrau[1])
+
+        origem = (origem_coluna, origem_linha)
+        destino = (destino_coluna, destino_linha)
+
+        if altura == degrau["altura_baixa"]:
+            if (origem == lado_baixo and destino == coord_degrau) or (
+                origem == coord_degrau and destino == lado_alto
+            ):
+                return degrau["altura_alta"]
+        elif (
+            altura == degrau["altura_alta"]
+            and (origem == lado_alto and destino == coord_degrau)
+            or (origem == coord_degrau and destino == lado_baixo)
+        ):
+            return degrau["altura_baixa"]
+
+        return None
 
     # ==================================================
     # CONVERSÃO DE COORDENADAS E SPRITES
@@ -330,74 +462,9 @@ class TileMapRenderer:
             "nw": igual(coluna - 1, linha - 1),
         }
 
-    def obter_sprite(self, coluna, linha):
-        tipo = self.obter_tipo(coluna, linha)
-        if tipo is None:
-            return None
-
-        if tipo == self.TIPO_AGUA:
-            return (
-                self.tiles_agua[self.frame_agua - 1]
-                if self._verificar_vizinhos_por_tipo(coluna, linha, self.TIPO_GRAMA)
-                else None
-            )
-
-        if tipo != self.TIPO_GRAMA:
-            return None
-
-        tiles = self.obter_tiles(coluna, linha)
-        v = self.obter_vizinhos_logicos(coluna, linha, tipo)
-
-        # Ilha
-        if not v["n"] and not v["s"] and not v["e"] and not v["w"]:
-            return tiles[16]
-
-        # Topo e Base
-        if not v["n"]:
-            return tiles[0] if not v["w"] else tiles[2] if not v["e"] else tiles[1]
-        if not v["s"]:
-            if (coluna, linha + 2) in self.relevos_agua:
-                return (
-                    tiles[30]
-                    if not v["w"] and not v["e"]
-                    else tiles[29]
-                    if not v["w"]
-                    else tiles[31]
-                    if not v["e"]
-                    else tiles[30]
-                )
-
-            return tiles[11] if not v["w"] else tiles[13] if not v["e"] else tiles[12]
-
-        if not v["w"]:
-            return tiles[8]
-        if not v["e"]:
-            return tiles[10]
-
-        # Margem direita de rios e cantos internos
-        if v["n"] and v["s"] and v["w"] and v["e"] and not v["nw"] or not v["sw"]:
-            return tiles[9]
-
-        if not v["nw"]:
-            return tiles[3]
-        if not v["ne"]:
-            return tiles[18]
-        if not v["sw"]:
-            return tiles[19]
-        if not v["se"]:
-            return tiles[20]
-
-        return tiles[9]
-
     # ==================================================
     # RENDERIZAÇÃO
     # ==================================================
-
-    def _atualizar_animacao_agua(self, dt):
-        self.tempo_agua += dt
-        if self.tempo_agua >= 0.08:
-            self.tempo_agua = 0
-            self.frame_agua = (self.frame_agua % len(self.tiles_agua)) + 1
 
     def _iterar_area_visivel(self, camera):
         inicio_x = max(-2, int((camera.x - self.offset_x) // TILE_SIZE) - 2)
@@ -405,7 +472,6 @@ class TileMapRenderer:
             self.largura + 2,
             int((camera.x + camera.largura - self.offset_x) // TILE_SIZE) + 3,
         )
-
         inicio_y = max(-2, int((camera.y - self.offset_y) // TILE_SIZE) - 2)
         fim_y = min(
             self.altura + 3,
@@ -426,36 +492,19 @@ class TileMapRenderer:
         self._renderizar_camada_espuma(camera)
         self._renderizar_relevos_agua(camera)
         self._renderizar_camada_grama(camera)
-        self._renderizar_camada_topos_penhasco(camera)
-        self._renderizar_camada_paredes_penhasco(camera)
-        # self._debug_tiles(camera)
+        self._renderizar_sombras_relevos(camera)
+        self._renderizar_grama_relevos_agua(camera)
+        self._renderizar_camada_degraus(camera)
+        self._renderizar_penhascos(camera)
 
-    def _debug_tiles(self, camera):
-        for coluna, linha in self._iterar_area_visivel(camera):
-            x = int((self.offset_x + coluna * TILE_SIZE - camera.x) * camera.zoom)
-            y = int((self.offset_y + linha * TILE_SIZE - camera.y) * camera.zoom)
-            tamanho = int(TILE_SIZE * camera.zoom)
-
-            draw.rect(
-                self.tela,
-                (255, 0, 0),
-                (x, y, tamanho, tamanho),
-                width=1,
-            )
-
-            altura = self.obter_altura(coluna, linha)
-
-            draw.text(
-                self.tela,
-                f"{coluna},{linha}\nH:{altura}",
-                (x + 3, y + 3),
-                cor=(255, 0, 0),
-                tamanho=14,
-            )
+    def _atualizar_animacao_agua(self, dt):
+        self.tempo_agua += dt
+        if self.tempo_agua >= 0.08:
+            self.tempo_agua = 0
+            self.frame_agua = (self.frame_agua % len(self.tiles_agua)) + 1
 
     def _renderizar_camada_espuma(self, camera):
         sprite = self.tiles_agua[self.frame_agua - 1]
-
         for (coluna, linha), dados in self.espumas.items():
             self._desenhar_sprite_cenario(
                 sprite,
@@ -472,7 +521,6 @@ class TileMapRenderer:
                 continue
 
             tiles = self.obter_tiles(coluna, linha)
-
             esquerda = (coluna - 1, linha) in self.relevos_agua
             direita = (coluna + 1, linha) in self.relevos_agua
 
@@ -490,104 +538,254 @@ class TileMapRenderer:
     def _renderizar_camada_grama(self, camera):
         for coluna, linha in self._iterar_area_visivel(camera):
             if self.obter_tipo(coluna, linha) == self.TIPO_GRAMA:
+                tiles = self.obter_tiles(coluna, linha)
+
+                # Renderiza fundo contínuo sob penhascos
                 if (
                     self.existe_penhasco(coluna, linha)
                     and self.obter_tipo(coluna, linha + 1) == self.TIPO_GRAMA
                 ):
-                    tiles = self.obter_tiles(coluna, linha)
                     self._desenhar_sprite_cenario(tiles[9], coluna, linha, camera)
 
-                sprite = self.obter_sprite(coluna, linha)
-                if sprite:
-                    self._desenhar_sprite_cenario(sprite, coluna, linha, camera)
+                # Busca o índice pré-calculado
+                indice = self.mapa[linha][coluna].get("sprite_index", 9)
+                self._desenhar_sprite_cenario(tiles[indice], coluna, linha, camera)
 
-    def _renderizar_camada_topos_penhasco(self, camera):
+    def _renderizar_grama_relevos_agua(self, camera):
+        for relevo in self._relevos_agua_config:
+            linhas = relevo.get("linhas", 1)
+            primeira_coluna = relevo["x"]
+            colunas = relevo["colunas"]
+            ultima_coluna = primeira_coluna + colunas - 1
+            linha_agua = relevo["y"]
+
+            if linhas <= 1 or colunas <= 0:
+                continue
+
+            tem_esq = relevo.get("tem_borda_esquerda", True)
+            tem_dir = relevo.get("tem_borda_direita", True)
+            tem_sup = relevo.get("tem_borda_superior", True)
+            tem_inf = relevo.get("tem_borda_inferior", True)
+
+            for nivel in range(linhas):
+                is_topo = nivel == linhas - 1
+                is_base = nivel == 0
+
+                if is_topo and not tem_sup:
+                    continue
+
+                if is_base and not tem_inf:
+                    continue
+
+                offset_y = (
+                    -(linhas + 2) * TILE_SIZE if is_topo else -(nivel + 3) * TILE_SIZE
+                )
+
+                for coluna in range(primeira_coluna, ultima_coluna + 1):
+                    tiles = self.obter_tiles(coluna, linha_agua)
+
+                    if is_topo:
+                        indice = (
+                            4
+                            if (coluna == primeira_coluna and tem_esq)
+                            else 6
+                            if (coluna == ultima_coluna and tem_dir)
+                            else 5
+                        )
+                    else:
+                        indice = (
+                            32
+                            if (coluna == primeira_coluna and tem_esq)
+                            else 33
+                            if (coluna == ultima_coluna and tem_dir)
+                            else 9
+                        )
+
+                    self._desenhar_sprite_cenario(
+                        tiles[indice], coluna, linha_agua, camera, offset_y=offset_y
+                    )
+
+    def _renderizar_sombras_relevos(self, camera):
+        for relevo in self._relevos_config:
+            x = relevo["x"]
+            y = relevo["y"]
+            colunas = relevo["colunas"]
+            linhas = relevo["linhas"]
+
+            tem_esq = relevo.get("tem_borda_esquerda", False)
+            tem_dir = relevo.get("tem_borda_direita", False)
+            tem_inf = relevo.get("tem_borda_inferior", False)
+
+            linha_topo = y + 1
+            linha_base_parede = y + 1 + linhas
+
+            if tem_esq:
+                for linha in range(linha_topo, linha_base_parede + 1):
+                    self._desenhar_sprite_cenario(self.sombra, x - 1, linha, camera)
+
+            if tem_dir:
+                for linha in range(linha_topo, linha_base_parede + 1):
+                    self._desenhar_sprite_cenario(
+                        self.sombra,
+                        x + colunas - 1,
+                        linha,
+                        camera,
+                        offset_x=-(TILE_SIZE - 4),
+                    )
+
+            if tem_inf:
+                limite_coluna = (x + colunas - 2) if tem_dir else (x + colunas)
+
+                for coluna in range(x, limite_coluna):
+                    self._desenhar_sprite_cenario(
+                        self.sombra, coluna, linha_base_parede, camera
+                    )
+
+    def _precisa_tile_38(self, coluna, linha_sprite):
+        for relevo in self._relevos_config:
+            x = relevo["x"]
+            colunas_x = relevo["colunas"]
+            if not (x <= coluna < x + colunas_x):
+                continue
+
+            for degrau_coluna, degrau_linha in self.degraus_por_relevo.get(
+                relevo["id"], []
+            ):
+                degrau = self.degraus.get((degrau_coluna, degrau_linha))
+                if not degrau:
+                    continue
+
+                is_esq = degrau["direcao"] == "esquerda" and coluna == (
+                    x + colunas_x - 1
+                )
+                is_dir = degrau["direcao"] == "direita" and coluna == x
+
+                if (is_esq or is_dir) and linha_sprite == degrau_linha - 1:
+                    return True
+        return False
+
+    def _renderizar_penhascos(self, camera):
         for coluna, linha in self._iterar_area_visivel(camera):
             if not self.existe_penhasco(coluna, linha):
                 continue
 
             tiles = self.obter_tiles(coluna, linha)
+
+            flags = self.relevos_flags.get(
+                (coluna, linha),
+                {
+                    "esq": True,
+                    "dir": True,
+                    "sup": True,
+                    "inf": True,
+                    "primeira_col": -1,
+                    "ultima_col": -1,
+                },
+            )
+
             w = self.existe_penhasco(coluna - 1, linha)
+            if coluna == flags["primeira_col"] and not flags["esq"]:
+                w = True
+
             e = self.existe_penhasco(coluna + 1, linha)
+            # Se é a última coluna do relevo e não tem borda, força o vizinho da direita
+            if coluna == flags["ultima_col"] and not flags["dir"]:
+                e = True
 
             linhas_penhasco = self.paredes_penhasco[(coluna, linha)]
-
             interno = self.eh_penhasco_interno(coluna, linha)
+
+            # ====== TOPO DO PENHASCO ======
             limite_iteracao = linhas_penhasco if interno else linhas_penhasco - 1
 
-            if interno:
-                topo = (
-                    tiles[5]
-                    if not w and not e
-                    else tiles[4]
-                    if not w
-                    else tiles[6]
-                    if not e
-                    else tiles[5]
-                )
+            desenha_topo = interno and flags["sup"]
+
+            if desenha_topo:
+                if not w and not e:
+                    topo = tiles[5]
+                elif not w:
+                    topo = tiles[4]
+                elif not e:
+                    topo = tiles[6]
+                else:
+                    topo = tiles[5]
                 self._desenhar_sprite_cenario(topo, coluna, linha, camera)
 
-            for i in range(1 if interno else 0, limite_iteracao):
-                meio = tiles[32] if not w else tiles[33] if not e else tiles[9]
+            # Se não tiver borda superior, a parede de pedra começa direto do topo (0)
+            inicio_meio = 1 if interno else 0
+            if interno and not flags["sup"]:
+                inicio_meio = 0
+
+            for i in range(inicio_meio, limite_iteracao):
+                linha_sprite = linha + i
+
+                if self._precisa_tile_38(coluna, linha_sprite):
+                    meio = tiles[38]
+                else:
+                    if not w:
+                        meio = tiles[32]
+                    elif not e:
+                        meio = tiles[33]
+                    else:
+                        meio = tiles[9]
+
                 self._desenhar_sprite_cenario(
                     meio, coluna, linha, camera, penhasco_size=TILE_SIZE * i
                 )
 
-            borda = (
-                tiles[30]
-                if not w and not e
-                else tiles[29]
-                if not w
-                else tiles[31]
-                if not e
-                else tiles[30]
-            )
-            altura_borda = (
-                TILE_SIZE * linhas_penhasco
-                if interno
-                else TILE_SIZE * (linhas_penhasco - 1)
-            )
-            self._desenhar_sprite_cenario(
-                borda, coluna, linha, camera, penhasco_size=altura_borda
-            )
+            # Nova condição: só desenha a base se tem_borda_inferior for True
+            if flags.get("inf", True):
+                altura_borda = TILE_SIZE * limite_iteracao
+                if not w and not e:
+                    borda = tiles[30]
+                elif not w:
+                    borda = tiles[29]
+                elif not e:
+                    borda = tiles[31]
+                else:
+                    borda = tiles[30]
 
-    def _renderizar_camada_paredes_penhasco(self, camera):
-        for coluna, linha in self._iterar_area_visivel(camera):
-            if not self.existe_penhasco(coluna, linha):
+                self._desenhar_sprite_cenario(
+                    borda, coluna, linha, camera, penhasco_size=altura_borda
+                )
+
+                # ====== PAREDE DO PENHASCO ======
+                if not w and not e:
+                    parede = tiles[22]
+                elif not w:
+                    parede = tiles[21]
+                elif not e:
+                    parede = tiles[23]
+                else:
+                    parede = tiles[22]
+
+                altura_final = TILE_SIZE * (
+                    linhas_penhasco + 1 if interno else linhas_penhasco
+                )
+                linha_bloqueada = linha + (
+                    linhas_penhasco + 1 if interno else linhas_penhasco
+                )
+
+                self.tiles_bloqueados.add((coluna, linha_bloqueada))
+                self._desenhar_sprite_cenario(
+                    parede, coluna, linha, camera, penhasco_size=altura_final
+                )
+
+    def _renderizar_camada_degraus(self, camera):
+        for (coluna, linha), dados in self.degraus.items():
+            tiles = self.obter_tiles(coluna, linha)
+            direcao = dados["direcao"]
+
+            if direcao == "direita":
+                tile_superior, tile_inferior = tiles[34], tiles[35]
+            elif direcao == "esquerda":
+                tile_superior, tile_inferior = tiles[36], tiles[37]
+            else:
                 continue
 
-            tiles = self.obter_tiles(coluna, linha)
-            w = self.existe_penhasco(coluna - 1, linha)
-            e = self.existe_penhasco(coluna + 1, linha)
-
-            parede_sprite = (
-                tiles[22]
-                if not w and not e
-                else tiles[21]
-                if not w
-                else tiles[23]
-                if not e
-                else tiles[22]
-            )
-
-            linhas_penhasco = self.paredes_penhasco[(coluna, linha)]
-
-            altura_final = (
-                TILE_SIZE * (linhas_penhasco + 1)
-                if self.eh_penhasco_interno(coluna, linha)
-                else TILE_SIZE * linhas_penhasco
-            )
-
-            linha_bloqueada = linha + (
-                linhas_penhasco + 1
-                if self.eh_penhasco_interno(coluna, linha)
-                else linhas_penhasco
-            )
-
-            self.tiles_bloqueados.add((coluna, linha_bloqueada))
-
+            self._desenhar_sprite_cenario(tile_inferior, coluna, linha, camera)
             self._desenhar_sprite_cenario(
-                parede_sprite, coluna, linha, camera, penhasco_size=altura_final
+                tile_superior, coluna, linha, camera, offset_y=-TILE_SIZE
             )
 
     def _desenhar_sprite_cenario(
@@ -609,17 +807,16 @@ class TileMapRenderer:
         altura_zoom = int(self.agua_parada.get_height() * camera.zoom)
         sprite = self.transform.escalar(self.agua_parada, (largura_zoom, altura_zoom))
 
-        inicio_x = int(camera.x // sprite.get_width()) - 1
-        fim_x = int((camera.x + camera.largura) // sprite.get_width()) + 2
-        inicio_y = int(camera.y // sprite.get_height()) - 1
-        fim_y = int((camera.y + camera.altura) // sprite.get_height()) + 2
+        sw, sh = sprite.get_width(), sprite.get_height()
+        inicio_x, fim_x = (
+            int(camera.x // sw) - 1,
+            int((camera.x + camera.largura) // sw) + 2,
+        )
+        inicio_y, fim_y = (
+            int(camera.y // sh) - 1,
+            int((camera.y + camera.altura) // sh) + 2,
+        )
 
         for y in range(inicio_y, fim_y):
             for x in range(inicio_x, fim_x):
-                self.tela.blit(
-                    sprite,
-                    (
-                        x * sprite.get_width() - camera.x,
-                        y * sprite.get_height() - camera.y,
-                    ),
-                )
+                self.tela.blit(sprite, (x * sw - camera.x, y * sh - camera.y))

@@ -1,6 +1,6 @@
 import random
 
-from application.usecases.mover_personagem import MoverPersonagemUseCase
+from application.usecases.personagem.mover import MoverPersonagemUseCase
 
 
 class ControlarComportamentoBaseUseCase:

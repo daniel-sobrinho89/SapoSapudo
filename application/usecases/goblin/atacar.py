@@ -1,180 +1,38 @@
-from math import hypot
+from application.usecases.personagem.atacar import (
+    AtacarPersonagemUseCase,
+)
+from domains.personagem.maquina_estado_goblin_tocha import (
+    EstadoGoblinTocha,
+)
 
-from domains.personagem.maquina_estado_goblin_tocha import EstadoGoblinTocha
 
-
-class AtacarGoblinUseCase:
-    VELOCIDADE = 110
-    DISTANCIA_PARADA = 18
-    DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
-    DISTANCIA_LATERAL_ATAQUE = 45
-    TEMPO_MINIMO_ATAQUE = 0.25
-
-    def __init__(self, cenario_principal):
-        self.cenario_principal = cenario_principal
-        self.entidade_alvo = None
-
-        self.tempo = 0.0
-        self.flip = False
-        self.posicao_alvo_no_inicio_ataque = None
-
-    def iniciar(self, personagemalvo, personagem):
-        self.tempo = 0.0
-        self.entidade_alvo = personagemalvo
-        self.personagem = personagem
-        self.posicao_alvo_no_inicio_ataque = None
-
-        self.tempo = 0.0
-
-        self.flip = personagemalvo.x < self.personagem.x
-
-        if self.flip:
-            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO_FLIP
-        else:
-            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
-
-    def cancelar(self):
-        self.entidade_alvo = None
-
-    def executar(self, dt):
-        if self.entidade_alvo is None:
-            return
-
-        if self.personagem.animacoes.maquina.atacando():
-            self._interagir(dt)
-        else:
-            self._andar(dt)
-
-    def _alvo_ainda_esta_no_alcance(self):
-        if self.posicao_alvo_no_inicio_ataque is None:
-            return True
-
-        alvo_x, alvo_y = self.posicao_alvo_no_inicio_ataque
-        deslocamento_alvo = hypot(
-            self.entidade_alvo.x - alvo_x,
-            self.entidade_alvo.y - alvo_y,
-        )
-
-        return deslocamento_alvo <= self.DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR
-
-    def _esta_correndo(self, personagem):
-        estado = personagem.animacoes.estado
-        tipo_estado = estado.__class__
-
-        return estado in (tipo_estado.CORRENDO, tipo_estado.CORRENDO_FLIP)
-
-    def _andar(self, dt):
-        self.flip = self.entidade_alvo.x < self.personagem.x
-
-        if self.flip:
-            destino_x = self.entidade_alvo.x + self.DISTANCIA_LATERAL_ATAQUE
-        else:
-            destino_x = self.entidade_alvo.x - self.DISTANCIA_LATERAL_ATAQUE
-
-        destino_y = self.entidade_alvo.y
-
-        dx = destino_x - self.personagem.x
-        dy = destino_y - self.personagem.y
-
-        distancia = hypot(dx, dy)
-
-        if distancia <= self.DISTANCIA_PARADA:
-            self.tempo = 0.0
-            self.posicao_alvo_no_inicio_ataque = (
-                self.entidade_alvo.x,
-                self.entidade_alvo.y,
-            )
-
-            if self.flip:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.ATACANDO_FLIP
-            else:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.ATACANDO
-
-            return
-
-        if self.flip:
-            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO_FLIP
-        else:
-            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
-
-        self.personagem.destino_x = destino_x
-        self.personagem.destino_y = destino_y
-
-        self.cenario_principal.mover_personagem.executar(
-            personagem=self.personagem,
-            navegacao=self.cenario_principal.navegacao,
-            velocidade=self.VELOCIDADE,
-            estado_correndo=EstadoGoblinTocha.CORRENDO,
-            estado_correndo_flip=EstadoGoblinTocha.CORRENDO_FLIP,
-            estado_parado=EstadoGoblinTocha.OCIOSO,
-            estado_parado_flip=EstadoGoblinTocha.OCIOSO_FLIP,
-            dt=dt,
-        )
-
-    def _interagir(self, dt):
-        if self.entidade_alvo is None:
-            return
-
-        if self.entidade_alvo.vida <= 0:
-            self.entidade_alvo = None
-
-            if self.flip:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO_FLIP
-            else:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO
-
-            return
-
-        # ==========================================
-        # O alvo fugiu?
-        # ==========================================
-
-        animacao = self.personagem.animacoes.animacao_atual
-
-        if not self._alvo_ainda_esta_no_alcance():
-            if not animacao.golpe_executado:
-                return
-
-            self.flip = self.entidade_alvo.x < self.personagem.x
-
-            if self.flip:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO_FLIP
-            else:
-                self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
-
-            self.posicao_alvo_no_inicio_ataque = None
-            return
-
-        if not animacao.golpe_executado:
-            return
-
-        destino = self.cenario_principal.navegacao.fugir(
-            self.entidade_alvo.x,
-            self.entidade_alvo.y,
-            self.personagem.x,
-            self.personagem.y,
-            self.personagem.altura,
-        )
-
-        self.entidade_alvo.receber_golpe(
-            self.personagem,
-            *destino,
-        )
-
-        ctrl = self.cenario_principal.controladores.get(self.entidade_alvo)
-
-        if ctrl is not None:
-            atacar = ctrl["acoes"].get("atacar")
-
-            if atacar is not None and not self._esta_correndo(self.entidade_alvo):
-                atacar["usecase"].iniciar(
-                    self.personagem,
-                    self.entidade_alvo,
-                )
-
-        self.flip = self.entidade_alvo.x < self.personagem.x
-
+class AtacarGoblinUseCase(AtacarPersonagemUseCase):
+    def _iniciar_ataque(self):
         if self.flip:
             self.personagem.animacoes.estado = EstadoGoblinTocha.ATACANDO_FLIP
         else:
             self.personagem.animacoes.estado = EstadoGoblinTocha.ATACANDO
+
+    def _animacao_correndo(self):
+        if self.flip:
+            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO_FLIP
+        else:
+            self.personagem.animacoes.estado = EstadoGoblinTocha.CORRENDO
+
+    def _animacao_ocioso(self):
+        if self.flip:
+            self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO_FLIP
+        else:
+            self.personagem.animacoes.estado = EstadoGoblinTocha.OCIOSO
+
+    def _estado_correndo(self):
+        return EstadoGoblinTocha.CORRENDO
+
+    def _estado_correndo_flip(self):
+        return EstadoGoblinTocha.CORRENDO_FLIP
+
+    def _estado_ocioso(self):
+        return EstadoGoblinTocha.OCIOSO
+
+    def _estado_ocioso_flip(self):
+        return EstadoGoblinTocha.OCIOSO_FLIP

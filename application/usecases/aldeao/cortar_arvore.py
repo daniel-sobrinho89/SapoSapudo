@@ -74,12 +74,17 @@ class CortarArvoreUseCase:
             return
 
         if distancia > 0:
-            self.cenario_principal.mover_personagem.ir_para(
+            self.personagem.destino_x = destino_x
+            self.personagem.destino_y = destino_y
+
+            self.cenario_principal.mover_personagem.executar(
                 personagem=self.personagem,
                 navegacao=self.cenario_principal.navegacao,
-                destino_x=destino_x,
-                destino_y=destino_y,
                 velocidade=self.VELOCIDADE,
+                estado_correndo=EstadoAldeao.CORRENDO_MACHADO,
+                estado_correndo_flip=EstadoAldeao.CORRENDO_MACHADO_FLIP,
+                estado_parado=EstadoAldeao.OCIOSO,
+                estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
                 dt=dt,
             )
 
@@ -139,11 +144,16 @@ class CortarArvoreUseCase:
 
             return
 
-        self.cenario_principal.mover_personagem.ir_para(
+        self.personagem.destino_x = destino_x
+        self.personagem.destino_y = destino_y
+
+        self.cenario_principal.mover_personagem.executar(
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
-            destino_x=destino_x,
-            destino_y=destino_y,
             velocidade=self.VELOCIDADE,
+            estado_correndo=EstadoAldeao.CORRENDO_MADEIRA,
+            estado_correndo_flip=EstadoAldeao.CORRENDO_MADEIRA_FLIP,
+            estado_parado=EstadoAldeao.OCIOSO,
+            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
             dt=dt,
         )

@@ -3,8 +3,6 @@ from domains.efeitos.entity import criar_efeitos
 
 
 class MortePersonagemUseCase:
-    PROGRESSO_PARA_REMOVER_PERSONAGEM = 0.1
-
     def __init__(self, cenario_principal):
         self.cenario_principal = cenario_principal
         self.entidade_alvo = None

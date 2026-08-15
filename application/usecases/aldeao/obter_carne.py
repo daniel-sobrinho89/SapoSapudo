@@ -111,12 +111,17 @@ class ObterCarneUseCase:
         else:
             self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
 
-        self.cenario_principal.mover_personagem.ir_para(
+        self.personagem.destino_x = destino_x
+        self.personagem.destino_y = destino_y
+
+        self.cenario_principal.mover_personagem.executar(
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
-            destino_x=destino_x,
-            destino_y=destino_y,
             velocidade=self.VELOCIDADE,
+            estado_correndo=EstadoAldeao.CORRENDO_FACA,
+            estado_correndo_flip=EstadoAldeao.CORRENDO_FACA_FLIP,
+            estado_parado=EstadoAldeao.OCIOSO,
+            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
             dt=dt,
         )
 
@@ -198,11 +203,16 @@ class ObterCarneUseCase:
 
             return
 
-        self.cenario_principal.mover_personagem.ir_para(
+        self.personagem.destino_x = destino_x
+        self.personagem.destino_y = destino_y
+
+        self.cenario_principal.mover_personagem.executar(
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
-            destino_x=destino_x,
-            destino_y=destino_y,
             velocidade=self.VELOCIDADE,
+            estado_correndo=EstadoAldeao.CORRENDO_CARNE,
+            estado_correndo_flip=EstadoAldeao.CORRENDO_CARNE_FLIP,
+            estado_parado=EstadoAldeao.OCIOSO,
+            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
             dt=dt,
         )

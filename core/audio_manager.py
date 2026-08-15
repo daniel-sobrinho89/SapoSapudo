@@ -11,8 +11,6 @@ class AudioManager:
         self.musica_atual = None
         self.pilha_musicas = []
 
-        self.callback_spotify_tocando = None
-
     # =====================================
     # INIT
     # =====================================
@@ -98,14 +96,6 @@ class AudioManager:
     def alternar_musica_violao(self):
         if self.habilitado:
             self.desligar()
-            return
-
-        spotify_tocando = False
-
-        if self.callback_spotify_tocando:
-            spotify_tocando = self.callback_spotify_tocando()
-
-        if spotify_tocando:
             return
 
         self.ligar()

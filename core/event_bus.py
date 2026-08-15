@@ -108,7 +108,6 @@ class EventBus:
                     f"[EventBus] Erro ao processar evento {tipo_evento.__name__}: {e}"
                 )
 
-    # Métodos em português (conforme GEMINI.md)
     def assinar(self, tipo_evento: Any, manipulador: Callable[[Any], None]):
         """Alias em português para subscribe."""
         self.subscribe(tipo_evento, manipulador)
@@ -129,21 +128,6 @@ class EventBus:
 # --- Definições de Eventos Específicos do Sistema ---
 
 
-class ClimaAtualizadoEvent(Event):
-    """Disparado quando as informações de clima/tempo são atualizadas."""
-
-    def __init__(self, clima_data: Any):
-        super().__init__(clima_data=clima_data)
-
-
-class TTSIniciadoEvent(Event):
-    pass
-
-
-class TTSFinalizadoEvent(Event):
-    pass
-
-
 class VooIniciadoEvent(Event):
     pass
 
@@ -157,14 +141,8 @@ class PensamentoSapoEvent(Event):
         super().__init__(texto=texto, duracao=duracao)
 
 
-# Aliases em português para as classes de eventos
-ClimaAtualizadoEvento = ClimaAtualizadoEvent
-
 # Mapa para resolução dinâmica a partir de strings
 _MAPA_EVENTOS = {
-    "clima_atualizado": ClimaAtualizadoEvent,
-    "tts_iniciado": TTSIniciadoEvent,
-    "tts_finalizado": TTSFinalizadoEvent,
     "voo_iniciado": VooIniciadoEvent,
     "descendo_para_dormir": DescendoParaDormirEvent,
     "pensamento_sapo": PensamentoSapoEvent,

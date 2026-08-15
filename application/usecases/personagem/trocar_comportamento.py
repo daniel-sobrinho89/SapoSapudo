@@ -18,16 +18,27 @@ class TrocarComportamentoUseCase:
         for acao in controlador["acoes"].values():
             acao["usecase"].cancelar()
 
-        if not navegacao.pode_andar(
+        pode_ir_direto = navegacao.pode_andar(
             destino_x,
             destino_y,
             personagem.altura,
-        ):
-            personagem.destino_x = personagem.x
-            personagem.destino_y = personagem.y
+        )
 
-            controlador["padrao"].parar(personagem)
-            return False
+        if not pode_ir_direto:
+            rota = navegacao.calcular_rota(
+                personagem.x,
+                personagem.y,
+                destino_x,
+                destino_y,
+                personagem.altura,
+            )
+
+            if not rota:
+                personagem.destino_x = personagem.x
+                personagem.destino_y = personagem.y
+
+                controlador["padrao"].parar(personagem)
+                return False
 
         controlador["padrao"].iniciar(
             personagem,

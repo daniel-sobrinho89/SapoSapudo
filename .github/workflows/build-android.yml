@@ -36,26 +36,6 @@ jobs:
             cmake libffi-dev libssl-dev \
             build-essential ccache libltdl-dev
 
-      - name: Gerar módulo Gemini
-        env:
-          APP_GEMINI_API_KEY: ${{ secrets.APP_GEMINI_API_KEY }}
-        run: |
-          python << 'EOF'
-          import os
-
-          chave = os.environ.get("APP_GEMINI_API_KEY")
-
-          if not chave:
-              raise RuntimeError(
-                  "APP_GEMINI_API_KEY não definida no GitHub Secrets"
-              )
-
-          with open("config_gemini.py", "w", encoding="utf-8") as f:
-              f.write(f"GEMINI_API_KEY = {chave!r}\n")
-
-          print("config_gemini.py criado")
-          EOF
-
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip

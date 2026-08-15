@@ -7,7 +7,7 @@ class Recurso:
         self.x = x
         self.y = y
         self.altura = altura
-        self.vida = 0
+        self.vida = 1
         self.animacoes = Animacoes(nome)
         self.reservado_por = None
 

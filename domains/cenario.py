@@ -2,27 +2,20 @@ from application.fabrica_controladores import FabricaControladores
 from application.usecases.duende.controlar_comportamento_duende import (
     ControlarComportamentoDuendeUseCase,
 )
-from application.usecases.duende.controlar_sono_duende import ControlarSonoDuendeUseCase
-from application.usecases.mover_personagem import MoverPersonagemUseCase
+from application.usecases.personagem.mover import MoverPersonagemUseCase
 from core.camera import Camera
 from core.game_config import obter_config, obter_tipos
 from core.navegacao_mapa import NavegacaoMapa
 from domains.construcao.entity import (  # noqa: F401
-    criar_casa,
-    criar_casa_goblin,
-    criar_castelo,
-    criar_quartel,
+    criar_construcao,
 )
 from domains.duende.entity import DuendeNeblina
 from domains.efeitos.entity import criar_efeitos  # noqa: F401
 from domains.personagem.entity import (  # noqa: F401
-    criar_aldeao,
     criar_arvore,
-    criar_goblin_tocha,
+    criar_entidade,
     criar_mina_ouro,
-    criar_ovelha,
     criar_recurso,
-    criar_soldado,
 )
 from domains.personagem.maquina_estado import EstadoAldeao
 from render.asset_manager import asset_manager
@@ -40,7 +33,6 @@ class CenarioBase:
         self,
         tela,
         transform,
-        clima_service,
         ceu_renderer,
         navegacao,
         mover_personagem,
@@ -50,7 +42,6 @@ class CenarioBase:
     ):
         self.tela = tela
         self.transform = transform
-        self.clima_service = clima_service
         self.ceu_renderer = ceu_renderer
         self.camera = camera
         self.navegacao = navegacao
@@ -74,6 +65,7 @@ class CenarioPrincipal(CenarioBase):
         self.arvores = []
         self.minas_ouro = []
         self.recursos = []
+        self.flora = []
         self.efeitos = []
         self.ovelhas = []
         self.construcoes = []
@@ -97,10 +89,6 @@ class CenarioPrincipal(CenarioBase):
         self.personagem_arrastando = None
 
     @property
-    def tem_duende(self):
-        return self.duende is not None
-
-    @property
     def total_madeira(self):
         return self.estoque["madeira"]
 
@@ -114,11 +102,26 @@ class CenarioPrincipal(CenarioBase):
 
     def construcao_desbloqueada(self, construcao):
         contrucao_unica = self._contrucao_unica(construcao.nome)
+        return not contrucao_unica and self._possui_recursos(construcao)
+
+    def personagem_desbloqueado(self, personagem):
+        if personagem.nome == "avatar_aldeao":
+            return self._possui_recursos(personagem) and any(
+                c.nome == "casa" for c in self.construcoes
+            )
+
+        if personagem.nome == "avatar_soldado":
+            return self._possui_recursos(personagem) and any(
+                c.nome == "quartel" for c in self.construcoes
+            )
+
+        return False
+
+    def _possui_recursos(self, entidade):
         return (
-            not contrucao_unica
-            and self.total_madeira >= construcao.custo_madeira
-            and self.total_ouro >= construcao.custo_ouro
-            and self.total_carne >= construcao.custo_carne
+            self.total_madeira >= entidade.custo_madeira
+            and self.total_ouro >= entidade.custo_ouro
+            and self.total_carne >= entidade.custo_carne
         )
 
     def _contrucao_unica(self, nome):
@@ -223,19 +226,6 @@ class CenarioPrincipal(CenarioBase):
                     else:
                         usecase.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
-    def personagem_desbloqueado(self, personagem):
-        if personagem.nome == "avatar_aldeao":
-            return self.construcao_desbloqueada(personagem) and any(
-                c.nome == "casa" for c in self.construcoes
-            )
-
-        if personagem.nome == "avatar_soldado":
-            return self.construcao_desbloqueada(personagem) and any(
-                c.nome == "quartel" for c in self.construcoes
-            )
-
-        return False
-
     def carregar(self):
         self.entidades = []
 
@@ -253,18 +243,35 @@ class CenarioPrincipal(CenarioBase):
         config = obter_config(tipo)
         criador = globals()[config["classe"]]
         entidades = []
-        spawns = config["spawn"]
 
-        if x is None and not spawns:
-            entidade = criador(tipo)
-            renderer = self._obter_renderer(tipo, config)
+        if x is None and y is None:
+            ambiente = next(
+                (
+                    item
+                    for item in self.tilemap_renderer.ambiente
+                    if item.get("tipo") == tipo
+                ),
+                None,
+            )
 
-            return entidade
-
-        spawns = spawns or [{"x": x, "y": y, "altura": 0}]
+            spawns = ambiente.get("spawn", []) if ambiente else []
+            if not spawns:
+                entidade = criador(tipo)
+                self._obter_renderer(tipo, config)
+                return entidade
+        else:
+            spawns = [{"x": x, "y": y, "altura": 0}]
 
         for spawn in spawns:
-            entidade = criador(tipo, x=spawn["x"], y=spawn["y"], altura=spawn["altura"])
+            entidade = criador(
+                tipo,
+                x=spawn["x"],
+                y=spawn["y"],
+                altura=spawn["altura"],
+                vida=config.get("vida", 0),
+                ataque=config.get("ataque", 0),
+                defesa=config.get("defesa", 0),
+            )
 
             renderer = self._obter_renderer(tipo, config)
 
@@ -360,14 +367,14 @@ class CenarioPrincipal(CenarioBase):
             if not entidade.vida <= 0:
                 entidade.atualizar(dt)
 
-        for efeito in self.efeitos:
+        for efeito in self.efeitos[:]:
             efeito.atualizar(dt)
 
             if (
-                efeito.nome == "poeira_grande"
+                not getattr(efeito, "persistente", False)
                 and efeito.animacoes.ocioso.progresso >= 1.0
             ):
-                self.remover_personagem(efeito)
+                self.efeitos.remove(efeito)
 
     def renderizar(self, dt):
         self._atualizar_carregamento_assets()
@@ -491,12 +498,10 @@ class GerenciadorCenarios:
         self,
         tela,
         transform,
-        clima_service,
     ):
         self.camera = Camera()
         self.tela = tela
         self.transform = transform
-        self.clima_service = clima_service
         self.ceu_renderer = CeuRenderer(tela, LARGURA, ALTURA)
         self.centro_y = ALTURA // 2 + CENTRO_OFFSET_Y
         self.estado = EstadoJogo.ABERTURA
@@ -511,7 +516,6 @@ class GerenciadorCenarios:
         self.cenario_principal = CenarioPrincipal(
             tela,
             transform,
-            clima_service,
             self.ceu_renderer,
             self.navegacao,
             self.mover_personagem,
@@ -521,10 +525,6 @@ class GerenciadorCenarios:
         )
 
         self.cenario_atual = self.cenario_principal
-
-    @property
-    def tem_duende(self):
-        return self.cenario_principal.tem_duende
 
     def atualizar(self, dt):
         self.cenario_atual.atualizar(dt)
@@ -541,10 +541,6 @@ class GerenciadorCenarios:
                     self.tela, asset_manager, self.transform
                 )
 
-                self.controlar_sono_duende = ControlarSonoDuendeUseCase(
-                    self.duende,
-                    self.clima_service,
-                )
                 self.controlar_comportamento_duende = (
                     ControlarComportamentoDuendeUseCase(self.duende)
                 )
@@ -560,16 +556,7 @@ class GerenciadorCenarios:
             self.cenario_atual.renderizar(dt)
 
     def _executar_fluxo_duende(self, dt):
-        # TODO! Ajustar para verificar se duende existe
-
-        if (
-            not self.clima_service.clima_disponivel
-            or not self.duende
-            or self.duende.animacoes.dormindo
-            or self.duende.animacoes.acordando
-        ):
-            self.controlar_sono_duende.executar(dt)
-        elif not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
+        if not self.duende.movimento_bloqueado and not self.duende.teleporte.ativo:
             self.controlar_comportamento_duende.executar(dt)
 
 

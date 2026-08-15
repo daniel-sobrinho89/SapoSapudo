@@ -6,24 +6,34 @@ from domains.recursos.entity import Recurso
 
 class Personagem:
     VIDA_MAXIMA = 40
+    VIDA_MINIMA = 30
     TEMPO_EXIBIR_BARRA_VIDA = 3.0
 
-    def __init__(self, nome, madeira=0, ouro=0, carne=0, x=400, y=450, altura=0):
+    def __init__(
+        self, nome, x, y, altura, vida, ataque, defesa, madeira=0, ouro=0, carne=0
+    ):
         self.nome = nome
         self.x = x
         self.y = y
         self.altura = altura
+        self.VIDA_MAXIMA = vida
+        self.ataque = ataque
+        self.defesa = defesa
         self.custo_carne = carne
         self.custo_ouro = ouro
         self.custo_madeira = madeira
         self.animacoes = Animacoes(nome)
-        self.vida = self.VIDA_MAXIMA
 
+        self.base_x = x
+        self.base_y = y
+        self.base_raio = 4
+
+        self.vida = self.VIDA_MAXIMA
+        self.corpo_rect = None
         self.selecionado = False
         self.destino_x = self.x
         self.destino_y = self.y
         self.construcao_selecionada = None
-        self.fugindo = False
         self.tempo_barra_vida = 0.0
 
     def atualizar(self, dt):
@@ -39,11 +49,11 @@ class Personagem:
         if self.vida <= 0:
             return
 
-        self.vida -= 1
+        dano = max(1, atacante.ataque - self.defesa)
+        self.vida = max(0, self.vida - dano)
         self.tempo_barra_vida = self.TEMPO_EXIBIR_BARRA_VIDA
 
-        if self.vida < 20 or self.nome == "ovelha":
-            self.fugindo = True
+        if self.vida < self.VIDA_MINIMA or self.ataque == 0:
             self.destino_x = destino_x
             self.destino_y = destino_y
 
@@ -55,40 +65,17 @@ class Personagem:
                 self.animacoes.estado = estado.CORRENDO_FLIP
 
 
-def criar_personagem(nome, x=400, y=450, altura=0):
-    if nome == "aldeao":
-        return criar_aldeao(x, y, altura)
-    elif nome == "soldado":
-        return criar_soldado(x, y, altura)
-    elif nome == "goblin_Tocha":
-        return criar_goblin_tocha(x, y, altura)
-    elif nome == "ovelha":
-        return criar_ovelha(x, y, altura)
+def criar_entidade(nome, x=0, y=0, altura=0, vida=0, ataque=0, defesa=0):
+    return Personagem(nome, x, y, altura, vida, ataque, defesa, carne=0)
 
 
-def criar_aldeao(nome, x=400, y=450, altura=0):
-    return Personagem(nome, carne=0, x=x, y=y, altura=altura)
-
-
-def criar_soldado(nome, x=400, y=450, altura=0):
-    return Personagem(nome, carne=0, x=x, y=y, altura=altura)
-
-
-def criar_goblin_tocha(nome, x=400, y=450, altura=0):
-    return Personagem(nome, carne=0, x=x, y=y, altura=altura)
-
-
-def criar_ovelha(nome, x=400, y=450, altura=0):
-    return Personagem(nome, x=x, y=y, altura=altura)
-
-
-def criar_arvore(nome, x=400, y=450, altura=0):
+def criar_arvore(nome, x=400, y=450, altura=0, vida=0, ataque=0, defesa=0):
     return Arvore(nome, x=x, y=y, altura=altura)
 
 
-def criar_mina_ouro(nome, x=400, y=450, altura=0):
+def criar_mina_ouro(nome, x=400, y=450, altura=0, vida=0, ataque=0, defesa=0):
     return MinaOuro(nome, x=x, y=y, altura=altura)
 
 
-def criar_recurso(nome, x=400, y=450, altura=0):
+def criar_recurso(nome, x=400, y=450, altura=0, vida=0, ataque=0, defesa=0):
     return Recurso(nome, x=x, y=y, altura=altura)

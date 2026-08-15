@@ -1,16 +1,16 @@
 {
     "sapudo": {
         "maquina": "MaquinaEstadoSapudo",
-        "classe":"criar_aldeao",
+        "classe":"criar_entidade",
         "grupo":"personagens",
+        "vida": 150,
+        "ataque": 5,
+        "defesa": 0,
         "renderer":{
             "colecao": "personagens",
             "escala":0.45,
             "frames_carregamento":10
         },
-        "spawn":[
-                { "x":550,"y":400, "altura": 0 }
-            ],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -33,16 +33,16 @@
     },
     "aldeao": {
         "maquina": "MaquinaEstadoAldeao",
-        "classe":"criar_aldeao",
+        "classe":"criar_entidade",
         "grupo":"personagens",
+        "vida": 100,
+        "ataque": 3,
+        "defesa": 0,
         "renderer":{
             "colecao": "personagens",
             "escala":1,
             "frames_carregamento":10
         },
-        "spawn":[
-                { "x":400,"y":450, "altura": 0 }
-            ],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -109,7 +109,6 @@
         "ia": {
             "padrao": "ControlarComportamentoAldeaoUseCase",
             "morte": "MortePersonagemUseCase",
-
             "acoes": {
                 "arvore": {
                     "alvos": "arvores",
@@ -128,14 +127,16 @@
     },
     "soldado": {
         "maquina": "MaquinaEstadoSoldado",
-        "classe":"criar_soldado",
+        "classe":"criar_entidade",
         "grupo":"personagens",
+        "vida": 300,
+        "ataque": 7,
+        "defesa": 2,
         "renderer":{
             "colecao": "personagens",
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -173,29 +174,19 @@
             }
         }
     },
-
     "goblin_tocha": {
         "maquina": "MaquinaEstadoGoblinTocha",
-        "classe":"criar_goblin_tocha",
+        "classe":"criar_entidade",
         "grupo":"hostis",
         "faccao":"goblin",
+        "vida": 200,
+        "ataque": 4,
+        "defesa": 0,
         "renderer":{
             "colecao": "personagens_hostis",
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":1200,"y":300, "altura": 1 },
-                { "x":1200,"y":315, "altura": 1 },
-                { "x":1200,"y":325, "altura": 1 },
-                { "x":1200,"y":335, "altura": 1 },
-                { "x":1100,"y":335, "altura": 1 },
-                { "x":1150,"y":340, "altura": 1 },
-
-
-                { "x":1200,"y":80, "altura": 1 },
-                { "x":1100,"y":150, "altura": 1 }
-            ],
         "flip": true,
         "animacoes": {
             "ocioso": {
@@ -225,7 +216,6 @@
             }
         }
     },
-
     "madeira": {
         "maquina": "MaquinaEstadoRecurso",
         "classe":"criar_recurso",
@@ -235,7 +225,6 @@
             "escala":1,
             "frames_carregamento":1
         },
-        "spawn":[],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -245,7 +234,6 @@
             }
         }
     },
-
     "carne": {
         "maquina": "MaquinaEstadoRecurso",
         "classe":"criar_recurso",
@@ -255,7 +243,6 @@
             "escala":1,
             "frames_carregamento":1
         },
-        "spawn":[],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -265,7 +252,6 @@
             }
         }
     },
-
     "ouro": {
         "maquina": "MaquinaEstadoRecurso",
         "classe":"criar_recurso",
@@ -275,7 +261,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -287,15 +272,15 @@
     },
     "castelo": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_castelo",
+        "classe": "criar_construcao",
         "grupo": "construcoes",
+        "vida": 600,
         "renderer": {
             "colecao": "construcoes",
             "escala": 0.9,
             "escala_menu":0.27,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -306,21 +291,21 @@
         },
         "ia": {
             "padrao": "DefenderConstrucaoUseCase",
-            "morte": "MortePersonagemUseCase",
+            "morte": "DestruirConstrucaoUseCase",
             "acoes": {}
         }
     },
     "casa": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_casa",
+        "classe": "criar_construcao",
         "grupo": "construcoes",
+        "vida": 200,
         "renderer": {
             "colecao": "construcoes",
             "escala": 0.9,
             "escala_menu":0.27,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -331,21 +316,21 @@
         },
         "ia": {
             "padrao": "DefenderConstrucaoUseCase",
-            "morte": "MortePersonagemUseCase",
+            "morte": "DestruirConstrucaoUseCase",
             "acoes": {}
         }
     },
     "quartel": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_quartel",
+        "classe": "criar_construcao",
         "grupo": "construcoes",
+        "vida": 400,
         "renderer": {
             "colecao": "construcoes",
             "escala": 0.9,
             "escala_menu":0.27,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -356,24 +341,22 @@
         },
         "ia": {
             "padrao": "DefenderConstrucaoUseCase",
-            "morte": "MortePersonagemUseCase",
+            "morte": "DestruirConstrucaoUseCase",
             "acoes": {}
         }
     },
     "casa_goblin": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_casa_goblin",
+        "classe": "criar_construcao",
         "grupo": "construcoes",
         "faccao":"goblin",
+        "vida": 200,
         "renderer": {
             "colecao": "construcoes_hostis",
             "escala": 0.9,
             "escala_menu":0.25,
             "frames_carregamento": 16
         },
-        "spawn": [
-                { "x":1280,"y":150, "altura": 1}
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -384,11 +367,10 @@
         },
         "ia": {
             "padrao": "DefenderConstrucaoUseCase",
-            "morte": "MortePersonagemUseCase",
+            "morte": "DestruirConstrucaoUseCase",
             "acoes": {}
         }
     },
-
     "arvore1": {
         "maquina": "MaquinaEstadoArvore",
         "classe":"criar_arvore",
@@ -398,9 +380,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":230,"y":340, "altura":0 }
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -415,7 +394,6 @@
             }
         }
     },
-
     "arvore2": {
         "maquina": "MaquinaEstadoArvore",
         "classe":"criar_arvore",
@@ -425,9 +403,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":300,"y":315, "altura":0 }
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -442,7 +417,6 @@
             }
         }
     },
-
     "arvore3": {
         "maquina": "MaquinaEstadoArvore",
         "classe":"criar_arvore",
@@ -452,9 +426,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":370,"y":355, "altura":0 }
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -469,7 +440,6 @@
             }
         }
     },
-
     "arvore4": {
         "maquina": "MaquinaEstadoArvore",
         "classe":"criar_arvore",
@@ -479,9 +449,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":285,"y":405, "altura":0 }
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -496,21 +463,18 @@
             }
         }
     },
-
     "ovelha": {
         "maquina": "MaquinaEstadoOvelha",
-        "classe":"criar_ovelha",
+        "classe":"criar_entidade",
         "grupo":"animais",
+        "vida": 100,
+        "ataque": 0,
+        "defesa": 0,
         "renderer":{
             "colecao": "ovelhas",
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":180,"y":420, "altura": 0 },
-                { "x":620,"y":435, "altura": 0 },
-                { "x":350,"y":455, "altura": 0 }
-            ],
         "drop": {
             "tipo": "carne",
             "quantidade": 10
@@ -539,7 +503,6 @@
             "acoes": {}
         }
     },
-
     "mina_ouro": {
         "maquina": "MaquinaEstadoOuro",
         "classe":"criar_mina_ouro",
@@ -549,10 +512,6 @@
             "escala":1,
             "frames_carregamento":5
         },
-        "spawn":[
-                { "x":145,"y":510, "altura":0 },
-                { "x":160,"y":540, "altura":0 }
-            ],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -587,6 +546,222 @@
             }
         }
     },
+    "arbusto1": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/arbusto1.png",
+                "frames": 8,
+                "tempo": 0.25
+            }
+        }
+    },
+    "arbusto2": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/arbusto2.png",
+                "frames": 8,
+                "tempo": 0.25
+            }
+        }
+    },
+    "arbusto3": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/arbusto3.png",
+                "frames": 8,
+                "tempo": 0.25
+            }
+        }
+    },
+    "arbusto4": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/arbusto4.png",
+                "frames": 8,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra1": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra1.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra2": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra2.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra3": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra3.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra4": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra4.png",
+                "frames": 1,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra_agua1": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra_agua1.png",
+                "frames": 16,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra_agua2": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra_agua2.png",
+                "frames": 16,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra_agua3": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra_agua3.png",
+                "frames": 16,
+                "tempo": 0.25
+            }
+        }
+    },
+    "pedra_agua4": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "flora/pedra_agua4.png",
+                "frames": 16,
+                "tempo": 0.25
+            }
+        }
+    },
     "poeira_grande": {
         "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
@@ -596,7 +771,6 @@
             "escala": 1.0,
             "frames_carregamento": 5
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -615,11 +789,10 @@
             "escala": 1.0,
             "frames_carregamento": 5
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
-                "arquivo": "efeitos/fogo_001.png",
+                "arquivo": "efeitos/fogo_01.png",
                 "frames": 8,
                 "tempo": 0.06
             }
@@ -634,11 +807,64 @@
             "escala": 1.0,
             "frames_carregamento": 5
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
-                "arquivo": "efeitos/fogo_002.png",
+                "arquivo": "efeitos/fogo_02.png",
+                "frames": 10,
+                "tempo": 0.20
+            }
+        }
+    },
+    "fogo3": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "colecao": "efeitos",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/fogo_03.png",
+                "frames": 12,
+                "tempo": 0.20
+            }
+        }
+    },
+    "explosao1": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "colecao": "efeitos",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/explosao_01.png",
+                "frames": 8,
+                "tempo": 0.20
+            }
+        }
+    },
+    "explosao2": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "colecao": "efeitos",
+            "escala": 1.0,
+            "frames_carregamento": 5
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "efeitos/explosao_02.png",
                 "frames": 10,
                 "tempo": 0.20
             }
@@ -652,7 +878,6 @@
             "escala": 1.0,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -662,7 +887,6 @@
             }
         }
     },
-
     "barra_vida_base": {
         "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
@@ -671,7 +895,6 @@
             "escala": 1.0,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -683,13 +906,12 @@
     },
     "avatar_aldeao": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_efeitos",
-        "grupo": "efeitos",
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
         "renderer": {
             "escala": 0.3,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {
@@ -701,13 +923,12 @@
     },
     "avatar_soldado": {
         "maquina": "MaquinaEstadoConstrucao",
-        "classe": "criar_efeitos",
-        "grupo": "efeitos",
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
         "renderer": {
             "escala": 0.3,
             "frames_carregamento": 1
         },
-        "spawn": [],
         "flip": false,
         "animacoes": {
             "ocioso": {

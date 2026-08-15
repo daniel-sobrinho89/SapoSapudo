@@ -5,11 +5,12 @@ class Construcao:
     VIDA_MAXIMA = 500
     TEMPO_EXIBIR_BARRA_VIDA = 3.0
 
-    def __init__(self, nome, madeira=0, ouro=0, carne=0, x=0, y=0, altura=0):
+    def __init__(self, nome, x, y, altura, vida, madeira, ouro, carne):
         self.nome = nome
         self.x = x
         self.y = y
         self.altura = altura
+        self.VIDA_MAXIMA = vida
         self.custo_madeira = madeira
         self.custo_ouro = ouro
         self.custo_carne = carne
@@ -31,28 +32,7 @@ class Construcao:
         self.tempo_barra_vida = self.TEMPO_EXIBIR_BARRA_VIDA
 
 
-def criar_construcao(nome, x=0, y=0, altura=0):
-    if nome == "castelo":
-        return criar_castelo(nome, x, y, altura)
-    elif nome == "casa":
-        return criar_casa(nome, x, y, altura)
-    elif nome == "quartel":
-        return criar_quartel(nome, x, y, altura)
-    elif nome == "casa_goblin":
-        return criar_casa_goblin(nome, x, y, altura)
-
-
-def criar_castelo(nome, x=0, y=0, altura=0):
-    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)
-
-
-def criar_casa(nome, x=0, y=0, altura=0):
-    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)
-
-
-def criar_casa_goblin(nome, x=0, y=0, altura=0):
-    return Construcao(nome, x=x, y=y, altura=altura)
-
-
-def criar_quartel(nome, x=0, y=0, altura=0):
-    return Construcao(nome, madeira=0, ouro=0, x=x, y=y, altura=altura)
+def criar_construcao(
+    nome, x=0, y=0, altura=0, vida=0, ataque=0, defesa=0, madeira=0, ouro=0, carne=0
+):
+    return Construcao(nome, x, y, altura, vida, madeira, ouro, carne)

@@ -143,8 +143,8 @@ class SpriteAnimadoRenderer:
         largura, altura = self.obter_tamanho(
             frame,
             escala,
-            getattr(entidade, "escala_x", 1.0),
-            getattr(entidade, "escala_y", 1.0),
+            getattr(entidade, "escala_x", 0.9),
+            getattr(entidade, "escala_y", 0.9),
         )
 
         if not camera.visivel(
