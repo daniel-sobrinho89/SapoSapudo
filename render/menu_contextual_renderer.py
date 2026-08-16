@@ -68,11 +68,31 @@ class MenuContextualRenderer:
 
         self.menu_renderer.atualizar_carregamento()
 
-        # Mantém um único menu no centro da tela, independente do conteúdo.
-        self.menu_renderer.renderizar(
-            self.tela.get_width() // 2 - self.menu_renderer.passo_x,
-            35,
+        # O menu inteiro usa coordenadas de tela e fica sempre no canto
+        # superior direito, independentemente de qual menu foi aberto.
+        centralizar_itens = self.modo != "personagens"
+
+        largura_menu, altura_menu = self.menu_renderer.obter_dimensoes(
             len(self.opcoes),
+            centralizar_itens=centralizar_itens,
+        )
+
+        # Margens da interface, em coordenadas da tela virtual.
+        # Valores menores colocam o menu mais perto do topo e da direita.
+        margem_direita = 70
+        margem_topo = 15
+
+        x_menu = max(
+            0,
+            self.tela.get_width() - largura_menu - margem_direita,
+        )
+        y_menu = max(0, margem_topo)
+
+        self.menu_renderer.renderizar(
+            x_menu,
+            y_menu,
+            len(self.opcoes),
+            centralizar_itens=centralizar_itens,
         )
 
         slots = self.menu_renderer.ultimo_slots

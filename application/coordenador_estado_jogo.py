@@ -108,6 +108,44 @@ class CoordenadorEstadoJogo:
                 )
                 return
 
+            if self.double_click.detectar(pos_virtual):
+                # Um duplo clique em um personagem, mesmo com outro menu
+                # aberto, troca imediatamente para o menu de construções.
+                for personagem in self.gerenciador_cenarios.personagens:
+                    if (
+                        personagem.corpo_rect is not None
+                        and personagem.corpo_rect.collidepoint(mouse_mundo)
+                    ):
+                        menu.abrir_construcoes()
+                        personagem.selecionado = False
+                        camera.arrastando = False
+                        camera.ultimo_mouse = None
+                        return
+
+                # Um duplo clique em uma construção troca imediatamente
+                # para o menu de recrutamento daquela construção.
+                for construcao in self.gerenciador_cenarios.construcoes:
+                    if (
+                        construcao.corpo_rect is not None
+                        and construcao.corpo_rect.collidepoint(mouse_mundo)
+                    ):
+                        menu.abrir_personagens(construcao)
+                        camera.arrastando = False
+                        camera.ultimo_mouse = None
+                        return
+
+                # Duplo clique fora do menu fecha o menu atual.
+                menu.fechar()
+                camera.arrastando = False
+                camera.ultimo_mouse = None
+                return
+
+            # Clique fora do painel não é bloqueado pelo menu.
+            # O mapa continua podendo ser arrastado normalmente.
+            camera.arrastando = True
+            camera.ultimo_mouse = pos_virtual
+            return
+
         for personagem in self.gerenciador_cenarios.personagens:
             if personagem.corpo_rect and personagem.corpo_rect.collidepoint(
                 mouse_mundo
