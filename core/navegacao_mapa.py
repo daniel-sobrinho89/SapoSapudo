@@ -38,7 +38,10 @@ class NavegacaoMapa:
 
         destino_x = x + cos(angulo) * distancia
         destino_y = y + sin(angulo) * distancia
-        return self.ajustar_posicao(destino_x, destino_y, altura)
+
+        destino = self.ajustar_posicao(destino_x, destino_y, altura)
+
+        return destino if destino is not None else (x, y)
 
     def ajustar_posicao(self, x, y, altura):
         if self.pode_andar(x, y, altura):

@@ -12,6 +12,8 @@ class EstadoSoldado(Enum):
     ATACANDO1_FLIP = "atacando1_flip"
     ATACANDO2 = "atacando2"
     ATACANDO2_FLIP = "atacando2_flip"
+    DEFENDENDO = "defendendo"
+    DEFENDENDO_FLIP = "defendendo_flip"
 
 
 class MaquinaEstadoSoldado(StateMachine):

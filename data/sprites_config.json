@@ -158,6 +158,11 @@
                 "arquivo": "soldado/soldado_atacando2.png",
                 "frames": 4,
                 "tempo": 0.20
+            },
+            "defendendo": {
+                "arquivo": "soldado/soldado_defendendo.png",
+                "frames": 6,
+                "tempo": 0.20
             }
         },
         "ia": {
@@ -902,6 +907,23 @@
         "animacoes": {
             "ocioso": {
                 "arquivo": "ui/barra_vida_base.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "escudo": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "escala": 0.7,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/escudo.png",
                 "frames": 1,
                 "tempo": 0
             }

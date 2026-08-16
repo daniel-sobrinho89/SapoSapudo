@@ -39,7 +39,8 @@ jobs:
       - name: Instalar Buildozer
         run: |
           pip install --upgrade pip
-          pip install buildozer==1.5.0 cython==0.29.36
+          pip install git+https://github.com/kivy/buildozer
+          pip install legacy-cgi setuptools cython==0.29.34
 
       - name: Atualizar versão Android
         run: |
@@ -76,7 +77,8 @@ jobs:
 
       - name: Limpar build anterior
         run: |
-          buildozer appclean
+          rm -rf .buildozer
+          rm -rf bin
 
       - name: Gerar Release
         env:

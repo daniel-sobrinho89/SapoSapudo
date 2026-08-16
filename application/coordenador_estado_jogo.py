@@ -2,7 +2,9 @@ from application.usecases import (
     ConstruirUseCase,
     TrocarComportamentoUseCase,
 )
+from application.usecases.soldado.defender import DefenderSoldadoUseCase
 from core.mouse_events import DoubleClickDetector
+from domains.personagem.maquina_estado_soldado import EstadoSoldado
 
 
 class CoordenadorEstadoJogo:
@@ -16,6 +18,7 @@ class CoordenadorEstadoJogo:
 
         self.construir = ConstruirUseCase()
         self.trocar_comportamento = TrocarComportamentoUseCase()
+        self.defender_soldado = DefenderSoldadoUseCase()
 
     def executar(self, dt):
         for personagem in (
@@ -67,18 +70,32 @@ class CoordenadorEstadoJogo:
                 ctrl["morte"].executar(dt)
                 return
 
+        defendendo = personagem.animacoes.estado in (
+            EstadoSoldado.DEFENDENDO,
+            EstadoSoldado.DEFENDENDO_FLIP,
+        )
+
         for acao in ctrl["acoes"].values():
             usecase = acao["usecase"]
 
+            # Enquanto estiver defendendo, o soldado permanece parado e não
+            # procura inimigos por conta própria. Se já recebeu um ataque,
+            # porém, o fluxo normal de combate continua e ele pode reagir.
             if usecase.entidade_alvo:
                 usecase.executar(dt)
                 return
+
+            if defendendo:
+                continue
 
             adquirir_alvo = getattr(usecase, "tentar_adquirir_inimigo_proximo", None)
 
             if adquirir_alvo is not None and adquirir_alvo(personagem):
                 usecase.executar(dt)
                 return
+
+        if defendendo:
+            return
 
         ctrl["padrao"].executar(dt, personagem)
 
@@ -91,6 +108,14 @@ class CoordenadorEstadoJogo:
             opcao = menu.obter_opcao_clicada(pos_virtual)
 
             if opcao:
+                if menu.modo == "soldado":
+                    if self.double_click.detectar(pos_virtual):
+                        if menu.soldado_alvo is not None:
+                            self.defender_soldado.executar(menu.soldado_alvo)
+                            menu.soldado_alvo.selecionado = False
+                        menu.fechar()
+                    return
+
                 if menu.modo == "personagens":
                     if self.double_click.detectar(pos_virtual):
                         self.construir.criar_personagem_na_construcao(
@@ -116,7 +141,10 @@ class CoordenadorEstadoJogo:
                         personagem.corpo_rect is not None
                         and personagem.corpo_rect.collidepoint(mouse_mundo)
                     ):
-                        menu.abrir_construcoes()
+                        if personagem.nome == "soldado":
+                            menu.abrir_soldado(personagem)
+                        else:
+                            menu.abrir_construcoes()
                         personagem.selecionado = False
                         camera.arrastando = False
                         camera.ultimo_mouse = None
@@ -151,7 +179,10 @@ class CoordenadorEstadoJogo:
                 mouse_mundo
             ):
                 if self.double_click.detectar(mouse_mundo):
-                    menu.abrir_construcoes()
+                    if personagem.nome == "soldado":
+                        menu.abrir_soldado(personagem)
+                    else:
+                        menu.abrir_construcoes()
                     personagem.selecionado = False
                     return
 

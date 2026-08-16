@@ -20,6 +20,7 @@ class MenuContextualRenderer:
         self.aberto = False
         self.modo = None
         self.construcao_alvo = None
+        self.soldado_alvo = None
         self.opcoes = []
 
         self._opcoes_construcoes = [
@@ -30,7 +31,7 @@ class MenuContextualRenderer:
 
         self._temporarias = {opcao.nome: opcao for opcao in self._opcoes_construcoes}
 
-        for nome in ("avatar_aldeao", "avatar_soldado"):
+        for nome in ("avatar_aldeao", "avatar_soldado", "escudo"):
             opcao = cenario.carregar_entidade_temporaria(nome)
             self._temporarias[nome] = opcao
 
@@ -41,19 +42,29 @@ class MenuContextualRenderer:
         self.aberto = True
         self.modo = "construcoes"
         self.construcao_alvo = None
+        self.soldado_alvo = None
         self.opcoes = self._opcoes_construcoes
+
+    def abrir_soldado(self, soldado):
+        self.aberto = True
+        self.modo = "soldado"
+        self.construcao_alvo = None
+        self.soldado_alvo = soldado
+        self.opcoes = [self._temporarias["escudo"]]
 
     def abrir_personagens(self, construcao):
         nomes = self.OPCOES_PERSONAGENS.get(construcao.nome, ())
         self.aberto = bool(nomes)
         self.modo = "personagens" if self.aberto else None
         self.construcao_alvo = construcao if self.aberto else None
+        self.soldado_alvo = None
         self.opcoes = [self._temporarias[nome] for nome in nomes]
 
     def fechar(self):
         self.aberto = False
         self.modo = None
         self.construcao_alvo = None
+        self.soldado_alvo = None
         self.opcoes = []
 
     def obter_opcao_clicada(self, pos):
@@ -68,25 +79,21 @@ class MenuContextualRenderer:
 
         self.menu_renderer.atualizar_carregamento()
 
-        # O menu inteiro usa coordenadas de tela e fica sempre no canto
-        # superior direito, independentemente de qual menu foi aberto.
-        centralizar_itens = self.modo != "personagens"
+        centralizar_itens = self.modo not in ("personagens", "soldado")
 
         largura_menu, altura_menu = self.menu_renderer.obter_dimensoes(
             len(self.opcoes),
             centralizar_itens=centralizar_itens,
         )
 
-        # Margens da interface, em coordenadas da tela virtual.
-        # Valores menores colocam o menu mais perto do topo e da direita.
-        margem_direita = 70
-        margem_topo = 15
+        margem_direita = -40
+        margem_topo = -40
 
         x_menu = max(
             0,
             self.tela.get_width() - largura_menu - margem_direita,
         )
-        y_menu = max(0, margem_topo)
+        y_menu = margem_topo
 
         self.menu_renderer.renderizar(
             x_menu,
@@ -119,7 +126,7 @@ class MenuContextualRenderer:
                     alpha,
                     escala,
                 )
-            else:
+            elif self.modo == "personagens":
                 alpha = 255 if cenario.personagem_desbloqueado(opcao) else 90
                 renderer.renderizar(
                     opcao,
@@ -127,11 +134,28 @@ class MenuContextualRenderer:
                     camera,
                     alpha,
                 )
+            else:
+                renderer.renderizar(
+                    opcao,
+                    opcao.animacoes,
+                    camera,
+                    255,
+                )
 
             camera.x = camera_x
             camera.y = camera_y
 
             if not Hover.esta_sobre(opcao.corpo_rect):
+                continue
+
+            if self.modo == "soldado":
+                kivy_adapter.draw.text(
+                    self.tela,
+                    "Defender",
+                    (slot.left - 20, slot.bottom + 5),
+                    (255, 255, 255),
+                    15,
+                )
                 continue
 
             if self.modo == "construcoes":

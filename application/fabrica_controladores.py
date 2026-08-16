@@ -25,6 +25,7 @@ from application.usecases.soldado.atacar import AtacarSoldadoUseCase
 from application.usecases.soldado.controlar_comportamento_soldado import (
     ControlarComportamentoSoldadoUseCase,
 )
+from application.usecases.soldado.defender import DefenderSoldadoUseCase
 from core.game_config import obter_config
 
 USECASES = {
@@ -48,6 +49,7 @@ USECASES = {
     "ObterOuroUseCase": lambda c: ObterOuroUseCase(c),
     "ObterCarneUseCase": lambda c: ObterCarneUseCase(c),
     "AtacarSoldadoUseCase": lambda c: AtacarSoldadoUseCase(c),
+    "DefenderSoldadoUseCase": lambda c: DefenderSoldadoUseCase(),
     "AtacarGoblinUseCase": lambda c: AtacarGoblinUseCase(c),
     "DefenderConstrucaoUseCase": lambda c: DefenderConstrucaoUseCase(c),
     "DestruirConstrucaoUseCase": lambda c: DestruirConstrucaoUseCase(c),
