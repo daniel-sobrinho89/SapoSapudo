@@ -131,6 +131,7 @@ class SpriteAnimadoRenderer:
         camera,
         alpha=255,
         escala=1.0,
+        cor=None,
     ):
         if not self.carregado:
             return
@@ -162,6 +163,15 @@ class SpriteAnimadoRenderer:
                 int(altura * camera.zoom),
             ),
         )
+
+        # O sprite escalado pode estar no cache compartilhado. Copia apenas
+        # quando precisamos aplicar uma transformação visual temporária,
+        # evitando contaminar as próximas renderizações.
+        if cor is not None or alpha != 255:
+            frame = frame.copy()
+
+        if cor is not None:
+            frame.multiplicar_cor(cor)
 
         frame.set_alpha(alpha)
 

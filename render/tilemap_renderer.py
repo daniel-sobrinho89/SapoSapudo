@@ -51,6 +51,9 @@ class TileMapRenderer:
         36: 39,  # borda superior direita degrau penhasco
         37: 48,  # borda inferior direita degrau penhasco
         38: 15,  # meio grama penhasco
+        39: 32,  # horizontal esquerda grama penhasco
+        40: 34,  # horizontal direita grama penhasco
+        41: 33,  # horizontal meio grama penhasco
     }
 
     def __init__(self, tela, assets, transform):
@@ -64,6 +67,7 @@ class TileMapRenderer:
         self.tiles_bioma = {}
         self.cache_tiles = {}
         self.espumas = {}
+        self.tiles_agua_bloqueados = set()
         self.relevos_agua = set()
         self._relevos_agua_config = []
         self.ambiente = []
@@ -75,6 +79,16 @@ class TileMapRenderer:
         self.degraus = {}
         self.degraus_por_relevo = {}
         self.tiles_bloqueados = set()
+
+        # Regras de colisão baseadas nos índices lógicos usados pelo tilemap.
+        # Os índices 21..28 são paredes/áreas que não aceitam movimento nem
+        # construção. As listas de borda não bloqueiam o tile inteiro:
+        # bloqueiam apenas a aproximação excessiva da respectiva borda.
+        self.TILES_BLOQUEADOS_COLISAO = frozenset(range(21, 29))
+        self.TILES_BORDA_ESQUERDA_COLISAO = frozenset((4, 32, 29, 0, 8, 11, 14, 39))
+        self.TILES_BORDA_DIREITA_COLISAO = frozenset((2, 6, 10, 13, 16, 31, 33, 40))
+        self.MARGEM_BORDA_COLISAO = 20
+        self.regras_colisao_visuais = {}
 
         self.largura = 0
         self.altura = 0
@@ -110,6 +124,7 @@ class TileMapRenderer:
         self._aplicar_rios(dados.get("rios", []))
         self._processar_espumas(dados.get("espumas", []))
         self._pre_calcular_autotiling()
+        self._pre_calcular_regras_colisao_visuais()
 
     def _processar_biomas(self, biomas, transicoes):
         self.tiles_bioma.clear()
@@ -240,6 +255,7 @@ class TileMapRenderer:
 
     def _processar_espumas(self, espumas):
         self.espumas = {}
+        self.tiles_agua_bloqueados = set()
         for grupo in espumas:
             offset_x = grupo.get("offset_x", 0)
             offset_y = grupo.get("offset_y", 0)
@@ -255,6 +271,8 @@ class TileMapRenderer:
                         "offset_x": offset_x,
                         "offset_y": offset_y,
                     }
+                    if self._coordenada_valida(coluna, linha):
+                        self.tiles_agua_bloqueados.add((coluna, linha))
 
     def _pre_calcular_autotiling(self):
         for linha in range(self.altura):
@@ -263,6 +281,190 @@ class TileMapRenderer:
                     self.mapa[linha][coluna]["sprite_index"] = (
                         self._calcular_indice_grama(coluna, linha)
                     )
+
+    def _adicionar_regra_visual(self, coluna, linha, indice):
+        if not self._coordenada_valida(coluna, linha):
+            return
+        self.regras_colisao_visuais.setdefault((coluna, linha), set()).add(indice)
+
+    def _pre_calcular_regras_colisao_visuais(self):
+        self.regras_colisao_visuais.clear()
+
+        # Camada de grama: registra o índice lógico efetivamente escolhido pelo
+        # autotiling para cada célula física.
+        for linha in range(self.altura):
+            for coluna in range(self.largura):
+                if self.obter_tipo(coluna, linha) == self.TIPO_GRAMA:
+                    self._adicionar_regra_visual(
+                        coluna,
+                        linha,
+                        self.mapa[linha][coluna].get("sprite_index", 9),
+                    )
+
+        # Relevos de penhasco. Reproduz as mesmas posições físicas usadas pelo
+        # renderer para que a colisão acompanhe a borda desenhada, inclusive
+        # quando o índice não é o sprite base da célula.
+        for relevo in getattr(self, "_relevos_config", []):
+            x = relevo["x"]
+            y = relevo["y"]
+            colunas = relevo["colunas"]
+            linhas = relevo["linhas"]
+
+            tem_esq = relevo.get("tem_borda_esquerda", True)
+            tem_dir = relevo.get("tem_borda_direita", True)
+            tem_sup = relevo.get("tem_borda_superior", True)
+            tem_inf = relevo.get("tem_borda_inferior", True)
+
+            linha_topo = y + 1
+
+            for coluna in range(x, x + colunas):
+                interno = self.eh_penhasco_interno(coluna, linha_topo)
+                limite_iteracao = linhas if interno else linhas - 1
+                limite_iteracao = max(0, limite_iteracao)
+
+                w = self.existe_penhasco(coluna - 1, linha_topo)
+                if coluna == x and not tem_esq:
+                    w = True
+
+                e = self.existe_penhasco(coluna + 1, linha_topo)
+                if coluna == x + colunas - 1 and not tem_dir:
+                    e = True
+
+                if interno and tem_sup:
+                    if not w and not e:
+                        topo = 5
+                    elif not w:
+                        topo = 4
+                    elif not e:
+                        topo = 6
+                    else:
+                        topo = 5
+                    self._adicionar_regra_visual(coluna, linha_topo, topo)
+
+                inicio_meio = 1 if interno else 0
+                if interno and not tem_sup:
+                    inicio_meio = 0
+
+                for i in range(inicio_meio, limite_iteracao):
+                    linha_sprite = linha_topo + i
+                    if not w:
+                        meio = 32
+                    elif not e:
+                        meio = 33
+                    else:
+                        meio = 9
+                    self._adicionar_regra_visual(coluna, linha_sprite, meio)
+
+                if tem_inf:
+                    linha_borda = linha_topo + limite_iteracao
+                    if not w and not e:
+                        borda = 30
+                    elif not w:
+                        borda = 29
+                    elif not e:
+                        borda = 31
+                    else:
+                        borda = 30
+                    self._adicionar_regra_visual(coluna, linha_borda, borda)
+
+                    linha_parede = linha_topo + (linhas + 1 if interno else linhas)
+                    if not w and not e:
+                        parede = 22
+                    elif not w:
+                        parede = 21
+                    elif not e:
+                        parede = 23
+                    else:
+                        parede = 22
+                    self._adicionar_regra_visual(coluna, linha_parede, parede)
+
+        # Relevos de água. Os frames da água animada/parada também ficam
+        # bloqueados pelo tipo lógico da água, enquanto estas bordas adicionais
+        # entram na máscara visual para manter a mesma regra das bordas de
+        # penhasco.
+        for relevo in self._relevos_agua_config:
+            linhas = relevo.get("linhas", 1)
+            primeira_coluna = relevo["x"]
+            colunas = relevo["colunas"]
+            ultima_coluna = primeira_coluna + colunas - 1
+            linha_agua = relevo["y"]
+
+            tem_esq = relevo.get("tem_borda_esquerda", True)
+            tem_dir = relevo.get("tem_borda_direita", True)
+            tem_sup = relevo.get("tem_borda_superior", True)
+            tem_inf = relevo.get("tem_borda_inferior", True)
+
+            if linhas > 1:
+                for nivel in range(linhas):
+                    is_topo = nivel == linhas - 1
+                    is_base = nivel == 0
+
+                    if is_topo and not tem_sup:
+                        continue
+                    if is_base and not tem_inf:
+                        continue
+
+                    linha_fisica = (
+                        linha_agua - (linhas + 2)
+                        if is_topo
+                        else linha_agua - (nivel + 3)
+                    )
+
+                    for coluna in range(primeira_coluna, ultima_coluna + 1):
+                        if coluna == primeira_coluna and tem_esq:
+                            indice = 32
+                        elif coluna == ultima_coluna and tem_dir:
+                            indice = 33
+                        else:
+                            indice = 9
+                        self._adicionar_regra_visual(coluna, linha_fisica, indice)
+
+            for coluna in range(primeira_coluna, ultima_coluna + 1):
+                esquerda = (coluna - 1) >= primeira_coluna
+                direita = (coluna + 1) <= ultima_coluna
+                if not esquerda:
+                    indice = 25
+                elif not direita:
+                    indice = 27
+                else:
+                    indice = 26
+                self._adicionar_regra_visual(coluna, linha_agua - 1, indice)
+
+    def obter_regras_colisao(self, coluna, linha):
+        return self.regras_colisao_visuais.get((coluna, linha), ())
+
+    def pode_andar_pixel(self, x, y, altura, margem_borda=None, verificar_borda=True):
+        coluna, linha = self.pixel_para_tile(x, y)
+
+        if (
+            not self.pode_andar(coluna, linha, altura)
+            or (coluna, linha) in self.tiles_agua_bloqueados
+        ):
+            return False
+
+        regras = self.obter_regras_colisao(coluna, linha)
+
+        if any(indice in self.TILES_BLOQUEADOS_COLISAO for indice in regras):
+            return False
+
+        if not verificar_borda:
+            return True
+
+        margem = (
+            self.MARGEM_BORDA_COLISAO
+            if margem_borda is None
+            else max(0, int(margem_borda))
+        )
+        tile_x, _ = self.tile_para_pixel(coluna, linha)
+
+        bateu_esquerda = any(
+            i in self.TILES_BORDA_ESQUERDA_COLISAO for i in regras
+        ) and (x <= tile_x + margem)
+        bateu_direita = any(i in self.TILES_BORDA_DIREITA_COLISAO for i in regras) and (
+            x >= tile_x + TILE_SIZE - margem
+        )
+
+        return not (bateu_esquerda or bateu_direita)
 
     def _calcular_indice_grama(self, coluna, linha):
         v = self.obter_vizinhos_logicos(coluna, linha, self.TIPO_GRAMA)
@@ -374,8 +576,7 @@ class TileMapRenderer:
         )
 
     def eh_grama(self, x, y, altura):
-        coluna, linha = self.pixel_para_tile(x, y)
-        return self.pode_andar(coluna, linha, altura)
+        return self.pode_andar_pixel(x, y, altura)
 
     def pode_andar(self, coluna, linha, altura):
         if (

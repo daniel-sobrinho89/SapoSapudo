@@ -19,6 +19,10 @@ class AudioManager:
         if self.inicializado:
             return
 
+        if not self.habilitado:
+            self.inicializado = True
+            return
+
         kivy_adapter.mixer.init()
 
         kivy_adapter.mixer.music.load(str(BASE_DIR / MUSICA_FUNDO))

@@ -19,6 +19,7 @@ class Construcao:
         self.vida = self.VIDA_MAXIMA
 
         self.tempo_barra_vida = 0.0
+        self.posicionamento_invalido = False
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)

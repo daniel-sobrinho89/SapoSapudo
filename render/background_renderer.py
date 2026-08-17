@@ -16,6 +16,12 @@ class CeuRenderer:
         self.superficie = kivy_adapter.Surface((largura, self.altura))
         self.luz = kivy_adapter.Surface((largura, self.altura))
 
+        # O renderer original redesenhava 600 linhas + dezenas de círculos
+        # em todos os frames. Em WebAssembly isso bloqueia o primeiro frame.
+        # No browser, o céu é reconstruído apenas quando o minuto muda.
+        self._cache_web = getattr(kivy_adapter, "IS_BROWSER", False)
+        self._cache_web_chave = None
+
         random.seed(42)
         self.estrelas = []
 
@@ -206,6 +212,19 @@ class CeuRenderer:
     def desenhar(self):
         self.hora = obter_hora_decimal()
 
+        if self._cache_web:
+            # O céu muda visualmente de forma relevante em minutos, não em
+            # frames. Cachear por minuto evita milhares de operações de desenho
+            # desnecessárias no WASM.
+            chave = int(self.hora * 60)
+            if chave != self._cache_web_chave:
+                self._cache_web_chave = chave
+                self._reconstruir_cache_web()
+
+            self.tela.blit(self.superficie, (0, 0))
+            self.tela.blit(self.luz, (0, 0))
+            return
+
         topo, baixo = self.obter_cores()
 
         for y in range(self.altura):
@@ -231,6 +250,30 @@ class CeuRenderer:
             (0, 0),
         )
 
+    def _reconstruir_cache_web(self):
+        top, bottom = self.obter_cores()
+
+        self.superficie.fill((0, 0, 0, 255))
+
+        # 60 faixas substituem 600 linhas individuais.
+        faixas = 60
+        altura_faixa = max(1, self.altura // faixas)
+
+        for i in range(faixas):
+            y = i * altura_faixa
+            t = min(1.0, y / max(1, self.altura - 1))
+            cor = self._lerp_cor(top, bottom, t)
+            h = altura_faixa if i < faixas - 1 else self.altura - y
+
+            kivy_adapter.draw.rect(
+                self.superficie,
+                (*cor, 255),
+                (0, y, self.largura, h),
+            )
+
+        self.luz.fill((0, 0, 0, 0))
+        self.desenhar_luz()
+
     def desenhar_luz(self):
         astro = self.obter_astro()
 
@@ -243,7 +286,7 @@ class CeuRenderer:
         # Glow
         # ============================
 
-        camadas = 30
+        camadas = 8 if self._cache_web else 30
 
         for i in range(camadas, 0, -1):
             fator = i / camadas

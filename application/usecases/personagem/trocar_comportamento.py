@@ -18,13 +18,9 @@ class TrocarComportamentoUseCase:
         for acao in controlador["acoes"].values():
             acao["usecase"].cancelar()
 
-        pode_ir_direto = navegacao.pode_andar(
-            destino_x,
-            destino_y,
-            personagem.altura,
-        )
-
-        if not pode_ir_direto:
+        # O movimento é quem decide se o trajeto exige desvio.
+        # Não desperdiçamos um BFS aqui e outro imediatamente depois no mover.
+        if not navegacao.pode_andar(destino_x, destino_y, personagem.altura):
             rota = navegacao.calcular_rota(
                 personagem.x,
                 personagem.y,
@@ -32,11 +28,9 @@ class TrocarComportamentoUseCase:
                 destino_y,
                 personagem.altura,
             )
-
             if not rota:
                 personagem.destino_x = personagem.x
                 personagem.destino_y = personagem.y
-
                 controlador["padrao"].parar(personagem)
                 return False
 

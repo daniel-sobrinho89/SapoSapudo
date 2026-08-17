@@ -51,12 +51,37 @@ class MoverPersonagemUseCase:
 
             # Atualiza altura se houver degrau/transição
             nova_altura = navegacao.obter_altura_transicao(
-                x_antigo, y_antigo, nova_posicao[0], nova_posicao[1], personagem.altura
+                x_antigo,
+                y_antigo,
+                nova_posicao[0],
+                nova_posicao[1],
+                personagem.altura,
             )
             if nova_altura is not None:
                 personagem.altura = nova_altura
 
             personagem.x, personagem.y = nova_posicao
+
+            # Garantia adicional: quando o movimento termina no lado alto de
+            # um relevo, a altura física da entidade acompanha o tile onde ela
+            # efetivamente terminou.
+            coluna, linha = navegacao.tilemap.pixel_para_tile(
+                personagem.x,
+                personagem.y,
+            )
+            degrau = navegacao.tilemap.obter_degrau(coluna, linha)
+            altura_tile = navegacao.tilemap.obter_altura(coluna, linha)
+
+            if (
+                degrau is None
+                and altura_tile != personagem.altura
+                and navegacao.tilemap.pode_andar(
+                    coluna,
+                    linha,
+                    altura_tile,
+                )
+            ):
+                personagem.altura = altura_tile
 
             # Tratativa caso o personagem tenha "travado" no cenário (andou muito pouco)
             if hypot(personagem.x - x_antigo, personagem.y - y_antigo) < 1:

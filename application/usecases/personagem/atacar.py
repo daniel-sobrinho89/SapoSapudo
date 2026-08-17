@@ -381,14 +381,40 @@ class AtacarPersonagemUseCase:
         return self._esta_fugindo_entidade(self.entidade_alvo)
 
     def _calcular_destino_ataque(self):
-        self.flip = self.entidade_alvo.x < self.personagem.x
+        alvo = self.entidade_alvo
+        self.flip = alvo.x < self.personagem.x
+
+        # Construções são obstáculos para o movimento, portanto o destino de
+        # ataque nunca pode ser o centro da construção. Calculamos o ponto de
+        # aproximação pela borda real da construção, mantendo a unidade fora
+        # da área bloqueada.
+        if self._alvo_e_construcao(alvo):
+            rect = self.cenario_principal.obter_rect_colisao(alvo)
+            margem = max(
+                self.DISTANCIA_PARADA,
+                self.DISTANCIA_LATERAL_ATAQUE,
+            )
+
+            if self.flip:
+                destino_x = rect.right + margem
+            else:
+                destino_x = rect.left - margem
+
+            destino_y = max(
+                rect.top - self.DISTANCIA_PARADA,
+                min(
+                    alvo.y,
+                    rect.bottom + self.DISTANCIA_PARADA,
+                ),
+            )
+            return destino_x, destino_y
 
         if self.flip:
-            destino_x = self.entidade_alvo.x + self.DISTANCIA_LATERAL_ATAQUE
+            destino_x = alvo.x + self.DISTANCIA_LATERAL_ATAQUE
         else:
-            destino_x = self.entidade_alvo.x - self.DISTANCIA_LATERAL_ATAQUE
+            destino_x = alvo.x - self.DISTANCIA_LATERAL_ATAQUE
 
-        return destino_x, self.entidade_alvo.y
+        return destino_x, alvo.y
 
     def _andar(self, dt):
         destino_x, destino_y = self._calcular_destino_ataque()

@@ -104,6 +104,19 @@ class CoordenadorEstadoJogo:
         camera = self.gerenciador_cenarios.camera
         mouse_mundo = camera.mundo(*pos_virtual)
 
+        if not menu.aberto:
+            for construcao in self.gerenciador_cenarios.construcoes:
+                if (
+                    construcao.corpo_rect is not None
+                    and construcao.corpo_rect.collidepoint(mouse_mundo)
+                ):
+                    if self.double_click.detectar(mouse_mundo):
+                        menu.abrir_personagens(construcao)
+                        camera.arrastando = False
+                        camera.ultimo_mouse = None
+                        return
+                    break
+
         if menu.aberto:
             opcao = menu.obter_opcao_clicada(pos_virtual)
 
@@ -245,18 +258,6 @@ class CoordenadorEstadoJogo:
 
             personagem.selecionado = False
             return
-
-        # ==========================================================
-        # Construções já existentes
-        # ==========================================================
-        for construcao in self.gerenciador_cenarios.construcoes:
-            if (
-                construcao.corpo_rect is not None
-                and construcao.corpo_rect.collidepoint(mouse_mundo)
-                and self.double_click.detectar(mouse_mundo)
-            ):
-                menu.abrir_personagens(construcao)
-                return
 
         camera.arrastando = True
         camera.ultimo_mouse = pos_virtual

@@ -18,10 +18,16 @@ class TransformUtils:
         if key in self.cache_escalas:
             return self.cache_escalas[key]
 
-        escalada = kivy_adapter.transform.smoothscale(
-            imagem,
-            (largura, altura),
-        )
+        if getattr(kivy_adapter, "IS_BROWSER", False):
+            escalada = kivy_adapter.transform.scale(
+                imagem,
+                (largura, altura),
+            )
+        else:
+            escalada = kivy_adapter.transform.smoothscale(
+                imagem,
+                (largura, altura),
+            )
 
         self.cache_escalas[key] = escalada
 

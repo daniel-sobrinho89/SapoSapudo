@@ -31,12 +31,26 @@ class MenuContextualRenderer:
 
         self._temporarias = {opcao.nome: opcao for opcao in self._opcoes_construcoes}
 
+        self._renderers_temporarias = {
+            nome: cenario.renderers[nome] for nome in ("castelo", "casa", "quartel")
+        }
+
         for nome in ("avatar_aldeao", "avatar_soldado", "escudo"):
             opcao = cenario.carregar_entidade_temporaria(nome)
             self._temporarias[nome] = opcao
 
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
+
+        for nome in ("castelo", "casa", "quartel"):
+            renderer = self._renderers_temporarias.get(nome)
+            if renderer is None or renderer.carregado:
+                continue
+
+            config = obter_config(nome)
+            renderer.atualizar_carregamento(
+                max(1, min(int(config["renderer"]["frames_carregamento"]), 2))
+            )
 
     def abrir_construcoes(self):
         self.aberto = True

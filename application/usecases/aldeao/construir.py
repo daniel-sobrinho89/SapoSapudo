@@ -29,6 +29,9 @@ class ConstruirUseCase:
 
         nome = construcao.nome.removeprefix("avatar_")
         entidade = cenario.carregar_entidade(nome, *pos)
+        entidade.posicionamento_invalido = not cenario.posicao_construcao_valida(
+            entidade
+        )
 
         cenario.construcao_arrastando = entidade
 
@@ -41,6 +44,7 @@ class ConstruirUseCase:
         if item is None:
             return
         item.x, item.y = pos
+        item.posicionamento_invalido = not cenario.posicao_construcao_valida(item)
 
     def finalizar_arraste(
         self,
@@ -51,8 +55,9 @@ class ConstruirUseCase:
         if item is None:
             return
         item.x, item.y = pos
+        item.posicionamento_invalido = not cenario.posicao_construcao_valida(item)
 
-        if not cenario.tilemap.eh_grama(item.x, item.y, 0):
+        if item.posicionamento_invalido:
             cenario.remover_personagem(item)
             cenario.construcao_arrastando = None
             return

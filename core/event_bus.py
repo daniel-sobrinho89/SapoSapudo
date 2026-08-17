@@ -136,16 +136,10 @@ class DescendoParaDormirEvent(Event):
     pass
 
 
-class PensamentoSapoEvent(Event):
-    def __init__(self, texto: str, duracao: float = 6):
-        super().__init__(texto=texto, duracao=duracao)
-
-
 # Mapa para resolução dinâmica a partir de strings
 _MAPA_EVENTOS = {
     "voo_iniciado": VooIniciadoEvent,
     "descendo_para_dormir": DescendoParaDormirEvent,
-    "pensamento_sapo": PensamentoSapoEvent,
 }
 
 # Instância global do EventBus para uso compartilhado em todo o projeto

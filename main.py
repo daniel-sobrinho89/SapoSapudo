@@ -17,7 +17,6 @@ import utils.kivy_adapter as kivy_adapter
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from core.mouse_events import DoubleClickDetector
 from domains.cenario import EstadoJogo, GerenciadorCenarios
-from render.pensamento_sapo_renderer import PensamentoSapoRenderer
 from render.transform_utils import TransformUtils
 from utils.config import ALTURA, FPS, IS_ANDROID, LARGURA
 from utils.input import init_scaling, real_to_virtual
@@ -83,7 +82,6 @@ class GameWidget(Widget):
 
     def _inicializar_sistemas_base(self):
         self.transform = TransformUtils()
-        self.pensamento_renderer = PensamentoSapoRenderer()
 
     def _inicializar_interacao(self):
         self.gerenciador_cenarios = GerenciadorCenarios(tela, self.transform)
@@ -180,7 +178,6 @@ class GameWidget(Widget):
         self.gerenciador_cenarios.atualizar(dt)
 
         self.gerenciador_cenarios.renderizar(dt)
-        self.pensamento_renderer.renderizar(tela, dt)
 
         # escalonar e apresentar
         img = tela._img

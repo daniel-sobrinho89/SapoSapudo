@@ -5,15 +5,15 @@ from utils.input import obter_posicao_ponteiro
 
 
 class DoubleClickDetector:
-    LIMITE_TEMPO = 0.30
-    LIMITE_DISTANCIA = 20
+    LIMITE_TEMPO = 0.45
+    LIMITE_DISTANCIA = 24
 
     def __init__(self):
-        self.ultimo_tempo = 0
+        self.ultimo_tempo = 0.0
         self.ultima_posicao = None
 
     def detectar(self, posicao):
-        agora = time.time()
+        agora = time.monotonic()
 
         if self.ultima_posicao is not None:
             distancia = hypot(
@@ -25,13 +25,12 @@ class DoubleClickDetector:
                 agora - self.ultimo_tempo <= self.LIMITE_TEMPO
                 and distancia <= self.LIMITE_DISTANCIA
             ):
-                self.ultimo_tempo = 0
+                self.ultimo_tempo = 0.0
                 self.ultima_posicao = None
                 return True
 
         self.ultimo_tempo = agora
-        self.ultima_posicao = posicao
-
+        self.ultima_posicao = (float(posicao[0]), float(posicao[1]))
         return False
 
 
@@ -40,5 +39,4 @@ class Hover:
     def esta_sobre(rect):
         if rect is None:
             return False
-
         return rect.collidepoint(obter_posicao_ponteiro())
