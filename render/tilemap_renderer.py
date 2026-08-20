@@ -87,7 +87,7 @@ class TileMapRenderer:
         self.TILES_BLOQUEADOS_COLISAO = frozenset(range(21, 29))
         self.TILES_BORDA_ESQUERDA_COLISAO = frozenset((4, 32, 29, 0, 8, 11, 14, 39))
         self.TILES_BORDA_DIREITA_COLISAO = frozenset((2, 6, 10, 13, 16, 31, 33, 40))
-        self.MARGEM_BORDA_COLISAO = 20
+        self.MARGEM_BORDA_COLISAO = 8
         self.regras_colisao_visuais = {}
 
         self.largura = 0
@@ -97,6 +97,15 @@ class TileMapRenderer:
 
         self.frame_agua = 1
         self.tempo_agua = 0.0
+
+        # O terreno é quase totalmente estático. No navegador, redesenhá-lo
+        # inteiro em cada frame desperdiça uma grande parcela do orçamento de
+        # CPU/GPU. Mantemos uma versão pré-composta e só desenhamos as camadas
+        # realmente dinâmicas por frame.
+        self._cache_terreno_base = None
+        self._cache_terreno_zoom = {}
+        self._cache_terreno_pad_x = 256
+        self._cache_terreno_pad_y = 256
         self.offset_agua_parada_x = -1
         self.offset_agua_parada_y = 85
 
@@ -534,6 +543,7 @@ class TileMapRenderer:
             }
 
         self._atualizar_cache_tiles()
+        self._construir_cache_terreno()
         self.carregado = True
 
     def _atualizar_cache_tiles(self):
@@ -627,9 +637,8 @@ class TileMapRenderer:
                 origem == coord_degrau and destino == lado_alto
             ):
                 return degrau["altura_alta"]
-        elif (
-            altura == degrau["altura_alta"]
-            and (origem == lado_alto and destino == coord_degrau)
+        elif altura == degrau["altura_alta"] and (
+            (origem == lado_alto and destino == coord_degrau)
             or (origem == coord_degrau and destino == lado_baixo)
         ):
             return degrau["altura_baixa"]
@@ -689,14 +698,90 @@ class TileMapRenderer:
 
         self._atualizar_animacao_agua(dt)
         self._renderizar_fundo(camera)
-
         self._renderizar_camada_espuma(camera)
-        self._renderizar_relevos_agua(camera)
-        self._renderizar_camada_grama(camera)
-        self._renderizar_sombras_relevos(camera)
-        self._renderizar_grama_relevos_agua(camera)
-        self._renderizar_camada_degraus(camera)
-        self._renderizar_penhascos(camera)
+        self._renderizar_cache_terreno(camera)
+
+    def _construir_cache_terreno(self):
+        if self._cache_terreno_base is not None:
+            return
+
+        largura = self.largura * TILE_SIZE + self._cache_terreno_pad_x * 2
+        altura = self.altura * TILE_SIZE + self._cache_terreno_pad_y * 2
+        cache = self.tela.__class__((largura, altura))
+        # O adaptador pygame/web usa uma Surface RGBA própria. Para evitar
+        # depender de constantes expostas pela classe, limpamos explicitamente.
+        cache.fill((0, 0, 0, 0))
+
+        tela_anterior = self.tela
+        self.tela = cache
+
+        class _CameraCache:
+            def __init__(self, x, y, largura, altura):
+                self.x = x
+                self.y = y
+                self.largura = largura
+                self.altura = altura
+                self.zoom = 1.0
+
+        camera_cache = _CameraCache(
+            -self._cache_terreno_pad_x,
+            -self._cache_terreno_pad_y,
+            largura,
+            altura,
+        )
+
+        try:
+            self._renderizar_relevos_agua(camera_cache)
+            self._renderizar_camada_grama(camera_cache)
+            self._renderizar_sombras_relevos(camera_cache)
+            self._renderizar_grama_relevos_agua(camera_cache)
+            self._renderizar_camada_degraus(camera_cache)
+            self._renderizar_penhascos(camera_cache)
+        finally:
+            self.tela = tela_anterior
+
+        self._cache_terreno_base = cache
+        self._cache_terreno_zoom.clear()
+
+    def _obter_cache_terreno_zoom(self, zoom):
+        chave = round(float(zoom), 4)
+        cache = self._cache_terreno_zoom.get(chave)
+        if cache is not None:
+            return cache
+
+        base = self._cache_terreno_base
+        if base is None:
+            return None
+
+        if chave == 1.0:
+            cache = base
+        else:
+            cache = self.transform.escalar(
+                base,
+                (
+                    max(1, int(round(base.get_width() * chave))),
+                    max(1, int(round(base.get_height() * chave))),
+                ),
+            )
+
+        self._cache_terreno_zoom[chave] = cache
+        return cache
+
+    def _renderizar_cache_terreno(self, camera):
+        cache = self._obter_cache_terreno_zoom(camera.zoom)
+        if cache is None:
+            return
+
+        escala = camera.zoom
+
+        # O cache foi construído com origem no mundo em
+        # (-_cache_terreno_pad_x, -_cache_terreno_pad_y).
+        # Portanto, esse ponto precisa ser projetado para a tela como
+        # (-pad - camera.x, -pad - camera.y). A versão anterior usava
+        # +pad e deslocava todo o terreno estático em 2*pad pixels.
+        x = int((-self._cache_terreno_pad_x - camera.x) * escala)
+        y = int((-self._cache_terreno_pad_y - camera.y) * escala)
+        self.tela.blit(cache, (x, y))
 
     def _atualizar_animacao_agua(self, dt):
         self.tempo_agua += dt
@@ -1020,4 +1105,10 @@ class TileMapRenderer:
 
         for y in range(inicio_y, fim_y):
             for x in range(inicio_x, fim_x):
-                self.tela.blit(sprite, (x * sw - camera.x, y * sh - camera.y))
+                self.tela.blit(
+                    sprite,
+                    (
+                        int(x * sw - camera.x * camera.zoom),
+                        int(y * sh - camera.y * camera.zoom),
+                    ),
+                )

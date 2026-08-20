@@ -51,11 +51,7 @@ class MenuRenderer:
             colunas=3,
         )
 
-        #
-        # PASSO = TAMANHO ORIGINAL DA CÉLULA DO SPRITESHEET
-        #
         bbox = self.frames[self.C].get_bounding_rect()
-
         self.passo_x = bbox.w
         self.passo_y = bbox.h
 

@@ -18,8 +18,16 @@ class TrocarComportamentoUseCase:
         for acao in controlador["acoes"].values():
             acao["usecase"].cancelar()
 
-        # O movimento é quem decide se o trajeto exige desvio.
-        # Não desperdiçamos um BFS aqui e outro imediatamente depois no mover.
+        atacar = controlador["acoes"].get("atacar")
+        if atacar is not None:
+            bloquear = getattr(
+                atacar["usecase"],
+                "bloquear_busca_automatica_ate_destino",
+                None,
+            )
+            if bloquear is not None:
+                bloquear()
+
         if not navegacao.pode_andar(destino_x, destino_y, personagem.altura):
             rota = navegacao.calcular_rota(
                 personagem.x,

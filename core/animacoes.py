@@ -1,4 +1,5 @@
 import json
+import sys
 
 from core.animacao_movimento import AnimacaoMovimento
 from domains.arvore.maquina_estado import MaquinaEstadoArvore
@@ -34,11 +35,12 @@ class Animacoes:
         self._estado_anterior = None
 
         self.maquina = MAQUINAS[config["maquina"]]()
+        multiplicador_web = 0.65 if sys.platform == "emscripten" else 1.0
 
         self.animacoes = {
             nome: AnimacaoMovimento(
                 dados["frames"],
-                dados["tempo"],
+                dados["tempo"] * multiplicador_web,
             )
             for nome, dados in config["animacoes"].items()
         }

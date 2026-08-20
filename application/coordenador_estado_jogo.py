@@ -15,6 +15,8 @@ class CoordenadorEstadoJogo:
         self.gerenciador_cenarios = gerenciador_cenarios
         self.double_click = DoubleClickDetector()
         self.controladores = {}
+        self._tempo_proxima_busca_alvo = {}
+        self._intervalo_busca_alvo = 0.12
 
         self.construir = ConstruirUseCase()
         self.trocar_comportamento = TrocarComportamentoUseCase()
@@ -46,6 +48,10 @@ class CoordenadorEstadoJogo:
             self.gerenciador_cenarios.construcoes
             + self.gerenciador_cenarios.construcoes_hostis
         ):
+            # Preview de construção não participa da IA até ser colocado.
+            if entidade is self.gerenciador_cenarios.construcao_arrastando:
+                continue
+
             ctrl = self.gerenciador_cenarios.controladores[entidade]
 
             if entidade.vida <= 0:
@@ -59,11 +65,17 @@ class CoordenadorEstadoJogo:
     def _executar_fluxo_personagem(self, personagem, dt):
         ctrl = self.gerenciador_cenarios.controladores[personagem]
 
-        if personagem.vida < personagem.VIDA_MINIMA:
-            for acao in ctrl["acoes"].values():
-                acao["usecase"].entidade_alvo = None
+        proxima_busca = self._tempo_proxima_busca_alvo.get(personagem, 0.0)
+        proxima_busca -= dt
+        self._tempo_proxima_busca_alvo[personagem] = proxima_busca
 
-            if personagem.vida <= 0 and ctrl["morte"].entidade_alvo is None:
+        if personagem.vida <= 0:
+            # Não apagar os alvos das ações antes da máquina de morte executar.
+            # O fluxo de morte precisa saber, por exemplo, se este personagem
+            # era a ovelha que um aldeão estava caçando para poder redirecioná-lo
+            # para a carne recém-dropada. O próprio use case de morte cancela as
+            # ações no momento correto, depois de capturar essa informação.
+            if ctrl["morte"].entidade_alvo is None:
                 ctrl["morte"].iniciar(personagem)
                 return
             elif personagem.vida <= 0:
@@ -78,9 +90,6 @@ class CoordenadorEstadoJogo:
         for acao in ctrl["acoes"].values():
             usecase = acao["usecase"]
 
-            # Enquanto estiver defendendo, o soldado permanece parado e não
-            # procura inimigos por conta própria. Se já recebeu um ataque,
-            # porém, o fluxo normal de combate continua e ele pode reagir.
             if usecase.entidade_alvo:
                 usecase.executar(dt)
                 return
@@ -89,10 +98,31 @@ class CoordenadorEstadoJogo:
                 continue
 
             adquirir_alvo = getattr(usecase, "tentar_adquirir_inimigo_proximo", None)
+            adquirir_recurso = getattr(usecase, "tentar_adquirir_recurso", None)
+            pode_buscar = getattr(
+                usecase,
+                "pode_adquirir_alvo_automaticamente",
+                None,
+            )
 
-            if adquirir_alvo is not None and adquirir_alvo(personagem):
-                usecase.executar(dt)
-                return
+            if (
+                adquirir_alvo is not None
+                and (pode_buscar is None or pode_buscar())
+                and self._tempo_proxima_busca_alvo[personagem] <= 0.0
+            ):
+                self._tempo_proxima_busca_alvo[personagem] = self._intervalo_busca_alvo
+                if adquirir_alvo(personagem):
+                    usecase.executar(dt)
+                    return
+
+            if (
+                adquirir_recurso is not None
+                and self._tempo_proxima_busca_alvo[personagem] <= 0.0
+            ):
+                self._tempo_proxima_busca_alvo[personagem] = self._intervalo_busca_alvo
+                if adquirir_recurso(personagem):
+                    usecase.executar(dt)
+                    return
 
         if defendendo:
             return
@@ -103,6 +133,17 @@ class CoordenadorEstadoJogo:
         menu = self.gerenciador_cenarios.menu_contextual
         camera = self.gerenciador_cenarios.camera
         mouse_mundo = camera.mundo(*pos_virtual)
+
+        audio_rect = getattr(self.gerenciador_cenarios, "audio_hud_rect", None)
+        pos_tela = (
+            pos_virtual[0],
+            self.gerenciador_cenarios.tela.get_height() - pos_virtual[1],
+        )
+        if audio_rect is not None and audio_rect.collidepoint(pos_tela):
+            self.gerenciador_cenarios.audio_manager.alternar_musica_vila_duendes()
+            camera.arrastando = False
+            camera.ultimo_mouse = None
+            return
 
         if not menu.aberto:
             for construcao in self.gerenciador_cenarios.construcoes:
@@ -214,6 +255,33 @@ class CoordenadorEstadoJogo:
             None,
         )
 
+        if personagem and not personagem.animacoes.maquina.carregando_recuso():
+            personagem_hostil = (
+                personagem in self.gerenciador_cenarios.personagens_hostis
+            )
+
+            if personagem_hostil:
+                construcoes_alvo = self.gerenciador_cenarios.construcoes
+            else:
+                construcoes_alvo = self.gerenciador_cenarios.construcoes_hostis
+
+            for construcao in construcoes_alvo:
+                rect = self.gerenciador_cenarios.obter_rect_colisao(construcao)
+                if rect is None or not rect.collidepoint(mouse_mundo):
+                    continue
+
+                ctrl = self.gerenciador_cenarios.controladores.get(personagem)
+                if ctrl is None:
+                    continue
+
+                atacar = ctrl["acoes"].get("atacar")
+                if atacar is None:
+                    continue
+
+                atacar["usecase"].iniciar(construcao, personagem, manual=True)
+                personagem.selecionado = False
+                return
+
         # ==========================================================
         # Recursos
         # ==========================================================
@@ -221,7 +289,12 @@ class CoordenadorEstadoJogo:
             ctrl = self.gerenciador_cenarios.controladores[personagem]
 
             for outra_acao in ctrl["acoes"].values():
-                outra_acao["usecase"].entidade_alvo = None
+                usecase = outra_acao["usecase"]
+                cancelar = getattr(usecase, "cancelar", None)
+                if cancelar is not None:
+                    cancelar()
+                else:
+                    usecase.entidade_alvo = None
 
             for acao in ctrl["acoes"].values():
                 itens = acao["itens"]
@@ -236,13 +309,17 @@ class CoordenadorEstadoJogo:
                         if item.corpo_rect is not None and item.corpo_rect.collidepoint(
                             mouse_mundo
                         ):
-                            acao["usecase"].iniciar(
+                            iniciar = acao["usecase"].iniciar
+                            manual = getattr(item, "nome", None) == "carne"
+                            iniciou = iniciar(
                                 item,
                                 personagem,
+                                manual=manual,
                             )
 
-                            personagem.selecionado = False
-                            return
+                            if iniciou is not False:
+                                personagem.selecionado = False
+                                return
 
         # ==========================================================
         # Clique no chão

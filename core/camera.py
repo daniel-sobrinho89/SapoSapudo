@@ -27,8 +27,8 @@ class Camera:
 
     def tela(self, x, y):
         return (
-            (x - self.x) * self.zoom,
-            (y - self.y) * self.zoom,
+            int(round((x - self.x) * self.zoom)),
+            int(round((y - self.y) * self.zoom)),
         )
 
     def visivel(

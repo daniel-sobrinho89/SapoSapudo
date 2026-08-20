@@ -89,8 +89,9 @@ class DestruirConstrucaoUseCase:
             return []
 
         for _ in range(drop.get("quantidade", 1)):
-            self.cenario_principal.carregar_entidade(
+            recurso = self.cenario_principal.carregar_entidade(
                 drop["tipo"],
                 self.entidade_alvo.x,
                 self.entidade_alvo.y,
             )
+            recurso.grupo_drop = self.entidade_alvo

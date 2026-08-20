@@ -14,6 +14,10 @@ class ConstruirUseCase:
         x, y = cenario.obter_posicao_proxima_construcao(construcao)
         entidade = cenario.carregar_entidade(nome, x, y)
 
+        atualizar = getattr(cenario, "_atualizar_carregamento_assets", None)
+        if atualizar is not None:
+            atualizar()
+
         self._consumir_recursos_entidade(cenario, entidade)
         cenario.menu_contextual.fechar()
         return entidade

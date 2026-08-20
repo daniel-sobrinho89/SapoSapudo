@@ -19,3 +19,5 @@ ignore = [
 "core/event_bus.py" = ["UP006", "UP035"]
 "domains/conversas/personalidade_sapudo.py" = ["E501"]
 "application/fabrica_controladores.py" = ["E501"]
+"scripts/patch_pygbag_template.py" = ["E501"]
+"main_web.py" = ["E402"]

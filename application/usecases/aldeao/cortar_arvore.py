@@ -19,7 +19,7 @@ class CortarArvoreUseCase:
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, arvore, personagem):
+    def iniciar(self, arvore, personagem, manual=False):
         self.entidade_alvo = arvore
         self.personagem = personagem
 

@@ -4,6 +4,7 @@ from application.usecases.duende.controlar_comportamento_duende import (
     ControlarComportamentoDuendeUseCase,
 )
 from application.usecases.personagem.mover import MoverPersonagemUseCase
+from core.audio_manager import AudioManager
 from core.camera import Camera
 from core.game_config import obter_config, obter_tipos
 from core.navegacao_mapa import NavegacaoMapa
@@ -86,8 +87,20 @@ class CenarioPrincipal(CenarioBase):
         self.renderers = {}
         self._frames_obstaculos = 0
         self._contagem_construcoes_cache = (-1, -1)
+        self._renderers_auxiliares = {}
+
+        self._tipos_render = tuple(
+            tipo
+            for tipo in obter_tipos()
+            if obter_config(tipo).get("renderer", {}).get("colecao")
+            and obter_config(tipo).get("grupo") != "efeitos"
+        )
 
         self.construcao_arrastando = None
+        self.primeiro_frame_renderizado = False
+        self.audio_manager = AudioManager()
+        self.audio_hud_rect = None
+        self.audio_hud_imagem = None
 
     @property
     def total_madeira(self):
@@ -135,8 +148,16 @@ class CenarioPrincipal(CenarioBase):
 
     def obter_obstaculos_construcoes(self):
         obstaculos = []
+        arrastando = self.construcao_arrastando
+
         for construcao in self.construcoes + self.construcoes_hostis:
+            # A construção arrastada é apenas um preview e ainda não bloqueia
+            # a navegação do cenário.
+            if construcao is arrastando:
+                continue
+
             obstaculos.append(self.obter_rect_colisao(construcao))
+
         return obstaculos
 
     def posicao_construcao_valida(self, construcao):
@@ -277,6 +298,16 @@ class CenarioPrincipal(CenarioBase):
         recurso.reservado_por = coletor
         return True
 
+    def liberar_reserva_recurso(self, recurso, coletor):
+        if recurso is None:
+            return False
+
+        if getattr(recurso, "reservado_por", None) is not coletor:
+            return False
+
+        recurso.reservado_por = None
+        return True
+
     def coletar_recurso(self, recurso, coletor):
         if recurso.reservado_por is not coletor or recurso not in self.recursos:
             return False
@@ -307,12 +338,19 @@ class CenarioPrincipal(CenarioBase):
                     if getattr(usecase, "personagem", None) is ignorar:
                         continue
 
-                    usecase.entidade_alvo = None
-
-                    if usecase.flip:
-                        usecase.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                    cancelar = getattr(usecase, "cancelar", None)
+                    if cancelar is not None:
+                        cancelar()
                     else:
-                        usecase.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+                        usecase.entidade_alvo = None
+
+                    if getattr(usecase, "personagem", None) is not None:
+                        if usecase.flip:
+                            usecase.personagem.animacoes.estado = (
+                                EstadoAldeao.OCIOSO_FLIP
+                            )
+                        else:
+                            usecase.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
     def parar_acao_global(self, entidade, ignorar=None):
         self.controladores.pop(entidade, None)
@@ -333,14 +371,48 @@ class CenarioPrincipal(CenarioBase):
                         usecase.personagem.animacoes.estado = EstadoAldeao.OCIOSO
 
     def carregar(self):
-        self.entidades = []
+        self.iniciar_carregamento()
+        while self._tipos_carregamento_restantes:
+            self.processar_carregamento(max_tipos=1)
 
-        for tipo in obter_tipos():
+        while not self.carregado:
+            self._atualizar_carregamento_assets()
+
+    def iniciar_carregamento(self):
+        if getattr(self, "_carregamento_iniciado", False):
+            return
+
+        self.entidades = []
+        self.renderers = {}
+        self._tipos_carregamento_restantes = list(obter_tipos())
+        self._carregamento_iniciado = True
+        self._menu_criado = False
+        self._renderers_auxiliares = {}
+        self.carregado = False
+
+    def processar_carregamento(self, max_tipos=1):
+        if not getattr(self, "_carregamento_iniciado", False):
+            self.iniciar_carregamento()
+
+        for _ in range(max(1, int(max_tipos))):
+            if not self._tipos_carregamento_restantes:
+                break
+
+            tipo = self._tipos_carregamento_restantes.pop(0)
             self.carregar_entidade(tipo)
 
-        self.menu_contextual = MenuContextualRenderer(
-            self.tela, asset_manager, self.transform, self
-        )
+        if not self._menu_criado and not self._tipos_carregamento_restantes:
+            self.menu_contextual = MenuContextualRenderer(
+                self.tela, asset_manager, self.transform, self
+            )
+            self._renderers_auxiliares = {}
+            for nome in ("barra_vida_base", "barra_vida"):
+                self.carregar_entidade_temporaria(nome)
+                self._renderers_auxiliares[nome] = self.renderers[nome]
+            self._menu_criado = True
+
+        if not self._tipos_carregamento_restantes:
+            self._atualizar_carregamento_assets()
 
     def carregar_entidade(self, tipo, x=None, y=None):
         config = obter_config(tipo)
@@ -360,7 +432,9 @@ class CenarioPrincipal(CenarioBase):
             spawns = ambiente.get("spawn", []) if ambiente else []
             if not spawns:
                 entidade = criador(tipo)
-                self._obter_renderer(tipo, config)
+                renderer = self._obter_renderer(tipo, config)
+                if config.get("grupo") == "efeitos":
+                    self._renderers_auxiliares[tipo] = renderer
                 return entidade
         else:
             spawns = [{"x": x, "y": y, "altura": 0}]
@@ -397,6 +471,13 @@ class CenarioPrincipal(CenarioBase):
         if x is None:
             return entidades
         else:
+            if entidades:
+                renderer = self.renderers.get(tipo)
+                if renderer is not None and not renderer.carregado:
+                    # Spawn interativo: o personagem/recurso precisa estar
+                    # completamente disponível já no próximo frame.
+                    quantidade = max(1, len(getattr(renderer, "_fila", ())))
+                    renderer.atualizar_carregamento(quantidade)
             return entidades[0]
 
     def carregar_entidade_temporaria(self, tipo):
@@ -429,6 +510,12 @@ class CenarioPrincipal(CenarioBase):
                 )
 
         self.renderers[tipo] = renderer
+
+        if config.get("grupo") == "efeitos" and getattr(
+            kivy_adapter, "IS_BROWSER", False
+        ):
+            self._renderers_auxiliares[tipo] = renderer
+
         return renderer
 
     def registrar_entidade(
@@ -467,7 +554,7 @@ class CenarioPrincipal(CenarioBase):
         self._frames_obstaculos += 1
         contagem = (len(self.construcoes), len(self.construcoes_hostis))
         if contagem != self._contagem_construcoes_cache or self._frames_obstaculos >= (
-            3 if getattr(kivy_adapter, "IS_BROWSER", False) else 1
+            6 if getattr(kivy_adapter, "IS_BROWSER", False) else 1
         ):
             self.navegacao.atualizar_obstaculos()
             self._contagem_construcoes_cache = contagem
@@ -499,7 +586,7 @@ class CenarioPrincipal(CenarioBase):
 
         itens_render = []
 
-        for tipo in obter_tipos():
+        for tipo in self._tipos_render:
             config = obter_config(tipo)
 
             renderer_cfg = config.get("renderer", {})
@@ -509,8 +596,11 @@ class CenarioPrincipal(CenarioBase):
                 continue
 
             renderer = self.renderers[tipo]
+            entidades_tipo = getattr(self, colecao)
+            if not entidades_tipo:
+                continue
 
-            for entidade in getattr(self, colecao):
+            for entidade in entidades_tipo:
                 if entidade.nome != tipo:
                     continue
 
@@ -525,6 +615,8 @@ class CenarioPrincipal(CenarioBase):
 
         itens_render.sort(key=lambda item: item["y"])
 
+        personagens_renderizados_neste_frame = 0
+
         for item in itens_render:
             item["renderer"].renderizar(
                 item["entidade"],
@@ -534,6 +626,17 @@ class CenarioPrincipal(CenarioBase):
             )
 
             entidade = item["entidade"]
+
+            grupo_entidade = obter_config(entidade.nome).get("grupo")
+            eh_personagem = grupo_entidade in ("personagens", "hostis")
+
+            if (
+                eh_personagem
+                and getattr(entidade, "render_rect", None) is not None
+                and getattr(item["renderer"], "carregado", False)
+            ):
+                personagens_renderizados_neste_frame += 1
+
             if getattr(entidade, "tempo_barra_vida", 0.0) > 0:
                 self.renderers["barra_vida_base"].renderizar_barra_vida(
                     entidade,
@@ -541,6 +644,9 @@ class CenarioPrincipal(CenarioBase):
                     entidade.vida / entidade.VIDA_MAXIMA,
                     self.renderers["barra_vida"],
                 )
+
+        if personagens_renderizados_neste_frame > 0:
+            self.primeiro_frame_renderizado = True
 
         for efeito in self.efeitos:
             renderer = self.renderers[efeito.nome]
@@ -553,6 +659,8 @@ class CenarioPrincipal(CenarioBase):
 
         if self.menu_contextual.aberto:
             self.menu_contextual.renderizar(self, self.camera)
+
+        self._renderizar_audio_hud()
 
         if self.construcao_arrastando:
             renderer = self.renderers[self.construcao_arrastando.nome]
@@ -572,12 +680,67 @@ class CenarioPrincipal(CenarioBase):
                 else None,
             )
 
+    def _renderizar_audio_hud(self):
+        if self.audio_hud_imagem is None:
+            try:
+                self.audio_hud_imagem = asset_manager.carregar("ui/audio.png")
+            except Exception:
+                self.audio_hud_imagem = False
+                self.audio_hud_rect = None
+                return
+
+        if not self.audio_hud_imagem:
+            return
+
+        imagem = self.audio_hud_imagem
+        tamanho = 48
+        escala = min(
+            tamanho / max(1, imagem.get_width()), tamanho / max(1, imagem.get_height())
+        )
+        if escala != 1.0:
+            imagem = self.transform.escalar(
+                imagem,
+                (
+                    max(1, int(imagem.get_width() * escala)),
+                    max(1, int(imagem.get_height() * escala)),
+                ),
+            )
+
+        margem = 14
+        self.audio_hud_rect = imagem.get_rect(
+            top=margem,
+            right=self.tela.get_width() - margem,
+        )
+        self.tela.blit(imagem, self.audio_hud_rect)
+
+        if (
+            self.audio_manager.habilitado
+            and self.audio_manager.musica_atual == "assets/musica/vila_duendes.ogg"
+            and kivy_adapter.mixer.music.get_busy()
+        ):
+            kivy_adapter.draw.rect(
+                self.tela,
+                (90, 220, 110),
+                (
+                    self.audio_hud_rect.left - 4,
+                    self.audio_hud_rect.bottom + 4,
+                    self.audio_hud_rect.width + 8,
+                    3,
+                ),
+            )
+
     def progresso_carregamento(self):
         total = 0
         carregado = 0
+        renderers = {}
 
         for item in self.entidades:
-            renderer = item["renderer"]
+            renderers[id(item["renderer"])] = item["renderer"]
+
+        for renderer in self._renderers_auxiliares.values():
+            renderers[id(renderer)] = renderer
+
+        for renderer in renderers.values():
             fila = getattr(renderer, "_fila", ())
             total += len(fila)
             carregado += min(getattr(renderer, "_indice", 0), len(fila))
@@ -587,29 +750,49 @@ class CenarioPrincipal(CenarioBase):
         return max(0.0, min(1.0, carregado / total))
 
     def _atualizar_carregamento_assets(self):
-        if self.carregado:
-            return
-
         renderers = {}
         for item in self.entidades:
             renderer = item["renderer"]
             renderers[id(renderer)] = (renderer, item["frames_carregamento"])
 
         for renderer, quantidade in renderers.values():
-            renderer.atualizar_carregamento(max(1, min(int(quantidade), 2)))
+            if not renderer.carregado:
+                renderer.atualizar_carregamento(max(1, min(int(quantidade), 2)))
 
-        self.menu_contextual.atualizar_carregamento()
+        if self.menu_contextual is not None:
+            self.menu_contextual.atualizar_carregamento()
+
+        for renderer in self._renderers_auxiliares.values():
+            if not renderer.carregado:
+                renderer.atualizar_carregamento(2)
 
         renderers_principais_prontos = bool(self.entidades) and all(
             renderer.carregado for renderer, _ in renderers.values()
         )
 
+        tipos_menu = (
+            "castelo",
+            "casa",
+            "quartel",
+            "avatar_aldeao",
+            "avatar_soldado",
+            "escudo",
+        )
         menu_pronto = self.menu_contextual is not None and all(
-            self.menu_contextual._renderers_temporarias[nome].carregado
-            for nome in ("castelo", "casa", "quartel")
+            nome in self.renderers and self.renderers[nome].carregado
+            for nome in tipos_menu
         )
 
-        self.carregado = renderers_principais_prontos and menu_pronto
+        auxiliares_prontos = all(
+            renderer.carregado for renderer in self._renderers_auxiliares.values()
+        )
+
+        # Depois que a cena inicial ficou pronta, novos spawns não podem
+        # colocar o jogo inteiro novamente no estado de carregamento.
+        if not self.carregado:
+            self.carregado = (
+                renderers_principais_prontos and menu_pronto and auxiliares_prontos
+            )
 
 
 class GerenciadorCenarios:

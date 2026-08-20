@@ -9,7 +9,7 @@ DIRECOES_8 = DIRECOES_4 + ((1, 1), (-1, -1), (1, -1), (-1, 1))
 
 
 class NavegacaoMapa:
-    RAIO_COLISAO_CONSTRUCAO = 20
+    RAIO_COLISAO_CONSTRUCAO = 8
 
     def __init__(self, tilemap, obter_obstaculos=None):
         self.tilemap = tilemap
@@ -20,7 +20,9 @@ class NavegacaoMapa:
         self._assinatura_obstaculos = None
         self._versao_obstaculos = 0
         self._cache_rotas = {}
+        self._cache_desvios = {}
         self._cache_rotas_limite = 256
+        self._cache_desvios_limite = 128
 
         self.pontos_grama = [
             (
@@ -55,9 +57,11 @@ class NavegacaoMapa:
             self._obstaculos_cache = obstaculos
             self._versao_obstaculos += 1
             self._cache_rotas.clear()
+            self._cache_desvios.clear()
 
     def invalidar_cache_rotas(self):
         self._cache_rotas.clear()
+        self._cache_desvios.clear()
         self._assinatura_obstaculos = None
 
     def pode_andar(self, x, y, altura):
@@ -156,6 +160,248 @@ class NavegacaoMapa:
             return self._limitar_distancia(x0, y0, ponto[0], ponto[1], distancia_maxima)
         return None
 
+    def encontrar_ponto_acessivel_proximo(
+        self,
+        origem_x,
+        origem_y,
+        alvo_x,
+        alvo_y,
+        altura,
+        distancia=45.0,
+        candidatos_extra=(),
+        distancia_maxima_alvo=None,
+        exigir_linha_livre_ate_alvo=False,
+    ):
+        """
+        Encontra um ponto caminhável próximo de um alvo que também seja
+        alcançável a partir da posição atual.
+
+        Evita que o destino de ataque/coleta caia dentro de uma construção
+        quando o alvo estiver encostado nela.
+        """
+        diagonais = distancia / (2**0.5)
+        candidatos = [
+            (alvo_x - distancia, alvo_y),
+            (alvo_x + distancia, alvo_y),
+            (alvo_x, alvo_y - distancia),
+            (alvo_x, alvo_y + distancia),
+            (alvo_x - diagonais, alvo_y - diagonais),
+            (alvo_x + diagonais, alvo_y - diagonais),
+            (alvo_x - diagonais, alvo_y + diagonais),
+            (alvo_x + diagonais, alvo_y + diagonais),
+        ]
+
+        # Quando um item dropa encostado em uma construção, os oito pontos
+        # radiais acima podem cair todos dentro da área bloqueada. Nesse caso
+        # usamos a própria borda dos obstáculos como área de interação, tal
+        # como já fazemos para atacar construções.
+        for obstaculo in self._obstaculos_cache:
+            distancia_rect_x = max(obstaculo.left - alvo_x, 0, alvo_x - obstaculo.right)
+            distancia_rect_y = max(obstaculo.top - alvo_y, 0, alvo_y - obstaculo.bottom)
+            if hypot(distancia_rect_x, distancia_rect_y) > distancia + TILE_SIZE:
+                continue
+
+            margem = max(8.0, distancia * 0.35)
+            candidatos.extend(
+                [
+                    (
+                        obstaculo.left - margem,
+                        min(max(alvo_y, obstaculo.top), obstaculo.bottom),
+                    ),
+                    (
+                        obstaculo.right + margem,
+                        min(max(alvo_y, obstaculo.top), obstaculo.bottom),
+                    ),
+                    (
+                        min(max(alvo_x, obstaculo.left), obstaculo.right),
+                        obstaculo.top - margem,
+                    ),
+                    (
+                        min(max(alvo_x, obstaculo.left), obstaculo.right),
+                        obstaculo.bottom + margem,
+                    ),
+                    (obstaculo.left - margem, obstaculo.top - margem),
+                    (obstaculo.right + margem, obstaculo.top - margem),
+                    (obstaculo.left - margem, obstaculo.bottom + margem),
+                    (obstaculo.right + margem, obstaculo.bottom + margem),
+                ]
+            )
+
+        candidatos.extend(candidatos_extra)
+
+        validos = []
+        vistos = set()
+
+        for x, y in candidatos:
+            chave = (round(x), round(y))
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+
+            if (
+                distancia_maxima_alvo is not None
+                and hypot(x - alvo_x, y - alvo_y) > distancia_maxima_alvo
+            ):
+                continue
+
+            if exigir_linha_livre_ate_alvo and self.linha_bloqueada_por_obstaculos(
+                x, y, alvo_x, alvo_y
+            ):
+                continue
+
+            col_dest, lin_dest = self.tilemap.pixel_para_tile(x, y)
+            alturas_validas = {self.tilemap.obter_altura(col_dest, lin_dest)}
+            degrau_dest = self.tilemap.obter_degrau(col_dest, lin_dest)
+            if degrau_dest:
+                alturas_validas.update(
+                    (degrau_dest["altura_baixa"], degrau_dest["altura_alta"])
+                )
+
+            if not any(
+                self.tilemap.pode_andar(col_dest, lin_dest, alt)
+                for alt in alturas_validas
+            ):
+                continue
+
+            distancia_origem = hypot(x - origem_x, y - origem_y)
+
+            if distancia_origem < 3:
+                validos.append((0.0, x, y))
+                continue
+
+            rota = self.calcular_rota(
+                origem_x,
+                origem_y,
+                x,
+                y,
+                altura,
+            )
+
+            if not rota:
+                if self._caminho_livre(
+                    origem_x,
+                    origem_y,
+                    x,
+                    y,
+                    altura,
+                ):
+                    validos.append((distancia_origem, x, y))
+                continue
+
+            comprimento_rota = 0.0
+            px, py = origem_x, origem_y
+            for rx, ry in rota:
+                comprimento_rota += hypot(rx - px, ry - py)
+                px, py = rx, ry
+
+            validos.append((comprimento_rota + distancia_origem * 0.05, x, y))
+
+        if not validos:
+            return None
+
+        _, x, y = min(validos, key=lambda item: item[0])
+        return x, y
+
+    @staticmethod
+    def distancia_para_rect(x, y, rect):
+        dx = max(rect.left - x, 0, x - rect.right)
+        dy = max(rect.top - y, 0, y - rect.bottom)
+        return hypot(dx, dy)
+
+    def encontrar_ponto_acessivel_ao_redor_rect(
+        self,
+        origem_x,
+        origem_y,
+        rect,
+        altura,
+        margem=45.0,
+    ):
+        ponto_borda_x = min(max(origem_x, rect.left), rect.right)
+        ponto_borda_y = min(max(origem_y, rect.top), rect.bottom)
+
+        dx = origem_x - ponto_borda_x
+        dy = origem_y - ponto_borda_y
+        comprimento = hypot(dx, dy)
+
+        if comprimento > 0:
+            nx = dx / comprimento
+            ny = dy / comprimento
+        else:
+            # Se estiver sobre o centro geométrico, escolha o lado mais curto.
+            dist_left = abs(origem_x - rect.left)
+            dist_right = abs(rect.right - origem_x)
+            dist_top = abs(origem_y - rect.top)
+            dist_bottom = abs(rect.bottom - origem_y)
+            menor = min(dist_left, dist_right, dist_top, dist_bottom)
+
+            if menor == dist_left:
+                nx, ny = -1.0, 0.0
+            elif menor == dist_right:
+                nx, ny = 1.0, 0.0
+            elif menor == dist_top:
+                nx, ny = 0.0, -1.0
+            else:
+                nx, ny = 0.0, 1.0
+
+        # Pequeno conjunto de pontos junto à borda e alguns pontos laterais
+        # para permitir contornar a construção quando o lado direto estiver
+        # bloqueado por outro obstáculo.
+        distancia = max(10.0, margem)
+        candidatos = [
+            (
+                ponto_borda_x + nx * distancia,
+                ponto_borda_y + ny * distancia,
+            ),
+            (rect.left - distancia, rect.centery),
+            (rect.right + distancia, rect.centery),
+            (rect.centerx, rect.top - distancia),
+            (rect.centerx, rect.bottom + distancia),
+            (rect.left - distancia, rect.top - distancia),
+            (rect.right + distancia, rect.top - distancia),
+            (rect.left - distancia, rect.bottom + distancia),
+            (rect.right + distancia, rect.bottom + distancia),
+        ]
+
+        validos = []
+        vistos = set()
+
+        for x, y in candidatos:
+            chave = (round(x), round(y))
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+
+            if not self.pode_andar(x, y, altura):
+                continue
+
+            distancia_origem = hypot(x - origem_x, y - origem_y)
+            rota = self.calcular_rota(
+                origem_x,
+                origem_y,
+                x,
+                y,
+                altura,
+            )
+
+            if not rota:
+                if self._caminho_livre(origem_x, origem_y, x, y, altura):
+                    validos.append((distancia_origem, x, y))
+                continue
+
+            comprimento_rota = 0.0
+            px, py = origem_x, origem_y
+            for rx, ry in rota:
+                comprimento_rota += hypot(rx - px, ry - py)
+                px, py = rx, ry
+
+            validos.append((comprimento_rota, x, y))
+
+        if not validos:
+            return None
+
+        _, x, y = min(validos, key=lambda item: item[0])
+        return x, y
+
     def destino_aleatorio(self, max_tentativas=200):
         for _ in range(max_tentativas):
             ponto = self._escolher_ponto_grama()
@@ -181,9 +427,6 @@ class NavegacaoMapa:
         if not self.pontos_grama:
             return None
 
-        # Obstáculos podem surgir depois da criação do mapa, portanto a lista
-        # pré-calculada é apenas um conjunto de candidatos. A validação final
-        # usa a regra atual.
         candidatos = [
             ponto for ponto in self.pontos_grama if self.pode_andar(*ponto, 0)
         ]
@@ -229,6 +472,18 @@ class NavegacaoMapa:
         orig_c, orig_l = self.tilemap.pixel_para_tile(origem_x, origem_y)
         dest_c, dest_l = self.tilemap.pixel_para_tile(destino_x, destino_y)
 
+        chave_cache = (
+            orig_c,
+            orig_l,
+            dest_c,
+            dest_l,
+            altura,
+            self._versao_obstaculos,
+            round(limite),
+        )
+        if chave_cache in self._cache_desvios:
+            return self._cache_desvios[chave_cache]
+
         # Um único BFS. A implementação anterior fazia um novo BFS completo
         # para praticamente cada ponto da rota encontrada.
         rota = self._calcular_rota_grade(orig_c, orig_l, dest_c, dest_l, altura)
@@ -246,6 +501,9 @@ class NavegacaoMapa:
                 break
 
         if melhor is not None:
+            if len(self._cache_desvios) >= self._cache_desvios_limite:
+                self._cache_desvios.pop(next(iter(self._cache_desvios)))
+            self._cache_desvios[chave_cache] = melhor
             return melhor
 
         # Quando o primeiro tile da rota está além do passo máximo, avança
@@ -258,9 +516,17 @@ class NavegacaoMapa:
             xx = origem_x + (xx - origem_x) * proporcao
             yy = origem_y + (yy - origem_y) * proporcao
             if self.pode_andar(xx, yy, altura):
-                return xx, yy
+                resultado = (xx, yy)
+                if len(self._cache_desvios) >= self._cache_desvios_limite:
+                    self._cache_desvios.pop(next(iter(self._cache_desvios)))
+                self._cache_desvios[chave_cache] = resultado
+                return resultado
 
-        return xx, yy
+        resultado = (xx, yy)
+        if len(self._cache_desvios) >= self._cache_desvios_limite:
+            self._cache_desvios.pop(next(iter(self._cache_desvios)))
+        self._cache_desvios[chave_cache] = resultado
+        return resultado
 
     def _ponto_para_tile_seguro(self, coluna, linha, altura):
         if self.tilemap.eh_degrau(coluna, linha):
@@ -268,7 +534,7 @@ class NavegacaoMapa:
 
         xx, yy = self.tilemap.tile_para_pixel(coluna, linha)
         centro_x, centro_y = xx + TILE_SIZE // 2, yy + TILE_SIZE // 2
-        margem = max(20, TILE_SIZE // 3)
+        margem = max(8, TILE_SIZE // 8)
         desloc_x = desloc_y = 0.0
 
         for dx, dy in DIRECOES_8:
@@ -298,6 +564,21 @@ class NavegacaoMapa:
         angulo = atan2(y1 - y0, x1 - x0)
         return x0 + cos(angulo) * distancia_maxima, y0 + sin(angulo) * distancia_maxima
 
+    def linha_bloqueada_por_obstaculos(self, x0, y0, x1, y1):
+        """Retorna True quando um obstáculo bloqueia a linha entre dois pontos."""
+        distancia = hypot(x1 - x0, y1 - y0)
+        passos = max(1, int(distancia / 6))
+
+        for i in range(passos + 1):
+            t = i / passos
+            x = x0 + (x1 - x0) * t
+            y = y0 + (y1 - y0) * t
+            for obstaculo in self._obstaculos_cache:
+                if self._ponto_colide_com_obstaculo(x, y, obstaculo, 0):
+                    return True
+
+        return False
+
     def _caminho_livre(self, x0, y0, x1, y1, altura):
         passos = max(1, int(hypot(x1 - x0, y1 - y0) / 32))
         for i in range(passos + 1):
@@ -323,15 +604,23 @@ class NavegacaoMapa:
         if not self.tilemap._coordenada_valida(*destino):
             return []
 
-        altura_dest = self.tilemap.obter_altura(*destino)
+        # Uma célula de degrau representa os dois lados do relevo. O destino
+        # não pode ser preso arbitrariamente à altura 0 da célula, senão uma
+        # rota que precisa terminar no lado alto parece inexistente.
+        alturas_destino = {self.tilemap.obter_altura(*destino)}
+        degrau_destino = self.tilemap.obter_degrau(*destino)
+        if degrau_destino:
+            alturas_destino.update(
+                (
+                    degrau_destino["altura_baixa"],
+                    degrau_destino["altura_alta"],
+                )
+            )
 
-        # AQUI ESTAVA O PROBLEMA: a regra de nivelar só deve se aplicar à grade!
-        if (
-            nivelar_destino
-            and altura_dest != altura_inicial
-            and not self.tilemap.eh_degrau(*destino)
-        ):
-            altura_dest = altura_inicial
+        # Para destinos de chão normal, mantém o comportamento de nivelar a
+        # célula ao nível da unidade quando solicitado.
+        if nivelar_destino and not degrau_destino:
+            alturas_destino = {altura_inicial}
 
         estado_inicial = (*origem, altura_inicial)
         fila = deque([estado_inicial])
@@ -341,7 +630,7 @@ class NavegacaoMapa:
         while fila:
             c_atual, l_atual, alt_atual = fila.popleft()
 
-            if (c_atual, l_atual) == destino and alt_atual == altura_dest:
+            if (c_atual, l_atual) == destino and alt_atual in alturas_destino:
                 estado_destino = (c_atual, l_atual, alt_atual)
                 break
 
@@ -408,7 +697,7 @@ class NavegacaoMapa:
             origem,
             destino,
             altura,
-            DIRECOES_8,
+            DIRECOES_4,
             nivelar_destino=False,
         )
 

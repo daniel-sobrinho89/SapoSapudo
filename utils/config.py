@@ -12,7 +12,7 @@ TITULO = "Sapo Sapudo"
 # ÁUDIO
 # =====================================
 
-AUDIO_HABILITADO = False
+AUDIO_HABILITADO = True
 
 MUSICA_FUNDO = "assets/musica/vila_duendes.ogg"
 

@@ -19,7 +19,7 @@ class ObterOuroUseCase:
         self.tempo = 0.0
         self.flip = False
 
-    def iniciar(self, mina, personagem):
+    def iniciar(self, mina, personagem, manual=False):
         self.entidade_alvo = mina
         self.personagem = personagem
 

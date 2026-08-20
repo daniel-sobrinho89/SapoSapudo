@@ -245,12 +245,27 @@ class Surface:
         self._alpha = max(0, min(255, int(a)))
 
     def get_rect(self, **kwargs):
-        # support center=(x,y)
+        w, h = self.get_size()
+
         if "center" in kwargs:
             cx, cy = kwargs["center"]
-            w, h = self.get_size()
-            return Rect(int(cx - w // 2), int(cy - h // 2), w, h)
-        return Rect(0, 0, self.get_width(), self.get_height())
+            rect = Rect(int(cx - w // 2), int(cy - h // 2), w, h)
+        elif "topleft" in kwargs:
+            x, y = kwargs["topleft"]
+            rect = Rect(int(x), int(y), w, h)
+        else:
+            rect = Rect(0, 0, w, h)
+
+        if "top" in kwargs:
+            rect.top = kwargs["top"]
+        if "bottom" in kwargs:
+            rect.bottom = kwargs["bottom"]
+        if "left" in kwargs:
+            rect.left = kwargs["left"]
+        if "right" in kwargs:
+            rect.right = kwargs["right"]
+
+        return rect
 
     # convenience to access underlying PIL image
     def pil_image(self):
@@ -537,13 +552,14 @@ class mixer:
         def __init__(self):
             self._sound = None
             self._volume = 1.0
+            self._busy = False
 
         def load(self, path):
             try:
                 if self._sound:
                     with suppress(Exception):
                         self._sound.stop()
-
+                self._busy = False
                 self._sound = obter_soundloader().load(path)
 
             except Exception as ex:
@@ -560,6 +576,7 @@ class mixer:
 
         def play(self, loops=0):
             if not self._sound:
+                self._busy = False
                 return
             # loops < 0 => infinite
             with suppress(Exception):
@@ -567,15 +584,24 @@ class mixer:
 
             self._sound.volume = self._volume
             self._sound.play()
+            self._busy = True
 
         def pause(self):
             if self._sound:
                 with suppress(Exception):
                     self._sound.stop()
+            self._busy = False
+
+        def stop(self):
+            self.pause()
 
         def unpause(self):
             if self._sound:
                 self._sound.play()
+                self._busy = True
+
+        def get_busy(self):
+            return bool(self._busy)
 
     music = _Music()
 

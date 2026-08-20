@@ -9,9 +9,11 @@ from utils.config import TILE_SIZE
 
 class AtacarPersonagemUseCase:
     VELOCIDADE = 110
-    DISTANCIA_PARADA = 18
+    DISTANCIA_PARADA = 32
     DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
-    DISTANCIA_LATERAL_ATAQUE = 45
+    DISTANCIA_LATERAL_ATAQUE = 32
+    DISTANCIA_ATAQUE_CONSTRUCAO = 10
+    DISTANCIA_PARADA_CONSTRUCAO = 2
     TEMPO_MINIMO_ATAQUE = 0.25
     RAIO_DETECCAO_INIMIGO_EM_TILES = 4
     RAIO_DETECCAO_INIMIGO = RAIO_DETECCAO_INIMIGO_EM_TILES * TILE_SIZE
@@ -20,38 +22,112 @@ class AtacarPersonagemUseCase:
 
     def __init__(self, cenario_principal):
         self.cenario_principal = cenario_principal
+        self.navegacao = cenario_principal.navegacao
         self.entidade_alvo = None
         self.personagem = None
 
         self.tempo = 0.0
         self.flip = False
         self.posicao_alvo_no_inicio_ataque = None
+        self.destino_ataque = None
+        self.posicao_alvo_destino_ataque = None
         self.ordem_ataque = None
         self.atacantes_recebidos = {}
+        self.destino_ataque = None
+        self.posicao_alvo_destino_ataque = None
         self.chamar_defensores = ChamarDefensoresUseCase(cenario_principal)
+        self.busca_automatica_bloqueada = False
 
     @classmethod
     def _proxima_ordem_ataque(cls):
         cls._sequencia_ataques += 1
         return cls._sequencia_ataques
 
-    def iniciar(self, personagemalvo, personagem):
+    def iniciar(self, personagemalvo, personagem, manual=False):
         mesmo_alvo = self.entidade_alvo is personagemalvo
+        estava_atacando = personagem.animacoes.maquina.atacando()
+
+        self.personagem = personagem
+
+        if manual:
+            self.atacantes_recebidos.clear()
+            self.busca_automatica_bloqueada = False
+
+        if estava_atacando and mesmo_alvo:
+            self.entidade_alvo = personagemalvo
+            return
+
+        if (
+            not manual
+            and self.entidade_alvo is not None
+            and not mesmo_alvo
+            and not self._deve_trocar_alvo_ao_iniciar(personagemalvo)
+        ):
+            return
 
         self.tempo = 0.0
         self.entidade_alvo = personagemalvo
-        self.personagem = personagem
         self.posicao_alvo_no_inicio_ataque = None
 
         if not mesmo_alvo or self.ordem_ataque is None:
             self.ordem_ataque = self._proxima_ordem_ataque()
 
-        self._iniciar_animacao_movimento()
+        if not estava_atacando:
+            self._iniciar_animacao_movimento()
+
+    def _deve_trocar_alvo_ao_iniciar(self, novo_alvo):
+        alvo_atual = self.entidade_alvo
+
+        if alvo_atual is None:
+            return True
+
+        if self._alvo_e_construcao(alvo_atual):
+            return True
+
+        if novo_alvo not in self.atacantes_recebidos:
+            return True
+
+        if not self._atacante_ainda_e_uma_ameaca(alvo_atual):
+            return True
+
+        vida_atual = getattr(alvo_atual, "vida", 0)
+        vida_nova = getattr(novo_alvo, "vida", 0)
+
+        return vida_nova < vida_atual
 
     def cancelar(self):
         self.entidade_alvo = None
         self.posicao_alvo_no_inicio_ataque = None
+        self.destino_ataque = None
+        self.posicao_alvo_destino_ataque = None
         self.ordem_ataque = None
+
+    def bloquear_busca_automatica_ate_destino(self):
+        self.entidade_alvo = None
+        self.posicao_alvo_no_inicio_ataque = None
+        self.destino_ataque = None
+        self.posicao_alvo_destino_ataque = None
+        self.ordem_ataque = None
+        self.atacantes_recebidos.clear()
+        self.busca_automatica_bloqueada = True
+
+    def pode_adquirir_alvo_automaticamente(self):
+        if not self.busca_automatica_bloqueada:
+            return True
+
+        if self.personagem is None:
+            return False
+
+        distancia = hypot(
+            self.personagem.x - self.personagem.destino_x,
+            self.personagem.y - self.personagem.destino_y,
+        )
+
+        if distancia <= 6:
+            self.busca_automatica_bloqueada = False
+            return True
+
+        return False
 
     def _obter_inimigo_atacando_construcao(self, personagem):
         faccao = obter_config(personagem.nome).get("faccao")
@@ -141,6 +217,18 @@ class AtacarPersonagemUseCase:
             self.iniciar(inimigo_atacando_construcao, personagem)
             return True
 
+        self._obter_atacantes()
+        if self.atacantes_recebidos:
+            proximo_atacante = min(
+                self.atacantes_recebidos,
+                key=lambda atacante: (
+                    getattr(atacante, "vida", float("inf")),
+                    self.atacantes_recebidos.get(atacante, float("inf")),
+                ),
+            )
+            self.iniciar(proximo_atacante, personagem)
+            return True
+
         personagens = [
             item["entidade"]
             for item in self.cenario_principal.entidades
@@ -183,6 +271,13 @@ class AtacarPersonagemUseCase:
             if candidato is personagem:
                 continue
 
+            if candidato is getattr(
+                self.cenario_principal,
+                "construcao_arrastando",
+                None,
+            ):
+                continue
+
             if getattr(candidato, "vida", 0) <= 0:
                 continue
 
@@ -216,8 +311,6 @@ class AtacarPersonagemUseCase:
         if self.entidade_alvo is None:
             return
 
-        # Se estiver indo para uma construção e surgir/continuar existindo
-        # um inimigo atacando uma construção, interrompe o avanço e foca nele.
         if self._alvo_e_construcao(self.entidade_alvo):
             inimigo_atacando_construcao = self._obter_inimigo_atacando_construcao(
                 self.personagem
@@ -226,7 +319,12 @@ class AtacarPersonagemUseCase:
             if inimigo_atacando_construcao is not None:
                 self._trocar_alvo_combate(inimigo_atacando_construcao)
 
-        self._atualizar_alvo_por_ataques_recebidos()
+        if (
+            self.entidade_alvo is None
+            or self._alvo_e_construcao(self.entidade_alvo)
+            or not self._atacante_ainda_e_uma_ameaca(self.entidade_alvo)
+        ):
+            self._atualizar_alvo_por_ataques_recebidos()
 
         if self.entidade_alvo is None:
             return
@@ -269,9 +367,6 @@ class AtacarPersonagemUseCase:
         if getattr(atacante, "vida", 0) <= 0:
             return False
 
-        if self._esta_fugindo_entidade(atacante):
-            return True
-
         ctrl = self.cenario_principal.controladores.get(atacante)
 
         if ctrl is None:
@@ -307,45 +402,20 @@ class AtacarPersonagemUseCase:
         return [atacante for atacante, _ in itens]
 
     def _atualizar_alvo_por_ataques_recebidos(self):
-        """
-        Aplica as quatro regras do foco de combate.
-
-        1. Se o alvo atual é uma construção e existe um agressor, ataca o
-           agressor.
-        2. Com dois ou mais agressores, prioriza quem iniciou primeiro.
-        3. Se o primeiro agressor está fugindo e existe outro agressor, troca
-           para o outro.
-        4. Se existe apenas um agressor, continua perseguindo-o mesmo fugindo.
-        """
         atacantes = self._obter_atacantes()
 
         if not atacantes:
             return
 
-        alvo_atual = self.entidade_alvo
-
-        if len(atacantes) == 1:
-            escolhido = atacantes[0]
-
-            if alvo_atual is not escolhido:
-                self._trocar_alvo_combate(escolhido)
-
-            return
-
-        escolhido = next(
-            (
-                atacante
-                for atacante in atacantes
-                if not self._esta_fugindo_entidade(atacante)
+        escolhido = min(
+            atacantes,
+            key=lambda atacante: (
+                getattr(atacante, "vida", float("inf")),
+                self.atacantes_recebidos.get(atacante, float("inf")),
             ),
-            None,
         )
 
-        # Se todos estiverem fugindo, mantém o primeiro agressor original.
-        if escolhido is None:
-            escolhido = atacantes[0]
-
-        if alvo_atual is not escolhido:
+        if self.entidade_alvo is not escolhido:
             self._trocar_alvo_combate(escolhido)
 
     def _trocar_alvo_combate(self, novo_alvo):
@@ -354,6 +424,8 @@ class AtacarPersonagemUseCase:
 
         self.entidade_alvo = novo_alvo
         self.posicao_alvo_no_inicio_ataque = None
+        self.destino_ataque = None
+        self.posicao_alvo_destino_ataque = None
 
         self.flip = self.entidade_alvo.x < self.personagem.x
 
@@ -382,49 +454,93 @@ class AtacarPersonagemUseCase:
 
     def _calcular_destino_ataque(self):
         alvo = self.entidade_alvo
-        self.flip = alvo.x < self.personagem.x
+        if alvo is None:
+            return self.personagem.x, self.personagem.y
 
-        # Construções são obstáculos para o movimento, portanto o destino de
-        # ataque nunca pode ser o centro da construção. Calculamos o ponto de
-        # aproximação pela borda real da construção, mantendo a unidade fora
-        # da área bloqueada.
-        if self._alvo_e_construcao(alvo):
+        posicao_alvo = (alvo.x, alvo.y)
+
+        if (
+            self.destino_ataque is not None
+            and self.posicao_alvo_destino_ataque is not None
+            and hypot(
+                alvo.x - self.posicao_alvo_destino_ataque[0],
+                alvo.y - self.posicao_alvo_destino_ataque[1],
+            )
+            <= 8
+            and self.navegacao.pode_andar(
+                self.destino_ataque[0],
+                self.destino_ataque[1],
+                self.personagem.altura,
+            )
+        ):
+            self.flip = alvo.x < self.personagem.x
+            return self.destino_ataque
+
+        entity = self.cenario_principal.obter_entidade(alvo)
+
+        if entity is not None and entity.get("grupo") == "construcoes":
             rect = self.cenario_principal.obter_rect_colisao(alvo)
-            margem = max(
-                self.DISTANCIA_PARADA,
-                self.DISTANCIA_LATERAL_ATAQUE,
+            destino = self.navegacao.encontrar_ponto_acessivel_ao_redor_rect(
+                self.personagem.x,
+                self.personagem.y,
+                rect,
+                self.personagem.altura,
+                margem=self.DISTANCIA_ATAQUE_CONSTRUCAO,
             )
-
-            if self.flip:
-                destino_x = rect.right + margem
-            else:
-                destino_x = rect.left - margem
-
-            destino_y = max(
-                rect.top - self.DISTANCIA_PARADA,
-                min(
-                    alvo.y,
-                    rect.bottom + self.DISTANCIA_PARADA,
-                ),
-            )
-            return destino_x, destino_y
-
-        if self.flip:
-            destino_x = alvo.x + self.DISTANCIA_LATERAL_ATAQUE
         else:
-            destino_x = alvo.x - self.DISTANCIA_LATERAL_ATAQUE
+            destino = (alvo.x, alvo.y)
 
-        return destino_x, alvo.y
+        if destino is None:
+            if entity is not None and entity.get("grupo") == "construcoes":
+                rect = self.cenario_principal.obter_rect_colisao(alvo)
+                px = min(max(self.personagem.x, rect.left), rect.right)
+                py = min(max(self.personagem.y, rect.top), rect.bottom)
+                dx = self.personagem.x - px
+                dy = self.personagem.y - py
+                comprimento = hypot(dx, dy) or 1.0
+                distancia = self.DISTANCIA_ATAQUE_CONSTRUCAO
+                destino = (
+                    px + dx / comprimento * distancia,
+                    py + dy / comprimento * distancia,
+                )
+            else:
+                destino = (self.personagem.x, self.personagem.y)
+
+        self.destino_ataque = destino
+        self.posicao_alvo_destino_ataque = posicao_alvo
+        self.flip = alvo.x < self.personagem.x
+        return destino
 
     def _andar(self, dt):
         destino_x, destino_y = self._calcular_destino_ataque()
 
-        dx = destino_x - self.personagem.x
-        dy = destino_y - self.personagem.y
+        entity = self.cenario_principal.obter_entidade(self.entidade_alvo)
+        alvo_e_construcao = entity is not None and entity.get("grupo") == "construcoes"
 
-        distancia = hypot(dx, dy)
+        if alvo_e_construcao:
+            rect = self.cenario_principal.obter_rect_colisao(self.entidade_alvo)
+            distancia_borda = self.navegacao.distancia_para_rect(
+                self.personagem.x,
+                self.personagem.y,
+                rect,
+            )
+            pronto_para_atacar = distancia_borda <= self.DISTANCIA_PARADA
+        else:
+            distancia_real_alvo = hypot(
+                self.entidade_alvo.x - self.personagem.x,
+                self.entidade_alvo.y - self.personagem.y,
+            )
+            linha_bloqueada = self.navegacao.linha_bloqueada_por_obstaculos(
+                self.personagem.x,
+                self.personagem.y,
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
+            )
+            pronto_para_atacar = (
+                distancia_real_alvo <= self.DISTANCIA_PARADA and not linha_bloqueada
+            )
 
-        if distancia <= self.DISTANCIA_PARADA:
+        if pronto_para_atacar:
             self.tempo = 0.0
 
             self.posicao_alvo_no_inicio_ataque = (
@@ -443,7 +559,7 @@ class AtacarPersonagemUseCase:
 
         self.cenario_principal.mover_personagem.executar(
             personagem=self.personagem,
-            navegacao=self.cenario_principal.navegacao,
+            navegacao=self.navegacao,
             velocidade=self.VELOCIDADE,
             estado_correndo=self._estado_correndo(),
             estado_correndo_flip=self._estado_correndo_flip(),
@@ -472,6 +588,34 @@ class AtacarPersonagemUseCase:
 
             return
 
+        entity = self.cenario_principal.obter_entidade(self.entidade_alvo)
+        if entity is not None and entity.get("grupo") == "construcoes":
+            rect = self.cenario_principal.obter_rect_colisao(self.entidade_alvo)
+            distancia_real_alvo = self.navegacao.distancia_para_rect(
+                self.personagem.x,
+                self.personagem.y,
+                rect,
+            )
+        else:
+            distancia_real_alvo = hypot(
+                self.entidade_alvo.x - self.personagem.x,
+                self.entidade_alvo.y - self.personagem.y,
+            )
+
+        linha_bloqueada = False
+        if entity is None or entity.get("grupo") != "construcoes":
+            linha_bloqueada = self.navegacao.linha_bloqueada_por_obstaculos(
+                self.personagem.x,
+                self.personagem.y,
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
+            )
+
+        if distancia_real_alvo > self.DISTANCIA_PARADA or linha_bloqueada:
+            self._animacao_correndo()
+            self.posicao_alvo_no_inicio_ataque = None
+            return
+
         if not animacao.golpe_executado:
             return
 
@@ -480,7 +624,7 @@ class AtacarPersonagemUseCase:
         self._apos_causar_dano()
 
     def _causar_dano(self):
-        destino = self.cenario_principal.navegacao.fugir(
+        destino = self.navegacao.fugir(
             self.entidade_alvo.x,
             self.entidade_alvo.y,
             self.personagem.x,

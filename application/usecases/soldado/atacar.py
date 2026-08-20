@@ -11,7 +11,7 @@ class AtacarSoldadoUseCase(AtacarPersonagemUseCase):
         super().__init__(cenario_principal)
         self.segundo_golpe = False
 
-    def iniciar(self, personagemalvo, personagem):
+    def iniciar(self, personagemalvo, personagem, manual=False):
         estado_atual = personagem.animacoes.estado
 
         if estado_atual in (
@@ -29,9 +29,7 @@ class AtacarSoldadoUseCase(AtacarPersonagemUseCase):
         else:
             self.segundo_golpe = False
 
-        # Toda a gestão de alvo, ordem de ataque e prioridade fica na classe
-        # base. Isso é importante para o soldado não quebrar as regras de foco.
-        super().iniciar(personagemalvo, personagem)
+        super().iniciar(personagemalvo, personagem, manual=manual)
 
     def _iniciar_ataque(self):
         self.flip = self.entidade_alvo.x < self.personagem.x

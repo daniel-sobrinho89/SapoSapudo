@@ -119,7 +119,7 @@
                     "usecase": "ObterOuroUseCase"
                 },
                 "carne": {
-                    "alvos": "ovelhas",
+                    "alvos": ["ovelhas", "recursos"],
                     "usecase": "ObterCarneUseCase"
                 }
             }
@@ -907,6 +907,23 @@
         "animacoes": {
             "ocioso": {
                 "arquivo": "ui/barra_vida_base.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "audio": {
+        "maquina": "MaquinaEstadoConstrucao",
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "escala": 1.0,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/audio.png",
                 "frames": 1,
                 "tempo": 0
             }

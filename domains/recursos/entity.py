@@ -10,6 +10,7 @@ class Recurso:
         self.vida = 1
         self.animacoes = Animacoes(nome)
         self.reservado_por = None
+        self.grupo_drop = None
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)

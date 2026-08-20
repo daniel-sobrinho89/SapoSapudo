@@ -12,7 +12,7 @@ class ControlarComportamentoBaseUseCase:
 
         self.tempo = 0.0
         self.proxima_acao = random.uniform(3, 8)
-        self.velocidade = 35
+        self.velocidade = 48
 
     def iniciar(
         self,

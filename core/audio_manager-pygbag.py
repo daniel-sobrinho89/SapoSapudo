@@ -71,7 +71,7 @@ class AudioManager:
     def tocar_passeio_sapudo(self):
         self.inicializar()
 
-        arquivo = BASE_DIR / "assets/musica/o_passeio_do_sapudo.mp3"
+        arquivo = BASE_DIR / "assets/musica/o_passeio_do_sapudo.ogg"
 
         self.musica_atual = arquivo
 
@@ -92,25 +92,6 @@ class AudioManager:
         kivy_adapter.mixer.music.load(str(BASE_DIR / MUSICA_FUNDO))
         kivy_adapter.mixer.music.set_volume(VOLUME_MUSICA)
         kivy_adapter.mixer.music.play(-1)
-
-    def alternar_musica_vila_duendes(self):
-        """Liga/desliga a música da vila após um clique explícito do usuário."""
-        musica = kivy_adapter.mixer.music
-
-        # O estado de reprodução é mantido pelo adapter também no backend Kivy.
-        if musica.get_busy():
-            musica.pause()
-            self.musica_atual = MUSICA_FUNDO
-            return
-
-        self.habilitado = True
-        self.inicializado = True
-
-        arquivo = BASE_DIR / MUSICA_FUNDO
-        musica.load(str(arquivo))
-        musica.set_volume(VOLUME_MUSICA)
-        musica.play(-1)
-        self.musica_atual = MUSICA_FUNDO
 
     # =====================================
     # CONTROLE

@@ -8,14 +8,15 @@ from contextlib import suppress
 
 import pygame
 
+from utils import browser_backend
+
+sys.modules["utils.kivy_adapter"] = browser_backend
+
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from domains.cenario import EstadoJogo, GerenciadorCenarios
 from render.transform_utils import TransformUtils
-from utils import browser_backend
 from utils.config import ALTURA, LARGURA
 from utils.input import init_scaling
-
-sys.modules["utils.kivy_adapter"] = browser_backend
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -44,6 +45,8 @@ pygame.display.set_caption("Sapo Sapudo")
 with suppress(Exception):
     if sys.platform == "emscripten":
         platform.window.canvas.style.imageRendering = "pixelated"
+        platform.window.canvas.style.webkitImageRendering = "pixelated"
+        platform.window.canvas.style.msInterpolationMode = "nearest-neighbor"
 init_scaling(LARGURA, ALTURA, LARGURA, ALTURA)
 
 tela = browser_backend.Surface((LARGURA, ALTURA))
@@ -53,6 +56,9 @@ gerenciador_cenarios = None
 cenario = None
 coordenador = None
 cenario_inicializado = False
+carregamento_iniciado = False
+preloader_ocultado = False
+maior_progresso_carregamento = 0.0
 
 web_log("SapoSapudo Web: display inicializado; aguardando início do jogo")
 
@@ -90,7 +96,7 @@ def preparar_gerenciador_web():
 
 
 def iniciar_cenario_web():
-    global coordenador, cenario_inicializado
+    global cenario_inicializado, carregamento_iniciado
 
     if cenario_inicializado:
         return True
@@ -98,19 +104,70 @@ def iniciar_cenario_web():
     try:
         preparar_gerenciador_web()
         gerenciador_cenarios.estado = EstadoJogo.JOGANDO
-        web_log("SapoSapudo Web: iniciando carregamento do cenário")
-        cenario.carregar()
-        coordenador = CoordenadorEstadoJogo(cenario)
-        cenario_inicializado = True
-        web_log(
-            "SapoSapudo Web: entidades criadas; carregamento visual será incremental"
-        )
+        cenario.iniciar_carregamento()
+        carregamento_iniciado = True
+        web_log("SapoSapudo Web: carregamento do cenário iniciado")
         return True
     except Exception:
-        web_error("SapoSapudo Web: erro ao iniciar o cenário")
+        web_error("SapoSapudo Web: erro ao iniciar carregamento do cenário")
         web_error(traceback.format_exc())
         gerenciador_cenarios.estado = EstadoJogo.ABERTURA
         return False
+
+
+def preparar_preloader_web():
+    """Assume o controle do carregamento Pygbag assim que Python inicia."""
+    if sys.platform != "emscripten":
+        return
+
+    with suppress(Exception):
+        root = platform.document.documentElement
+        root.classList.add("sapo-python")
+        root.classList.remove("sapo-ready")
+        root.style.setProperty("--sapo-percent", '"0%"')
+        status = platform.document.getElementById("status")
+        progress = platform.document.getElementById("progress")
+        if status is not None:
+            status.innerText = "Carregando o mundo..."
+        if progress is not None:
+            progress.max = 100
+            progress.value = 0
+
+
+def atualizar_preloader_web(progresso):
+    """Atualiza exclusivamente a barra oficial do Pygbag, sempre para frente."""
+    if sys.platform != "emscripten":
+        return
+
+    percentual = max(0, min(100, int(progresso * 100)))
+
+    with suppress(Exception):
+        root = platform.document.documentElement
+        root.style.setProperty("--sapo-percent", f'"{percentual}%"')
+        progress = platform.document.getElementById("progress")
+        if progress is not None:
+            atual = int(getattr(progress, "value", 0) or 0)
+            if percentual > atual:
+                progress.value = percentual
+
+
+def finalizar_preloader_web():
+    """Esconde a interface oficial somente depois do primeiro frame pronto."""
+    global preloader_ocultado
+
+    if preloader_ocultado or sys.platform != "emscripten":
+        return
+
+    with suppress(Exception):
+        root = platform.document.documentElement
+        root.classList.add("sapo-ready")
+        status = platform.document.getElementById("status")
+        progress = platform.document.getElementById("progress")
+        if status is not None:
+            status.innerText = "100%"
+        if progress is not None:
+            progress.value = 100
+        preloader_ocultado = True
 
 
 def processar_mouse_down(event):
@@ -136,27 +193,14 @@ def processar_mouse_down(event):
 
 
 async def main():
-    global coordenador, cenario_inicializado
+    global \
+        coordenador, \
+        cenario_inicializado, \
+        carregamento_iniciado, \
+        maior_progresso_carregamento, \
+        preloader_ocultado
 
-    # Primeiro frame leve, sem carregar mapa ou sprites. No browser não
-    # dependemos de double-click/touch para iniciar o jogo: isso evita que
-    # diferenças de input do canvas deixem o usuário preso na abertura.
-    tela.fill((20, 24, 40, 255))
-    browser_backend.draw.text(
-        tela,
-        "Sapo Sapudo",
-        (LARGURA // 2 - 90, ALTURA // 2 - 40),
-        (255, 255, 255),
-        32,
-    )
-    browser_backend.draw.text(
-        tela,
-        "Carregando...",
-        (LARGURA // 2 - 85, ALTURA // 2 + 10),
-        (210, 210, 220),
-        20,
-    )
-    pygame.display.flip()
+    preparar_preloader_web()
     await asyncio.sleep(0)
 
     preparar_gerenciador_web()
@@ -165,8 +209,6 @@ async def main():
 
     last = time.perf_counter()
     ultimo_progresso = -1
-    acumulador_ia = 0.0
-    passo_ia = 1.0 / 30.0
 
     while True:
         now = time.perf_counter()
@@ -210,57 +252,52 @@ async def main():
                 p = pos_virtual_to_finger(event.x, event.y)
                 coordenador.processar_toque_up(p)
 
-        # A criação das entidades acontece uma única vez. Enquanto os assets
-        # ainda estão sendo preparados, não execute IA nem renderização pesada.
-        if cenario_inicializado and not cenario.carregado:
+        primeiro_frame_jogo = False
+
+        if carregamento_iniciado and not cenario.carregado:
             try:
+                cenario.processar_carregamento(max_tipos=1)
+
                 gerenciador_cenarios.renderizar(dt)
                 progresso = cenario.progresso_carregamento()
+                progresso = max(progresso, maior_progresso_carregamento)
+                maior_progresso_carregamento = progresso
+                if not cenario.carregado:
+                    progresso = min(progresso, 0.99)
                 marco = int(progresso * 100)
                 if marco != ultimo_progresso and marco % 5 == 0:
                     ultimo_progresso = marco
                     web_log(f"SapoSapudo Web: carregamento {marco}%")
 
-                # O renderizador de cenário não desenha nada pesado enquanto
-                # os sprites estão incompletos. Mostramos apenas o progresso.
-                browser_backend.draw.text(
-                    tela,
-                    f"Carregando... {int(progresso * 100)}%",
-                    (LARGURA // 2 - 95, ALTURA // 2 + 50),
-                    (255, 255, 255),
-                    24,
-                )
+                atualizar_preloader_web(progresso)
             except Exception:
                 web_error("SapoSapudo Web: erro durante carregamento")
                 web_error(traceback.format_exc())
 
-        elif cenario_inicializado and cenario.carregado:
-            # IA e navegação não precisam ser avaliadas 60 vezes por segundo.
-            # Mantemos a renderização no ritmo do browser, mas executamos os
-            # UseCases de comportamento em 30 Hz, reduzindo BFS, scans de
-            # alvos e chamadas de colisão sem deixar o movimento perceptivelmente
-            # travado.
-            acumulador_ia += dt
-            if acumulador_ia >= passo_ia:
-                iteracoes = min(2, int(acumulador_ia / passo_ia))
-                for _ in range(iteracoes):
-                    coordenador.executar(passo_ia)
-                    acumulador_ia -= passo_ia
+        elif carregamento_iniciado and cenario.carregado:
+            if not cenario_inicializado:
+                coordenador = CoordenadorEstadoJogo(cenario)
+                cenario_inicializado = True
+                web_log("SapoSapudo Web: cenário carregado; preparando primeiro frame")
 
+            coordenador.executar(dt)
             gerenciador_cenarios.atualizar(dt)
             gerenciador_cenarios.renderizar(dt)
+            primeiro_frame_jogo = bool(
+                getattr(cenario, "primeiro_frame_renderizado", False)
+            )
+            if primeiro_frame_jogo and not preloader_ocultado:
+                finalizar_preloader_web()
+                web_log("SapoSapudo Web: primeiro frame pronto; iniciando jogo")
         else:
             # fallback visual caso a inicialização falhe
             tela.fill((20, 24, 40, 255))
 
-        target_size = pygame.display.get_window_size()
-        if target_size != (LARGURA, ALTURA):
-            scaled = pygame.transform.scale(tela._img, target_size)
-            screen.blit(scaled, (0, 0))
-        else:
-            screen.blit(tela._img, (0, 0))
+        screen.fill((24, 56, 74))
+        screen.blit(tela._img, (0, 0))
 
         pygame.display.flip()
+
         await asyncio.sleep(0)
 
 

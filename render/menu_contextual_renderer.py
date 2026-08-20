@@ -42,8 +42,15 @@ class MenuContextualRenderer:
     def atualizar_carregamento(self):
         self.menu_renderer.atualizar_carregamento()
 
-        for nome in ("castelo", "casa", "quartel"):
-            renderer = self._renderers_temporarias.get(nome)
+        for nome in (
+            "castelo",
+            "casa",
+            "quartel",
+            "avatar_aldeao",
+            "avatar_soldado",
+            "escudo",
+        ):
+            renderer = self.cenario.renderers.get(nome)
             if renderer is None or renderer.carregado:
                 continue
 
@@ -126,8 +133,12 @@ class MenuContextualRenderer:
 
             camera_x = camera.x
             camera_y = camera.y
+            camera_zoom = camera.zoom
+
+            # HUD: o menu não herda o zoom do mapa.
             camera.x = 0
             camera.y = 0
+            camera.zoom = 1.0
 
             if self.modo == "construcoes":
                 config = obter_config(opcao.nome)
@@ -158,6 +169,7 @@ class MenuContextualRenderer:
 
             camera.x = camera_x
             camera.y = camera_y
+            camera.zoom = camera_zoom
 
             if not Hover.esta_sobre(opcao.corpo_rect):
                 continue

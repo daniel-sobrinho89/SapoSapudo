@@ -9,8 +9,70 @@ class MortePersonagemUseCase:
 
     def iniciar(self, personagem):
         ctrl = self.cenario_principal.controladores[personagem]
+
+        # Primeiro registramos as ações que realmente estavam usando o
+        # personagem morto como alvo. Só depois cancelamos os use cases.
+        # Isso preserva a informação necessária para redirecionar uma caça
+        # de ovelha para a carne criada pelo drop.
+        self._acoes_redirecionar = []
+        controladores_envolvidos = []
+
+        for (
+            personagem_outro,
+            ctrl_outro,
+        ) in self.cenario_principal.controladores.items():
+            if personagem_outro is personagem or ctrl_outro is None:
+                continue
+
+            alvo_encontrado = False
+            obter_carne = None
+
+            for outra_acao in ctrl_outro.get("acoes", {}).values():
+                usecase = outra_acao["usecase"]
+                if getattr(usecase, "entidade_alvo", None) is not personagem:
+                    continue
+
+                alvo_encontrado = True
+                if usecase.__class__.__name__ == "ObterCarneUseCase":
+                    obter_carne = usecase
+
+            if not alvo_encontrado:
+                continue
+
+            if obter_carne is None:
+                obter_carne = next(
+                    (
+                        acao["usecase"]
+                        for acao in ctrl_outro.get("acoes", {}).values()
+                        if acao["usecase"].__class__.__name__ == "ObterCarneUseCase"
+                    ),
+                    None,
+                )
+
+            if obter_carne is not None:
+                obter_carne.personagem = personagem_outro
+                self._acoes_redirecionar.append(obter_carne)
+                controladores_envolvidos.append(ctrl_outro)
+
+        # Só cancelamos as ações dos personagens que realmente estavam mirando
+        # a ovelha morta. As demais ações do cenário permanecem intactas.
+        for ctrl_envolvido in controladores_envolvidos:
+            for outra_acao in ctrl_envolvido.get("acoes", {}).values():
+                usecase = outra_acao["usecase"]
+                cancelar = getattr(usecase, "cancelar", None)
+                if cancelar is not None:
+                    cancelar()
+                else:
+                    usecase.entidade_alvo = None
+
+        # Limpa também as ações da própria ovelha, se houver.
         for outra_acao in ctrl["acoes"].values():
-            outra_acao["usecase"].entidade_alvo = None
+            usecase = outra_acao["usecase"]
+            cancelar = getattr(usecase, "cancelar", None)
+            if cancelar is not None:
+                cancelar()
+            else:
+                usecase.entidade_alvo = None
 
         self.entidade_alvo = personagem
         self.poeira_grande = criar_efeitos("poeira_grande")
@@ -99,13 +161,14 @@ class MortePersonagemUseCase:
         itens = []
 
         for _ in range(drop.get("quantidade", 1)):
-            itens.append(
-                self.cenario_principal.carregar_entidade(
-                    drop["tipo"],
-                    self.entidade_alvo.x,
-                    self.entidade_alvo.y,
-                )
+            recurso = self.cenario_principal.carregar_entidade(
+                drop["tipo"],
+                self.entidade_alvo.x,
+                self.entidade_alvo.y,
             )
+
+            recurso.grupo_drop = self.entidade_alvo
+            itens.append(recurso)
 
         return itens
 
@@ -113,22 +176,19 @@ class MortePersonagemUseCase:
         if not drops:
             return
 
-        for ctrl in self.cenario_principal.controladores.values():
-            for acao in ctrl["acoes"].values():
-                usecase = acao["usecase"]
+        for usecase in getattr(self, "_acoes_redirecionar", ()):
+            personagem = getattr(usecase, "personagem", None)
+            if personagem is None or personagem.vida <= 0:
+                continue
 
-                if usecase.entidade_alvo is not self.entidade_alvo:
-                    continue
+            redirecionou = False
+            for drop in drops:
+                if self.cenario_principal.reservar_drop(drop, personagem):
+                    usecase.iniciar(drop, personagem, manual=True)
+                    redirecionou = True
+                    break
 
-                if usecase.__class__.__name__ != "ObterCarneUseCase":
-                    continue
+            if not redirecionou:
+                usecase.cancelar_coleta()
 
-                for drop in drops:
-                    if self.cenario_principal.reservar_drop(
-                        drop,
-                        usecase.personagem,
-                    ):
-                        usecase.iniciar(drop, usecase.personagem)
-                        break
-                else:
-                    usecase.cancelar_coleta()
+        self._acoes_redirecionar = []

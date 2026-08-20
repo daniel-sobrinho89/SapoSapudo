@@ -19,10 +19,12 @@ class AnimacaoMovimento:
         return self.progresso >= 0.90
 
     def atualizar(self, dt):
+        intervalo = self.intervalo
+
         self.tempo += dt
-        if self.tempo < self.intervalo:
+        if self.tempo < intervalo:
             return False
-        self.tempo -= self.intervalo
+        self.tempo -= intervalo
         self.frame += 1
         terminou = False
         if self.frame >= self.total_frames:
