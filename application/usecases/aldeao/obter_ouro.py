@@ -22,6 +22,7 @@ class ObterOuroUseCase:
     def iniciar(self, mina, personagem, manual=False):
         self.entidade_alvo = mina
         self.personagem = personagem
+        personagem.definir_base_movimento(mina.x, mina.y)
 
         self.tempo = 0.0
 

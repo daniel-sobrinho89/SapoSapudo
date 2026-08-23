@@ -43,6 +43,20 @@ class AtacarPersonagemUseCase:
         cls._sequencia_ataques += 1
         return cls._sequencia_ataques
 
+    def _registrar_alvo_ativo(self, alvo):
+        if alvo is None or alvo is self.personagem:
+            return
+        registrar = getattr(self.cenario_principal, "registrar_atacante", None)
+        if registrar is not None:
+            registrar(alvo, self.personagem)
+
+    def _desregistrar_alvo_ativo(self, alvo):
+        if alvo is None:
+            return
+        remover = getattr(self.cenario_principal, "remover_atacante", None)
+        if remover is not None:
+            remover(alvo, self.personagem)
+
     def iniciar(self, personagemalvo, personagem, manual=False):
         mesmo_alvo = self.entidade_alvo is personagemalvo
         estava_atacando = personagem.animacoes.maquina.atacando()
@@ -65,9 +79,20 @@ class AtacarPersonagemUseCase:
         ):
             return
 
+        self._desregistrar_alvo_ativo(self.entidade_alvo)
         self.tempo = 0.0
         self.entidade_alvo = personagemalvo
+        self._registrar_alvo_ativo(self.entidade_alvo)
         self.posicao_alvo_no_inicio_ataque = None
+
+        # O combate aceito redefine a área de movimentação livre para a
+        # região do alvo. Isso vale para ordens manuais e para aquisições
+        # automáticas de inimigos.
+        if personagemalvo is not None:
+            personagem.definir_base_movimento(
+                personagemalvo.x,
+                personagemalvo.y,
+            )
 
         if not mesmo_alvo or self.ordem_ataque is None:
             self.ordem_ataque = self._proxima_ordem_ataque()
@@ -96,6 +121,7 @@ class AtacarPersonagemUseCase:
         return vida_nova < vida_atual
 
     def cancelar(self):
+        self._desregistrar_alvo_ativo(self.entidade_alvo)
         self.entidade_alvo = None
         self.posicao_alvo_no_inicio_ataque = None
         self.destino_ataque = None
@@ -103,6 +129,7 @@ class AtacarPersonagemUseCase:
         self.ordem_ataque = None
 
     def bloquear_busca_automatica_ate_destino(self):
+        self._desregistrar_alvo_ativo(self.entidade_alvo)
         self.entidade_alvo = None
         self.posicao_alvo_no_inicio_ataque = None
         self.destino_ataque = None
@@ -130,59 +157,54 @@ class AtacarPersonagemUseCase:
         return False
 
     def _obter_inimigo_atacando_construcao(self, personagem):
-        faccao = obter_config(personagem.nome).get("faccao")
+        """Consulta atacantes registrados nas construções próximas."""
+        indice = getattr(self.cenario_principal, "indice_espacial", None)
+        if indice is None:
+            construcoes = getattr(self.cenario_principal, "construcoes", ()) + getattr(
+                self.cenario_principal, "construcoes_hostis", ()
+            )
+        else:
+            construcoes = indice.consultar_raio(
+                personagem.x,
+                personagem.y,
+                self.RAIO_DETECCAO_INIMIGO,
+                grupos=("construcoes",),
+            )
+
+        registro_personagem = self.cenario_principal.obter_entidade(personagem)
+        config_personagem = obter_config(personagem.nome)
+        faccao = (
+            registro_personagem.get("faccao")
+            if registro_personagem is not None
+            and registro_personagem.get("faccao") is not None
+            else config_personagem.get("faccao")
+        )
+
         melhor_atacante = None
         melhor_distancia = None
 
-        construcoes = (
-            self.cenario_principal.construcoes
-            + self.cenario_principal.construcoes_hostis
-        )
-
         for construcao in construcoes:
-            ctrl_construcao = self.cenario_principal.controladores.get(construcao)
+            for atacante in tuple(getattr(construcao, "atacantes_ativos", ())):
+                if atacante is personagem or getattr(atacante, "vida", 0) <= 0:
+                    continue
+                registro = self.cenario_principal.obter_entidade(atacante)
+                if registro is None:
+                    continue
+                faccao_atacante = registro.get("faccao")
+                if faccao_atacante == faccao or (
+                    faccao is None and faccao_atacante is None
+                ):
+                    continue
+                distancia = hypot(atacante.x - personagem.x, atacante.y - personagem.y)
+                if distancia > self.RAIO_DETECCAO_INIMIGO:
+                    continue
+                if melhor_distancia is None or distancia < melhor_distancia:
+                    melhor_atacante = atacante
+                    melhor_distancia = distancia
 
-            if ctrl_construcao is None:
-                continue
-
-            defender = ctrl_construcao.get("padrao")
-
-            if defender is None:
-                continue
-
-            atacante = getattr(defender, "entidade_alvo", None)
-
-            if atacante is None or atacante is personagem:
-                continue
-
-            if getattr(atacante, "vida", 0) <= 0:
-                continue
-
-            entity = self.cenario_principal.obter_entidade(atacante)
-
-            if entity is None:
-                continue
-
-            faccao_atacante = entity.get("faccao")
-
-            if faccao_atacante == faccao:
-                continue
-
-            if faccao is None and faccao_atacante is None:
-                continue
-
-            distancia = hypot(
-                atacante.x - personagem.x,
-                atacante.y - personagem.y,
-            )
-
-            if distancia > self.RAIO_DETECCAO_INIMIGO:
-                continue
-
-            if melhor_distancia is None or distancia < melhor_distancia:
-                melhor_atacante = atacante
-                melhor_distancia = distancia
-
+        metricas = getattr(self.cenario_principal, "metricas_desempenho", None)
+        if metricas is not None:
+            metricas.contar("buscas_atacante_construcao")
         return melhor_atacante
 
     def _alvo_e_construcao(self, alvo):
@@ -205,7 +227,14 @@ class AtacarPersonagemUseCase:
         if personagem.vida <= 0:
             return False
 
-        faccao = obter_config(personagem.nome).get("faccao")
+        registro_personagem = self.cenario_principal.obter_entidade(personagem)
+        config_personagem = obter_config(personagem.nome)
+        faccao = (
+            registro_personagem.get("faccao")
+            if registro_personagem is not None
+            and registro_personagem.get("faccao") is not None
+            else config_personagem.get("faccao")
+        )
 
         # Se um inimigo estiver atacando uma construção, ele tem prioridade
         # absoluta sobre a própria construção como alvo automático.
@@ -229,33 +258,42 @@ class AtacarPersonagemUseCase:
             self.iniciar(proximo_atacante, personagem)
             return True
 
-        personagens = [
-            item["entidade"]
-            for item in self.cenario_principal.entidades
-            if item["grupo"] in ("personagens", "hostis")
-        ]
+        indice = getattr(self.cenario_principal, "indice_espacial", None)
+        if indice is not None:
+            personagens = indice.consultar_raio(
+                personagem.x,
+                personagem.y,
+                self.RAIO_DETECCAO_INIMIGO,
+                grupos=("personagens", "hostis"),
+            )
+        else:
+            personagens = [
+                item["entidade"]
+                for item in self.cenario_principal.entidades
+                if item["grupo"] in ("personagens", "hostis")
+            ]
 
-        melhor_personagem = self._obter_melhor_alvo(
-            personagem,
-            personagens,
-            faccao,
-        )
+        melhor_personagem = self._obter_melhor_alvo(personagem, personagens, faccao)
 
         if melhor_personagem is not None:
             self.iniciar(melhor_personagem, personagem)
             return True
 
-        construcoes = [
-            item["entidade"]
-            for item in self.cenario_principal.entidades
-            if item["grupo"] == "construcoes"
-        ]
+        if indice is not None:
+            construcoes = indice.consultar_raio(
+                personagem.x,
+                personagem.y,
+                self.RAIO_DETECCAO_INIMIGO,
+                grupos=("construcoes",),
+            )
+        else:
+            construcoes = [
+                item["entidade"]
+                for item in self.cenario_principal.entidades
+                if item["grupo"] == "construcoes"
+            ]
 
-        melhor_construcao = self._obter_melhor_alvo(
-            personagem,
-            construcoes,
-            faccao,
-        )
+        melhor_construcao = self._obter_melhor_alvo(personagem, construcoes, faccao)
 
         if melhor_construcao is None:
             return False
@@ -268,6 +306,9 @@ class AtacarPersonagemUseCase:
         melhor_distancia = None
 
         for candidato in candidatos:
+            metricas = getattr(self.cenario_principal, "metricas_desempenho", None)
+            if metricas is not None:
+                metricas.contar("candidatos_busca_alvo")
             if candidato is personagem:
                 continue
 
@@ -422,7 +463,9 @@ class AtacarPersonagemUseCase:
         if novo_alvo is None or novo_alvo is self.personagem:
             return
 
+        self._desregistrar_alvo_ativo(self.entidade_alvo)
         self.entidade_alvo = novo_alvo
+        self._registrar_alvo_ativo(self.entidade_alvo)
         self.posicao_alvo_no_inicio_ataque = None
         self.destino_ataque = None
         self.posicao_alvo_destino_ataque = None
@@ -488,7 +531,59 @@ class AtacarPersonagemUseCase:
                 margem=self.DISTANCIA_ATAQUE_CONSTRUCAO,
             )
         else:
-            destino = (alvo.x, alvo.y)
+            alvo_caminhavel = self.navegacao.pode_andar(
+                alvo.x,
+                alvo.y,
+                self.personagem.altura,
+            )
+
+            if alvo_caminhavel:
+                linha_bloqueada = self.navegacao.linha_bloqueada_por_obstaculos(
+                    self.personagem.x,
+                    self.personagem.y,
+                    alvo.x,
+                    alvo.y,
+                )
+
+                if linha_bloqueada:
+                    # Quando uma construção bloqueia a linha até um alvo que
+                    # está em terreno caminhável, não basta perseguir o centro
+                    # do alvo. Encontramos um ponto acessível bem próximo dele
+                    # e com linha de ataque livre. Isso permite que o defensor
+                    # faça o contorno e conclua o ataque em vez de ficar preso
+                    # na quina da construção.
+                    destino = self.navegacao.encontrar_ponto_acessivel_proximo(
+                        self.personagem.x,
+                        self.personagem.y,
+                        alvo.x,
+                        alvo.y,
+                        self.personagem.altura,
+                        distancia=self.DISTANCIA_LATERAL_ATAQUE,
+                        distancia_maxima_alvo=self.DISTANCIA_PARADA
+                        + self.DISTANCIA_LATERAL_ATAQUE,
+                        exigir_linha_livre_ate_alvo=True,
+                    )
+                    if destino is None:
+                        destino = (alvo.x, alvo.y)
+                else:
+                    destino = (alvo.x, alvo.y)
+            else:
+                # Alvos podem existir em um tile bloqueado. Nesse caso, não
+                # tentamos atravessar o obstáculo: buscamos o ponto caminhável
+                # mais próximo que ainda permita atacar o alvo.
+                destino = self.navegacao.encontrar_ponto_acessivel_proximo(
+                    self.personagem.x,
+                    self.personagem.y,
+                    alvo.x,
+                    alvo.y,
+                    self.personagem.altura,
+                    distancia=self.DISTANCIA_LATERAL_ATAQUE,
+                    distancia_maxima_alvo=self.DISTANCIA_PARADA
+                    + self.DISTANCIA_LATERAL_ATAQUE,
+                    exigir_linha_livre_ate_alvo=True,
+                )
+                if destino is None:
+                    destino = (alvo.x, alvo.y)
 
         if destino is None:
             if entity is not None and entity.get("grupo") == "construcoes":
@@ -566,6 +661,7 @@ class AtacarPersonagemUseCase:
             estado_parado=self._estado_ocioso(),
             estado_parado_flip=self._estado_ocioso_flip(),
             dt=dt,
+            destino_externo=(destino_x, destino_y),
         )
 
     def _interagir(self, dt):
@@ -679,6 +775,7 @@ class AtacarPersonagemUseCase:
         self._animacao_correndo()
 
     def _finalizar_ataque(self):
+        self._desregistrar_alvo_ativo(self.entidade_alvo)
         self.entidade_alvo = None
         self.posicao_alvo_no_inicio_ataque = None
         self.ordem_ataque = None

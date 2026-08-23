@@ -25,31 +25,29 @@ from application.usecases.soldado.atacar import AtacarSoldadoUseCase
 from application.usecases.soldado.controlar_comportamento_soldado import (
     ControlarComportamentoSoldadoUseCase,
 )
-from application.usecases.soldado.defender import DefenderSoldadoUseCase
 from core.game_config import obter_config
 
 USECASES = {
     "ControlarComportamentoSapudoUseCase": lambda c: ControlarComportamentoSapudoUseCase(
-        c.navegacao
+        c.navegacao, c.mover_personagem
     ),
     "ControlarComportamentoAldeaoUseCase": lambda c: ControlarComportamentoAldeaoUseCase(
-        c.navegacao
+        c.navegacao, c.mover_personagem
     ),
     "ControlarComportamentoSoldadoUseCase": lambda c: ControlarComportamentoSoldadoUseCase(
-        c.navegacao
+        c.navegacao, c.mover_personagem
     ),
     "ControlarComportamentoGoblinTochaUseCase": lambda c: ControlarComportamentoGoblinTochaUseCase(
-        c.navegacao
+        c.navegacao, c.mover_personagem
     ),
     "ControlarComportamentoOvelhaUseCase": lambda c: ControlarComportamentoOvelhaUseCase(
-        c.navegacao
+        c.navegacao, c.mover_personagem
     ),
     "MortePersonagemUseCase": lambda c: MortePersonagemUseCase(c),
     "CortarArvoreUseCase": lambda c: CortarArvoreUseCase(c),
     "ObterOuroUseCase": lambda c: ObterOuroUseCase(c),
     "ObterCarneUseCase": lambda c: ObterCarneUseCase(c),
     "AtacarSoldadoUseCase": lambda c: AtacarSoldadoUseCase(c),
-    "DefenderSoldadoUseCase": lambda c: DefenderSoldadoUseCase(),
     "AtacarGoblinUseCase": lambda c: AtacarGoblinUseCase(c),
     "DefenderConstrucaoUseCase": lambda c: DefenderConstrucaoUseCase(c),
     "DestruirConstrucaoUseCase": lambda c: DestruirConstrucaoUseCase(c),

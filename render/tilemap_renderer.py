@@ -1,5 +1,6 @@
 import json
 
+import utils.kivy_adapter as kivy_adapter
 from utils.config import TILE_SIZE
 
 
@@ -71,6 +72,7 @@ class TileMapRenderer:
         self.relevos_agua = set()
         self._relevos_agua_config = []
         self.ambiente = []
+        self.recursos_iniciais = {"madeira": 0, "ouro": 0, "carne": 0}
 
         self.alturas = {}
         self.topos_penhasco = set()
@@ -103,7 +105,16 @@ class TileMapRenderer:
         # CPU/GPU. Mantemos uma versão pré-composta e só desenhamos as camadas
         # realmente dinâmicas por frame.
         self._cache_terreno_base = None
-        self._cache_terreno_zoom = {}
+        # Cache seguro do viewport escalado. Não usamos TransformUtils.escalar
+        # aqui porque ele usa id(imagem) como chave e o viewport é uma Surface
+        # temporária criada a cada frame. Em web isso pode reutilizar um id de
+        # Python e devolver a imagem escalada de outro viewport.
+        #
+        # Mantemos somente o último viewport, indexado pelo trecho real da
+        # superfície-base e pelo zoom. Assim preservamos o ganho de cache sem
+        # permitir que imagens de áreas diferentes sejam misturadas.
+        self._cache_viewport = None
+        self._cache_viewport_key = None
         self._cache_terreno_pad_x = 256
         self._cache_terreno_pad_y = 256
         self.offset_agua_parada_x = -1
@@ -120,6 +131,12 @@ class TileMapRenderer:
             dados = json.load(arquivo)
 
         self.ambiente = dados.get("ambiente", [])
+        recursos_iniciais = dados.get("recursos_iniciais", {})
+        self.recursos_iniciais = {
+            "madeira": max(0, int(recursos_iniciais.get("madeira", 0))),
+            "ouro": max(0, int(recursos_iniciais.get("ouro", 0))),
+            "carne": max(0, int(recursos_iniciais.get("carne", 0))),
+        }
         self.largura = dados.get("colunas", 0)
         self.altura = dados.get("linhas", 0)
         self.offset_y = self.altura - 96
@@ -741,47 +758,133 @@ class TileMapRenderer:
             self.tela = tela_anterior
 
         self._cache_terreno_base = cache
-        self._cache_terreno_zoom.clear()
 
-    def _obter_cache_terreno_zoom(self, zoom):
-        chave = round(float(zoom), 4)
-        cache = self._cache_terreno_zoom.get(chave)
-        if cache is not None:
-            return cache
+    def _obter_cache_terreno_viewport(self, camera):
+        """Retorna somente a área visível do terreno pré-composto.
 
+        O cache importante é o terreno-base: o mapa já composto continua
+        sendo criado uma única vez. O viewport NÃO é mantido em um segundo
+        cache entre frames. Isso é intencional para desktop/web: um viewport
+        derivado de uma câmera com zoom pode acumular erros de origem quando a
+        câmera muda, principalmente no navegador, onde a superfície é um
+        wrapper de pygame.
+
+        A cada frame fazemos apenas:
+          1. recorte barato da superfície-base;
+          2. escala somente desse recorte pequeno;
+          3. blit com o deslocamento fracionário da câmera.
+
+        Assim preservamos o grande ganho de não redesenhar o mapa inteiro, mas
+        eliminamos a segunda camada de cache que podia deixar o terreno
+        defasado em relação aos sprites ao alternar zoom + arrasto.
+        """
         base = self._cache_terreno_base
         if base is None:
-            return None
+            return None, (0, 0)
 
-        if chave == 1.0:
-            cache = base
+        zoom = max(0.01, float(camera.zoom))
+        largura_mundo = max(1.0, float(camera.largura) / zoom)
+        altura_mundo = max(1.0, float(camera.altura) / zoom)
+
+        # O pixel 0 da superfície-base representa o mundo
+        # (-pad_x, -pad_y).
+        origem_cache_x = float(camera.x) + self._cache_terreno_pad_x
+        origem_cache_y = float(camera.y) + self._cache_terreno_pad_y
+
+        origem_x = int(origem_cache_x // 1)
+        origem_y = int(origem_cache_y // 1)
+        fracao_x = origem_cache_x - origem_x
+        fracao_y = origem_cache_y - origem_y
+
+        largura_origem = max(2, int(largura_mundo) + 2)
+        altura_origem = max(2, int(altura_mundo) + 2)
+
+        viewport_base = None
+        src_x = max(0, origem_x)
+        src_y = max(0, origem_y)
+        src_right = min(base.get_width(), origem_x + largura_origem)
+        src_bottom = min(base.get_height(), origem_y + altura_origem)
+
+        if (
+            src_right > src_x
+            and src_bottom > src_y
+            and origem_x >= 0
+            and origem_y >= 0
+            and origem_x + largura_origem <= base.get_width()
+            and origem_y + altura_origem <= base.get_height()
+        ):
+            viewport_base = base.subsurface(
+                (origem_x, origem_y, largura_origem, altura_origem)
+            )
         else:
-            cache = self.transform.escalar(
-                base,
-                (
-                    max(1, int(round(base.get_width() * chave))),
-                    max(1, int(round(base.get_height() * chave))),
-                ),
+            viewport_base = self.tela.__class__((largura_origem, altura_origem))
+            viewport_base.fill((0, 0, 0, 0))
+
+            if src_right > src_x and src_bottom > src_y:
+                viewport_base.blit(
+                    base,
+                    (src_x - origem_x, src_y - origem_y),
+                    (
+                        src_x,
+                        src_y,
+                        src_right - src_x,
+                        src_bottom - src_y,
+                    ),
+                )
+
+        if abs(zoom - 1.0) < 1e-9:
+            viewport = viewport_base
+        else:
+            # NÃO usar TransformUtils.escalar aqui. viewport_base é uma
+            # Surface temporária e o cache genérico usa id(imagem) como chave.
+            # Quando o objeto antigo é destruído, Python pode reutilizar o id
+            # para outro viewport e a web passa a mostrar conteúdo de outra
+            # posição do mapa. Esse é exatamente o sintoma de “itens trocando
+            # de lugar” após zoom + movimento.
+            viewport_largura = max(1, int(round(largura_origem * zoom)))
+            viewport_altura = max(1, int(round(altura_origem * zoom)))
+            cache_key = (
+                id(base),
+                origem_x,
+                origem_y,
+                largura_origem,
+                altura_origem,
+                round(zoom, 6),
             )
 
-        self._cache_terreno_zoom[chave] = cache
-        return cache
+            if self._cache_viewport_key != cache_key:
+                if getattr(kivy_adapter, "IS_BROWSER", False):
+                    viewport = kivy_adapter.transform.scale(
+                        viewport_base,
+                        (viewport_largura, viewport_altura),
+                    )
+                else:
+                    viewport = kivy_adapter.transform.smoothscale(
+                        viewport_base,
+                        (viewport_largura, viewport_altura),
+                    )
+                self._cache_viewport = viewport
+                self._cache_viewport_key = cache_key
+            else:
+                viewport = self._cache_viewport
+
+        # A origem do recorte está em floor(camera), portanto somente a
+        # fração restante precisa ser aplicada no destino.
+        return viewport, (fracao_x * zoom, fracao_y * zoom)
 
     def _renderizar_cache_terreno(self, camera):
-        cache = self._obter_cache_terreno_zoom(camera.zoom)
-        if cache is None:
+        viewport, deslocamento = self._obter_cache_terreno_viewport(camera)
+        if viewport is None:
             return
 
-        escala = camera.zoom
-
-        # O cache foi construído com origem no mundo em
-        # (-_cache_terreno_pad_x, -_cache_terreno_pad_y).
-        # Portanto, esse ponto precisa ser projetado para a tela como
-        # (-pad - camera.x, -pad - camera.y). A versão anterior usava
-        # +pad e deslocava todo o terreno estático em 2*pad pixels.
-        x = int((-self._cache_terreno_pad_x - camera.x) * escala)
-        y = int((-self._cache_terreno_pad_y - camera.y) * escala)
-        self.tela.blit(cache, (x, y))
+        deslocamento_x, deslocamento_y = deslocamento
+        self.tela.blit(
+            viewport,
+            (
+                int(round(-deslocamento_x)),
+                int(round(-deslocamento_y)),
+            ),
+        )
 
     def _atualizar_animacao_agua(self, dt):
         self.tempo_agua += dt
@@ -1089,26 +1192,30 @@ class TileMapRenderer:
         self.tela.blit(sprite_escalado, (pos_x, pos_y))
 
     def _renderizar_fundo(self, camera):
-        largura_zoom = int(self.agua_parada.get_width() * camera.zoom)
-        altura_zoom = int(self.agua_parada.get_height() * camera.zoom)
-        sprite = self.transform.escalar(self.agua_parada, (largura_zoom, altura_zoom))
+        # O índice da repetição é calculado em coordenadas do mundo. Usar o
+        # tamanho já escalado (pixels de tela) para dividir camera.x/y mistura
+        # espaços e causa saltos no fundo durante zoom e arrasto, sobretudo na
+        # versão web.
+        mundo_w = max(1, self.agua_parada.get_width())
+        mundo_h = max(1, self.agua_parada.get_height())
+        largura_zoom = max(1, int(round(mundo_w * camera.zoom)))
+        altura_zoom = max(1, int(round(mundo_h * camera.zoom)))
+        sprite = self.transform.escalar(
+            self.agua_parada,
+            (largura_zoom, altura_zoom),
+        )
 
-        sw, sh = sprite.get_width(), sprite.get_height()
-        inicio_x, fim_x = (
-            int(camera.x // sw) - 1,
-            int((camera.x + camera.largura) // sw) + 2,
-        )
-        inicio_y, fim_y = (
-            int(camera.y // sh) - 1,
-            int((camera.y + camera.altura) // sh) + 2,
-        )
+        inicio_x = int(camera.x // mundo_w) - 1
+        fim_x = int((camera.x + camera.largura_mundo_visivel) // mundo_w) + 2
+        inicio_y = int(camera.y // mundo_h) - 1
+        fim_y = int((camera.y + camera.altura_mundo_visivel) // mundo_h) + 2
 
         for y in range(inicio_y, fim_y):
             for x in range(inicio_x, fim_x):
                 self.tela.blit(
                     sprite,
                     (
-                        int(x * sw - camera.x * camera.zoom),
-                        int(y * sh - camera.y * camera.zoom),
+                        int(round(x * mundo_w * camera.zoom - camera.x * camera.zoom)),
+                        int(round(y * mundo_h * camera.zoom - camera.y * camera.zoom)),
                     ),
                 )

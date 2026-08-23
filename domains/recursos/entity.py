@@ -11,6 +11,7 @@ class Recurso:
         self.animacoes = Animacoes(nome)
         self.reservado_por = None
         self.grupo_drop = None
+        self.corpo_rect = None
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)

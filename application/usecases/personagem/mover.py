@@ -74,6 +74,14 @@ class MoverPersonagemUseCase:
         personagem.destino_x, personagem.destino_y = rota[indice]
         return True
 
+    def notificar_obstaculos_alterados(self, navegacao):
+        versao = getattr(navegacao, "_versao_obstaculos", None)
+        removidas = 0
+        for _chave, dados in list(self._rotas_por_personagem.items()):
+            if versao is not None:
+                dados["versao_pendente"] = versao
+        return removidas
+
     def executar(
         self,
         personagem,
@@ -84,38 +92,79 @@ class MoverPersonagemUseCase:
         estado_parado,
         estado_parado_flip,
         dt,
+        destino_externo=None,
     ):
         try:
             destino_recebido = (personagem.destino_x, personagem.destino_y)
             dados = self._rotas_por_personagem.get(id(personagem))
+            destino_final = (
+                destino_externo
+                if destino_externo is not None
+                else (dados["alvo"] if dados is not None else destino_recebido)
+            )
 
-            # Se havia uma rota, destino_x/destino_y normalmente apontam para
-            # o waypoint criado por este próprio movimentador. Só descarte a
-            # rota quando o chamador realmente mudou para outro destino.
+            # Ações como combate atualizam destino_x/destino_y continuamente
+            # para representar o ponto de ataque. Isso não pode ser confundido
+            # com uma nova ordem e destruir o waypoint persistente a cada frame.
+            # Quando existe um destino externo, comparamos somente esse destino
+            # final com a rota atual.
             if dados is not None:
-                rota = dados["rota"]
-                indice = dados["indice"]
-                esperado = dados["alvo"]
-                if indice < len(rota):
-                    esperado = rota[indice]
+                if destino_externo is not None:
+                    if (
+                        hypot(
+                            destino_externo[0] - dados["alvo"][0],
+                            destino_externo[1] - dados["alvo"][1],
+                        )
+                        > 12
+                    ):
+                        self._limpar_rota(personagem)
+                        dados = None
+                        destino_final = destino_externo
+                else:
+                    rota = dados["rota"]
+                    indice = dados["indice"]
+                    esperado = dados["alvo"]
+                    if indice < len(rota):
+                        esperado = rota[indice]
 
-                if (
-                    hypot(
-                        destino_recebido[0] - esperado[0],
-                        destino_recebido[1] - esperado[1],
+                    if (
+                        hypot(
+                            destino_recebido[0] - esperado[0],
+                            destino_recebido[1] - esperado[1],
+                        )
+                        > 8
+                    ):
+                        self._limpar_rota(personagem)
+                        dados = None
+
+            if dados is not None:
+                versao_atual = getattr(navegacao, "_versao_obstaculos", None)
+                if dados["versao_obstaculos"] != versao_atual:
+                    rota_afetada = navegacao.rota_foi_afetada(
+                        dados["rota"],
+                        dados["indice"],
+                        dados["versao_obstaculos"],
+                        origem=(personagem.x, personagem.y),
                     )
-                    > 8
-                ):
-                    self._limpar_rota(personagem)
-                    dados = None
+                    if rota_afetada:
+                        destino_final = dados["alvo"]
+                        self._limpar_rota(personagem)
+                        dados = None
+                    else:
+                        # A construção/obstáculo mudou fora do trecho restante.
+                        # A rota continua válida, apenas atualizamos sua versão.
+                        dados["versao_obstaculos"] = versao_atual
+                        dados.pop("versao_pendente", None)
 
-            if dados is not None and not self._preparar_waypoint(personagem, navegacao):
-                dados = self._rotas_por_personagem.get(id(personagem))
+                if dados is not None and not self._preparar_waypoint(
+                    personagem, navegacao
+                ):
+                    dados = self._rotas_por_personagem.get(id(personagem))
 
             if dados is not None:
                 alvo = (personagem.destino_x, personagem.destino_y)
             else:
-                alvo = destino_recebido
+                alvo = destino_final
 
             dx = alvo[0] - personagem.x
             dy = alvo[1] - personagem.y
@@ -139,26 +188,38 @@ class MoverPersonagemUseCase:
                     passo_maximo,
                 )
             else:
-                nova_posicao = navegacao.limitar_movimento(
+                caminho_livre = navegacao._caminho_livre(
                     x_antigo,
                     y_antigo,
                     alvo[0],
                     alvo[1],
                     personagem.altura,
-                    passo_maximo,
                 )
 
-                if nova_posicao is None and self._criar_rota(
-                    personagem, navegacao, destino_recebido
+                if caminho_livre and navegacao.pode_andar(
+                    alvo[0], alvo[1], personagem.altura
                 ):
-                    self._preparar_waypoint(personagem, navegacao)
                     nova_posicao = navegacao._limitar_distancia(
                         x_antigo,
                         y_antigo,
-                        personagem.destino_x,
-                        personagem.destino_y,
+                        alvo[0],
+                        alvo[1],
                         passo_maximo,
                     )
+                else:
+                    # A partir do primeiro bloqueio, cria uma rota persistente
+                    # e passa a consumir seus waypoints. Não pede BFS novamente
+                    # a cada frame enquanto o obstáculo permanecer igual.
+                    nova_posicao = None
+                    if self._criar_rota(personagem, navegacao, destino_final):
+                        self._preparar_waypoint(personagem, navegacao)
+                        nova_posicao = navegacao._limitar_distancia(
+                            x_antigo,
+                            y_antigo,
+                            personagem.destino_x,
+                            personagem.destino_y,
+                            passo_maximo,
+                        )
 
             if not nova_posicao:
                 self._limpar_rota(personagem)
@@ -201,6 +262,14 @@ class MoverPersonagemUseCase:
                     alvo_final = dados["alvo"]
                     self._limpar_rota(personagem)
                     personagem.destino_x, personagem.destino_y = alvo_final
+                else:
+                    # O waypoint foi consumido neste frame. Atualiza já o
+                    # destino exposto ao restante do jogo para que o próximo
+                    # frame não interprete a troca legítima de waypoint como
+                    # uma nova ordem manual.
+                    personagem.destino_x, personagem.destino_y = dados["rota"][
+                        dados["indice"]
+                    ]
 
             passo_x = personagem.x - x_antigo
             self._atualizar_estado_animacao(

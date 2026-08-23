@@ -10,6 +10,7 @@ class AudioManager:
 
         self.musica_atual = None
         self.pilha_musicas = []
+        self.musica_vila_tocando = False
 
     # =====================================
     # INIT
@@ -43,6 +44,8 @@ class AudioManager:
 
         if not kivy_adapter.mixer.music.get_busy():
             kivy_adapter.mixer.music.play(-1)
+        if self.musica_atual == MUSICA_FUNDO:
+            self.musica_vila_tocando = True
 
     def tocar_musica_fundo(self, arquivo):
         self.inicializar()
@@ -55,6 +58,7 @@ class AudioManager:
         kivy_adapter.mixer.music.load(str(arquivo))
         kivy_adapter.mixer.music.set_volume(VOLUME_MUSICA)
         kivy_adapter.mixer.music.play(-1)
+        self.musica_vila_tocando = arquivo == MUSICA_FUNDO
 
     def tocar_musica_temporaria(self, arquivo):
         self.inicializar()
@@ -85,6 +89,7 @@ class AudioManager:
 
         self.habilitado = True
         self.musica_atual = MUSICA_FUNDO
+        self.musica_vila_tocando = True
 
         kivy_adapter.mixer.music.pause()
         kivy_adapter.mixer.music._sound = None

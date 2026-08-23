@@ -17,6 +17,13 @@ class Arvore:
         self.animacoes.atualizar(dt)
 
     def obter_madeira(self):
+        if self.madeira <= 0:
+            self.madeira = 0
+            self.animacoes.estado = EstadoArvore.CORTADA
+            return False
+
         self.madeira -= 1
         if self.madeira == 0:
             self.animacoes.estado = EstadoArvore.CORTADA
+
+        return True

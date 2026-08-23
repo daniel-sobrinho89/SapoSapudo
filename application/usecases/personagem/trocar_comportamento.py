@@ -48,4 +48,7 @@ class TrocarComportamentoUseCase:
             destino_y,
         )
 
+        # Uma ordem manual redefine a área de movimentação autônoma.
+        personagem.definir_base_movimento(destino_x, destino_y)
+
         return True

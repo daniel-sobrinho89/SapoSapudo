@@ -23,11 +23,17 @@ class ChamarDefensoresUseCase:
                 continue
 
             config = obter_config(personagem.nome)
+            registro = self.cenario_principal.obter_entidade(personagem)
+            faccao_personagem = (
+                registro.get("faccao")
+                if registro is not None and registro.get("faccao") is not None
+                else config.get("faccao")
+            )
 
             if config.get("grupo") == "construcoes":
                 continue
 
-            if config.get("faccao") != faccao:
+            if faccao_personagem != faccao:
                 continue
 
             if not self._esta_no_raio(entidade_protegida, personagem):

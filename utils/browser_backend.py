@@ -281,6 +281,11 @@ class mixer:
                 return
             pygame.mixer.music.pause()
 
+        def stop(self):
+            if not AUDIO_HABILITADO or pygame.mixer.get_init() is None:
+                return
+            pygame.mixer.music.stop()
+
         def unpause(self):
             if not AUDIO_HABILITADO or pygame.mixer.get_init() is None:
                 return

@@ -2,6 +2,7 @@ from core.animacoes import Animacoes
 from domains.arvore.entity import Arvore
 from domains.ouro.entity import MinaOuro
 from domains.recursos.entity import Recurso
+from utils.config import TILE_SIZE
 
 
 class Personagem:
@@ -26,6 +27,9 @@ class Personagem:
 
         self.base_x = x
         self.base_y = y
+        # Raio da área de movimentação livre, em tiles.
+        # O centro muda somente quando o personagem recebe uma nova ordem
+        # (movimento, ataque ou coleta). Animais não usam este comportamento.
         self.base_raio = 4
 
         self.vida = self.VIDA_MAXIMA
@@ -35,6 +39,15 @@ class Personagem:
         self.destino_y = self.y
         self.construcao_selecionada = None
         self.tempo_barra_vida = 0.0
+
+    def definir_base_movimento(self, x, y):
+        """Define o centro da área de movimentação autônoma do personagem."""
+        self.base_x = x
+        self.base_y = y
+
+    @property
+    def raio_movimento_livre(self):
+        return self.base_raio * TILE_SIZE
 
     def atualizar(self, dt):
         self.animacoes.atualizar(dt)
@@ -65,8 +78,30 @@ class Personagem:
                 self.animacoes.estado = estado.CORRENDO_FLIP
 
 
-def criar_entidade(nome, x=0, y=0, altura=0, vida=0, ataque=0, defesa=0):
-    return Personagem(nome, x, y, altura, vida, ataque, defesa, carne=0)
+def criar_entidade(
+    nome,
+    x=0,
+    y=0,
+    altura=0,
+    vida=0,
+    ataque=0,
+    defesa=0,
+    madeira=0,
+    ouro=0,
+    carne=0,
+):
+    return Personagem(
+        nome,
+        x,
+        y,
+        altura,
+        vida,
+        ataque,
+        defesa,
+        madeira=madeira,
+        ouro=ouro,
+        carne=carne,
+    )
 
 
 def criar_arvore(nome, x=400, y=450, altura=0, vida=0, ataque=0, defesa=0):

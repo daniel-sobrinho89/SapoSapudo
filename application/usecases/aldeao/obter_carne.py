@@ -27,6 +27,14 @@ class ObterCarneUseCase:
         self.posicao_alvo_destino_coleta = None
 
     def iniciar(self, animal, personagem, manual=False):
+        # ObterCarne aceita personagens abatíveis (ex.: ovelha) ou drops de
+        # carne. Um Recurso de outro tipo nunca deve entrar no fluxo de ataque.
+        if (
+            not hasattr(animal, "receber_golpe")
+            and getattr(animal, "nome", None) != "carne"
+        ):
+            return False
+
         if getattr(animal, "nome", None) == "carne":
             if not manual:
                 return False
@@ -40,6 +48,7 @@ class ObterCarneUseCase:
 
         self.entidade_alvo = animal
         self.personagem = personagem
+        personagem.definir_base_movimento(animal.x, animal.y)
         self.grupo_recurso = (
             getattr(animal, "grupo_drop", None)
             if getattr(animal, "nome", None) == "carne"
@@ -212,6 +221,22 @@ class ObterCarneUseCase:
         )
 
     def _atacar(self):
+        # Drops de carne são entidades Recurso e não possuem receber_golpe.
+        # Em alguns redirecionamentos de coleta o estado de animação pode
+        # permanecer por um frame no fluxo de ataque. Nunca deixe a IA tentar
+        # golpear um recurso. Redirecionamos para coleta quando for carne e,
+        # para qualquer outro recurso inesperado, cancelamos a ação com
+        # segurança em vez de derrubar o jogo.
+        alvo = self.entidade_alvo
+        receber_golpe = getattr(alvo, "receber_golpe", None)
+        if receber_golpe is None:
+            if getattr(alvo, "nome", None) == "carne":
+                self.posicao_alvo_no_inicio_ataque = None
+                self._obter()
+            else:
+                self.cancelar_coleta()
+            return
+
         animacao = self.personagem.animacoes.animacao_atual
 
         if not self._alvo_ainda_esta_no_alcance():
@@ -239,7 +264,7 @@ class ObterCarneUseCase:
             self.personagem.altura,
         )
 
-        self.entidade_alvo.receber_golpe(
+        receber_golpe(
             self.personagem,
             *destino,
         )

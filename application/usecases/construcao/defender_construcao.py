@@ -24,9 +24,11 @@ class DefenderConstrucaoUseCase:
 
             self._atualizar_fogos()
 
+            atacante = self.entidade_alvo
+
             self.chamar_defensores.executar(
                 self.construcao,
-                self.entidade_alvo,
+                atacante,
                 faccao,
             )
 

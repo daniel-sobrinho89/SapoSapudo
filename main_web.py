@@ -12,10 +12,10 @@ from utils import browser_backend
 
 sys.modules["utils.kivy_adapter"] = browser_backend
 
+from application.cenario import EstadoJogo, GerenciadorCenarios
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
-from domains.cenario import EstadoJogo, GerenciadorCenarios
 from render.transform_utils import TransformUtils
-from utils.config import ALTURA, LARGURA
+from utils.config import ALTURA, FPS, LARGURA
 from utils.input import init_scaling
 
 logging.getLogger().setLevel(logging.INFO)
@@ -60,13 +60,58 @@ carregamento_iniciado = False
 preloader_ocultado = False
 maior_progresso_carregamento = 0.0
 
+# Browsers mobile podem emitir FINGER* e também o MOUSE* sintético para o
+# mesmo toque. Sem deduplicação, um único toque chega duas vezes ao jogo e
+# o detector de duplo clique interpreta o par como uma ação distinta.
+_ULTIMO_EVENTO_TOQUE_WEB = None
+_ULTIMO_EVENTO_MOUSE_WEB = None
+_JANELA_DUPLICATA_TOQUE = 0.35
+_DISTANCIA_DUPLICATA_TOQUE = 28.0
+
+
+def _web_eh_dispositivo_tactil():
+    if sys.platform != "emscripten":
+        return False
+    with suppress(Exception):
+        return int(getattr(platform.window.navigator, "maxTouchPoints", 0) or 0) > 0
+    return False
+
+
+_WEB_TOUCH_DEVICE = _web_eh_dispositivo_tactil()
+
+
+def _evento_web_duplicado(origem, pos):
+    global _ULTIMO_EVENTO_TOQUE_WEB, _ULTIMO_EVENTO_MOUSE_WEB
+
+    agora = time.monotonic()
+    pos = (float(pos[0]), float(pos[1]))
+
+    anterior = (
+        _ULTIMO_EVENTO_MOUSE_WEB if origem == "touch" else _ULTIMO_EVENTO_TOQUE_WEB
+    )
+
+    if anterior is not None:
+        instante, x, y = anterior
+        if (
+            agora - instante <= _JANELA_DUPLICATA_TOQUE
+            and (pos[0] - x) ** 2 + (pos[1] - y) ** 2 <= _DISTANCIA_DUPLICATA_TOQUE**2
+        ):
+            return True
+
+    registro = (agora, pos[0], pos[1])
+    if origem == "touch":
+        _ULTIMO_EVENTO_TOQUE_WEB = registro
+    else:
+        _ULTIMO_EVENTO_MOUSE_WEB = registro
+    return False
+
+
 web_log("SapoSapudo Web: display inicializado; aguardando início do jogo")
 
 
 def pos_virtual(pos):
-    # Pygame/Web canvas uses origin at the top-left, unlike Kivy/Android.
-    # Reusing real_to_virtual() here would invert Y and send clicks to the
-    # opposite side of the map.
+    # Pygame/Web e HUD usam origem no topo; apenas convertemos a escala
+    # do canvas real para a resolução virtual fixa.
     try:
         rx, ry = pos
         rw, rh = pygame.display.get_window_size()
@@ -170,14 +215,17 @@ def finalizar_preloader_web():
         preloader_ocultado = True
 
 
-def processar_mouse_down(event):
+def processar_mouse_down(event, origem="mouse"):
     p = pos_virtual(event.pos)
 
+    if event.button == 1 and _evento_web_duplicado(origem, p):
+        return
+
     if event.button == 4:
-        cenario.camera.aproximar()
+        cenario.camera.aproximar(p)
         return
     if event.button == 5:
-        cenario.camera.afastar()
+        cenario.camera.afastar(p)
         return
 
     if event.button == 1:
@@ -189,7 +237,12 @@ def processar_mouse_down(event):
             return
 
         if cenario.carregado and coordenador is not None:
-            coordenador.processar_toque_down(p)
+            # O detector de duplo clique continua ativo no touch.
+            # A deduplicacao acima remove apenas o MOUSEBUTTONDOWN sintetico
+            # correspondente ao mesmo toque. Assim:
+            #   1 toque real -> 1 selecao
+            #   2 toques reais -> duplo clique/menu
+            coordenador.processar_toque_down(p, permitir_duplo_clique=True)
 
 
 async def main():
@@ -211,7 +264,8 @@ async def main():
     ultimo_progresso = -1
 
     while True:
-        now = time.perf_counter()
+        frame_start = time.perf_counter()
+        now = frame_start
         dt = min(now - last, 0.05)
         last = now
 
@@ -223,18 +277,22 @@ async def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 processar_mouse_down(event)
             elif event.type == getattr(pygame, "FINGERDOWN", -999):
-                # Alguns browsers expõem toque como FINGERDOWN em vez de
-                # sintetizar MOUSEBUTTONDOWN. Converta para coordenadas virtuais.
-                with suppress(Exception):
-                    evento_mouse = type(
-                        "MouseEvent",
-                        (),
-                        {
-                            "button": 1,
-                            "pos": pos_virtual_to_finger(event.x, event.y),
-                        },
-                    )()
-                    processar_mouse_down(evento_mouse)
+                # Em mobile, trate o FINGERDOWN como o evento primário.
+                # Não sintetize um MOUSEBUTTONDOWN, pois alguns browsers já
+                # produzem esse evento automaticamente para o mesmo toque.
+                p = pos_virtual_to_finger(event.x, event.y)
+                if not _evento_web_duplicado("touch", p):
+                    if (
+                        not cenario_inicializado
+                        and gerenciador_cenarios.estado == EstadoJogo.ABERTURA
+                    ):
+                        iniciar_cenario_web()
+                    elif cenario.carregado and coordenador is not None:
+                        # FINGERDOWN e a entrada primaria no touch.
+                        # O detector deve permanecer ativo para reconhecer
+                        # dois toques reais como duplo clique; o MOUSE*
+                        # sintetico do browser e descartado pela deduplicacao.
+                        coordenador.processar_toque_down(p, permitir_duplo_clique=True)
             elif event.type == pygame.KEYDOWN:
                 if getattr(event, "key", None) in (pygame.K_RETURN, pygame.K_SPACE):
                     iniciar_cenario_web()
@@ -298,7 +356,12 @@ async def main():
 
         pygame.display.flip()
 
-        await asyncio.sleep(0)
+        # O jogo foi projetado para 30 FPS. Sem pacing, o loop assíncrono do
+        # browser roda tão rápido quanto o dispositivo permitir e disputa CPU
+        # com o próprio navegador, especialmente em celulares. Limitamos o
+        # ritmo ao FPS-alvo sem reduzir resolução, sprites ou qualidade.
+        restante = (1.0 / FPS) - (time.perf_counter() - frame_start)
+        await asyncio.sleep(max(0.0, restante))
 
 
 asyncio.run(main())

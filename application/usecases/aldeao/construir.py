@@ -71,6 +71,9 @@ class ConstruirUseCase:
         cenario.menu_contextual.fechar()
 
         cenario.construcao_arrastando = None
+        notificar = getattr(cenario, "notificar_obstaculos_alterados", None)
+        if notificar is not None:
+            notificar()
 
     def _consumir_recursos(self, cenario):
         madeiras = cenario.construcao_arrastando.custo_madeira

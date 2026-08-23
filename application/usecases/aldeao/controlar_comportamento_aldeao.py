@@ -1,8 +1,11 @@
-from application.usecases.personagem.controlar_comportamento_base import (
-    ControlarComportamentoBaseUseCase,
-)
+"""Compatibilidade para imports antigos. A implementação agora é genérica."""
+
+from application.usecases.personagem.comportamento import ControlarComportamentoUseCase
 from domains.personagem.maquina_estado import EstadoAldeao
 
 
-class ControlarComportamentoAldeaoUseCase(ControlarComportamentoBaseUseCase):
-    ESTADO = EstadoAldeao
+def ControlarComportamentoAldeaoUseCase(navegacao, mover=None):
+    return ControlarComportamentoUseCase(navegacao, EstadoAldeao, mover=mover)
+
+
+__all__ = ["ControlarComportamentoAldeaoUseCase"]

@@ -14,9 +14,9 @@ from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
 import utils.kivy_adapter as kivy_adapter
+from application.cenario import EstadoJogo, GerenciadorCenarios
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
 from core.mouse_events import DoubleClickDetector
-from domains.cenario import EstadoJogo, GerenciadorCenarios
 from render.transform_utils import TransformUtils
 from utils.config import ALTURA, FPS, IS_ANDROID, LARGURA
 from utils.input import init_scaling, real_to_virtual
@@ -113,11 +113,11 @@ class GameWidget(Widget):
         # Scroll do mouse
         if "button" in touch.profile:
             if touch.button == "scrolldown":
-                camera.afastar()
+                camera.afastar(pos_virtual)
                 return True
 
             if touch.button == "scrollup":
-                camera.aproximar()
+                camera.aproximar(pos_virtual)
                 return True
 
         if (
@@ -151,7 +151,7 @@ class GameWidget(Widget):
                 if abs(delta) > 10:
                     camera = self.cenario.camera
 
-                    camera.definir_zoom(camera.zoom + delta * 0.002)
+                    camera.definir_zoom(camera.zoom + delta * 0.002, pos_virtual)
 
             self._distancia_pinca = distancia
 

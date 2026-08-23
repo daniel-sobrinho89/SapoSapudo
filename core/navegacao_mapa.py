@@ -23,6 +23,9 @@ class NavegacaoMapa:
         self._cache_desvios = {}
         self._cache_rotas_limite = 256
         self._cache_desvios_limite = 128
+        self.metricas = None
+        self._historico_alteracoes_obstaculos = {}
+        self._historico_alteracoes_limite = 32
 
         self.pontos_grama = [
             (
@@ -41,6 +44,114 @@ class NavegacaoMapa:
     def definir_obter_obstaculos(self, obter_obstaculos):
         self._obter_obstaculos = obter_obstaculos or (lambda: ())
 
+    def definir_metricas(self, metricas):
+        self.metricas = metricas
+
+    def notificar_obstaculos_alterados(self):
+        """Atualiza obstáculos e registra apenas a área que mudou."""
+        obstaculos = tuple(self._obter_obstaculos())
+        assinatura = tuple(
+            (
+                getattr(r, "left", 0),
+                getattr(r, "top", 0),
+                getattr(r, "right", 0),
+                getattr(r, "bottom", 0),
+            )
+            for r in obstaculos
+        )
+
+        antiga = set(self._assinatura_obstaculos or ())
+        nova = set(assinatura)
+        alteracoes = tuple(nova ^ antiga)
+
+        self._obstaculos_cache = obstaculos
+        self._assinatura_obstaculos = assinatura
+        self._versao_obstaculos += 1
+        self._historico_alteracoes_obstaculos[self._versao_obstaculos] = alteracoes
+        while (
+            len(self._historico_alteracoes_obstaculos)
+            > self._historico_alteracoes_limite
+        ):
+            primeira = min(self._historico_alteracoes_obstaculos)
+            self._historico_alteracoes_obstaculos.pop(primeira, None)
+
+        # O cache de pathfinding usa a versão global. Consultas futuras devem
+        # sempre considerar o novo mapa, mas rotas já em execução só serão
+        # invalidadas se a área alterada tocar seu trecho restante.
+        self._cache_rotas.clear()
+        self._cache_desvios.clear()
+        if self.metricas is not None:
+            self.metricas.contar("obstaculos_alterados")
+        return alteracoes
+
+    def rota_foi_afetada(self, caminho, indice, versao, origem=None):
+        """Retorna True apenas se uma mudança recente toca a rota restante."""
+        if versao == self._versao_obstaculos:
+            return False
+
+        historico = [
+            alteracoes
+            for numero, alteracoes in self._historico_alteracoes_obstaculos.items()
+            if numero > versao
+        ]
+        esperado = self._versao_obstaculos - versao
+        if len(historico) != esperado:
+            # Já não temos histórico suficiente. Segurança primeiro.
+            return True
+
+        pontos = list(caminho[indice:])
+        if not pontos:
+            return False
+        if origem is not None:
+            pontos.insert(0, origem)
+
+        for alteracoes in historico:
+            for rect in alteracoes:
+                for i in range(len(pontos) - 1):
+                    if self._segmento_intersecta_rect(pontos[i], pontos[i + 1], rect):
+                        return True
+        return False
+
+    @staticmethod
+    def _segmento_intersecta_rect(p0, p1, rect):
+        margem = NavegacaoMapa.RAIO_COLISAO_CONSTRUCAO
+        left, top, right, bottom = (
+            rect[0] - margem,
+            rect[1] - margem,
+            rect[2] + margem,
+            rect[3] + margem,
+        )
+
+        x0, y0 = p0
+        x1, y1 = p1
+        dx = x1 - x0
+        dy = y1 - y0
+
+        if left <= x0 <= right and top <= y0 <= bottom:
+            return True
+        if left <= x1 <= right and top <= y1 <= bottom:
+            return True
+
+        p = (-dx, dx, -dy, dy)
+        q = (x0 - left, right - x0, y0 - top, bottom - y0)
+        u1, u2 = 0.0, 1.0
+
+        for pi, qi in zip(p, q):
+            if pi == 0:
+                if qi < 0:
+                    return False
+                continue
+            t = qi / pi
+            if pi < 0:
+                if t > u2:
+                    return False
+                u1 = max(u1, t)
+            else:
+                if t < u1:
+                    return False
+                u2 = min(u2, t)
+        return True
+
     def atualizar_obstaculos(self):
         obstaculos = tuple(self._obter_obstaculos())
         assinatura = tuple(
@@ -53,11 +164,10 @@ class NavegacaoMapa:
             for r in obstaculos
         )
         if assinatura != self._assinatura_obstaculos:
-            self._assinatura_obstaculos = assinatura
-            self._obstaculos_cache = obstaculos
-            self._versao_obstaculos += 1
-            self._cache_rotas.clear()
-            self._cache_desvios.clear()
+            if self.metricas is not None:
+                self.metricas.contar("obstaculos_alterados_detectados")
+            return self.notificar_obstaculos_alterados()
+        return ()
 
     def invalidar_cache_rotas(self):
         self._cache_rotas.clear()
@@ -247,6 +357,14 @@ class NavegacaoMapa:
             if exigir_linha_livre_ate_alvo and self.linha_bloqueada_por_obstaculos(
                 x, y, alvo_x, alvo_y
             ):
+                continue
+
+            # O BFS trabalha em centros de tiles, mas o destino retornado
+            # pode ser um ponto contínuo junto à borda de uma construção.
+            # Valide também o ponto exato para não entregar ao movimento um
+            # destino que o mapa considera atravessável no tile, mas que a
+            # colisão dinâmica considera bloqueado.
+            if not self.pode_andar(x, y, altura):
                 continue
 
             col_dest, lin_dest = self.tilemap.pixel_para_tile(x, y)
@@ -678,6 +796,9 @@ class NavegacaoMapa:
         return [(c, lin) for c, lin, _ in rota_bruta]
 
     def calcular_rota(self, origem_x, origem_y, destino_x, destino_y, altura):
+        if self.metricas is not None:
+            self.metricas.contar("pathfinding_chamadas")
+
         origem = self.tilemap.pixel_para_tile(origem_x, origem_y)
         destino = self.tilemap.pixel_para_tile(destino_x, destino_y)
 
@@ -691,7 +812,11 @@ class NavegacaoMapa:
         )
         rota_cache = self._cache_rotas.get(chave)
         if rota_cache is not None:
+            if self.metricas is not None:
+                self.metricas.contar("pathfinding_cache_hit")
             return rota_cache
+        if self.metricas is not None:
+            self.metricas.contar("pathfinding_cache_miss")
 
         rota_bruta = self._buscar_caminho_base(
             origem,

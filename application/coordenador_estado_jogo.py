@@ -2,7 +2,6 @@ from application.usecases import (
     ConstruirUseCase,
     TrocarComportamentoUseCase,
 )
-from application.usecases.soldado.defender import DefenderSoldadoUseCase
 from core.mouse_events import DoubleClickDetector
 from domains.personagem.maquina_estado_soldado import EstadoSoldado
 
@@ -16,23 +15,29 @@ class CoordenadorEstadoJogo:
         self.double_click = DoubleClickDetector()
         self.controladores = {}
         self._tempo_proxima_busca_alvo = {}
-        self._intervalo_busca_alvo = 0.12
+        # Decisão automática em 4 Hz. A execução de ações continua por frame.
+        self._intervalo_busca_alvo = 0.25
 
         self.construir = ConstruirUseCase()
         self.trocar_comportamento = TrocarComportamentoUseCase()
-        self.defender_soldado = DefenderSoldadoUseCase()
 
     def executar(self, dt):
+        metricas = getattr(self.gerenciador_cenarios, "metricas_desempenho", None)
+        if metricas is not None:
+            metricas.contar("ticks_coordenador")
+
         for personagem in (
             self.gerenciador_cenarios.personagens
             + self.gerenciador_cenarios.personagens_hostis
         ):
+            if metricas is not None:
+                metricas.contar("personagens_processados")
             self._executar_fluxo_personagem(personagem, dt)
 
         for personagem in self.gerenciador_cenarios.ovelhas:
             ctrl = self.gerenciador_cenarios.controladores[personagem]
 
-            if personagem.vida <= 0:
+            if personagem.vida <= 0 and ctrl.get("morte") is not None:
                 if ctrl["morte"].entidade_alvo is None:
                     ctrl["morte"].iniciar(personagem)
                 else:
@@ -54,7 +59,7 @@ class CoordenadorEstadoJogo:
 
             ctrl = self.gerenciador_cenarios.controladores[entidade]
 
-            if entidade.vida <= 0:
+            if entidade.vida <= 0 and ctrl.get("morte") is not None:
                 if ctrl["morte"].entidade_alvo is None:
                     ctrl["morte"].iniciar(entidade)
                 else:
@@ -64,12 +69,13 @@ class CoordenadorEstadoJogo:
 
     def _executar_fluxo_personagem(self, personagem, dt):
         ctrl = self.gerenciador_cenarios.controladores[personagem]
+        metricas = getattr(self.gerenciador_cenarios, "metricas_desempenho", None)
 
         proxima_busca = self._tempo_proxima_busca_alvo.get(personagem, 0.0)
         proxima_busca -= dt
         self._tempo_proxima_busca_alvo[personagem] = proxima_busca
 
-        if personagem.vida <= 0:
+        if personagem.vida <= 0 and ctrl.get("morte") is not None:
             # Não apagar os alvos das ações antes da máquina de morte executar.
             # O fluxo de morte precisa saber, por exemplo, se este personagem
             # era a ovelha que um aldeão estava caçando para poder redirecioná-lo
@@ -78,7 +84,7 @@ class CoordenadorEstadoJogo:
             if ctrl["morte"].entidade_alvo is None:
                 ctrl["morte"].iniciar(personagem)
                 return
-            elif personagem.vida <= 0:
+            else:
                 ctrl["morte"].executar(dt)
                 return
 
@@ -111,6 +117,8 @@ class CoordenadorEstadoJogo:
                 and self._tempo_proxima_busca_alvo[personagem] <= 0.0
             ):
                 self._tempo_proxima_busca_alvo[personagem] = self._intervalo_busca_alvo
+                if metricas is not None:
+                    metricas.contar("buscas_alvo")
                 if adquirir_alvo(personagem):
                     usecase.executar(dt)
                     return
@@ -120,6 +128,8 @@ class CoordenadorEstadoJogo:
                 and self._tempo_proxima_busca_alvo[personagem] <= 0.0
             ):
                 self._tempo_proxima_busca_alvo[personagem] = self._intervalo_busca_alvo
+                if metricas is not None:
+                    metricas.contar("buscas_recurso")
                 if adquirir_recurso(personagem):
                     usecase.executar(dt)
                     return
@@ -129,17 +139,32 @@ class CoordenadorEstadoJogo:
 
         ctrl["padrao"].executar(dt, personagem)
 
-    def processar_toque_down(self, pos_virtual):
+    @staticmethod
+    def _defender_soldado(soldado):
+        estado = (
+            EstadoSoldado.DEFENDENDO_FLIP
+            if soldado.animacoes.maquina.flip
+            else EstadoSoldado.DEFENDENDO
+        )
+        soldado.destino_x = soldado.x
+        soldado.destino_y = soldado.y
+        soldado.animacoes.estado = estado
+
+    def processar_toque_down(self, pos_virtual, permitir_duplo_clique=True):
         menu = self.gerenciador_cenarios.menu_contextual
         camera = self.gerenciador_cenarios.camera
         mouse_mundo = camera.mundo(*pos_virtual)
+        detectar_duplo = (
+            self.double_click.detectar
+            if permitir_duplo_clique
+            else (lambda _pos: False)
+        )
 
         audio_rect = getattr(self.gerenciador_cenarios, "audio_hud_rect", None)
-        pos_tela = (
-            pos_virtual[0],
-            self.gerenciador_cenarios.tela.get_height() - pos_virtual[1],
-        )
-        if audio_rect is not None and audio_rect.collidepoint(pos_tela):
+        # Todas as entradas de toque chegam aqui em coordenadas virtuais
+        # com origem no topo. O HUD também é desenhado com origem no topo,
+        # portanto o retângulo do ícone pode ser usado diretamente.
+        if audio_rect is not None and audio_rect.collidepoint(pos_virtual):
             self.gerenciador_cenarios.audio_manager.alternar_musica_vila_duendes()
             camera.arrastando = False
             camera.ultimo_mouse = None
@@ -151,7 +176,7 @@ class CoordenadorEstadoJogo:
                     construcao.corpo_rect is not None
                     and construcao.corpo_rect.collidepoint(mouse_mundo)
                 ):
-                    if self.double_click.detectar(mouse_mundo):
+                    if detectar_duplo(mouse_mundo):
                         menu.abrir_personagens(construcao)
                         camera.arrastando = False
                         camera.ultimo_mouse = None
@@ -163,15 +188,15 @@ class CoordenadorEstadoJogo:
 
             if opcao:
                 if menu.modo == "soldado":
-                    if self.double_click.detectar(pos_virtual):
+                    if detectar_duplo(pos_virtual):
                         if menu.soldado_alvo is not None:
-                            self.defender_soldado.executar(menu.soldado_alvo)
+                            self._defender_soldado(menu.soldado_alvo)
                             menu.soldado_alvo.selecionado = False
                         menu.fechar()
                     return
 
                 if menu.modo == "personagens":
-                    if self.double_click.detectar(pos_virtual):
+                    if detectar_duplo(pos_virtual):
                         self.construir.criar_personagem_na_construcao(
                             self.gerenciador_cenarios,
                             opcao,
@@ -187,7 +212,7 @@ class CoordenadorEstadoJogo:
                 )
                 return
 
-            if self.double_click.detectar(pos_virtual):
+            if detectar_duplo(pos_virtual):
                 # Um duplo clique em um personagem, mesmo com outro menu
                 # aberto, troca imediatamente para o menu de construções.
                 for personagem in self.gerenciador_cenarios.personagens:
@@ -232,7 +257,7 @@ class CoordenadorEstadoJogo:
             if personagem.corpo_rect and personagem.corpo_rect.collidepoint(
                 mouse_mundo
             ):
-                if self.double_click.detectar(mouse_mundo):
+                if detectar_duplo(mouse_mundo):
                     if personagem.nome == "soldado":
                         menu.abrir_soldado(personagem)
                     else:
@@ -358,8 +383,7 @@ class CoordenadorEstadoJogo:
             dx = pos_virtual[0] - camera.ultimo_mouse[0]
             dy = pos_virtual[1] - camera.ultimo_mouse[1]
 
-            camera.x -= dx
-            camera.y -= dy
+            camera.arrastar(dx, dy)
 
             camera.ultimo_mouse = pos_virtual
             return

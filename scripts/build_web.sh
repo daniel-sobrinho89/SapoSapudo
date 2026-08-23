@@ -35,6 +35,7 @@ copy_tree() {
       --exclude='__pycache__/' \
       --exclude='*.pyc' \
       --exclude='*.pyo' \
+      --exclude='tests/' \
       "$src/" "$dst/"
   else
     tar -C "$ROOT" \
@@ -43,6 +44,7 @@ copy_tree() {
       --exclude='*/__pycache__' \
       --exclude='*.pyc' \
       --exclude='*.pyo' \
+      --exclude='tests/' \
       -cf - "$(basename "$src")" \
       | tar -C "$WORK" -xf -
   fi
@@ -63,6 +65,11 @@ find "$WORK" -type d \
 find "$WORK" -type f \
   \( -name '*.pyc' -o -name '*.pyo' \) \
   -delete
+
+if [ -e "$WORK/tests" ]; then
+  echo "ERROR: integration tests leaked into web source: $WORK/tests"
+  exit 1
+fi
 
 echo "Web source prepared: $WORK"
 
@@ -254,6 +261,11 @@ with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as z:
         if path.is_file():
             z.write(path, path.relative_to(src).as_posix())
 PY
+
+if unzip -l "$FINAL_ZIP" | grep -E '(^|/)tests/' >/dev/null 2>&1; then
+  echo "ERROR: integration tests leaked into $FINAL_ZIP"
+  exit 1
+fi
 
 echo "Browser build directory: $FINAL_WEB"
 echo "Browser archive: $FINAL_ZIP"
