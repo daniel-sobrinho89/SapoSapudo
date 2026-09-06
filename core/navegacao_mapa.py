@@ -1,4 +1,4 @@
-from collections import deque
+from heapq import heappop, heappush
 from math import atan2, cos, hypot, sin
 from random import choice, randint, uniform
 
@@ -10,9 +10,14 @@ DIRECOES_8 = DIRECOES_4 + ((1, 1), (-1, -1), (1, -1), (-1, 1))
 
 class NavegacaoMapa:
     RAIO_COLISAO_CONSTRUCAO = 8
+    # A transição usa a superfície visual do degrau, mas evita a faixa
+    # inferior do tile para não permitir a troca de altura depois do limite
+    # visual real da escada. A caminhada no tile continua normal.
+    MARGEM_INFERIOR_TRANSICAO_DEGRAU = 12.0
 
-    def __init__(self, tilemap, obter_obstaculos=None):
+    def __init__(self, tilemap, obter_obstaculos=None, world_context=None):
         self.tilemap = tilemap
+        self.world_context = world_context or getattr(tilemap, "world_context", None)
         self._obter_obstaculos = obter_obstaculos or (lambda: ())
         # Obstáculos dinâmicos e rotas são cacheados para evitar recalcular
         # Rects de sprites e BFS repetidamente durante o mesmo trajeto.
@@ -199,47 +204,66 @@ class NavegacaoMapa:
         return esquerda <= x < direita and topo <= y < base
 
     def obter_altura_transicao(self, origem_x, origem_y, destino_x, destino_y, altura):
-        """
-        Resolve transições de altura atravessadas durante um único movimento.
+        """Resolve a mudança de altura pela célula lógica real do degrau.
 
-        O movimento de uma unidade pode atravessar mais de uma fronteira de
-        tile em um frame. Verificar somente o tile inicial e final faz a
-        unidade perder a mudança de altura quando o degrau fica no meio do
-        segmento.
-        """
-        distancia = hypot(destino_x - origem_x, destino_y - origem_y)
-        passos = max(1, int(distancia / 8))
+        O degrau configurado em ``mapa1.json`` está na própria célula física
+        atravessada pelo personagem. O renderer desenha a parte superior do
+        sprite do degrau com ``offset_y=-TILE_SIZE``, mas isso é apenas visual.
+        A navegação não deve aplicar esse deslocamento visual à coordenada do
+        personagem.
 
-        altura_atual = altura
-        x_anterior, y_anterior = origem_x, origem_y
-        coluna_anterior, linha_anterior = self.tilemap.pixel_para_tile(
-            x_anterior, y_anterior
+        Portanto, a transição é decidida usando exatamente os tiles retornados
+        por ``pixel_para_tile`` para a origem e o destino.
+        """
+        if origem_x is None or origem_y is None:
+            return None
+
+        dx = destino_x - origem_x
+        dy = destino_y - origem_y
+        if dx == 0 and dy == 0:
+            return None
+
+        origem_coluna, origem_linha = self.tilemap.pixel_para_tile(origem_x, origem_y)
+        destino_coluna, destino_linha = self.tilemap.pixel_para_tile(
+            destino_x, destino_y
         )
 
-        for indice in range(1, passos + 1):
-            t = indice / passos
-            x_atual = origem_x + (destino_x - origem_x) * t
-            y_atual = origem_y + (destino_y - origem_y) * t
-            coluna_atual, linha_atual = self.tilemap.pixel_para_tile(x_atual, y_atual)
+        if (origem_coluna, origem_linha) == (destino_coluna, destino_linha):
+            return None
 
-            if (coluna_atual, linha_atual) != (
-                coluna_anterior,
-                linha_anterior,
-            ):
-                nova_altura = self.tilemap.obter_transicao_degrau(
-                    coluna_anterior,
-                    linha_anterior,
-                    coluna_atual,
-                    linha_atual,
-                    altura_atual,
-                )
-                if nova_altura is not None:
-                    altura_atual = nova_altura
+        origem_degrau = self.tilemap.obter_degrau(origem_coluna, origem_linha)
+        destino_degrau = self.tilemap.obter_degrau(destino_coluna, destino_linha)
 
-            coluna_anterior, linha_anterior = coluna_atual, linha_atual
-            x_anterior, y_anterior = x_atual, y_atual
+        if origem_degrau is None and destino_degrau is None:
+            return None
 
-        return altura_atual if altura_atual != altura else None
+        movimento_horizontal = abs(dx) >= abs(dy)
+        movimento_vertical = abs(dy) > abs(dx)
+
+        degraus = [d for d in (origem_degrau, destino_degrau) if d]
+        if not degraus:
+            return None
+
+        def permite_direcao(degrau):
+            if not degrau:
+                return False
+            direcao = degrau.get("direcao")
+            if movimento_horizontal and direcao in {"direita", "esquerda"}:
+                return dx != 0
+            if movimento_vertical:
+                return dy != 0
+            return False
+
+        if not any(permite_direcao(d) for d in degraus):
+            return None
+
+        altura_origem_base = self.tilemap.obter_altura(origem_coluna, origem_linha)
+        altura_destino_base = self.tilemap.obter_altura(destino_coluna, destino_linha)
+
+        if altura_origem_base != altura_destino_base:
+            return altura_destino_base
+
+        return None
 
     def fugir(self, x, y, atacante_x, atacante_y, altura):
         angulo = atan2(y - atacante_y, x - atacante_x) + uniform(-0.5, 0.5)
@@ -301,10 +325,6 @@ class NavegacaoMapa:
             (alvo_x + diagonais, alvo_y + diagonais),
         ]
 
-        # Quando um item dropa encostado em uma construção, os oito pontos
-        # radiais acima podem cair todos dentro da área bloqueada. Nesse caso
-        # usamos a própria borda dos obstáculos como área de interação, tal
-        # como já fazemos para atacar construções.
         for obstaculo in self._obstaculos_cache:
             distancia_rect_x = max(obstaculo.left - alvo_x, 0, alvo_x - obstaculo.right)
             distancia_rect_y = max(obstaculo.top - alvo_y, 0, alvo_y - obstaculo.bottom)
@@ -359,11 +379,6 @@ class NavegacaoMapa:
             ):
                 continue
 
-            # O BFS trabalha em centros de tiles, mas o destino retornado
-            # pode ser um ponto contínuo junto à borda de uma construção.
-            # Valide também o ponto exato para não entregar ao movimento um
-            # destino que o mapa considera atravessável no tile, mas que a
-            # colisão dinâmica considera bloqueado.
             if not self.pode_andar(x, y, altura):
                 continue
 
@@ -445,7 +460,6 @@ class NavegacaoMapa:
             nx = dx / comprimento
             ny = dy / comprimento
         else:
-            # Se estiver sobre o centro geométrico, escolha o lado mais curto.
             dist_left = abs(origem_x - rect.left)
             dist_right = abs(rect.right - origem_x)
             dist_top = abs(origem_y - rect.top)
@@ -461,9 +475,6 @@ class NavegacaoMapa:
             else:
                 nx, ny = 0.0, 1.0
 
-        # Pequeno conjunto de pontos junto à borda e alguns pontos laterais
-        # para permitir contornar a construção quando o lado direto estiver
-        # bloqueado por outro obstáculo.
         distancia = max(10.0, margem)
         candidatos = [
             (
@@ -602,8 +613,6 @@ class NavegacaoMapa:
         if chave_cache in self._cache_desvios:
             return self._cache_desvios[chave_cache]
 
-        # Um único BFS. A implementação anterior fazia um novo BFS completo
-        # para praticamente cada ponto da rota encontrada.
         rota = self._calcular_rota_grade(orig_c, orig_l, dest_c, dest_l, altura)
         if not rota:
             return self.ajustar_posicao(destino_x, destino_y, altura)
@@ -624,8 +633,6 @@ class NavegacaoMapa:
             self._cache_desvios[chave_cache] = melhor
             return melhor
 
-        # Quando o primeiro tile da rota está além do passo máximo, avança
-        # somente até o limite permitido, sem recalcular outra rota.
         col, lin = rota[0]
         xx, yy = self._ponto_para_tile_seguro(col, lin, altura)
         distancia = hypot(xx - origem_x, yy - origem_y)
@@ -713,43 +720,37 @@ class NavegacaoMapa:
         x, y = self.tilemap.tile_para_pixel(coluna, linha)
         return x + TILE_SIZE // 2, y
 
-    def _esta_em_grade(self, coluna, linha):
-        return isinstance(coluna, int) and isinstance(linha, int)
-
     def _buscar_caminho_base(
         self, origem, destino, altura_inicial, direcoes, nivelar_destino=False
     ):
         if not self.tilemap._coordenada_valida(*destino):
             return []
 
-        # Uma célula de degrau representa os dois lados do relevo. O destino
-        # não pode ser preso arbitrariamente à altura 0 da célula, senão uma
-        # rota que precisa terminar no lado alto parece inexistente.
         alturas_destino = {self.tilemap.obter_altura(*destino)}
         degrau_destino = self.tilemap.obter_degrau(*destino)
         if degrau_destino:
             alturas_destino.update(
-                (
-                    degrau_destino["altura_baixa"],
-                    degrau_destino["altura_alta"],
-                )
+                (degrau_destino["altura_baixa"], degrau_destino["altura_alta"])
             )
 
-        # Para destinos de chão normal, mantém o comportamento de nivelar a
-        # célula ao nível da unidade quando solicitado.
         if nivelar_destino and not degrau_destino:
             alturas_destino = {altura_inicial}
 
         estado_inicial = (*origem, altura_inicial)
-        fila = deque([estado_inicial])
+        fila = [(0.0, 0, estado_inicial)]
         veio_de = {estado_inicial: None}
+        custos = {estado_inicial: 0.0}
+        contador = 0
         estado_destino = None
 
         while fila:
-            c_atual, l_atual, alt_atual = fila.popleft()
+            custo_atual, _, atual = heappop(fila)
+            if custo_atual > custos.get(atual, float("inf")):
+                continue
 
+            c_atual, l_atual, alt_atual = atual
             if (c_atual, l_atual) == destino and alt_atual in alturas_destino:
-                estado_destino = (c_atual, l_atual, alt_atual)
+                estado_destino = atual
                 break
 
             for dx, dy in direcoes:
@@ -762,16 +763,23 @@ class NavegacaoMapa:
                 )
                 alt_vizinho = nova_alt if nova_alt is not None else alt_atual
 
-                if nova_alt is None and not self.pode_andar(
-                    *self._centro_do_tile(c_vizinho, l_vizinho),
-                    alt_vizinho,
-                ):
+                centro = self._centro_do_tile(c_vizinho, l_vizinho)
+                if nova_alt is None and not self.pode_andar(*centro, alt_vizinho):
                     continue
 
+                base = 1.0
+                if self.world_context is not None:
+                    base = (
+                        self.world_context.custo_movimento(c_vizinho, l_vizinho) + 0.15
+                    )
+
+                novo_custo = custo_atual + base
                 novo_estado = (c_vizinho, l_vizinho, alt_vizinho)
-                if novo_estado not in veio_de:
-                    veio_de[novo_estado] = (c_atual, l_atual, alt_atual)
-                    fila.append(novo_estado)
+                if novo_custo < custos.get(novo_estado, float("inf")):
+                    custos[novo_estado] = novo_custo
+                    contador += 1
+                    veio_de[novo_estado] = atual
+                    heappush(fila, (novo_custo, contador, novo_estado))
 
         if not estado_destino:
             return []
@@ -780,7 +788,6 @@ class NavegacaoMapa:
         while atual != estado_inicial:
             rota.append(atual)
             atual = veio_de[atual]
-
         return rota[::-1]
 
     def _calcular_rota_grade(

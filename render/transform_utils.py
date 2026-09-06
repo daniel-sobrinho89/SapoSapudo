@@ -15,8 +15,14 @@ class TransformUtils:
 
         key = (id(imagem), largura, altura)
 
-        if key in self.cache_escalas:
-            return self.cache_escalas[key]
+        cache_entry = self.cache_escalas.get(key)
+        if cache_entry is not None:
+            fonte_cacheada, resultado = cache_entry
+            if fonte_cacheada is imagem:
+                return resultado
+            # Nunca reutilizar o resultado de outra Surface mesmo que o Python
+            # tenha reaproveitado o mesmo id().
+            self.cache_escalas.pop(key, None)
 
         if getattr(kivy_adapter, "IS_BROWSER", False):
             escalada = kivy_adapter.transform.scale(
@@ -29,7 +35,8 @@ class TransformUtils:
                 (largura, altura),
             )
 
-        self.cache_escalas[key] = escalada
+        # Guardar a referência da fonte impede colisões por reutilização de id().
+        self.cache_escalas[key] = (imagem, escalada)
 
         return escalada
 
@@ -38,12 +45,16 @@ class TransformUtils:
 
         key = (id(imagem), rotacao)
 
-        if key in self.cache_rotacoes:
-            return self.cache_rotacoes[key]
+        cache_entry = self.cache_rotacoes.get(key)
+        if cache_entry is not None:
+            fonte_cacheada, resultado = cache_entry
+            if fonte_cacheada is imagem:
+                return resultado
+            self.cache_rotacoes.pop(key, None)
 
         resultado = kivy_adapter.transform.rotate(imagem, rotacao)
 
-        self.cache_rotacoes[key] = resultado
+        self.cache_rotacoes[key] = (imagem, resultado)
 
         return resultado
 
@@ -59,8 +70,12 @@ class TransformUtils:
             colunas,
         )
 
-        if key in self.cache_spritesheets:
-            return self.cache_spritesheets[key]
+        cache_entry = self.cache_spritesheets.get(key)
+        if cache_entry is not None:
+            fonte_cacheada, frames = cache_entry
+            if fonte_cacheada is imagem:
+                return frames
+            self.cache_spritesheets.pop(key, None)
 
         largura_frame = imagem.get_width() // colunas
         altura_frame = imagem.get_height() // linhas
@@ -93,15 +108,19 @@ class TransformUtils:
 
                 frames.append(frame)
 
-        self.cache_spritesheets[key] = frames
+        self.cache_spritesheets[key] = (imagem, frames)
 
         return frames
 
     def espelhar(self, imagem):
         key = ("flip_x", id(imagem))
 
-        if key in self.cache_rotacoes:
-            return self.cache_rotacoes[key]
+        cache_entry = self.cache_rotacoes.get(key)
+        if cache_entry is not None:
+            fonte_cacheada, resultado = cache_entry
+            if fonte_cacheada is imagem:
+                return resultado
+            self.cache_rotacoes.pop(key, None)
 
         resultado = kivy_adapter.transform.flip(
             imagem,
@@ -109,6 +128,6 @@ class TransformUtils:
             False,  # vertical
         )
 
-        self.cache_rotacoes[key] = resultado
+        self.cache_rotacoes[key] = (imagem, resultado)
 
         return resultado

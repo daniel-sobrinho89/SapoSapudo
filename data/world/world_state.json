@@ -1,0 +1,44 @@
+{
+  "clock": {
+    "modo": "horario_real",
+    "dia_inicial": "manha",
+    "duracao_dia_simulado": 180.0
+  },
+  "clima": {
+    "estado_inicial": "normal",
+    "permitidos": [
+      "normal",
+      "chuva",
+      "seca"
+    ],
+    "intervalo_mudanca": 75.0
+  },
+  "recursos": {
+    "estado_inicial": "disponivel",
+    "respawn": true,
+    "duracao_respawn": 45.0
+  },
+  "fauna": {
+    "estados": [
+      "pastando",
+      "fugindo",
+      "dormindo",
+      "migrando"
+    ]
+  },
+  "ameaca": {
+    "estados": [
+      "calma",
+      "alerta",
+      "ocupada"
+    ]
+  },
+  "eventos": {
+    "habilitados": true,
+    "tipos": [
+      "mudanca_clima",
+      "alerta_regional"
+    ],
+    "duracao_padrao": 30.0
+  }
+}

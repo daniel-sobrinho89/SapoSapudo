@@ -16,7 +16,7 @@ from kivy.uix.widget import Widget
 import utils.kivy_adapter as kivy_adapter
 from application.cenario import EstadoJogo, GerenciadorCenarios
 from application.coordenador_estado_jogo import CoordenadorEstadoJogo
-from core.mouse_events import DoubleClickDetector
+from core.input_teclas import normalizar_tecla
 from render.transform_utils import TransformUtils
 from utils.config import ALTURA, FPS, IS_ANDROID, LARGURA
 from utils.input import init_scaling, real_to_virtual
@@ -72,10 +72,13 @@ class GameWidget(Widget):
 
         self._toques = {}
         self._distancia_pinca = None
-        self.double_click = DoubleClickDetector()
+        self.teclas_pressionadas = set()
+        Window.bind(on_key_down=self._on_key_down, on_key_up=self._on_key_up)
+        Window.bind(on_focus=self._on_window_focus)
         self._inicializar_sistemas_base()
         self._inicializar_interacao()
         self._configurar_graficos()
+        self._carregamento_iniciado = True
 
         # schedule updates
         Clock.schedule_interval(self.update, 1.0 / FPS)
@@ -86,10 +89,9 @@ class GameWidget(Widget):
     def _inicializar_interacao(self):
         self.gerenciador_cenarios = GerenciadorCenarios(tela, self.transform)
 
-        self.gerenciador_cenarios.cenario_principal.carregar()
-        self.coordenador_estado_jogo = CoordenadorEstadoJogo(
-            self.gerenciador_cenarios.cenario_principal
-        )
+        self.gerenciador_cenarios.estado = EstadoJogo.JOGANDO
+        self.gerenciador_cenarios.cenario_principal.iniciar_carregamento()
+        self.coordenador_estado_jogo = CoordenadorEstadoJogo(self.gerenciador_cenarios)
 
     def _configurar_graficos(self):
         with self.canvas:
@@ -106,78 +108,155 @@ class GameWidget(Widget):
         self.rect.pos = self.pos
 
     def on_touch_down(self, touch):
-        self._toques[touch.uid] = touch
-        pos_virtual = real_to_virtual(touch.pos)
-
-        camera = self.cenario.camera
-        # Scroll do mouse
-        if "button" in touch.profile:
-            if touch.button == "scrolldown":
-                camera.afastar(pos_virtual)
+        if getattr(self, "gerenciador_cenarios", None) is not None:
+            pos = real_to_virtual(touch.pos)
+            if self.gerenciador_cenarios.world_editor_ativo:
+                self.gerenciador_cenarios.world_editor_set_mouse_button(
+                    getattr(touch, "button", None)
+                )
+                self.gerenciador_cenarios.world_editor_touch_down(pos)
+                self.gerenciador_cenarios.world_editor_set_mouse_button(None)
                 return True
 
-            if touch.button == "scrollup":
-                camera.aproximar(pos_virtual)
-                return True
-
-        if (
-            self.gerenciador_cenarios.estado == EstadoJogo.ABERTURA
-            and self.double_click.detectar(pos_virtual)
-        ):
-            self.gerenciador_cenarios.estado = EstadoJogo.JOGANDO
+            self.coordenador_estado_jogo.processar_toque_down(pos)
             return True
-
-        if self.cenario.carregado:
-            self.coordenador_estado_jogo.processar_toque_down(pos_virtual)
-
-        return super().on_touch_down(touch)
+        return True
 
     def on_touch_move(self, touch):
-        pos_virtual = real_to_virtual(touch.pos)
+        if getattr(self, "gerenciador_cenarios", None) is not None:
+            pos = real_to_virtual(touch.pos)
+            if self.gerenciador_cenarios.world_editor_ativo:
+                self.gerenciador_cenarios.world_editor_touch_move(pos)
+                return True
 
-        self._toques[touch.uid] = touch
-
-        if len(self._toques) == 2:
-            dedos = list(self._toques.values())
-
-            x1, y1 = dedos[0].pos
-            x2, y2 = dedos[1].pos
-
-            distancia = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-
-            if self._distancia_pinca is not None:
-                delta = distancia - self._distancia_pinca
-
-                if abs(delta) > 10:
-                    camera = self.cenario.camera
-
-                    camera.definir_zoom(camera.zoom + delta * 0.002, pos_virtual)
-
-            self._distancia_pinca = distancia
-
-        if self.cenario.carregado:
-            self.coordenador_estado_jogo.processar_on_touch_move(pos_virtual)
+            self.coordenador_estado_jogo.processar_on_touch_move(pos)
+            return True
+        return True
 
     def on_touch_up(self, touch):
-        pos_virtual = real_to_virtual(touch.pos)
+        if getattr(self, "gerenciador_cenarios", None) is not None:
+            pos = real_to_virtual(touch.pos)
+            if self.gerenciador_cenarios.world_editor_ativo:
+                self.gerenciador_cenarios.world_editor_touch_up(pos)
+                return True
 
-        self._toques.pop(touch.uid, None)
+            self.coordenador_estado_jogo.processar_toque_up(pos)
+            return True
+        return True
 
-        if len(self._toques) < 2:
-            self._distancia_pinca = None
+    @staticmethod
+    def _normalizar_tecla(keycode, text):
+        return normalizar_tecla(keycode, text)
 
-        if self.cenario.carregado:
-            self.coordenador_estado_jogo.processar_toque_up(pos_virtual)
+    def _on_key_down(self, _window, keycode, _scancode, text, _modifiers):
+        tecla = self._normalizar_tecla(keycode, text)
+        self.teclas_pressionadas.add(tecla)
+        if tecla == "escape" and self.cenario.conversa_controller.aberta:
+            self.cenario.conversa_controller.cancelar_dialogo()
+            return True
+        self.coordenador_estado_jogo.processar_tecla_down(tecla)
+        return True
+
+    def _on_window_focus(self, _window, focus):
+        # Alguns backends perdem KEYUP ao trocar foco/janela. Nunca deixamos
+        # uma tecla de movimento ficar presa nesse caso.
+        if not focus:
+            self.teclas_pressionadas.clear()
+            if getattr(self, "coordenador_estado_jogo", None) is not None:
+                self.coordenador_estado_jogo.sapudo_manual.teclas.clear()
+
+    def _on_key_up(self, _window, keycode, _scancode):
+        tecla = self._normalizar_tecla(keycode, "")
+        self.teclas_pressionadas.discard(tecla)
+        self.coordenador_estado_jogo.processar_tecla_up(tecla)
+        return True
+
+    def _renderizar_relogio_dia_noite(self):
+        """Mostra a hora do mundo sem participar da iluminação do cenário."""
+        ciclo = getattr(self.cenario, "ciclo_dia_noite", None)
+        if ciclo is None:
+            return
+
+        periodo = {
+            "manha": "Manhã",
+            "tarde": "Tarde",
+            "noite": "Noite",
+        }.get(ciclo.periodo, ciclo.periodo.capitalize())
+
+        largura = 150
+        altura = 42
+        margem = 12
+        x = LARGURA - largura - margem
+        y = margem
+
+        kivy_adapter.draw.rect(
+            self.cenario.tela,
+            (20, 28, 34, 215),
+            kivy_adapter.Rect(x, y, largura, altura),
+        )
+        kivy_adapter.draw.text(
+            self.cenario.tela,
+            f"{ciclo.horario_formatado}  {periodo}",
+            (x + 12, y + 11),
+            (245, 238, 205),
+            18,
+        )
+
+    def _renderizar_tela_carregamento(self, progresso):
+        tela = self.cenario.tela
+        tela.fill((18, 28, 34, 255))
+        kivy_adapter.draw.text(
+            tela,
+            "SapoSapudo",
+            (LARGURA // 2 - 92, ALTURA // 2 - 80),
+            (235, 220, 165),
+            30,
+        )
+        kivy_adapter.draw.text(
+            tela,
+            "Carregando o mundo...",
+            (LARGURA // 2 - 105, ALTURA // 2 - 38),
+            (225, 230, 232),
+            20,
+        )
+
+        largura = 520
+        altura = 18
+        x = (LARGURA - largura) // 2
+        y = ALTURA // 2 + 8
+        kivy_adapter.draw.rect(
+            tela,
+            (35, 48, 56, 255),
+            kivy_adapter.Rect(x, y, largura, altura),
+        )
+        preenchida = max(0, min(largura, int(largura * progresso)))
+        if preenchida:
+            kivy_adapter.draw.rect(
+                tela,
+                (139, 211, 107, 255),
+                kivy_adapter.Rect(x, y, preenchida, altura),
+            )
+
+        kivy_adapter.draw.text(
+            tela,
+            f"{int(progresso * 100):02d}%",
+            (LARGURA // 2 - 18, y + 28),
+            (190, 205, 210),
+            16,
+        )
 
     def update(self, dt):
         dt = min(dt, 0.05)
 
-        if self.cenario.carregado:
-            self.coordenador_estado_jogo.executar(dt)
-
-        self.gerenciador_cenarios.atualizar(dt)
-
-        self.gerenciador_cenarios.renderizar(dt)
+        if not self.cenario.carregado:
+            self.cenario.processar_carregamento(max_tipos=1)
+            self.gerenciador_cenarios.renderizar(dt)
+            self._renderizar_tela_carregamento(self.cenario.progresso_carregamento())
+        else:
+            self.coordenador_estado_jogo.executar(dt, self.teclas_pressionadas)
+            self.gerenciador_cenarios.atualizar(dt)
+            self.gerenciador_cenarios.renderizar(dt)
+            self._renderizar_relogio_dia_noite()
 
         # escalonar e apresentar
         img = tela._img

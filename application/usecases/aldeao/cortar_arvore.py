@@ -1,7 +1,5 @@
 from math import hypot
 
-from domains.arvore.maquina_estado import EstadoArvore
-from domains.personagem.maquina_estado import EstadoAldeao
 from utils.config import TILE_SIZE
 
 
@@ -46,12 +44,14 @@ class CortarArvoreUseCase:
 
         self.tempo = 0.0
 
-        self.flip = arvore.x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            arvore.x - self.personagem.x
+        )
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO_FLIP
+            self.personagem.animacoes.definir("correndo_machado_flip")
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MACHADO
+            self.personagem.animacoes.definir("correndo_machado")
 
         return True
 
@@ -69,11 +69,11 @@ class CortarArvoreUseCase:
         # Quem já está levando madeira precisa concluir a entrega mesmo que
         # a árvore de origem tenha acabado. A troca para a próxima árvore
         # acontece depois que o recurso é entregue.
-        if self.personagem.animacoes.maquina.entregando_madeira():
+        if self.personagem.animacoes.esta_em("correndo_madeira"):
             self._entregar(dt)
             return
 
-        if self.personagem.animacoes.maquina.cortando_arvore():
+        if self.personagem.animacoes.esta_em("usando_machado"):
             self._obter(dt)
             return
 
@@ -94,8 +94,10 @@ class CortarArvoreUseCase:
 
         if getattr(arvore, "madeira", 0) <= 0:
             return False
+        if not getattr(arvore, "pronta_para_coleta", True):
+            return False
 
-        return getattr(arvore.animacoes, "estado", None) != EstadoArvore.CORTADA
+        return not arvore.animacoes.esta_em("cortada")
 
     def _buscar_arvore_proxima(self, origem_x=None, origem_y=None, excluir=None):
         if origem_x is None:
@@ -163,18 +165,18 @@ class CortarArvoreUseCase:
 
     def _aguardar_nova_arvore(self):
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+            self.personagem.animacoes.definir("ocioso_flip")
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+            self.personagem.animacoes.definir("ocioso")
 
         self.personagem.destino_x = self.personagem.x
         self.personagem.destino_y = self.personagem.y
 
     def _parar_sem_arvore(self):
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+            self.personagem.animacoes.definir("ocioso_flip")
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+            self.personagem.animacoes.definir("ocioso")
 
         self.personagem.destino_x = self.personagem.x
         self.personagem.destino_y = self.personagem.y
@@ -189,6 +191,12 @@ class CortarArvoreUseCase:
             self._aguardar_nova_arvore()
             return
 
+        # A orientação desejada vem da posição real da árvore, antes de
+        # calcular o ponto de corte. Isso evita escolher o lado errado da
+        # árvore por causa do flip da animação anterior.
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            self.entidade_alvo.x - self.personagem.x
+        )
         destino_x, destino_y = self._obter_destino_corte()
 
         dx = destino_x - self.personagem.x
@@ -198,11 +206,12 @@ class CortarArvoreUseCase:
 
         if distancia <= self.DISTANCIA_PARADA:
             self.tempo = 0.0
+            self.flip = self.personagem.animacoes.flip_para_direcao(dx)
 
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_MACHADO_FLIP
+                self.personagem.animacoes.definir("usando_machado_flip")
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_MACHADO
+                self.personagem.animacoes.definir("usando_machado")
 
             return
 
@@ -214,12 +223,17 @@ class CortarArvoreUseCase:
                 personagem=self.personagem,
                 navegacao=self.cenario_principal.navegacao,
                 velocidade=self.VELOCIDADE,
-                estado_correndo=EstadoAldeao.CORRENDO_MACHADO,
-                estado_correndo_flip=EstadoAldeao.CORRENDO_MACHADO_FLIP,
-                estado_parado=EstadoAldeao.OCIOSO,
-                estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+                estado_correndo="correndo_machado",
+                estado_correndo_flip="correndo_machado_flip",
+                estado_parado="ocioso",
+                estado_parado_flip="ocioso_flip",
                 dt=dt,
             )
+            self.personagem.animacoes.definir_por_direcao(
+                "correndo_machado",
+                self.entidade_alvo.x - self.personagem.x,
+            )
+            self.flip = self.personagem.animacoes.flip
 
     def _obter_destino_corte(self):
         """Obtém a posição de trabalho sem depender do renderer.
@@ -267,13 +281,32 @@ class CortarArvoreUseCase:
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.guardar_recurso_x < self.personagem.x
-        self.entidade_alvo.obter_madeira()
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            self.guardar_recurso_x - self.personagem.x
+        )
+        madeira_obtida = self.entidade_alvo.obter_madeira()
+
+        # O respawn pertence à árvore, não a cada unidade de madeira.
+        # Antes deste ponto o WorldState iniciava o timer de regeneração em
+        # TODO golpe, fazendo uma árvore ainda cheia entrar em crescimento
+        # enquanto Bernardo continuava trabalhando nela. Isso ficava
+        # especialmente evidente quando o jogador parava para combater as
+        # cobras e deixava passar tempo suficiente para o timer vencer.
+        if madeira_obtida and getattr(self.entidade_alvo, "madeira", 0) <= 0:
+            world = getattr(self.cenario_principal, "world_context", None)
+            if world is not None:
+                world.state.marcar_recurso_coletado(
+                    getattr(
+                        self.entidade_alvo,
+                        "world_resource_id",
+                        f"arvore:{id(self.entidade_alvo)}",
+                    )
+                )
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA_FLIP
+            self.personagem.animacoes.definir("correndo_madeira_flip")
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_MADEIRA
+            self.personagem.animacoes.definir("correndo_madeira")
 
     def _entregar(self, dt):
         arvore_alvo = self.entidade_alvo
@@ -286,11 +319,21 @@ class CortarArvoreUseCase:
 
         distancia = hypot(dx, dy)
 
+        # Ao pegar a madeira, Bernardo deve imediatamente olhar para o
+        # destino real da entrega. O movimento continua responsável por
+        # atualizar a orientação quando houver deslocamento horizontal real,
+        # mas não deixamos um primeiro trecho vertical preservar a orientação
+        # da árvore e fazê-lo carregar a madeira de costas.
+        self.flip = self.personagem.animacoes.flip_para_direcao(dx)
+        self.personagem.animacoes.definir(
+            "correndo_madeira_flip" if self.flip else "correndo_madeira"
+        )
+
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.definir("ocioso_flip")
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.definir("ocioso")
 
             OFFSET = 40
 
@@ -301,7 +344,11 @@ class CortarArvoreUseCase:
 
             recurso_y = self.personagem.y
 
-            self.cenario_principal.carregar_entidade("madeira", recurso_x, recurso_y)
+            madeira_visual = self.cenario_principal.carregar_entidade(
+                "madeira", recurso_x, recurso_y
+            )
+            if madeira_visual is not None:
+                madeira_visual.madeira_missao_bernardo = True
             self.cenario_principal.adicionar_estoque("madeira", 1)
 
             # Se a árvore ainda possui madeira, continua nela.
@@ -322,9 +369,9 @@ class CortarArvoreUseCase:
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
             velocidade=self.VELOCIDADE,
-            estado_correndo=EstadoAldeao.CORRENDO_MADEIRA,
-            estado_correndo_flip=EstadoAldeao.CORRENDO_MADEIRA_FLIP,
-            estado_parado=EstadoAldeao.OCIOSO,
-            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+            estado_correndo="correndo_madeira",
+            estado_correndo_flip="correndo_madeira_flip",
+            estado_parado="ocioso",
+            estado_parado_flip="ocioso_flip",
             dt=dt,
         )

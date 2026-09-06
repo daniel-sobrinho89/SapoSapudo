@@ -26,8 +26,18 @@ class DestruirConstrucaoUseCase:
 
         self._remover_fogos()
 
+        entidade = self.entidade_alvo
         self._dropar_itens()
-        self.cenario_principal.remover_personagem(self.entidade_alvo)
+        self.cenario_principal.remover_personagem(entidade)
+        callback = getattr(entidade, "ao_ser_destruida", None)
+        if callable(callback):
+            callback(entidade)
+        else:
+            conversa = getattr(self.cenario_principal, "conversa_controller", None)
+            notificar = getattr(conversa, "notificar_construcao_destruida", None)
+            if callable(notificar):
+                notificar(entidade)
+        self.entidade_alvo = None
 
     def _ajustar_tamanho_efeito(self, explosao, personagem):
         renderer_personagem = self.cenario_principal.renderers.get(personagem.nome)

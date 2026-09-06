@@ -1,9 +1,8 @@
-from application.usecases.aldeao.controlar_comportamento_aldeao import (
-    ControlarComportamentoAldeaoUseCase,
-)
 from application.usecases.aldeao.cortar_arvore import CortarArvoreUseCase
 from application.usecases.aldeao.obter_carne import ObterCarneUseCase
 from application.usecases.aldeao.obter_ouro import ObterOuroUseCase
+from application.usecases.bandido.atacar import AtacarBandidoUseCase
+from application.usecases.cobra.atacar import AtacarCobraUseCase
 from application.usecases.construcao.defender_construcao import (
     DefenderConstrucaoUseCase,
 )
@@ -13,42 +12,41 @@ from application.usecases.construcao.destruir_construcao import (
 from application.usecases.controlar_comportamento_ovelha import (
     ControlarComportamentoOvelhaUseCase,
 )
-from application.usecases.goblin.atacar import AtacarGoblinUseCase
-from application.usecases.goblin.controlar_comportamento_goblin_tocha import (
-    ControlarComportamentoGoblinTochaUseCase,
-)
+from application.usecases.esqueleto.atacar import AtacarEsqueletoUseCase
+from application.usecases.personagem.atacar import AtacarPersonagemUseCase
+from application.usecases.personagem.comportamento import ControlarComportamentoUseCase
 from application.usecases.personagem.morte_personagem import MortePersonagemUseCase
-from application.usecases.sapudo.controlar_comportamento_sapudo import (
-    ControlarComportamentoSapudoUseCase,
-)
 from application.usecases.soldado.atacar import AtacarSoldadoUseCase
-from application.usecases.soldado.controlar_comportamento_soldado import (
-    ControlarComportamentoSoldadoUseCase,
-)
+from application.usecases.urso.atacar import AtacarUrsoUseCase
 from core.game_config import obter_config
 
 USECASES = {
-    "ControlarComportamentoSapudoUseCase": lambda c: ControlarComportamentoSapudoUseCase(
-        c.navegacao, c.mover_personagem
+    # Comportamento genérico parametrizado pelo estado de cada personagem.
+    "ControlarComportamentoAldeaoUseCase": lambda c: ControlarComportamentoUseCase(
+        c.navegacao, mover=c.mover_personagem, world_context=c.world_context
     ),
-    "ControlarComportamentoAldeaoUseCase": lambda c: ControlarComportamentoAldeaoUseCase(
-        c.navegacao, c.mover_personagem
+    "ControlarComportamentoSoldadoUseCase": lambda c: ControlarComportamentoUseCase(
+        c.navegacao, mover=c.mover_personagem, world_context=c.world_context
     ),
-    "ControlarComportamentoSoldadoUseCase": lambda c: ControlarComportamentoSoldadoUseCase(
-        c.navegacao, c.mover_personagem
+    "ControlarComportamentoGoblinTochaUseCase": lambda c: ControlarComportamentoUseCase(
+        c.navegacao, mover=c.mover_personagem, world_context=c.world_context
     ),
-    "ControlarComportamentoGoblinTochaUseCase": lambda c: ControlarComportamentoGoblinTochaUseCase(
-        c.navegacao, c.mover_personagem
+    "ControlarComportamentoEsqueletoUseCase": lambda c: ControlarComportamentoUseCase(
+        c.navegacao, mover=c.mover_personagem, world_context=c.world_context
     ),
     "ControlarComportamentoOvelhaUseCase": lambda c: ControlarComportamentoOvelhaUseCase(
-        c.navegacao, c.mover_personagem
+        c.navegacao, c.mover_personagem, c.world_context
     ),
     "MortePersonagemUseCase": lambda c: MortePersonagemUseCase(c),
     "CortarArvoreUseCase": lambda c: CortarArvoreUseCase(c),
     "ObterOuroUseCase": lambda c: ObterOuroUseCase(c),
     "ObterCarneUseCase": lambda c: ObterCarneUseCase(c),
     "AtacarSoldadoUseCase": lambda c: AtacarSoldadoUseCase(c),
-    "AtacarGoblinUseCase": lambda c: AtacarGoblinUseCase(c),
+    "AtacarPersonagemUseCase": lambda c: AtacarPersonagemUseCase(c),
+    "AtacarEsqueletoUseCase": lambda c: AtacarEsqueletoUseCase(c),
+    "AtacarCobraUseCase": lambda c: AtacarCobraUseCase(c),
+    "AtacarBandidoUseCase": lambda c: AtacarBandidoUseCase(c),
+    "AtacarUrsoUseCase": lambda c: AtacarUrsoUseCase(c),
     "DefenderConstrucaoUseCase": lambda c: DefenderConstrucaoUseCase(c),
     "DestruirConstrucaoUseCase": lambda c: DestruirConstrucaoUseCase(c),
 }

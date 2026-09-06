@@ -1,9 +1,6 @@
 from application.usecases.personagem.atacar import (
     AtacarPersonagemUseCase,
 )
-from domains.personagem.maquina_estado_soldado import (
-    EstadoSoldado,
-)
 
 
 class AtacarSoldadoUseCase(AtacarPersonagemUseCase):
@@ -12,39 +9,27 @@ class AtacarSoldadoUseCase(AtacarPersonagemUseCase):
         self.segundo_golpe = False
 
     def iniciar(self, personagemalvo, personagem, manual=False):
-        estado_atual = personagem.animacoes.estado
-
-        if estado_atual in (
-            EstadoSoldado.ATACANDO1,
-            EstadoSoldado.ATACANDO1_FLIP,
-        ):
+        if personagem.animacoes.esta_em("atacando1"):
             self.segundo_golpe = False
-
-        elif estado_atual in (
-            EstadoSoldado.ATACANDO2,
-            EstadoSoldado.ATACANDO2_FLIP,
-        ):
+        elif personagem.animacoes.esta_em("atacando2"):
             self.segundo_golpe = True
-
         else:
             self.segundo_golpe = False
 
         super().iniciar(personagemalvo, personagem, manual=manual)
 
     def _iniciar_ataque(self):
-        self.flip = self.entidade_alvo.x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            self.entidade_alvo.x - self.personagem.x
+        )
 
         if self.flip:
-            self.personagem.animacoes.estado = (
-                EstadoSoldado.ATACANDO2_FLIP
-                if self.segundo_golpe
-                else EstadoSoldado.ATACANDO1_FLIP
+            self.personagem.animacoes.definir(
+                "atacando2_flip" if self.segundo_golpe else "atacando1_flip"
             )
         else:
-            self.personagem.animacoes.estado = (
-                EstadoSoldado.ATACANDO2
-                if self.segundo_golpe
-                else EstadoSoldado.ATACANDO1
+            self.personagem.animacoes.definir(
+                "atacando2" if self.segundo_golpe else "atacando1"
             )
 
     def _apos_causar_dano(self):
@@ -53,24 +38,24 @@ class AtacarSoldadoUseCase(AtacarPersonagemUseCase):
 
     def _animacao_correndo(self):
         if self.flip:
-            self.personagem.animacoes.estado = EstadoSoldado.CORRENDO_FLIP
+            self.personagem.animacoes.definir("correndo_flip")
         else:
-            self.personagem.animacoes.estado = EstadoSoldado.CORRENDO
+            self.personagem.animacoes.definir("correndo")
 
     def _animacao_ocioso(self):
         if self.flip:
-            self.personagem.animacoes.estado = EstadoSoldado.OCIOSO_FLIP
+            self.personagem.animacoes.definir("ocioso_flip")
         else:
-            self.personagem.animacoes.estado = EstadoSoldado.OCIOSO
+            self.personagem.animacoes.definir("ocioso")
 
     def _estado_correndo(self):
-        return EstadoSoldado.CORRENDO
+        return "correndo"
 
     def _estado_correndo_flip(self):
-        return EstadoSoldado.CORRENDO_FLIP
+        return "correndo_flip"
 
     def _estado_ocioso(self):
-        return EstadoSoldado.OCIOSO
+        return "ocioso"
 
     def _estado_ocioso_flip(self):
-        return EstadoSoldado.OCIOSO_FLIP
+        return "ocioso_flip"

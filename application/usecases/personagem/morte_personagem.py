@@ -10,10 +10,6 @@ class MortePersonagemUseCase:
     def iniciar(self, personagem):
         ctrl = self.cenario_principal.controladores[personagem]
 
-        # Primeiro registramos as ações que realmente estavam usando o
-        # personagem morto como alvo. Só depois cancelamos os use cases.
-        # Isso preserva a informação necessária para redirecionar uma caça
-        # de ovelha para a carne criada pelo drop.
         self._acoes_redirecionar = []
         controladores_envolvidos = []
 
@@ -87,10 +83,12 @@ class MortePersonagemUseCase:
         if self.entidade_alvo is None:
             return
 
+        self._recompensar_experiencia_missao()
         drops = self._dropar_itens()
         self._redirecionar_alvos(drops)
 
         self.cenario_principal.remover_personagem(self.entidade_alvo)
+        self.entidade_alvo = None
 
     def _ajustar_tamanho_poeira(self, poeira, personagem):
         renderer_personagem = self.cenario_principal.renderers.get(personagem.nome)
@@ -150,6 +148,34 @@ class MortePersonagemUseCase:
 
         poeira.x = centro_personagem_x - centro_poeira_x
         poeira.y = centro_personagem_y - centro_poeira_y
+
+    def _recompensar_experiencia_missao(self):
+        personagem = self.entidade_alvo
+        xp = int(getattr(personagem, "xp_recompensa", 0) or 0)
+        if xp <= 0 or getattr(personagem, "xp_recompensada", False):
+            return
+
+        personagem.xp_recompensada = True
+        sapudo = getattr(self.cenario_principal, "sapudo", None)
+        if sapudo is None:
+            for p in getattr(self.cenario_principal, "personagens", ()):
+                if getattr(p, "nome", None) == "sapudo":
+                    sapudo = p
+                    break
+        if sapudo is None:
+            return
+
+        conversa = getattr(self.cenario_principal, "conversa_controller", None)
+        missao = getattr(personagem, "xp_missao_id", None)
+        if conversa is not None and not conversa.pode_receber_xp_missao(missao):
+            return
+
+        from application.usecases.sapudo.evolucao import EvolucaoSapudoUseCase
+
+        evolucao = getattr(conversa, "evolucao", None) or EvolucaoSapudoUseCase()
+        evolucao.adicionar_experiencia(sapudo, xp)
+        if conversa is not None:
+            conversa.evolucao_pendente = sapudo.pontos_evolucao > 0
 
     def _dropar_itens(self):
         config = obter_config(self.entidade_alvo.nome)

@@ -1,0 +1,18 @@
+{
+  "world_id": "sapudo_v1",
+  "version": 1,
+  "start_region": "vila_bernardo",
+  "map": "mapa1",
+  "systems": {
+    "day_night": true,
+    "weather": true,
+    "resource_respawn": true,
+    "fauna": true,
+    "dynamic_events": true
+  },
+  "layers": [
+    "terrain",
+    "region",
+    "world_state"
+  ]
+}

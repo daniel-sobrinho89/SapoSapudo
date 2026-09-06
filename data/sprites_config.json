@@ -1,14 +1,13 @@
 {
     "sapudo": {
-        "maquina": "MaquinaEstadoSapudo",
         "classe": "criar_entidade",
         "grupo": "personagens",
-        "vida": 150,
-        "ataque": 5,
-        "defesa": 0,
+        "vida": 200,
+        "ataque": 10,
+        "defesa": 4,
         "renderer": {
             "colecao": "personagens",
-            "escala": 0.45,
+            "escala": 1,
             "frames_carregamento": 10
         },
         "flip": true,
@@ -16,27 +15,36 @@
             "ocioso": {
                 "arquivo": "sapudo/sapudo_ocioso.png",
                 "frames": 8,
-                "tempo": 0.3
+                "tempo": 0.2
             },
             "correndo": {
                 "arquivo": "sapudo/sapudo_correndo.png",
-                "frames": 10,
+                "frames": 6,
                 "tempo": 0.15
+            },
+            "atacando1": {
+                "arquivo": "sapudo/sapudo_atacando1.png",
+                "frames": 4,
+                "tempo": 0.2
+            },
+            "atacando2": {
+                "arquivo": "sapudo/sapudo_atacando2.png",
+                "frames": 4,
+                "tempo": 0.2
+            },
+            "defendendo": {
+                "arquivo": "sapudo/sapudo_defendendo.png",
+                "frames": 6,
+                "tempo": 0.2
             }
         },
-        "ia": {
-            "padrao": "ControlarComportamentoSapudoUseCase",
-            "morte": "MortePersonagemUseCase",
-            "acoes": {}
-        },
         "custo": {
-            "madeira": 0,
-            "ouro": 0,
-            "carne": 0
+            "madeira": 15,
+            "ouro": 20,
+            "carne": 8
         }
     },
     "aldeao": {
-        "maquina": "MaquinaEstadoAldeao",
         "classe": "criar_entidade",
         "grupo": "personagens",
         "vida": 100,
@@ -94,6 +102,11 @@
                 "frames": 6,
                 "tempo": 0.15
             },
+            "correndo_martelo": {
+                "arquivo": "aldeao/correndo/aldeao_martelo.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
             "usando_machado": {
                 "arquivo": "aldeao/obtendo_recursos/aldeao_machado.png",
                 "frames": 6,
@@ -107,6 +120,11 @@
             "usando_faca": {
                 "arquivo": "aldeao/obtendo_recursos/aldeao_faca.png",
                 "frames": 4,
+                "tempo": 0.15
+            },
+            "usando_martelo": {
+                "arquivo": "aldeao/obtendo_recursos/aldeao_martelo.png",
+                "frames": 3,
                 "tempo": 0.15
             }
         },
@@ -138,7 +156,6 @@
         }
     },
     "soldado": {
-        "maquina": "MaquinaEstadoSoldado",
         "classe": "criar_entidade",
         "grupo": "personagens",
         "vida": 300,
@@ -197,7 +214,6 @@
         }
     },
     "goblin_tocha": {
-        "maquina": "MaquinaEstadoGoblinTocha",
         "classe": "criar_entidade",
         "grupo": "hostis",
         "faccao": "goblin",
@@ -236,7 +252,7 @@
                         "personagens",
                         "construcoes"
                     ],
-                    "usecase": "AtacarGoblinUseCase"
+                    "usecase": "AtacarPersonagemUseCase"
                 }
             }
         },
@@ -247,7 +263,6 @@
         }
     },
     "madeira": {
-        "maquina": "MaquinaEstadoRecurso",
         "classe": "criar_recurso",
         "grupo": "recursos",
         "renderer": {
@@ -265,7 +280,6 @@
         }
     },
     "carne": {
-        "maquina": "MaquinaEstadoRecurso",
         "classe": "criar_recurso",
         "grupo": "recursos",
         "renderer": {
@@ -283,7 +297,6 @@
         }
     },
     "ouro": {
-        "maquina": "MaquinaEstadoRecurso",
         "classe": "criar_recurso",
         "grupo": "recursos",
         "renderer": {
@@ -301,7 +314,6 @@
         }
     },
     "castelo": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "vida": 600,
@@ -331,7 +343,6 @@
         }
     },
     "casa": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "vida": 200,
@@ -355,13 +366,90 @@
             "acoes": {}
         },
         "custo": {
-            "madeira": 35,
+            "madeira": 14,
+            "ouro": 0,
+            "carne": 0
+        }
+    },
+    "casa_palha_azul": {
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
+        "vida": 200,
+        "renderer": {
+            "colecao": "construcoes",
+            "escala": 1,
+            "escala_menu": 0.27,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/casa_palha_azul.png",
+                "frames": 1,
+                "tempo": 0.2
+            }
+        },
+        "custo": {
+            "madeira": 12,
+            "ouro": 0,
+            "carne": 0
+        }
+    },
+    "casa_palha_vermelha": {
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
+        "faccao": "bandido",
+        "vida": 200,
+        "renderer": {
+            "colecao": "construcoes",
+            "escala": 1.2,
+            "escala_menu": 0.27,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/casa_palha_vermelha.png",
+                "frames": 1,
+                "tempo": 0.2
+            }
+        },
+        "custo": {
+            "madeira": 20,
+            "ouro": 0,
+            "carne": 0
+        }
+    },
+    "casa_construindo": {
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
+        "vida": 200,
+        "renderer": {
+            "colecao": "construcoes",
+            "escala": 1,
+            "escala_menu": 0.27,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/casa_construindo.png",
+                "frames": 1,
+                "tempo": 0.2
+            }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "DestruirConstrucaoUseCase",
+            "acoes": {}
+        },
+        "custo": {
+            "madeira": 0,
             "ouro": 0,
             "carne": 0
         }
     },
     "quartel": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "vida": 400,
@@ -391,7 +479,6 @@
         }
     },
     "casa_goblin": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "faccao": "goblin",
@@ -421,8 +508,37 @@
             "carne": 5
         }
     },
+    "caverna": {
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
+        "faccao": "fera",
+        "vida": 200,
+        "renderer": {
+            "colecao": "construcoes_hostis",
+            "escala": 0.9,
+            "escala_menu": 0.25,
+            "frames_carregamento": 16
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "construcoes/caverna.png",
+                "frames": 8,
+                "tempo": 0.25
+            }
+        },
+        "ia": {
+            "padrao": "DefenderConstrucaoUseCase",
+            "morte": "DestruirConstrucaoUseCase",
+            "acoes": {}
+        },
+        "custo": {
+            "madeira": 45,
+            "ouro": 15,
+            "carne": 5
+        }
+    },
     "arvore1": {
-        "maquina": "MaquinaEstadoArvore",
         "classe": "criar_arvore",
         "grupo": "fontes_recursos",
         "renderer": {
@@ -445,7 +561,6 @@
         }
     },
     "arvore2": {
-        "maquina": "MaquinaEstadoArvore",
         "classe": "criar_arvore",
         "grupo": "fontes_recursos",
         "renderer": {
@@ -468,7 +583,6 @@
         }
     },
     "arvore3": {
-        "maquina": "MaquinaEstadoArvore",
         "classe": "criar_arvore",
         "grupo": "fontes_recursos",
         "renderer": {
@@ -491,7 +605,6 @@
         }
     },
     "arvore4": {
-        "maquina": "MaquinaEstadoArvore",
         "classe": "criar_arvore",
         "grupo": "fontes_recursos",
         "renderer": {
@@ -514,7 +627,6 @@
         }
     },
     "ovelha": {
-        "maquina": "MaquinaEstadoOvelha",
         "classe": "criar_entidade",
         "grupo": "animais",
         "vida": 100,
@@ -559,7 +671,6 @@
         }
     },
     "mina_ouro": {
-        "maquina": "MaquinaEstadoOuro",
         "classe": "criar_mina_ouro",
         "grupo": "fontes_recursos",
         "renderer": {
@@ -602,7 +713,6 @@
         }
     },
     "arbusto1": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -620,7 +730,6 @@
         }
     },
     "arbusto2": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -638,7 +747,6 @@
         }
     },
     "arbusto3": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -656,7 +764,6 @@
         }
     },
     "arbusto4": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -674,7 +781,6 @@
         }
     },
     "pedra1": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -692,7 +798,6 @@
         }
     },
     "pedra2": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -710,7 +815,6 @@
         }
     },
     "pedra3": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -728,7 +832,6 @@
         }
     },
     "pedra4": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -746,7 +849,6 @@
         }
     },
     "pedra_agua1": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -764,7 +866,6 @@
         }
     },
     "pedra_agua2": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -782,7 +883,6 @@
         }
     },
     "pedra_agua3": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -800,7 +900,6 @@
         }
     },
     "pedra_agua4": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_recurso",
         "grupo": "flora",
         "renderer": {
@@ -818,7 +917,6 @@
         }
     },
     "poeira_grande": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -836,7 +934,6 @@
         }
     },
     "fogo1": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -854,7 +951,6 @@
         }
     },
     "fogo2": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -872,7 +968,6 @@
         }
     },
     "fogo3": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -890,7 +985,6 @@
         }
     },
     "explosao1": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -908,7 +1002,6 @@
         }
     },
     "explosao2": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -926,7 +1019,6 @@
         }
     },
     "barra_vida": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -943,7 +1035,6 @@
         }
     },
     "barra_vida_base": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -960,7 +1051,6 @@
         }
     },
     "audio": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -977,7 +1067,6 @@
         }
     },
     "escudo": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_efeitos",
         "grupo": "efeitos",
         "renderer": {
@@ -993,8 +1082,23 @@
             }
         }
     },
+    "espada": {
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "escala": 0.7,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ui/espada.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
     "avatar_aldeao": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "renderer": {
@@ -1016,7 +1120,6 @@
         }
     },
     "avatar_soldado": {
-        "maquina": "MaquinaEstadoConstrucao",
         "classe": "criar_construcao",
         "grupo": "construcoes",
         "renderer": {
@@ -1035,6 +1138,331 @@
             "madeira": 15,
             "ouro": 20,
             "carne": 8
+        }
+    },
+    "machado": {
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "escala": 1,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ferramentas/machado.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "martelo": {
+        "classe": "criar_efeitos",
+        "grupo": "efeitos",
+        "renderer": {
+            "escala": 1,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "ferramentas/martelo.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "esqueleto": {
+        "classe": "criar_entidade",
+        "grupo": "hostis",
+        "faccao": "esqueleto",
+        "vida": 80,
+        "ataque": 4,
+        "defesa": 1,
+        "renderer": {
+            "colecao": "personagens_hostis",
+            "escala": 1,
+            "frames_carregamento": 5
+        },
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "esqueleto/esqueleto_ocioso.png",
+                "frames": 8,
+                "tempo": 0.2
+            },
+            "correndo": {
+                "arquivo": "esqueleto/esqueleto_correndo.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "atacando": {
+                "arquivo": "esqueleto/esqueleto_atacando.png",
+                "frames": 7,
+                "tempo": 0.15
+            },
+            "defendendo": {
+                "arquivo": "esqueleto/esqueleto_defendendo.png",
+                "frames": 7,
+                "tempo": 0.2
+            },
+            "avatar": {
+                "arquivo": "esqueleto/avatar.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        },
+        "ia": {
+            "padrao": "ControlarComportamentoEsqueletoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {
+                "atacar": {
+                    "alvos": [
+                        "personagens",
+                        "construcoes"
+                    ],
+                    "usecase": "AtacarEsqueletoUseCase"
+                }
+            }
+        },
+        "custo": {
+            "madeira": 10,
+            "ouro": 5,
+            "carne": 6
+        }
+    },
+    "cobra": {
+        "classe": "criar_entidade",
+        "grupo": "hostis",
+        "faccao": "fera",
+        "vida": 110,
+        "ataque": 7,
+        "defesa": 2,
+        "renderer": {
+            "colecao": "personagens_hostis",
+            "escala": 1,
+            "frames_carregamento": 5
+        },
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "cobra/cobra_ocioso.png",
+                "frames": 8,
+                "tempo": 0.2
+            },
+            "correndo": {
+                "arquivo": "cobra/cobra_correndo.png",
+                "frames": 8,
+                "tempo": 0.15
+            },
+            "atacando": {
+                "arquivo": "cobra/cobra_atacando.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "avatar": {
+                "arquivo": "cobra/avatar.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        },
+        "ia": {
+            "padrao": "ControlarComportamentoEsqueletoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {
+                "atacar": {
+                    "alvos": [
+                        "personagens",
+                        "construcoes"
+                    ],
+                    "usecase": "AtacarCobraUseCase"
+                }
+            }
+        },
+        "custo": {
+            "madeira": 0,
+            "ouro": 0,
+            "carne": 0
+        }
+    },
+    "urso": {
+        "classe": "criar_entidade",
+        "grupo": "hostis",
+        "faccao": "fera",
+        "vida": 500,
+        "ataque": 17,
+        "defesa": 7,
+        "renderer": {
+            "colecao": "personagens_hostis",
+            "escala": 1,
+            "frames_carregamento": 5
+        },
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "urso/urso_ocioso.png",
+                "frames": 8,
+                "tempo": 0.2
+            },
+            "correndo": {
+                "arquivo": "urso/urso_correndo.png",
+                "frames": 5,
+                "tempo": 0.15
+            },
+            "atacando": {
+                "arquivo": "urso/urso_atacando.png",
+                "frames": 9,
+                "tempo": 0.15
+            },
+            "avatar": {
+                "arquivo": "urso/avatar.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        },
+        "ia": {
+            "padrao": "ControlarComportamentoEsqueletoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {
+                "atacar": {
+                    "alvos": [
+                        "personagens",
+                        "construcoes"
+                    ],
+                    "usecase": "AtacarUrsoUseCase"
+                }
+            }
+        },
+        "custo": {
+            "madeira": 0,
+            "ouro": 0,
+            "carne": 0
+        },
+        "comportamento_noturno": {
+            "hora_saida": "18:10",
+            "origem": "caverna",
+            "alvo": "sapudo"
+        }
+    },
+    "bandido": {
+        "classe": "criar_entidade",
+        "grupo": "hostis",
+        "faccao": "bandido",
+        "vida": 70,
+        "ataque": 5,
+        "defesa": 2,
+        "renderer": {
+            "colecao": "personagens_hostis",
+            "escala": 1,
+            "frames_carregamento": 5
+        },
+        "flip": true,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "bandido/bandido_ocioso.png",
+                "frames": 6,
+                "tempo": 0.2
+            },
+            "correndo": {
+                "arquivo": "bandido/bandido_correndo.png",
+                "frames": 6,
+                "tempo": 0.15
+            },
+            "atacando": {
+                "arquivo": "bandido/bandido_atacando.png",
+                "frames": 6,
+                "tempo": 0.15
+            }
+        },
+        "ia": {
+            "padrao": "ControlarComportamentoEsqueletoUseCase",
+            "morte": "MortePersonagemUseCase",
+            "acoes": {
+                "atacar": {
+                    "alvos": [
+                        "personagens",
+                        "construcoes"
+                    ],
+                    "usecase": "AtacarBandidoUseCase"
+                }
+            }
+        },
+        "custo": {
+            "madeira": 10,
+            "ouro": 5,
+            "carne": 6
+        }
+    },
+    "osso1": {
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "elementos/osso_01.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "osso2": {
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "elementos/osso_02.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "osso3": {
+        "classe": "criar_recurso",
+        "grupo": "flora",
+        "renderer": {
+            "colecao": "flora",
+            "escala": 1,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "elementos/osso_03.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        }
+    },
+    "avatar_bandido": {
+        "classe": "criar_construcao",
+        "grupo": "construcoes",
+        "renderer": {
+            "escala": 0.3,
+            "frames_carregamento": 1
+        },
+        "flip": false,
+        "animacoes": {
+            "ocioso": {
+                "arquivo": "bandido/avatar.png",
+                "frames": 1,
+                "tempo": 0
+            }
+        },
+        "custo": {
+            "madeira": 0,
+            "ouro": 0,
+            "carne": 0
         }
     }
 }

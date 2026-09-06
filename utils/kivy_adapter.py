@@ -13,6 +13,7 @@ from PIL import (
     Image,
     ImageChops,
     ImageDraw,
+    ImageEnhance,
     ImageFont,
     ImageOps,
 )
@@ -284,6 +285,18 @@ class Surface:
             self._img,
             mascara,
         )
+
+    def ajustar_luminosidade(self, fator):
+        fator = max(0.0, float(fator))
+        if abs(fator - 1.0) < 1e-6:
+            return self
+
+        alpha = self._img.getchannel("A")
+        rgb = self._img.convert("RGB")
+        rgb = ImageEnhance.Brightness(rgb).enhance(fator)
+        rgb.putalpha(alpha)
+        self._img = rgb
+        return self
 
     def fill(self, color):
         if len(color) == 3:

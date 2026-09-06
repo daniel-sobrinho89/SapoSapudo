@@ -36,6 +36,8 @@ class SpriteAnimadoRenderer:
         self.frames = {}
         self._partes_barra_vida = None
         self._bbox_frames = {}
+        self.ciclo_dia_noite = None
+        self._cache_iluminacao = {}
 
         config = self.CONFIG[self.tipo]
 
@@ -139,6 +141,8 @@ class SpriteAnimadoRenderer:
     ):
         if not self.carregado:
             return
+        if getattr(entidade, "visivel", True) is False:
+            return
 
         frame = self.obter_frame_animacao(animacoes)
 
@@ -168,21 +172,61 @@ class SpriteAnimadoRenderer:
         ):
             return
 
-        frame = self.transform.escalar(
-            frame,
-            (
-                int(largura * camera.zoom),
-                int(altura * camera.zoom),
-            ),
+        # A iluminação é calculada sobre o frame-fonte, que permanece estável
+        # entre os frames de renderização. O cache antigo usava id() do frame
+        # já escalado, portanto criava uma textura nova a cada frame.
+        fator_luz = None
+        if self.ciclo_dia_noite is not None:
+            fator_luz = self.ciclo_dia_noite.nivel_luz
+
+        cor_chave = tuple(cor) if cor is not None else None
+        cache_key = (
+            id(frame),
+            int(largura * camera.zoom),
+            int(altura * camera.zoom),
+            round(fator_luz, 3) if fator_luz is not None else None,
+            cor_chave,
         )
+        cache_entry = self._cache_iluminacao.get(cache_key)
+        frame_render = None
+        if cache_entry is not None:
+            fonte_cacheada, frame_render = cache_entry
+            if fonte_cacheada is not frame:
+                frame_render = None
 
-        if cor is not None or alpha != 255:
+        if frame_render is None:
+            frame_base = frame
+            if cor is not None or fator_luz is not None:
+                frame_base = frame.copy()
+
+                if cor is not None:
+                    frame_base.multiplicar_cor(cor)
+
+                if fator_luz is not None and abs(fator_luz - 1.0) >= 1e-6:
+                    frame_base.ajustar_luminosidade(fator_luz)
+
+            frame_render = self.transform.escalar(
+                frame_base,
+                (
+                    int(largura * camera.zoom),
+                    int(altura * camera.zoom),
+                ),
+            )
+            # Mantém referência forte ao frame-fonte. Além de validar identidade,
+            # isso impede colisões por reutilização de id() do objeto.
+            self._cache_iluminacao[cache_key] = (frame, frame_render)
+
+            # Evita crescimento ilimitado caso o zoom mude continuamente.
+            if len(self._cache_iluminacao) > 512:
+                for chave in list(self._cache_iluminacao)[:128]:
+                    del self._cache_iluminacao[chave]
+
+        frame = frame_render
+        if alpha != 255:
+            # Nunca alterar a textura armazenada no cache. Um alpha diferente
+            # para um personagem/efeito não pode contaminar os próximos usos.
             frame = frame.copy()
-
-        if cor is not None:
-            frame.multiplicar_cor(cor)
-
-        frame.set_alpha(alpha)
+            frame.set_alpha(alpha)
 
         bboxes = self._bbox_frames.get(seletor)
         if bboxes:

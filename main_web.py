@@ -216,33 +216,62 @@ def finalizar_preloader_web():
 
 
 def processar_mouse_down(event, origem="mouse"):
-    p = pos_virtual(event.pos)
-
-    if event.button == 1 and _evento_web_duplicado(origem, p):
+    if coordenador is None or not cenario.carregado:
         return
 
-    if event.button == 4:
-        cenario.camera.aproximar(p)
-        return
-    if event.button == 5:
-        cenario.camera.afastar(p)
+    if origem == "touch":
+        pos = pos_virtual_to_finger(
+            getattr(event, "x", 0.0),
+            getattr(event, "y", 0.0),
+        )
+    else:
+        pos = pos_virtual(getattr(event, "pos", (0, 0)))
+
+    if _evento_web_duplicado(origem, pos):
         return
 
-    if event.button == 1:
-        if (
-            not cenario_inicializado
-            and gerenciador_cenarios.estado == EstadoJogo.ABERTURA
-        ):
-            iniciar_cenario_web()
-            return
+    coordenador.processar_toque_down(pos)
 
-        if cenario.carregado and coordenador is not None:
-            # O detector de duplo clique continua ativo no touch.
-            # A deduplicacao acima remove apenas o MOUSEBUTTONDOWN sintetico
-            # correspondente ao mesmo toque. Assim:
-            #   1 toque real -> 1 selecao
-            #   2 toques reais -> duplo clique/menu
-            coordenador.processar_toque_down(p, permitir_duplo_clique=True)
+
+def processar_mouse_up(event, origem="mouse"):
+    if coordenador is None or not cenario.carregado:
+        return
+
+    if origem == "touch":
+        pos = pos_virtual_to_finger(
+            getattr(event, "x", 0.0),
+            getattr(event, "y", 0.0),
+        )
+    else:
+        pos = pos_virtual(getattr(event, "pos", (0, 0)))
+
+    coordenador.processar_toque_up(pos)
+
+
+def processar_mouse_move(event):
+    if coordenador is None or not cenario.carregado:
+        return
+    pos = pos_virtual(getattr(event, "pos", (0, 0)))
+    coordenador.processar_on_touch_move(pos)
+
+
+def _tecla_web(event):
+    mapa = {
+        pygame.K_UP: "up",
+        pygame.K_DOWN: "down",
+        pygame.K_LEFT: "left",
+        pygame.K_RIGHT: "right",
+        pygame.K_SPACE: "space",
+        pygame.K_RETURN: "enter",
+        pygame.K_ESCAPE: "escape",
+        pygame.K_w: "w",
+        pygame.K_a: "a",
+        pygame.K_s: "s",
+        pygame.K_d: "d",
+        pygame.K_q: "q",
+        pygame.K_e: "e",
+    }
+    return mapa.get(getattr(event, "key", None))
 
 
 async def main():
@@ -274,41 +303,27 @@ async def main():
                 pygame.quit()
                 return
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                processar_mouse_down(event)
-            elif event.type == getattr(pygame, "FINGERDOWN", -999):
-                # Em mobile, trate o FINGERDOWN como o evento primário.
-                # Não sintetize um MOUSEBUTTONDOWN, pois alguns browsers já
-                # produzem esse evento automaticamente para o mesmo toque.
-                p = pos_virtual_to_finger(event.x, event.y)
-                if not _evento_web_duplicado("touch", p):
-                    if (
-                        not cenario_inicializado
-                        and gerenciador_cenarios.estado == EstadoJogo.ABERTURA
-                    ):
-                        iniciar_cenario_web()
-                    elif cenario.carregado and coordenador is not None:
-                        # FINGERDOWN e a entrada primaria no touch.
-                        # O detector deve permanecer ativo para reconhecer
-                        # dois toques reais como duplo clique; o MOUSE*
-                        # sintetico do browser e descartado pela deduplicacao.
-                        coordenador.processar_toque_down(p, permitir_duplo_clique=True)
-            elif event.type == pygame.KEYDOWN:
-                if getattr(event, "key", None) in (pygame.K_RETURN, pygame.K_SPACE):
-                    iniciar_cenario_web()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                processar_mouse_down(event, origem="mouse")
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1 and cenario.carregado and coordenador is not None:
-                    coordenador.processar_toque_up(pos_virtual(event.pos))
+                processar_mouse_up(event, origem="mouse")
             elif event.type == pygame.MOUSEMOTION:
-                if cenario.carregado and coordenador is not None:
-                    coordenador.processar_on_touch_move(pos_virtual(event.pos))
-            elif (
-                event.type == getattr(pygame, "FINGERUP", -998)
-                and cenario.carregado
-                and coordenador is not None
-            ):
-                p = pos_virtual_to_finger(event.x, event.y)
-                coordenador.processar_toque_up(p)
+                processar_mouse_move(event)
+            elif hasattr(pygame, "FINGERDOWN") and event.type == pygame.FINGERDOWN:
+                processar_mouse_down(event, origem="touch")
+            elif hasattr(pygame, "FINGERUP") and event.type == pygame.FINGERUP:
+                processar_mouse_up(event, origem="touch")
+            elif event.type == pygame.KEYDOWN:
+                tecla = _tecla_web(event)
+                if tecla is not None and cenario.carregado and coordenador is not None:
+                    if tecla == "escape" and cenario.conversa_controller.aberta:
+                        cenario.conversa_controller.cancelar_dialogo()
+                    else:
+                        coordenador.processar_tecla_down(tecla)
+            elif event.type == pygame.KEYUP:
+                tecla = _tecla_web(event)
+                if tecla is not None and cenario.carregado and coordenador is not None:
+                    coordenador.processar_tecla_up(tecla)
 
         primeiro_frame_jogo = False
 

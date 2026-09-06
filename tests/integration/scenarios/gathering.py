@@ -25,8 +25,8 @@ def aldeoes_cortando_arvore(quantidade):
     for i in range(2400):
         c.tick()
         for aldeao in aldeoes:
-            cortando = aldeao.animacoes.maquina.cortando_arvore()
-            entregando = aldeao.animacoes.maquina.entregando_madeira()
+            cortando = aldeao.animacoes.esta_em("usando_machado")
+            entregando = aldeao.animacoes.esta_em("correndo_madeira")
             if cortando and not corte_inicial[aldeao]:
                 corte_inicial[aldeao] = True
                 fases[aldeao] = max(fases[aldeao], 1)
@@ -47,8 +47,8 @@ def aldeoes_cortando_arvore(quantidade):
                             **snapshot_visual_entity(
                                 a, faccao=getattr(a, "_faccao_teste", None)
                             ),
-                            "cortando": a.animacoes.maquina.cortando_arvore(),
-                            "entregando": a.animacoes.maquina.entregando_madeira(),
+                            "cortando": a.animacoes.esta_em("usando_machado"),
+                            "entregando": a.animacoes.esta_em("correndo_madeira"),
                         }
                         for a in aldeoes
                     ],
@@ -105,7 +105,7 @@ def aldeao_termina_arvore_e_inicia_outra():
     for i in range(5000):
         c.tick()
 
-        if aldeao.animacoes.maquina.cortando_arvore():
+        if aldeao.animacoes.esta_em("usando_machado"):
             if not primeiro_corte:
                 primeiro_corte = True
             if iniciou_segunda_arvore:
@@ -139,8 +139,8 @@ def aldeao_termina_arvore_e_inicia_outra():
                         ),
                         "alvo_x": controle.ultima_posicao_corte_x,
                         "alvo_y": controle.ultima_posicao_corte_y,
-                        "cortando": aldeao.animacoes.maquina.cortando_arvore(),
-                        "entregando": aldeao.animacoes.maquina.entregando_madeira(),
+                        "cortando": aldeao.animacoes.esta_em("usando_machado"),
+                        "entregando": aldeao.animacoes.esta_em("correndo_madeira"),
                     },
                 }
             )
@@ -218,7 +218,7 @@ def aldeoes_trocam_para_arvore_proxima(quantidade=3):
             ):
                 trocas[aldeao] = True
 
-            if trocas[aldeao] and aldeao.animacoes.maquina.cortando_arvore():
+            if trocas[aldeao] and aldeao.animacoes.esta_em("usando_machado"):
                 segundos_cortes[aldeao] = True
 
         if i % 6 == 0:
@@ -235,8 +235,8 @@ def aldeoes_trocam_para_arvore_proxima(quantidade=3):
                             ),
                             "alvo_x": controle.ultima_posicao_corte_x,
                             "alvo_y": controle.ultima_posicao_corte_y,
-                            "cortando": aldeao.animacoes.maquina.cortando_arvore(),
-                            "entregando": aldeao.animacoes.maquina.entregando_madeira(),
+                            "cortando": aldeao.animacoes.esta_em("usando_machado"),
+                            "entregando": aldeao.animacoes.esta_em("correndo_madeira"),
                         }
                         for aldeao, controle in zip(aldeoes, controles)
                     ],
@@ -286,10 +286,10 @@ def aldeao_corta_arvore_sem_corpo_rect():
 
     for _ in range(240):
         c.tick(1 / 60)
-        if aldeao.animacoes.maquina.cortando_arvore():
+        if aldeao.animacoes.esta_em("usando_machado"):
             break
 
-    assert aldeao.animacoes.maquina.cortando_arvore(), (
+    assert aldeao.animacoes.esta_em("usando_machado"), (
         "o aldeão não conseguiu chegar à árvore quando corpo_rect ainda era None"
     )
 

@@ -11,11 +11,45 @@ class MoverPersonagemUseCase:
     def __init__(self):
         self._rotas_por_personagem = {}
 
-    def _atualizar_estado_animacao(self, personagem, dx, estado_normal, estado_flip):
-        personagem.animacoes.estado = estado_normal if dx >= 0 else estado_flip
+    def _atualizar_estado_animacao(
+        self,
+        personagem,
+        dx,
+        estado_normal=None,
+        estado_flip=None,
+        nome_animacao=None,
+    ):
+        """Atualiza a apresentação sem tornar o movimento dependente do domínio.
+
+        Os parâmetros de estado antigos permanecem aceitos para compatibilidade
+        durante a migração. Novos chamadores podem informar apenas
+        ``nome_animacao``.
+        """
+        animacoes = getattr(personagem, "animacoes", None)
+        if animacoes is None:
+            return
+
+        if hasattr(animacoes, "flip_para_direcao"):
+            flip = animacoes.flip_para_direcao(dx)
+        else:
+            flip = dx < 0
+
+        if nome_animacao is not None and hasattr(animacoes, "definir"):
+            animacoes.definir(nome_animacao, flip=flip)
+            return
+
+        if estado_normal is not None and estado_flip is not None:
+            animacoes.definir(estado_flip if flip else estado_normal)
 
     def _limpar_rota(self, personagem):
         self._rotas_por_personagem.pop(id(personagem), None)
+
+    def cancelar_rota(self, personagem):
+        """Cancela explicitamente qualquer rota persistente do personagem."""
+        self._limpar_rota(personagem)
+        if personagem is not None:
+            personagem.destino_x = personagem.x
+            personagem.destino_y = personagem.y
 
     def _criar_rota(self, personagem, navegacao, alvo_original):
         try:
@@ -87,12 +121,14 @@ class MoverPersonagemUseCase:
         personagem,
         navegacao,
         velocidade,
-        estado_correndo,
-        estado_correndo_flip,
-        estado_parado,
-        estado_parado_flip,
-        dt,
+        estado_correndo=None,
+        estado_correndo_flip=None,
+        estado_parado=None,
+        estado_parado_flip=None,
+        dt=0.0,
         destino_externo=None,
+        animacao_correndo=None,
+        animacao_parado=None,
     ):
         try:
             destino_recebido = (personagem.destino_x, personagem.destino_y)
@@ -172,7 +208,11 @@ class MoverPersonagemUseCase:
             if hypot(dx, dy) < 2:
                 self._limpar_rota(personagem)
                 self._atualizar_estado_animacao(
-                    personagem, dx, estado_parado, estado_parado_flip
+                    personagem,
+                    dx,
+                    estado_parado,
+                    estado_parado_flip,
+                    nome_animacao=animacao_parado,
                 )
                 return False
 
@@ -207,9 +247,6 @@ class MoverPersonagemUseCase:
                         passo_maximo,
                     )
                 else:
-                    # A partir do primeiro bloqueio, cria uma rota persistente
-                    # e passa a consumir seus waypoints. Não pede BFS novamente
-                    # a cada frame enquanto o obstáculo permanecer igual.
                     nova_posicao = None
                     if self._criar_rota(personagem, navegacao, destino_final):
                         self._preparar_waypoint(personagem, navegacao)
@@ -228,7 +265,33 @@ class MoverPersonagemUseCase:
                     personagem.y,
                 )
                 self._atualizar_estado_animacao(
-                    personagem, dx, estado_parado, estado_parado_flip
+                    personagem,
+                    dx,
+                    estado_parado,
+                    estado_parado_flip,
+                    nome_animacao=animacao_parado,
+                )
+                return False
+
+            # Uma posição calculada igual à posição atual não é movimento.
+            # Não deixe o personagem permanecer em "correndo" quando a
+            # navegação encontrou um trecho sem progresso real.
+            deslocamento_calculado = hypot(
+                nova_posicao[0] - x_antigo,
+                nova_posicao[1] - y_antigo,
+            )
+            if deslocamento_calculado <= 0.0001:
+                self._limpar_rota(personagem)
+                personagem.destino_x, personagem.destino_y = (
+                    personagem.x,
+                    personagem.y,
+                )
+                self._atualizar_estado_animacao(
+                    personagem,
+                    0.0,
+                    estado_parado,
+                    estado_parado_flip,
+                    nome_animacao=animacao_parado,
                 )
                 return False
 
@@ -271,9 +334,46 @@ class MoverPersonagemUseCase:
                         dados["indice"]
                     ]
 
+            # Se este foi o último trecho e chegamos efetivamente ao destino,
+            # encerra a corrida neste mesmo frame. Isso evita um frame (ou,
+            # em rotas inválidas, vários frames) de "correndo" parado.
+            dados_apos_movimento = self._rotas_por_personagem.get(id(personagem))
+            alvo_atual = (
+                (personagem.destino_x, personagem.destino_y)
+                if dados_apos_movimento is None
+                else (personagem.destino_x, personagem.destino_y)
+            )
+            if (
+                dados_apos_movimento is None
+                and hypot(
+                    alvo_atual[0] - personagem.x,
+                    alvo_atual[1] - personagem.y,
+                )
+                <= 2.0
+            ):
+                self._atualizar_estado_animacao(
+                    personagem,
+                    personagem.x - x_antigo,
+                    estado_parado,
+                    estado_parado_flip,
+                    nome_animacao=animacao_parado,
+                )
+                return True
+
             passo_x = personagem.x - x_antigo
+            orientacao_x = passo_x
+            if abs(orientacao_x) < 0.0001:
+                # Em trechos verticais não use o alvo final para decidir a
+                # orientação. O alvo pode estar do outro lado de um barranco,
+                # fazendo a unidade parecer andar de costas. Mantemos a última
+                # orientação horizontal enquanto não houver deslocamento em X.
+                orientacao_x = 0.0
             self._atualizar_estado_animacao(
-                personagem, passo_x, estado_correndo, estado_correndo_flip
+                personagem,
+                orientacao_x,
+                estado_correndo,
+                estado_correndo_flip,
+                nome_animacao=animacao_correndo,
             )
             return True
 

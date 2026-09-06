@@ -1,6 +1,7 @@
 import json
 
 import utils.kivy_adapter as kivy_adapter
+from core.regiao_mapa import RegiaoMapa
 from utils.config import TILE_SIZE
 
 
@@ -57,21 +58,29 @@ class TileMapRenderer:
         41: 33,  # horizontal meio grama penhasco
     }
 
-    def __init__(self, tela, assets, transform):
+    def __init__(
+        self, tela, assets, transform, world_context=None, ciclo_dia_noite=None
+    ):
         self.tela = tela
         self.assets = assets
         self.transform = transform
+        self.world_context = world_context
+        self.ciclo_dia_noite = ciclo_dia_noite
+        self._cache_iluminacao = {}
         self.carregado = False
 
         self.tiles = {}
         self.mapa = []
         self.tiles_bioma = {}
+        self.terrain_overrides = {}
+        self._terrain_editor_path = "data/mapas/mapa1.json"
         self.cache_tiles = {}
         self.espumas = {}
         self.tiles_agua_bloqueados = set()
         self.relevos_agua = set()
         self._relevos_agua_config = []
-        self.ambiente = []
+        self.world = None
+        self.regioes = {}
         self.recursos_iniciais = {"madeira": 0, "ouro": 0, "carne": 0}
 
         self.alturas = {}
@@ -79,6 +88,7 @@ class TileMapRenderer:
         self.paredes_penhasco = {}
         self.relevos_flags = {}
         self.degraus = {}
+        self.degraus_superficie = {}
         self.degraus_por_relevo = {}
         self.tiles_bloqueados = set()
 
@@ -100,21 +110,12 @@ class TileMapRenderer:
         self.frame_agua = 1
         self.tempo_agua = 0.0
 
-        # O terreno é quase totalmente estático. No navegador, redesenhá-lo
-        # inteiro em cada frame desperdiça uma grande parcela do orçamento de
-        # CPU/GPU. Mantemos uma versão pré-composta e só desenhamos as camadas
-        # realmente dinâmicas por frame.
         self._cache_terreno_base = None
-        # Cache seguro do viewport escalado. Não usamos TransformUtils.escalar
-        # aqui porque ele usa id(imagem) como chave e o viewport é uma Surface
-        # temporária criada a cada frame. Em web isso pode reutilizar um id de
-        # Python e devolver a imagem escalada de outro viewport.
-        #
-        # Mantemos somente o último viewport, indexado pelo trecho real da
-        # superfície-base e pelo zoom. Assim preservamos o ganho de cache sem
-        # permitir que imagens de áreas diferentes sejam misturadas.
+        self._cache_terreno_overlay = None
         self._cache_viewport = None
         self._cache_viewport_key = None
+        self._cache_overlay_viewport = None
+        self._cache_overlay_viewport_key = None
         self._cache_terreno_pad_x = 256
         self._cache_terreno_pad_y = 256
         self.offset_agua_parada_x = -1
@@ -123,6 +124,16 @@ class TileMapRenderer:
         self.carregar_mapa("data/mapas/mapa1.json")
 
     # ==================================================
+    def obter_regiao(self, regiao_id):
+        return self.regioes.get(regiao_id)
+
+    def obter_regiao_no_ponto(self, x, y):
+        if self.world_context is not None:
+            return self.world_context.region_service.no_pixel(
+                x - self.offset_x, y - self.offset_y
+            )
+        return None
+
     # LOAD E INICIALIZAÇÃO
     # ==================================================
 
@@ -130,7 +141,27 @@ class TileMapRenderer:
         with open(caminho, encoding="utf-8") as arquivo:
             dados = json.load(arquivo)
 
-        self.ambiente = dados.get("ambiente", [])
+        if self.world_context is not None:
+            self.world = self.world_context.world
+            self.regioes = {
+                regiao.id: RegiaoMapa(
+                    id=regiao.id,
+                    nome=regiao.nome,
+                    tipo=regiao.tipo,
+                    x=regiao.x,
+                    y=regiao.y,
+                    colunas=regiao.colunas,
+                    linhas=regiao.linhas,
+                )
+                for regiao in self.world.regions.values()
+            }
+        else:
+            # O renderer é uma camada de apresentação e não deve criar um
+            # WorldService por conta própria. Instâncias isoladas usadas por
+            # testes/visualizações podem operar apenas com a geometria bruta.
+            self.world = None
+            self.regioes = {}
+
         recursos_iniciais = dados.get("recursos_iniciais", {})
         self.recursos_iniciais = {
             "madeira": max(0, int(recursos_iniciais.get("madeira", 0))),
@@ -139,16 +170,29 @@ class TileMapRenderer:
         }
         self.largura = dados.get("colunas", 0)
         self.altura = dados.get("linhas", 0)
+        # Mantém a origem vertical usada pelo mapa original. Ao aumentar a
+        # quantidade de linhas, a expansão acontece somente na parte inferior.
         self.offset_y = self.altura - 96
 
         self._processar_biomas(dados.get("biomas", []), dados.get("transicoes", []))
+        self.terrain_overrides = {
+            (int(item["x"]), int(item["y"])): item["tipo"]
+            for item in dados.get("terrain_overrides", [])
+            if 0 <= int(item.get("x", -1)) < self.largura
+            and 0 <= int(item.get("y", -1)) < self.altura
+            and item.get("tipo") in (self.TIPO_GRAMA, self.TIPO_AGUA_FUNDO)
+        }
         self._processar_relevos(dados.get("relevos", []))
-        self._processar_degraus(dados.get("degraus", []))
+        self._degraus_config = list(dados.get("degraus", []))
+        self._rios_config = list(dados.get("rios", []))
+        self._espumas_config = list(dados.get("espumas", []))
+        self._processar_degraus(self._degraus_config)
         self._processar_relevos_agua(dados.get("relevos_agua", []))
 
         self._construir_grid_mapa()
         self._aplicar_rios(dados.get("rios", []))
-        self._processar_espumas(dados.get("espumas", []))
+        self._aplicar_overrides_terreno()
+        self._processar_espumas(self._espumas_config)
         self._pre_calcular_autotiling()
         self._pre_calcular_regras_colisao_visuais()
 
@@ -165,48 +209,195 @@ class TileMapRenderer:
             for coluna, linha in transicao["tiles"]:
                 self.tiles_bioma[(coluna, linha)] = destino
 
+    def _segmentos_relevo(self, relevo):
+        if "forma" not in relevo:
+            return [relevo]
+
+        forma = relevo.get("forma", [])
+        if not forma:
+            return []
+
+        bordas = relevo.get("bordas", {})
+        tem_esq = bordas.get("esquerda", True)
+        tem_dir = bordas.get("direita", True)
+        tem_sup = bordas.get("superior", True)
+        tem_inf = bordas.get("inferior", True)
+        altura = relevo.get("altura", 1)
+        relevo_id = relevo.get("id")
+
+        active_cells = set()
+        for linha in forma:
+            y = linha.get("y", 0)
+            x_ini = linha.get("x", 0)
+            cols = linha.get("colunas", 0)
+            for x in range(x_ini, x_ini + cols):
+                active_cells.add((x, y))
+
+        if not active_cells:
+            return []
+
+        col_max_y = {}
+        for x, y in active_cells:
+            col_max_y[x] = max(col_max_y.get(x, y), y)
+
+        def is_covered(neighbor_x, current_y):
+            if (neighbor_x, current_y) in active_cells:
+                return True
+            if neighbor_x in col_max_y:
+                return current_y == col_max_y[neighbor_x] + 1
+            return False
+
+        min_y = min(y for x, y in active_cells)
+        max_y = max(y for x, y in active_cells)
+
+        row_segments = []
+        for y in range(min_y, max_y + 1):
+            active_x = sorted([x for x, row_y in active_cells if row_y == y])
+            if not active_x:
+                continue
+
+            current_group = []
+            for x in active_x:
+                sup_empty = (x, y - 1) not in active_cells
+                inf_empty = (x, y + 1) not in active_cells
+
+                if not current_group:
+                    current_group = [(x, sup_empty, inf_empty)]
+                else:
+                    prev_x, prev_sup, prev_inf = current_group[-1]
+                    if (
+                        x == prev_x + 1
+                        and sup_empty == prev_sup
+                        and inf_empty == prev_inf
+                    ):
+                        current_group.append((x, sup_empty, inf_empty))
+                    else:
+                        start_x = current_group[0][0]
+                        end_x = current_group[-1][0]
+                        row_segments.append(
+                            {
+                                "x": start_x,
+                                "y": y,
+                                "colunas": len(current_group),
+                                "linhas": 1,
+                                "sup": current_group[0][1],
+                                "inf": current_group[0][2],
+                                "cov_left": is_covered(start_x - 1, y),
+                                "cov_right": is_covered(end_x + 1, y),
+                            }
+                        )
+                        current_group = [(x, sup_empty, inf_empty)]
+
+            if current_group:
+                start_x = current_group[0][0]
+                end_x = current_group[-1][0]
+                row_segments.append(
+                    {
+                        "x": start_x,
+                        "y": y,
+                        "colunas": len(current_group),
+                        "linhas": 1,
+                        "sup": current_group[0][1],
+                        "inf": current_group[0][2],
+                        "cov_left": is_covered(start_x - 1, y),
+                        "cov_right": is_covered(end_x + 1, y),
+                    }
+                )
+
+        merged_segments = []
+        for seg in row_segments:
+            merged = False
+            for m in reversed(merged_segments):
+                if (
+                    m["x"] == seg["x"]
+                    and m["colunas"] == seg["colunas"]
+                    and m["y"] + m["linhas"] == seg["y"]
+                    and not m["inf"]
+                    and not seg["sup"]
+                    and m["cov_left"] == seg["cov_left"]
+                    and m["cov_right"] == seg["cov_right"]
+                ):
+                    m["linhas"] += seg["linhas"]
+                    m["inf"] = seg["inf"]
+                    merged = True
+                    break
+            if not merged:
+                merged_segments.append(seg)
+
+        final_segments = []
+        for rect in merged_segments:
+            borda_esq = tem_esq and not rect["cov_left"]
+            borda_dir = tem_dir and not rect["cov_right"]
+
+            final_segments.append(
+                {
+                    "id": relevo_id,
+                    "altura": altura,
+                    "x": rect["x"],
+                    "y": rect["y"],
+                    "colunas": rect["colunas"],
+                    "linhas": rect["linhas"],
+                    "tem_borda_esquerda": borda_esq,
+                    "tem_borda_direita": borda_dir,
+                    "tem_borda_superior": tem_sup and rect["sup"],
+                    "tem_borda_inferior": tem_inf and rect["inf"],
+                }
+            )
+
+        return final_segments
+
     def _processar_relevos(self, relevos):
         self._relevos_config = relevos
+        self._relevos_segmentos = []
         self.alturas.clear()
         self.topos_penhasco.clear()
         self.paredes_penhasco.clear()
         self.relevos_flags.clear()
 
         for relevo in relevos:
-            altura = relevo.get("altura", 1)
-            x = relevo["x"]
-            y = relevo["y"]
-            colunas_x = relevo["colunas"]
-            linhas = relevo["linhas"]
+            segmentos = self._segmentos_relevo(relevo)
+            self._relevos_segmentos.extend(segmentos)
 
-            tem_esq = relevo.get("tem_borda_esquerda", True)
-            tem_dir = relevo.get("tem_borda_direita", True)
-            tem_sup = relevo.get("tem_borda_superior", True)
-            tem_inf = relevo.get("tem_borda_inferior", True)  # Lendo a nova propriedade
+            for segmento in segmentos:
+                altura = segmento.get("altura", 1)
+                x = segmento["x"]
+                y = segmento["y"]
+                colunas_x = segmento["colunas"]
+                linhas = segmento["linhas"]
 
-            linha_borda = y + 1
+                tem_esq = segmento.get("tem_borda_esquerda", True)
+                tem_dir = segmento.get("tem_borda_direita", True)
+                tem_sup = segmento.get("tem_borda_superior", True)
+                tem_inf = segmento.get("tem_borda_inferior", True)
 
-            for coluna in range(x, x + colunas_x):
-                self.alturas[(coluna, linha_borda)] = altura
-                self.topos_penhasco.add((coluna, linha_borda))
-                self.paredes_penhasco[(coluna, linha_borda)] = linhas
+                linha_borda = y + 1
 
-                self.relevos_flags[(coluna, linha_borda)] = {
-                    "esq": tem_esq,
-                    "dir": tem_dir,
-                    "sup": tem_sup,
-                    "inf": tem_inf,
-                    "primeira_col": x,
-                    "ultima_col": x + colunas_x - 1,
-                }
-
-            linha_inicio_parede = linha_borda + 1
-            for linha in range(linha_inicio_parede, linha_inicio_parede + linhas + 1):
                 for coluna in range(x, x + colunas_x):
-                    self.alturas[(coluna, linha)] = altura
+                    self.alturas[(coluna, linha_borda)] = altura
+                    self.topos_penhasco.add((coluna, linha_borda))
+                    self.paredes_penhasco[(coluna, linha_borda)] = max(
+                        linhas, self.paredes_penhasco.get((coluna, linha_borda), 0)
+                    )
+
+                    self.relevos_flags[(coluna, linha_borda)] = {
+                        "esq": tem_esq,
+                        "dir": tem_dir,
+                        "sup": tem_sup,
+                        "inf": tem_inf,
+                        "primeira_col": x,
+                        "ultima_col": x + colunas_x - 1,
+                    }
+
+                linha_inicio_parede = linha_borda + 1
+                for linha in range(
+                    linha_inicio_parede, linha_inicio_parede + linhas + 1
+                ):
+                    for coluna in range(x, x + colunas_x):
+                        self.alturas[(coluna, linha)] = altura
 
     def _processar_degraus(self, degraus):
         self.degraus.clear()
+        self.degraus_superficie.clear()
         self.degraus_por_relevo.clear()
 
         relevos_dit = {r["id"]: r for r in self._relevos_config}
@@ -222,12 +413,20 @@ class TileMapRenderer:
             altura_baixa = altura_alta - 1
 
             for coluna, linha in grupo.get("tiles", []):
-                self.degraus[(coluna, linha)] = {
+                dados_degrau = {
                     "relevo_id": relevo_id,
                     "direcao": grupo["direcao"],
                     "altura_baixa": altura_baixa,
                     "altura_alta": altura_alta,
+                    "tile": (coluna, linha),
+                    # O sprite do degrau é desenhado 1 tile para cima.
+                    # Portanto a superfície visual transitável pertence à
+                    # célula imediatamente acima da célula lógica.
+                    "superficie": (coluna, linha - 1),
                 }
+                self.degraus[(coluna, linha)] = dados_degrau
+                if linha > 0:
+                    self.degraus_superficie[(coluna, linha - 1)] = dados_degrau
                 self.degraus_por_relevo.setdefault(relevo_id, []).append(
                     (coluna, linha)
                 )
@@ -279,12 +478,218 @@ class TileMapRenderer:
                     if self._coordenada_valida(coluna, linha):
                         self.mapa[linha][coluna]["tipo"] = self.TIPO_AGUA_FUNDO
 
+    def _aplicar_overrides_terreno(self):
+        for (coluna, linha), tipo in self.terrain_overrides.items():
+            if self._coordenada_valida(coluna, linha):
+                self.mapa[linha][coluna]["tipo"] = tipo
+                self.mapa[linha][coluna]["altura"] = self.alturas.get(
+                    (coluna, linha), 0
+                )
+
+    def definir_terreno_editor(self, coluna, linha, tipo):
+        if not self._coordenada_valida(coluna, linha):
+            return False
+        if tipo not in (self.TIPO_GRAMA, self.TIPO_AGUA_FUNDO):
+            return False
+        self.terrain_overrides[(int(coluna), int(linha))] = tipo
+        self.mapa[linha][coluna]["tipo"] = tipo
+        self._recalcular_terreno_editor()
+        return True
+
+    def _recalcular_terreno_editor(self):
+        self._pre_calcular_autotiling()
+        self._pre_calcular_regras_colisao_visuais()
+        self._cache_terreno_base = None
+        self._cache_terreno_overlay = None
+        self._cache_viewport = None
+        self._cache_viewport_key = None
+        self._cache_overlay_viewport = None
+        self._cache_overlay_viewport_key = None
+        if self.carregado:
+            self._construir_cache_terreno()
+
+    def salvar_terreno_editor(self):
+        caminho = self._terrain_editor_path
+        with open(caminho, encoding="utf-8") as arquivo:
+            dados = json.load(arquivo)
+        dados["terrain_overrides"] = [
+            {"x": coluna, "y": linha, "tipo": tipo}
+            for (coluna, linha), tipo in sorted(self.terrain_overrides.items())
+        ]
+        dados["relevos"] = list(self._relevos_config)
+        dados["espumas"] = list(getattr(self, "_espumas_config", []))
+        import shutil
+
+        backup = caminho + ".bak"
+        shutil.copy2(caminho, backup)
+        temp = caminho + ".tmp"
+        with open(temp, "w", encoding="utf-8") as arquivo:
+            json.dump(dados, arquivo, ensure_ascii=False, indent=2)
+            arquivo.write("\n")
+        import os
+
+        os.replace(temp, caminho)
+
+    def _reindexar_camadas_editor(self):
+        self._processar_relevos(list(self._relevos_config))
+        self._processar_degraus(list(getattr(self, "_degraus_config", [])))
+        self._processar_relevos_agua(list(self._relevos_agua_config))
+        self._construir_grid_mapa()
+        self._aplicar_rios(getattr(self, "_rios_config", []))
+        self._aplicar_overrides_terreno()
+        self._processar_espumas(list(getattr(self, "_espumas_config", [])))
+        self._pre_calcular_autotiling()
+        self._pre_calcular_regras_colisao_visuais()
+        self._cache_terreno_base = None
+        self._cache_terreno_overlay = None
+        self._cache_viewport = None
+        self._cache_viewport_key = None
+        self._cache_overlay_viewport = None
+        self._cache_overlay_viewport_key = None
+        if self.carregado:
+            self._construir_cache_terreno()
+
+    def adicionar_relevo_editor(self, x, y, colunas, linhas, altura=1):
+        if (
+            not self._coordenada_valida(x, y)
+            or x + colunas > self.largura
+            or y + linhas > self.altura
+        ):
+            return None
+        relevo_id = max([int(r.get("id", 0)) for r in self._relevos_config] or [0]) + 1
+        forma = [
+            {"y": int(y + linha), "x": int(x), "colunas": int(colunas)}
+            for linha in range(int(linhas))
+        ]
+        relevo = {
+            "id": relevo_id,
+            "altura": int(altura),
+            "forma": forma,
+            "bordas": {
+                "esquerda": True,
+                "direita": True,
+                "superior": True,
+                "inferior": True,
+            },
+        }
+        self._relevos_config = list(self._relevos_config) + [relevo]
+        self._reindexar_camadas_editor()
+        return relevo_id
+
+    def _configurar_espuma_editor(self, coluna, linha):
+        if not self._coordenada_valida(coluna, linha):
+            return None
+
+        tipo = self.obter_tipo(coluna, linha)
+
+        def agua_em(c, lin):
+            return (
+                self._coordenada_valida(c, lin)
+                and self.obter_tipo(c, lin) == self.TIPO_AGUA_FUNDO
+            )
+
+        def grama_em(c, lin):
+            return (
+                self._coordenada_valida(c, lin)
+                and self.obter_tipo(c, lin) == self.TIPO_GRAMA
+            )
+
+        if tipo == self.TIPO_AGUA_FUNDO:
+            if grama_em(coluna, linha + 1):
+                return int(coluna), int(linha), 0, -6
+
+            if grama_em(coluna, linha - 1):
+                return int(coluna), int(linha - 1), 0, 1
+
+            if grama_em(coluna - 1, linha):
+                return int(coluna), int(linha), -(TILE_SIZE // 2), 0
+            if grama_em(coluna + 1, linha):
+                return int(coluna), int(linha), TILE_SIZE // 2, 0
+
+            return int(coluna), int(linha), 0, 0
+
+        if tipo == self.TIPO_GRAMA:
+            if agua_em(coluna, linha + 1):
+                print("TIPO_GRAMA1")
+                return int(coluna), int(linha), 0, -1
+
+            if agua_em(coluna, linha - 1):
+                print("TIPO_GRAMA2")
+                return int(coluna), int(linha - 1), -(TILE_SIZE // 1), 0
+
+            if agua_em(coluna - 1, linha):
+                print("TIPO_GRAMA3")
+                return int(coluna), int(linha - 1), -70, -1
+            if agua_em(coluna + 1, linha):
+                print("TIPO_GRAMA4")
+                return int(coluna), int(linha - 1), -55, 0
+
+        return None
+
+    def adicionar_espuma_editor(self, x, y, colunas, linhas):
+        if (
+            not self._coordenada_valida(x, y)
+            or x + colunas > self.largura
+            or y + linhas > self.altura
+        ):
+            return None
+
+        configuracoes = []
+        vistos = set()
+        for linha in range(int(y), int(y) + int(linhas)):
+            for coluna in range(int(x), int(x) + int(colunas)):
+                config = self._configurar_espuma_editor(coluna, linha)
+                if config is None:
+                    return None
+                ancora_x, ancora_y, offset_x, offset_y = config
+                chave = (ancora_x, ancora_y, offset_x, offset_y)
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+                configuracoes.append((ancora_x, ancora_y, offset_x, offset_y))
+
+        if not configuracoes:
+            return None
+
+        idx_base = len(getattr(self, "_espumas_config", [])) + 1
+        novas = []
+        for indice, (coluna, linha, offset_x, offset_y) in enumerate(configuracoes):
+            novas.append(
+                {
+                    "id": f"editor_{idx_base + indice}",
+                    "origem": "editor",
+                    "relevo_agua_id": None,
+                    "offset_x": int(offset_x),
+                    "offset_y": int(offset_y),
+                    "x": int(coluna),
+                    "y": int(linha),
+                    "colunas": 1,
+                    "linhas": 1,
+                }
+            )
+
+        self._espumas_config = list(getattr(self, "_espumas_config", [])) + novas
+        self._processar_espumas(self._espumas_config)
+        self._cache_viewport = None
+        self._cache_viewport_key = None
+        return novas[0]["id"]
+
     def _processar_espumas(self, espumas):
         self.espumas = {}
         self.tiles_agua_bloqueados = set()
         for grupo in espumas:
             offset_x = grupo.get("offset_x", 0)
             offset_y = grupo.get("offset_y", 0)
+
+            if (
+                grupo.get("relevo_agua_id") is None
+                and offset_y == -TILE_SIZE
+                and not (
+                    grupo.get("origem") == "editor"
+                    or str(grupo.get("id", "")).startswith("editor_")
+                )
+            ):
+                offset_y = 0
 
             x_inicial = grupo.get("x", 0)
             y_inicial = grupo.get("y", 0)
@@ -330,7 +735,7 @@ class TileMapRenderer:
         # Relevos de penhasco. Reproduz as mesmas posições físicas usadas pelo
         # renderer para que a colisão acompanhe a borda desenhada, inclusive
         # quando o índice não é o sprite base da célula.
-        for relevo in getattr(self, "_relevos_config", []):
+        for relevo in getattr(self, "_relevos_segmentos", self._relevos_config):
             x = relevo["x"]
             y = relevo["y"]
             colunas = relevo["colunas"]
@@ -456,6 +861,17 @@ class TileMapRenderer:
                     indice = 26
                 self._adicionar_regra_visual(coluna, linha_agua - 1, indice)
 
+        # Um degrau é uma passagem física através da borda do relevo. O
+        # autotiling do penhasco pode registrar nessa mesma célula uma borda
+        # esquerda/direita que bloquearia a aproximação exatamente no ponto
+        # em que o Sapudo precisa atravessar a escada. O degrau tem prioridade
+        # de navegação, então removemos somente as regras visuais de colisão da
+        # própria célula do degrau, preservando as paredes ao redor.
+        for coord_degrau in self.degraus:
+            self.regras_colisao_visuais[coord_degrau] = set()
+        for coord_superficie in self.degraus_superficie:
+            self.regras_colisao_visuais[coord_superficie] = set()
+
     def obter_regras_colisao(self, coluna, linha):
         return self.regras_colisao_visuais.get((coluna, linha), ())
 
@@ -525,11 +941,11 @@ class TileMapRenderer:
             if not v["nw"]:
                 return 3
             if not v["ne"]:
-                return 18
+                return 9
             if not v["sw"]:
                 return 19
             if not v["se"]:
-                return 20
+                return 9
             return 9
 
         return 9
@@ -613,52 +1029,75 @@ class TileMapRenderer:
             return False
         if self.obter_tipo(coluna, linha) != self.TIPO_GRAMA:
             return False
-        if self.obter_altura(coluna, linha) == altura:
+
+        altura_tile = self.obter_altura(coluna, linha)
+        if altura_tile == altura:
             return True
 
+        # A superfície visual do degrau fica exatamente uma célula acima
+        # da célula lógica configurada no mapa. Essa célula precisa aceitar
+        # as duas alturas enquanto o personagem atravessa a escada.
         degrau = self.obter_degrau(coluna, linha)
         if degrau:
             return altura in (degrau["altura_baixa"], degrau["altura_alta"])
+
+        degrau_superficie = self.degraus_superficie.get((coluna, linha))
+        if degrau_superficie:
+            return altura in (
+                degrau_superficie["altura_baixa"],
+                degrau_superficie["altura_alta"],
+            )
+
         return False
 
     def obter_degrau(self, coluna, linha):
-        return self.degraus.get((coluna, linha))
+        return self.degraus.get((coluna, linha)) or self.degraus_superficie.get(
+            (coluna, linha)
+        )
 
     def eh_degrau(self, coluna, linha):
-        return (coluna, linha) in self.degraus
+        return (coluna, linha) in self.degraus or (
+            coluna,
+            linha,
+        ) in self.degraus_superficie
 
     def obter_transicao_degrau(
         self, origem_coluna, origem_linha, destino_coluna, destino_linha, altura
     ):
-        coord_degrau = (
-            (origem_coluna, origem_linha)
-            if (origem_coluna, origem_linha) in self.degraus
-            else (destino_coluna, destino_linha)
-            if (destino_coluna, destino_linha) in self.degraus
-            else None
-        )
+        origem = self.obter_degrau(*((origem_coluna, origem_linha)))
+        destino = self.obter_degrau(*((destino_coluna, destino_linha)))
 
-        if not coord_degrau:
+        if origem is None and destino is None:
             return None
 
-        degrau = self.degraus[coord_degrau]
-        offset = 1 if degrau["direcao"] == "direita" else -1
-        lado_baixo = (coord_degrau[0] - offset, coord_degrau[1])
-        lado_alto = (coord_degrau[0] + offset, coord_degrau[1])
+        # A transição acontece ao entrar/sair da SUPERFÍCIE visual do degrau.
+        # Não esperamos o personagem chegar na célula lógica um tile abaixo.
+        destino_altura_base = self.obter_altura(destino_coluna, destino_linha)
 
-        origem = (origem_coluna, origem_linha)
-        destino = (destino_coluna, destino_linha)
+        if destino is not None:
+            baixa = destino["altura_baixa"]
+            alta = destino["altura_alta"]
+            # Entrando na superfície de um degrau, vamos para o lado oposto
+            # à altura atual.
+            if altura == baixa and alta != destino_altura_base:
+                return alta
+            if altura == alta and baixa != destino_altura_base:
+                return baixa
 
-        if altura == degrau["altura_baixa"]:
-            if (origem == lado_baixo and destino == coord_degrau) or (
-                origem == coord_degrau and destino == lado_alto
-            ):
-                return degrau["altura_alta"]
-        elif altura == degrau["altura_alta"] and (
-            (origem == lado_alto and destino == coord_degrau)
-            or (origem == coord_degrau and destino == lado_baixo)
+        if origem is not None and destino is None:
+            baixa = origem["altura_baixa"]
+            alta = origem["altura_alta"]
+            if altura == alta:
+                return baixa
+
+        # Se o destino já possui a altura do lado alto/baixo, mantém.
+        if destino_altura_base != altura and (
+            destino_altura_base == 0
+            or any(
+                destino_altura_base == d["altura_alta"] for d in (origem, destino) if d
+            )
         ):
-            return degrau["altura_baixa"]
+            return destino_altura_base
 
         return None
 
@@ -693,13 +1132,44 @@ class TileMapRenderer:
     # RENDERIZAÇÃO
     # ==================================================
 
+    def _margem_vertical_relevos_tiles(self):
+        """Calcula quantas linhas de ancora acima da camera ainda podem desenhar.
+
+        As paredes de penhasco sao ancoradas no tile do topo e podem se
+        estender varios tiles para baixo. Se iterarmos apenas as ancoras dentro
+        do viewport, uma parede ainda visivel pode desaparecer quando a camera
+        desce um pouco. A margem e derivada dos dados reais do relevo para nao
+        depender de um valor magico.
+        """
+        maior_extensao = 0
+        for paredes in getattr(self, "paredes_penhasco", {}).values():
+            try:
+                maior_extensao = max(maior_extensao, int(paredes) + 2)
+            except (TypeError, ValueError):
+                continue
+
+        # Relevos de agua tambem usam offsets verticais que podem ultrapassar
+        # uma celula; mantemos uma folga pequena para bordas/sombras.
+        for relevo in getattr(self, "_relevos_agua_config", []):
+            try:
+                maior_extensao = max(maior_extensao, int(relevo.get("linhas", 1)) + 3)
+            except (TypeError, ValueError):
+                continue
+
+        return max(2, maior_extensao)
+
     def _iterar_area_visivel(self, camera):
         inicio_x = max(-2, int((camera.x - self.offset_x) // TILE_SIZE) - 2)
         fim_x = min(
             self.largura + 2,
             int((camera.x + camera.largura - self.offset_x) // TILE_SIZE) + 3,
         )
-        inicio_y = max(-2, int((camera.y - self.offset_y) // TILE_SIZE) - 2)
+
+        linha_camera = int((camera.y - self.offset_y) // TILE_SIZE)
+        margem_relevos = self._margem_vertical_relevos_tiles()
+        # Importante: uma parede pode comecar acima do viewport e continuar
+        # visivel abaixo dele. Incluimos as ancoras dessa faixa superior.
+        inicio_y = max(-2, linha_camera - margem_relevos)
         fim_y = min(
             self.altura + 3,
             int((camera.y + camera.altura - self.offset_y) // TILE_SIZE) + 4,
@@ -714,23 +1184,20 @@ class TileMapRenderer:
             return
 
         self._atualizar_animacao_agua(dt)
-        self._renderizar_fundo(camera)
-        self._renderizar_camada_espuma(camera)
+
         self._renderizar_cache_terreno(camera)
+        self._renderizar_camada_espuma(camera)
+        self._renderizar_cache_terreno_overlay(camera)
 
     def _construir_cache_terreno(self):
-        if self._cache_terreno_base is not None:
+        if (
+            self._cache_terreno_base is not None
+            and self._cache_terreno_overlay is not None
+        ):
             return
 
         largura = self.largura * TILE_SIZE + self._cache_terreno_pad_x * 2
         altura = self.altura * TILE_SIZE + self._cache_terreno_pad_y * 2
-        cache = self.tela.__class__((largura, altura))
-        # O adaptador pygame/web usa uma Surface RGBA própria. Para evitar
-        # depender de constantes expostas pela classe, limpamos explicitamente.
-        cache.fill((0, 0, 0, 0))
-
-        tela_anterior = self.tela
-        self.tela = cache
 
         class _CameraCache:
             def __init__(self, x, y, largura, altura):
@@ -739,6 +1206,8 @@ class TileMapRenderer:
                 self.largura = largura
                 self.altura = altura
                 self.zoom = 1.0
+                self.largura_mundo_visivel = largura
+                self.altura_mundo_visivel = altura
 
         camera_cache = _CameraCache(
             -self._cache_terreno_pad_x,
@@ -747,37 +1216,40 @@ class TileMapRenderer:
             altura,
         )
 
+        tela_anterior = self.tela
         try:
-            self._renderizar_relevos_agua(camera_cache)
+            # Base: fica abaixo da espuma.
+            base = self.tela.__class__((largura, altura))
+            base.fill((0, 0, 0, 0))
+            self.tela = base
+            self._renderizar_fundo(camera_cache)
+            self._renderizar_agua_editor(camera_cache)
+            self._cache_terreno_base = base
+
+            # Overlay: fica acima da espuma.
+            overlay = self.tela.__class__((largura, altura))
+            overlay.fill((0, 0, 0, 0))
+            self.tela = overlay
             self._renderizar_camada_grama(camera_cache)
             self._renderizar_sombras_relevos(camera_cache)
-            self._renderizar_grama_relevos_agua(camera_cache)
             self._renderizar_camada_degraus(camera_cache)
             self._renderizar_penhascos(camera_cache)
+            self._renderizar_relevos_agua(camera_cache)
+            self._renderizar_grama_relevos_agua(camera_cache)
+            self._cache_terreno_overlay = overlay
         finally:
             self.tela = tela_anterior
 
-        self._cache_terreno_base = cache
+    def _renderizar_agua_editor(self, camera):
+        sprite = getattr(self, "agua_parada", None)
+        if sprite is None:
+            return
+        for (coluna, linha), tipo in self.terrain_overrides.items():
+            if tipo != self.TIPO_AGUA_FUNDO:
+                continue
+            self._desenhar_sprite_cenario(sprite, coluna, linha, camera)
 
     def _obter_cache_terreno_viewport(self, camera):
-        """Retorna somente a área visível do terreno pré-composto.
-
-        O cache importante é o terreno-base: o mapa já composto continua
-        sendo criado uma única vez. O viewport NÃO é mantido em um segundo
-        cache entre frames. Isso é intencional para desktop/web: um viewport
-        derivado de uma câmera com zoom pode acumular erros de origem quando a
-        câmera muda, principalmente no navegador, onde a superfície é um
-        wrapper de pygame.
-
-        A cada frame fazemos apenas:
-          1. recorte barato da superfície-base;
-          2. escala somente desse recorte pequeno;
-          3. blit com o deslocamento fracionário da câmera.
-
-        Assim preservamos o grande ganho de não redesenhar o mapa inteiro, mas
-        eliminamos a segunda camada de cache que podia deixar o terreno
-        defasado em relação aos sprites ao alternar zoom + arrasto.
-        """
         base = self._cache_terreno_base
         if base is None:
             return None, (0, 0)
@@ -835,12 +1307,6 @@ class TileMapRenderer:
         if abs(zoom - 1.0) < 1e-9:
             viewport = viewport_base
         else:
-            # NÃO usar TransformUtils.escalar aqui. viewport_base é uma
-            # Surface temporária e o cache genérico usa id(imagem) como chave.
-            # Quando o objeto antigo é destruído, Python pode reutilizar o id
-            # para outro viewport e a web passa a mostrar conteúdo de outra
-            # posição do mapa. Esse é exatamente o sintoma de “itens trocando
-            # de lugar” após zoom + movimento.
             viewport_largura = max(1, int(round(largura_origem * zoom)))
             viewport_altura = max(1, int(round(altura_origem * zoom)))
             cache_key = (
@@ -878,6 +1344,7 @@ class TileMapRenderer:
             return
 
         deslocamento_x, deslocamento_y = deslocamento
+        viewport = self._aplicar_iluminacao(viewport)
         self.tela.blit(
             viewport,
             (
@@ -886,6 +1353,103 @@ class TileMapRenderer:
             ),
         )
 
+    def _renderizar_cache_terreno_overlay(self, camera):
+        viewport, deslocamento = self._obter_cache_terreno_overlay_viewport(camera)
+        if viewport is None:
+            return
+
+        deslocamento_x, deslocamento_y = deslocamento
+        self.tela.blit(
+            viewport,
+            (
+                int(round(-deslocamento_x)),
+                int(round(-deslocamento_y)),
+            ),
+        )
+
+    def _obter_cache_terreno_overlay_viewport(self, camera):
+        """Retorna somente a área visível da camada acima da espuma."""
+        overlay = self._cache_terreno_overlay
+        if overlay is None:
+            return None, (0, 0)
+
+        zoom = max(0.01, float(camera.zoom))
+        largura_mundo = max(1.0, float(camera.largura) / zoom)
+        altura_mundo = max(1.0, float(camera.altura) / zoom)
+
+        origem_cache_x = float(camera.x) + self._cache_terreno_pad_x
+        origem_cache_y = float(camera.y) + self._cache_terreno_pad_y
+
+        origem_x = int(origem_cache_x // 1)
+        origem_y = int(origem_cache_y // 1)
+        fracao_x = origem_cache_x - origem_x
+        fracao_y = origem_cache_y - origem_y
+
+        largura_origem = max(2, int(largura_mundo) + 2)
+        altura_origem = max(2, int(altura_mundo) + 2)
+
+        src_x = max(0, origem_x)
+        src_y = max(0, origem_y)
+        src_right = min(overlay.get_width(), origem_x + largura_origem)
+        src_bottom = min(overlay.get_height(), origem_y + altura_origem)
+
+        if (
+            src_right > src_x
+            and src_bottom > src_y
+            and origem_x >= 0
+            and origem_y >= 0
+            and origem_x + largura_origem <= overlay.get_width()
+            and origem_y + altura_origem <= overlay.get_height()
+        ):
+            viewport_base = overlay.subsurface(
+                (origem_x, origem_y, largura_origem, altura_origem)
+            )
+        else:
+            viewport_base = self.tela.__class__((largura_origem, altura_origem))
+            viewport_base.fill((0, 0, 0, 0))
+            if src_right > src_x and src_bottom > src_y:
+                viewport_base.blit(
+                    overlay,
+                    (src_x - origem_x, src_y - origem_y),
+                    (
+                        src_x,
+                        src_y,
+                        src_right - src_x,
+                        src_bottom - src_y,
+                    ),
+                )
+
+        if abs(zoom - 1.0) < 1e-9:
+            viewport = viewport_base
+        else:
+            viewport_largura = max(1, int(round(largura_origem * zoom)))
+            viewport_altura = max(1, int(round(altura_origem * zoom)))
+            cache_key = (
+                id(overlay),
+                origem_x,
+                origem_y,
+                largura_origem,
+                altura_origem,
+                round(zoom, 6),
+            )
+            if self._cache_overlay_viewport_key != cache_key:
+                if getattr(kivy_adapter, "IS_BROWSER", False):
+                    viewport = kivy_adapter.transform.scale(
+                        viewport_base,
+                        (viewport_largura, viewport_altura),
+                    )
+                else:
+                    viewport = kivy_adapter.transform.smoothscale(
+                        viewport_base,
+                        (viewport_largura, viewport_altura),
+                    )
+                self._cache_overlay_viewport = viewport
+                self._cache_overlay_viewport_key = cache_key
+            else:
+                viewport = self._cache_overlay_viewport
+
+        return viewport, (fracao_x * zoom, fracao_y * zoom)
+
     def _atualizar_animacao_agua(self, dt):
         self.tempo_agua += dt
         if self.tempo_agua >= 0.08:
@@ -893,8 +1457,17 @@ class TileMapRenderer:
             self.frame_agua = (self.frame_agua % len(self.tiles_agua)) + 1
 
     def _renderizar_camada_espuma(self, camera):
-        sprite = self.tiles_agua[self.frame_agua - 1]
+        if not getattr(self, "tiles_agua", None):
+            return
+        indice = max(0, min(len(self.tiles_agua) - 1, self.frame_agua - 1))
+        sprite = self.tiles_agua[indice]
+        if sprite is None:
+            return
         for (coluna, linha), dados in self.espumas.items():
+            if not self._coordenada_valida(coluna, linha):
+                continue
+            if not self._celula_toca_agua_ou_margem(coluna, linha):
+                continue
             self._desenhar_sprite_cenario(
                 sprite,
                 coluna,
@@ -903,6 +1476,22 @@ class TileMapRenderer:
                 offset_x=dados["offset_x"],
                 offset_y=dados["offset_y"],
             )
+
+    def _celula_toca_agua_ou_margem(self, coluna, linha):
+        if self.obter_tipo(coluna, linha) == self.TIPO_AGUA_FUNDO:
+            return True
+        for nc, nl in (
+            (coluna - 1, linha),
+            (coluna + 1, linha),
+            (coluna, linha - 1),
+            (coluna, linha + 1),
+        ):
+            if (
+                self._coordenada_valida(nc, nl)
+                and self.obter_tipo(nc, nl) == self.TIPO_AGUA_FUNDO
+            ):
+                return True
+        return False
 
     def _renderizar_relevos_agua(self, camera):
         for coluna, linha in self._iterar_area_visivel(camera):
@@ -995,7 +1584,7 @@ class TileMapRenderer:
                     )
 
     def _renderizar_sombras_relevos(self, camera):
-        for relevo in self._relevos_config:
+        for relevo in getattr(self, "_relevos_segmentos", self._relevos_config):
             x = relevo["x"]
             y = relevo["y"]
             colunas = relevo["colunas"]
@@ -1031,7 +1620,7 @@ class TileMapRenderer:
                     )
 
     def _precisa_tile_38(self, coluna, linha_sprite):
-        for relevo in self._relevos_config:
+        for relevo in getattr(self, "_relevos_segmentos", self._relevos_config):
             x = relevo["x"]
             colunas_x = relevo["colunas"]
             if not (x <= coluna < x + colunas_x):
@@ -1177,6 +1766,37 @@ class TileMapRenderer:
                 tile_superior, coluna, linha, camera, offset_y=-TILE_SIZE
             )
 
+    def _aplicar_iluminacao(self, sprite, chave_extra=None):
+        if self.ciclo_dia_noite is None:
+            return sprite
+
+        fator_luz = self.ciclo_dia_noite.nivel_luz
+        if abs(fator_luz - 1.0) < 1e-6:
+            return sprite
+
+        # A chave usa o sprite-fonte e o período, nunca uma textura criada
+        # durante o próprio render. Isso permite reaproveitar a mesma textura
+        # iluminada por todas as células idênticas do mapa.
+        cache_key = (id(sprite), self.ciclo_dia_noite.chave_iluminacao, chave_extra)
+        cache_entry = self._cache_iluminacao.get(cache_key)
+        iluminado = None
+        if cache_entry is not None:
+            fonte_cacheada, iluminado = cache_entry
+            if fonte_cacheada is not sprite:
+                iluminado = None
+
+        if iluminado is None:
+            iluminado = sprite.copy()
+            iluminado.ajustar_luminosidade(fator_luz)
+            # Guarda o sprite-fonte junto com o resultado para impedir que uma
+            # reutilização de id() faça um sprite receber a aparência de outro.
+            self._cache_iluminacao[cache_key] = (sprite, iluminado)
+
+            if len(self._cache_iluminacao) > 256:
+                for chave in list(self._cache_iluminacao)[:64]:
+                    del self._cache_iluminacao[chave]
+        return iluminado
+
     def _desenhar_sprite_cenario(
         self, sprite, coluna, linha, camera, penhasco_size=0, offset_x=0, offset_y=0
     ):
@@ -1185,7 +1805,16 @@ class TileMapRenderer:
 
         largura_zoom = int(sprite.get_width() * camera.zoom)
         altura_zoom = int(sprite.get_height() * camera.zoom)
-        sprite_escalado = self.transform.escalar(sprite, (largura_zoom, altura_zoom))
+        cache_key = (id(sprite), largura_zoom, altura_zoom)
+        sprite_escalado = self._cache_iluminacao.get(("escala",) + cache_key)
+        if sprite_escalado is None:
+            sprite_escalado = self.transform.escalar(
+                sprite, (largura_zoom, altura_zoom)
+            )
+            self._cache_iluminacao[("escala",) + cache_key] = sprite_escalado
+        sprite_escalado = self._aplicar_iluminacao(
+            sprite_escalado, chave_extra=cache_key
+        )
 
         pos_x = x + offset_x * camera.zoom
         pos_y = y + penhasco_size + offset_y * camera.zoom
@@ -1200,10 +1829,14 @@ class TileMapRenderer:
         mundo_h = max(1, self.agua_parada.get_height())
         largura_zoom = max(1, int(round(mundo_w * camera.zoom)))
         altura_zoom = max(1, int(round(mundo_h * camera.zoom)))
-        sprite = self.transform.escalar(
-            self.agua_parada,
-            (largura_zoom, altura_zoom),
-        )
+        fundo_cache_key = ("fundo", id(self.agua_parada), largura_zoom, altura_zoom)
+        sprite = self._cache_iluminacao.get(fundo_cache_key)
+        if sprite is None:
+            sprite = self.transform.escalar(
+                self.agua_parada,
+                (largura_zoom, altura_zoom),
+            )
+            self._cache_iluminacao[fundo_cache_key] = sprite
 
         inicio_x = int(camera.x // mundo_w) - 1
         fim_x = int((camera.x + camera.largura_mundo_visivel) // mundo_w) + 2
@@ -1213,7 +1846,7 @@ class TileMapRenderer:
         for y in range(inicio_y, fim_y):
             for x in range(inicio_x, fim_x):
                 self.tela.blit(
-                    sprite,
+                    self._aplicar_iluminacao(sprite),
                     (
                         int(round(x * mundo_w * camera.zoom - camera.x * camera.zoom)),
                         int(round(y * mundo_h * camera.zoom - camera.y * camera.zoom)),

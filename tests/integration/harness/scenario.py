@@ -11,6 +11,7 @@ from core.game_config import obter_config
 from core.indice_espacial import IndiceEspacial
 from core.navegacao_mapa import NavegacaoMapa
 from core.performance_metrics import PerformanceMetrics
+from core.world.service import WorldService
 from domains.arvore.entity import Arvore
 from domains.construcao.entity import criar_construcao
 from domains.personagem.entity import criar_entidade
@@ -61,7 +62,11 @@ class IntegrationScenario:
     """
 
     def __init__(self):
-        self.tilemap_renderer = TileMapRenderer(None, None, None)
+        self.world_context = WorldService().carregar()
+        self.tilemap_renderer = TileMapRenderer(
+            None, None, None, world_context=self.world_context
+        )
+        self.world_context.tilemap_renderer = self.tilemap_renderer
         self.mover_personagem = MoverPersonagemUseCase()
         self._rects = {}
         self.entidades = []
@@ -95,11 +100,23 @@ class IntegrationScenario:
         self.estoque = {"madeira": 0, "ouro": 0, "carne": 0}
         self.construcao_arrastando = None
         self.navegacao = NavegacaoMapa(
-            self.tilemap_renderer, self.obter_obstaculos_construcoes
+            self.tilemap_renderer,
+            self.obter_obstaculos_construcoes,
+            world_context=self.world_context,
         )
         self.navegacao.definir_metricas(self.metricas_desempenho)
         self.coordenador = CoordenadorEstadoJogo(self)
         self.clock = RealTraceClock()
+
+        class _ConversationStub:
+            aberta = False
+            estado = "nenhuma"
+
+        self.conversa_controller = _ConversationStub()
+        self.menu_contextual = type("MenuStub", (), {"aberto": False})()
+        self.audio_manager = type(
+            "AudioStub", (), {"habilitado": False, "musica_vila_tocando": False}
+        )()
 
     @property
     def tilemap(self):

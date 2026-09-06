@@ -1,0 +1,2764 @@
+[
+  {
+    "id": "sapudo_vila_bernardo_01",
+    "tipo": "sapudo",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 356.0,
+      "y": 286.0,
+      "altura": 0
+    },
+    "tags": [
+      "player"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "aldeao_vila_bernardo_01",
+    "tipo": "aldeao",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 548.0,
+      "y": 286.0,
+      "altura": 0
+    },
+    "tags": [
+      "social"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "goblin_tocha_acampamento_goblin_01",
+    "tipo": "goblin_tocha",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2148.0,
+      "y": 158.0,
+      "altura": 0
+    },
+    "tags": [
+      "goblin"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "goblin_tocha_acampamento_goblin_02",
+    "tipo": "goblin_tocha",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2340.0,
+      "y": 222.0,
+      "altura": 0
+    },
+    "tags": [
+      "goblin"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "goblin_tocha_acampamento_goblin_03",
+    "tipo": "goblin_tocha",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2212.0,
+      "y": 350.0,
+      "altura": 0
+    },
+    "tags": [
+      "goblin"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "goblin_tocha_acampamento_goblin_04",
+    "tipo": "goblin_tocha",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2468.0,
+      "y": 158.0,
+      "altura": 0
+    },
+    "tags": [
+      "goblin"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "casa_goblin_acampamento_goblin_01",
+    "tipo": "casa_goblin",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2340.0,
+      "y": 286.0,
+      "altura": 0
+    },
+    "tags": [
+      "poi",
+      "construcao",
+      "hostil"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "caverna_planalto_dos_pinheiros_01",
+    "tipo": "caverna",
+    "regiao": "planalto_norte",
+    "posicao": {
+      "x": 1742.0,
+      "y": 270.0,
+      "altura": 0
+    },
+    "tags": [
+      "poi",
+      "construcao",
+      "hostil"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_01",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 996.0,
+      "y": 706.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_02",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1124.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_03",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1252.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_04",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1380.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_05",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1124.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "ovelha_clareira_central_06",
+    "tipo": "ovelha",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1444.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "fauna",
+      "animal"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "mina_ouro_mina_leste_01",
+    "tipo": "mina_ouro",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1956.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "mina"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "mina_ouro_mina_leste_02",
+    "tipo": "mina_ouro",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2074.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "mina"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "mina_ouro_mina_leste_03",
+    "tipo": "mina_ouro",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2404.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "mina"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_01",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 164.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_02",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 542.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_03",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 356.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_04",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_05",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_06",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 612.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_07",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_bosque_08",
+    "tipo": "arvore1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_01",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 542.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_02",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 420.0,
+      "y": 542.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_03",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 164.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_04",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 420.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_05",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 548.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_06",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_07",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_bosque_08",
+    "tipo": "arvore2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 676.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_01",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_02",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 356.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_03",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 612.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_04",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_05",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 356.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_06",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 548.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_07",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 804.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_bosque_08",
+    "tipo": "arvore3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_01",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 542.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_02",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 548.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_03",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 676.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_04",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 804.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_05",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 420.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_06",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 612.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_07",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_bosque_08",
+    "tipo": "arvore4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 164.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_vila_bernardo_01",
+    "tipo": "arvore1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 164.0,
+      "y": 350.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore1_vila_bernardo_02",
+    "tipo": "arvore1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 676.0,
+      "y": 350.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_vila_bernardo_01",
+    "tipo": "arvore2",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 228.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_vila_bernardo_02",
+    "tipo": "arvore2",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 676.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_bosque_01",
+    "tipo": "arbusto1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_bosque_02",
+    "tipo": "arbusto1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 356.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_bosque_03",
+    "tipo": "arbusto1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 612.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_bosque_04",
+    "tipo": "arbusto1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_clareira_central_01",
+    "tipo": "arbusto1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 932.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_clareira_central_02",
+    "tipo": "arbusto1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1060.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_clareira_borda_01",
+    "tipo": "arbusto1",
+    "regiao": null,
+    "posicao": {
+      "x": 1316.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_clareira_central_03",
+    "tipo": "arbusto1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1572.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_campo_sul_01",
+    "tipo": "arbusto1",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1700.0,
+      "y": 1182.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_mina_leste_01",
+    "tipo": "arbusto1",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1892.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_clareira_central_04",
+    "tipo": "arbusto1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1636.0,
+      "y": 542.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_corredor_central_01",
+    "tipo": "arbusto1",
+    "regiao": null,
+    "posicao": {
+      "x": 1764.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_acampamento_periferia_01",
+    "tipo": "arbusto1",
+    "regiao": null,
+    "posicao": {
+      "x": 2276.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_acampamento_periferia_02",
+    "tipo": "arbusto1",
+    "regiao": null,
+    "posicao": {
+      "x": 2468.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_bosque_01",
+    "tipo": "arbusto2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_bosque_02",
+    "tipo": "arbusto2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_bosque_03",
+    "tipo": "arbusto2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 676.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_clareira_central_01",
+    "tipo": "arbusto2",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 868.0,
+      "y": 606.0,
+      "altura": 1
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_clareira_central_02",
+    "tipo": "arbusto2",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1188.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_clareira_central_03",
+    "tipo": "arbusto2",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1444.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_clareira_borda_01",
+    "tipo": "arbusto2",
+    "regiao": null,
+    "posicao": {
+      "x": 1636.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_mina_leste_01",
+    "tipo": "arbusto2",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1828.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_mina_leste_02",
+    "tipo": "arbusto2",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2084.0,
+      "y": 1310.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_mina_leste_03",
+    "tipo": "arbusto2",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2276.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_clareira_central_04",
+    "tipo": "arbusto2",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1572.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_corredor_central_01",
+    "tipo": "arbusto2",
+    "regiao": null,
+    "posicao": {
+      "x": 1700.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_acampamento_periferia_01",
+    "tipo": "arbusto2",
+    "regiao": null,
+    "posicao": {
+      "x": 2276.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_acampamento_periferia_02",
+    "tipo": "arbusto2",
+    "regiao": null,
+    "posicao": {
+      "x": 2532.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_bosque_01",
+    "tipo": "arbusto3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 164.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_bosque_02",
+    "tipo": "arbusto3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 420.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_bosque_03",
+    "tipo": "arbusto3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 548.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_bosque_04",
+    "tipo": "arbusto3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 804.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_clareira_central_01",
+    "tipo": "arbusto3",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 996.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_clareira_central_02",
+    "tipo": "arbusto3",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1252.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_clareira_borda_01",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 1508.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_campo_ossos_01",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 1764.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_mina_leste_01",
+    "tipo": "arbusto3",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2020.0,
+      "y": 1438.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_morro_minas_01",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 2468.0,
+      "y": 1310.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_clareira_central_03",
+    "tipo": "arbusto3",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1508.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_corredor_central_01",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 1764.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_acampamento_periferia_01",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 2340.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto3_morro_minas_02",
+    "tipo": "arbusto3",
+    "regiao": null,
+    "posicao": {
+      "x": 2532.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_bosque_01",
+    "tipo": "arbusto4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_bosque_02",
+    "tipo": "arbusto4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_bosque_03",
+    "tipo": "arbusto4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_clareira_central_01",
+    "tipo": "arbusto4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 868.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_clareira_borda_01",
+    "tipo": "arbusto4",
+    "regiao": null,
+    "posicao": {
+      "x": 1124.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_clareira_central_02",
+    "tipo": "arbusto4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1380.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_campo_sul_01",
+    "tipo": "arbusto4",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1572.0,
+      "y": 1182.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_mina_leste_01",
+    "tipo": "arbusto4",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1892.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_mina_leste_02",
+    "tipo": "arbusto4",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2340.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_mina_leste_03",
+    "tipo": "arbusto4",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2404.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_clareira_central_03",
+    "tipo": "arbusto4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1444.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_morro_minas_01",
+    "tipo": "arbusto4",
+    "regiao": null,
+    "posicao": {
+      "x": 1828.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_acampamento_periferia_01",
+    "tipo": "arbusto4",
+    "regiao": null,
+    "posicao": {
+      "x": 2276.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto4_morro_minas_02",
+    "tipo": "arbusto4",
+    "regiao": null,
+    "posicao": {
+      "x": 2468.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_bosque_01",
+    "tipo": "pedra1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 100.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_bosque_02",
+    "tipo": "pedra1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 356.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_bosque_03",
+    "tipo": "pedra1",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 676.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_clareira_central_01",
+    "tipo": "pedra1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 868.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_campo_sul_01",
+    "tipo": "pedra1",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 996.0,
+      "y": 1182.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_clareira_borda_01",
+    "tipo": "pedra1",
+    "regiao": null,
+    "posicao": {
+      "x": 1508.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_campo_ossos_01",
+    "tipo": "pedra1",
+    "regiao": null,
+    "posicao": {
+      "x": 1764.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_mina_leste_01",
+    "tipo": "pedra1",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1956.0,
+      "y": 1502.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_clareira_central_02",
+    "tipo": "pedra1",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1636.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_corredor_central_01",
+    "tipo": "pedra1",
+    "regiao": null,
+    "posicao": {
+      "x": 1764.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_acampamento_periferia_01",
+    "tipo": "pedra1",
+    "regiao": null,
+    "posicao": {
+      "x": 2276.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_bosque_01",
+    "tipo": "pedra2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 292.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_bosque_02",
+    "tipo": "pedra2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 548.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_bosque_03",
+    "tipo": "pedra2",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 804.0,
+      "y": 670.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_clareira_borda_01",
+    "tipo": "pedra2",
+    "regiao": null,
+    "posicao": {
+      "x": 1060.0,
+      "y": 1118.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_clareira_borda_02",
+    "tipo": "pedra2",
+    "regiao": null,
+    "posicao": {
+      "x": 1380.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_campo_sul_01",
+    "tipo": "pedra2",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1700.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_morro_minas_01",
+    "tipo": "pedra2",
+    "regiao": null,
+    "posicao": {
+      "x": 2020.0,
+      "y": 1566.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_mina_leste_01",
+    "tipo": "pedra2",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2340.0,
+      "y": 1438.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_clareira_central_01",
+    "tipo": "pedra2",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1508.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra2_mina_leste_02",
+    "tipo": "pedra2",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2340.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_bosque_01",
+    "tipo": "pedra3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 164.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_bosque_02",
+    "tipo": "pedra3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 484.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_bosque_03",
+    "tipo": "pedra3",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 740.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_clareira_central_01",
+    "tipo": "pedra3",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1124.0,
+      "y": 734.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_campo_sul_01",
+    "tipo": "pedra3",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1444.0,
+      "y": 1182.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_mina_leste_01",
+    "tipo": "pedra3",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 1828.0,
+      "y": 1502.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_mina_leste_02",
+    "tipo": "pedra3",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2276.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_morro_minas_01",
+    "tipo": "pedra3",
+    "regiao": null,
+    "posicao": {
+      "x": 2468.0,
+      "y": 1502.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_corredor_central_01",
+    "tipo": "pedra3",
+    "regiao": null,
+    "posicao": {
+      "x": 1700.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra3_acampamento_periferia_01",
+    "tipo": "pedra3",
+    "regiao": null,
+    "posicao": {
+      "x": 2468.0,
+      "y": 926.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_bosque_01",
+    "tipo": "pedra4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 228.0,
+      "y": 606.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_bosque_02",
+    "tipo": "pedra4",
+    "regiao": "bosque",
+    "posicao": {
+      "x": 612.0,
+      "y": 990.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_clareira_central_01",
+    "tipo": "pedra4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 932.0,
+      "y": 798.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_clareira_central_02",
+    "tipo": "pedra4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1252.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_campo_sul_01",
+    "tipo": "pedra4",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1572.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_morro_minas_01",
+    "tipo": "pedra4",
+    "regiao": null,
+    "posicao": {
+      "x": 1892.0,
+      "y": 1566.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_mina_leste_01",
+    "tipo": "pedra4",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2084.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_morro_minas_02",
+    "tipo": "pedra4",
+    "regiao": null,
+    "posicao": {
+      "x": 2532.0,
+      "y": 1310.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_clareira_central_03",
+    "tipo": "pedra4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1572.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra4_mina_leste_02",
+    "tipo": "pedra4",
+    "regiao": "mina_leste",
+    "posicao": {
+      "x": 2276.0,
+      "y": 1054.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua1_margem_sul_01",
+    "tipo": "pedra_agua1",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 164.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua1_margem_sul_02",
+    "tipo": "pedra_agua1",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 676.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua1_margem_sul_03",
+    "tipo": "pedra_agua1",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1124.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua1_margem_sul_04",
+    "tipo": "pedra_agua1",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1636.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua1_margem_sul_05",
+    "tipo": "pedra_agua1",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 2340.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua2_margem_sul_01",
+    "tipo": "pedra_agua2",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 356.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua2_margem_sul_02",
+    "tipo": "pedra_agua2",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 868.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua2_margem_sul_03",
+    "tipo": "pedra_agua2",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1380.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua2_margem_sul_04",
+    "tipo": "pedra_agua2",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 2020.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua3_margem_sul_01",
+    "tipo": "pedra_agua3",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 548.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua3_margem_sul_02",
+    "tipo": "pedra_agua3",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1060.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua3_margem_sul_03",
+    "tipo": "pedra_agua3",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1892.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua3_margem_sul_04",
+    "tipo": "pedra_agua3",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 2532.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua4_margem_sul_01",
+    "tipo": "pedra_agua4",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 100.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua4_margem_sul_02",
+    "tipo": "pedra_agua4",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1252.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua4_margem_sul_03",
+    "tipo": "pedra_agua4",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 1764.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra_agua4_margem_sul_04",
+    "tipo": "pedra_agua4",
+    "regiao": "margem_sul",
+    "posicao": {
+      "x": 2276.0,
+      "y": 1822.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "agua",
+      "margem"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "bandido_campo_sul_01",
+    "tipo": "bandido",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1060.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "hostil",
+      "narrativa"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "bandido_campo_sul_02",
+    "tipo": "bandido",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1316.0,
+      "y": 1438.0,
+      "altura": 0
+    },
+    "tags": [
+      "hostil",
+      "narrativa"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "bandido_campo_sul_03",
+    "tipo": "bandido",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1572.0,
+      "y": 1374.0,
+      "altura": 0
+    },
+    "tags": [
+      "hostil",
+      "narrativa"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "casa_palha_vermelha_campo_sul_03",
+    "tipo": "casa_palha_vermelha",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1400.0,
+      "y": 1364.0,
+      "altura": 0
+    },
+    "tags": [
+      "hostil",
+      "narrativa"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso1_campo_sul_01",
+    "tipo": "osso1",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 996.0,
+      "y": 1310.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso1_campo_sul_02",
+    "tipo": "osso1",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1444.0,
+      "y": 1310.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso2_campo_sul_01",
+    "tipo": "osso2",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1188.0,
+      "y": 1566.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso2_campo_sul_02",
+    "tipo": "osso2",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1636.0,
+      "y": 1502.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso3_campo_sul_01",
+    "tipo": "osso3",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1444.0,
+      "y": 1246.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "osso3_campo_sul_02",
+    "tipo": "osso3",
+    "regiao": "campo_sul",
+    "posicao": {
+      "x": 1124.0,
+      "y": 1566.0,
+      "altura": 0
+    },
+    "tags": [
+      "decoracao",
+      "narrativa",
+      "osso"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_lago_01",
+    "tipo": "arvore4",
+    "regiao": "lago",
+    "posicao": {
+      "x": 1700.0,
+      "y": 862.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore2_acampamento_goblin_01",
+    "tipo": "arvore2",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2404.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_vila_bernardo_01",
+    "tipo": "arbusto1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 164.0,
+      "y": 222.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto1_vila_bernardo_02",
+    "tipo": "arbusto1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 676.0,
+      "y": 222.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_vila_bernardo_01",
+    "tipo": "arbusto2",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 228.0,
+      "y": 350.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arbusto2_vila_bernardo_02",
+    "tipo": "arbusto2",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 612.0,
+      "y": 414.0,
+      "altura": 0
+    },
+    "tags": [
+      "arbusto2"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_vila_bernardo_01",
+    "tipo": "pedra1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 164.0,
+      "y": 286.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "pedra1_vila_bernardo_02",
+    "tipo": "pedra1",
+    "regiao": "vila_bernardo",
+    "posicao": {
+      "x": 676.0,
+      "y": 286.0,
+      "altura": 0
+    },
+    "tags": [
+      "pedra1"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_planalto_norte_01",
+    "tipo": "arvore3",
+    "regiao": "planalto_norte",
+    "posicao": {
+      "x": 1828.0,
+      "y": 94.0,
+      "altura": 1
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_planalto_norte_02",
+    "tipo": "arvore3",
+    "regiao": "planalto_norte",
+    "posicao": {
+      "x": 1592.0,
+      "y": 94.0,
+      "altura": 1
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_clareira_central_01",
+    "tipo": "arvore4",
+    "regiao": "clareira_central",
+    "posicao": {
+      "x": 1636.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_acampamento_goblin_01",
+    "tipo": "arvore4",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2276.0,
+      "y": 414.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore4_acampamento_goblin_02",
+    "tipo": "arvore4",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2532.0,
+      "y": 414.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore4"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_acampamento_goblin_01",
+    "tipo": "arvore3",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2276.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_acampamento_goblin_02",
+    "tipo": "arvore3",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2468.0,
+      "y": 478.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  },
+  {
+    "id": "arvore3_acampamento_goblin_03",
+    "tipo": "arvore3",
+    "regiao": "acampamento_goblin",
+    "posicao": {
+      "x": 2020.0,
+      "y": 350.0,
+      "altura": 0
+    },
+    "tags": [
+      "arvore3"
+    ],
+    "origem": "mapa1_legacy"
+  }
+]

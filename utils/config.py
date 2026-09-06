@@ -5,6 +5,10 @@ LARGURA = 1024
 ALTURA = 600
 FPS = 30
 
+# Duração, em minutos reais, das 24 horas do relógio do jogo.
+# Centraliza a velocidade do ciclo para facilitar manutenção.
+MINUTOS_24_HORAS = 11
+
 TITULO = "Sapo Sapudo"
 
 

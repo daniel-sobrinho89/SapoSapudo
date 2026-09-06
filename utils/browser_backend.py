@@ -144,6 +144,32 @@ class Surface:
         overlay.fill((*cor, 255))
         self._img.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
+    def ajustar_luminosidade(self, fator):
+        fator = max(0.0, float(fator))
+        if abs(fator - 1.0) < 1e-6:
+            return self
+
+        if fator < 1.0:
+            overlay = pygame.Surface(self._img.get_size(), pygame.SRCALPHA)
+            valor = max(0, min(255, int(round(255 * fator))))
+            overlay.fill((valor, valor, valor, 255))
+            self._img.blit(
+                overlay,
+                (0, 0),
+                special_flags=pygame.BLEND_RGBA_MULT,
+            )
+        else:
+            delta = max(0, min(255, int(round(255 * (fator - 1.0)))))
+            if delta:
+                overlay = pygame.Surface(self._img.get_size(), pygame.SRCALPHA)
+                overlay.fill((delta, delta, delta, 0))
+                self._img.blit(
+                    overlay,
+                    (0, 0),
+                    special_flags=pygame.BLEND_RGBA_ADD,
+                )
+        return self
+
     def fill(self, color):
         self._img.fill(color)
 

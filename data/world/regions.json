@@ -1,0 +1,174 @@
+[
+  {
+    "id": "vila_bernardo",
+    "nome": "Vila de Bernardo",
+    "tipo": "vila",
+    "x": 3,
+    "y": 2,
+    "colunas": 9,
+    "linhas": 7,
+    "papel": "hub_inicial",
+    "tier": 0,
+    "risco": "baixo",
+    "recompensa": "recursos_basicos",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "hub",
+      "onboarding"
+    ]
+  },
+  {
+    "id": "planalto_norte",
+    "nome": "Planalto dos Pinheiros",
+    "tipo": "relevo",
+    "x": 14,
+    "y": 0,
+    "colunas": 16,
+    "linhas": 7,
+    "papel": "transicao",
+    "tier": 1,
+    "risco": "baixo_medio",
+    "recompensa": "atalhos_e_orientacao",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "verticalidade",
+      "transicao"
+    ]
+  },
+  {
+    "id": "bosque",
+    "nome": "Bosque do Caminho",
+    "tipo": "bosque",
+    "x": 2,
+    "y": 8,
+    "colunas": 13,
+    "linhas": 10,
+    "papel": "coleta_recorrente",
+    "tier": 1,
+    "risco": "baixo_medio",
+    "recompensa": "madeira_e_pedra",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "coleta",
+      "madeira",
+      "fauna"
+    ]
+  },
+  {
+    "id": "lago",
+    "nome": "Lago das Pedras",
+    "tipo": "lago",
+    "x": 27,
+    "y": 8,
+    "colunas": 9,
+    "linhas": 7,
+    "papel": "landmark_natural",
+    "tier": 1,
+    "risco": "medio",
+    "recompensa": "recursos_aquaticos_futuros",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "agua",
+      "navegacao_visual"
+    ]
+  },
+  {
+    "id": "clareira_central",
+    "nome": "Clareira Central",
+    "tipo": "clareira",
+    "x": 14,
+    "y": 8,
+    "colunas": 13,
+    "linhas": 9,
+    "papel": "nucleo_social_fauna",
+    "tier": 1,
+    "risco": "baixo",
+    "recompensa": "fauna_e_encontros",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "fauna",
+      "social"
+    ]
+  },
+  {
+    "id": "acampamento_goblin",
+    "nome": "Acampamento Goblin",
+    "tipo": "acampamento",
+    "x": 32,
+    "y": 2,
+    "colunas": 10,
+    "linhas": 7,
+    "papel": "threat_poi",
+    "tier": 2,
+    "risco": "medio_alto",
+    "recompensa": "combate_e_recursos",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "hostil",
+      "patrulha"
+    ]
+  },
+  {
+    "id": "campo_sul",
+    "nome": "Campo dos Ossos",
+    "tipo": "campo",
+    "x": 14,
+    "y": 19,
+    "colunas": 14,
+    "linhas": 8,
+    "papel": "narrativa_ambiental",
+    "tier": 2,
+    "risco": "medio",
+    "recompensa": "misterio",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "misterio",
+      "narrativa"
+    ]
+  },
+  {
+    "id": "mina_leste",
+    "nome": "Morro das Minas",
+    "tipo": "mina",
+    "x": 29,
+    "y": 16,
+    "colunas": 10,
+    "linhas": 9,
+    "papel": "recurso_avancado",
+    "tier": 2,
+    "risco": "medio_alto",
+    "recompensa": "ouro",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "economia",
+      "mineral"
+    ]
+  },
+  {
+    "id": "margem_sul",
+    "nome": "Margem do Lago",
+    "tipo": "margem",
+    "x": 2,
+    "y": 26,
+    "colunas": 39,
+    "linhas": 4,
+    "papel": "fronteira_aquatica",
+    "tier": 1,
+    "risco": "baixo_medio",
+    "recompensa": "agua_e_vegetacao",
+    "entrada": true,
+    "saida": true,
+    "tags": [
+      "agua",
+      "futuro"
+    ]
+  }
+]

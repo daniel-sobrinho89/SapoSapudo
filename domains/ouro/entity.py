@@ -1,5 +1,4 @@
 from core.animacoes import Animacoes
-from domains.ouro.maquina_estado import EstadoOuro
 
 
 class MinaOuro:
@@ -31,14 +30,14 @@ class MinaOuro:
 
     def _atualizar_estado(self):
         if self.minerio <= 0:
-            self.animacoes.estado = EstadoOuro.OBTIDO
+            self.animacoes.definir("obtido")
         elif self.minerio <= 13:
-            self.animacoes.estado = EstadoOuro.NIVEL_OURO1
+            self.animacoes.definir("nivel_ouro1")
         elif self.minerio <= 26:
-            self.animacoes.estado = EstadoOuro.NIVEL_OURO2
+            self.animacoes.definir("nivel_ouro2")
         elif self.minerio <= 39:
-            self.animacoes.estado = EstadoOuro.NIVEL_OURO3
+            self.animacoes.definir("nivel_ouro3")
         elif self.minerio <= 52:
-            self.animacoes.estado = EstadoOuro.NIVEL_OURO4
+            self.animacoes.definir("nivel_ouro4")
         else:
-            self.animacoes.estado = EstadoOuro.NIVEL_OURO5
+            self.animacoes.definir("nivel_ouro5")

@@ -1,18 +1,18 @@
 {
   "recursos_iniciais": {
     "ouro": 0,
-    "carne": 15,
-    "madeira": 20
+    "carne": 0,
+    "madeira": 0
   },
-  "colunas": 34,
-  "linhas": 16,
+  "colunas": 42,
+  "linhas": 30,
   "biomas": [
     {
       "tilemap": "tilemap_color1",
       "x": 0,
       "y": 0,
-      "colunas": 34,
-      "linhas": 16
+      "colunas": 42,
+      "linhas": 30
     },
     {
       "tilemap": "tilemap_color2",
@@ -26,7 +26,7 @@
       "x": 8,
       "y": 6,
       "colunas": 18,
-      "linhas": 10
+      "linhas": 14
     },
     {
       "tilemap": "tilemap_color3",
@@ -39,7 +39,7 @@
       "tilemap": "tilemap_color3",
       "x": 16,
       "y": 1,
-      "colunas": 14,
+      "colunas": 15,
       "linhas": 5
     },
     {
@@ -53,52 +53,64 @@
       "tilemap": "tilemap_color5",
       "x": 32,
       "y": 0,
-      "colunas": 2,
+      "colunas": 10,
       "linhas": 15
     }
   ],
   "rios": [
     {
       "id": 1,
-      "x": 0,
-      "y": 0,
-      "colunas": 2,
-      "linhas": 2
+      "x": 29,
+      "y": 9,
+      "colunas": 5,
+      "linhas": 6
     },
     {
       "id": 2,
-      "x": 0,
-      "y": 6,
-      "colunas": 3,
-      "linhas": 3
-    }
-  ],
-  "espumas": [
-    {
-      "rio_id": 1,
-      "offset_x": 0,
-      "offset_y": -6,
-      "x": 1,
-      "y": -1,
-      "colunas": 1,
-      "linhas": 2
+      "x": 28,
+      "y": 10,
+      "colunas": 7,
+      "linhas": 4
     },
     {
-      "relevos_agua_id": 1,
-      "offset_x": 0,
-      "offset_y": -6,
-      "x": -1,
-      "y": 5,
+      "id": 3,
+      "x": 30,
+      "y": 8,
       "colunas": 3,
       "linhas": 1
     },
     {
-      "relevos_agua_id": 2,
+      "id": 4,
+      "x": 34,
+      "y": 13,
+      "colunas": 2,
+      "linhas": 17
+    },
+    {
+      "id": 5,
+      "x": 0,
+      "y": 29,
+      "colunas": 42,
+      "linhas": 1
+    }
+  ],
+  "espumas": [
+    {
+      "relevo_agua_id": 1,
+      "offset_x": 0,
+      "offset_y": -6,
+      "x": 27,
+      "y": 14,
+      "colunas": 6,
+      "linhas": 1
+    },
+    {
+      "relevo_agua_id": 2,
       "offset_x": 0,
       "offset_y": 1,
       "x": -1,
-      "y": 14,
-      "colunas": 34,
+      "y": 28,
+      "colunas": 42,
       "linhas": 1
     }
   ],
@@ -106,81 +118,58 @@
     {
       "id": 1,
       "altura": 1,
-      "x": 14,
-      "y": 0,
-      "colunas": 2,
-      "linhas": 1,
-      "tem_borda_esquerda": true,
-      "tem_borda_direita": false,
-      "tem_borda_superior": true,
-      "tem_borda_inferior": true
-    },
-    {
-      "id": 2,
-      "altura": 1,
-      "x": 16,
-      "y": 0,
-      "colunas": 14,
-      "linhas": 2,
-      "tem_borda_esquerda": false,
-      "tem_borda_direita": true,
-      "tem_borda_superior": true,
-      "tem_borda_inferior": false
-    },
-    {
-      "id": 3,
-      "altura": 1,
-      "x": 16,
-      "y": 2,
-      "colunas": 14,
-      "linhas": 3,
-      "tem_borda_esquerda": true,
-      "tem_borda_direita": true,
-      "tem_borda_superior": false,
-      "tem_borda_inferior": true
-    },
-    {
-      "id": 4,
-      "altura": 1,
-      "x": 13,
-      "y": 7,
-      "colunas": 5,
-      "linhas": 1,
-      "tem_borda_esquerda": true,
-      "tem_borda_direita": true,
-      "tem_borda_superior": true,
-      "tem_borda_inferior": true
+      "forma": [
+        {
+          "y": 0,
+          "x": 14,
+          "colunas": 17
+        },
+        {
+          "y": 1,
+          "x": 16,
+          "colunas": 15
+        },
+        {
+          "y": 2,
+          "x": 16,
+          "colunas": 15
+        },
+        {
+          "y": 3,
+          "x": 16,
+          "colunas": 13
+        },
+        {
+          "y": 4,
+          "x": 16,
+          "colunas": 13
+        }
+      ],
+      "bordas": {
+        "esquerda": true,
+        "direita": true,
+        "superior": true,
+        "inferior": true
+      }
     }
   ],
   "relevos_agua": [
     {
       "id": 1,
       "altura": -1,
-      "linhas": 3,
-      "colunas": 4,
-      "tem_borda_esquerda": true,
-      "tem_borda_direita": false,
-      "tem_borda_superior": true,
-      "tem_borda_inferior": true,
-      "x": 0,
-      "y": 7
-    },
-    {
-      "id": 2,
-      "altura": -1,
       "linhas": 1,
-      "colunas": 34,
+      "colunas": 42,
       "tem_borda_esquerda": true,
       "tem_borda_direita": true,
       "tem_borda_superior": false,
       "tem_borda_inferior": true,
       "x": 0,
-      "y": 16
+      "y": 30
     }
   ],
   "degraus": [
     {
-      "relevo_id": 3,
+      "relevo_id": 1,
       "direcao": "direita",
       "tiles": [
         [
@@ -194,1201 +183,11 @@
       ]
     }
   ],
-  "ambiente": [
-    {
-      "tipo": "sapudo",
-      "spawn": [
-        {
-          "x": 550,
-          "y": 400,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "aldeao",
-      "spawn": [
-        {
-          "x": 400,
-          "y": 450,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "goblin_tocha",
-      "spawn": [
-        {
-          "x": 1580,
-          "y": 290,
-          "altura": 1
-        },
-        {
-          "x": 1730,
-          "y": 330,
-          "altura": 1
-        },
-        {
-          "x": 1640,
-          "y": 150,
-          "altura": 1
-        },
-        {
-          "x": 1770,
-          "y": 120,
-          "altura": 1
-        }
-      ]
-    },
-    {
-      "tipo": "casa_goblin",
-      "spawn": [
-        {
-          "x": 1800,
-          "y": 190,
-          "altura": 1
-        }
-      ]
-    },
-    {
-      "tipo": "ovelha",
-      "spawn": [
-        {
-          "x": 833,
-          "y": 875,
-          "altura": 0
-        },
-        {
-          "x": 813,
-          "y": 647,
-          "altura": 0
-        },
-        {
-          "x": 925,
-          "y": 879,
-          "altura": 0
-        },
-        {
-          "x": 1369,
-          "y": 749,
-          "altura": 0
-        },
-        {
-          "x": 479,
-          "y": 664,
-          "altura": 0
-        },
-        {
-          "x": 106,
-          "y": 623,
-          "altura": 0
-        },
-        {
-          "x": 1359,
-          "y": 669,
-          "altura": 0
-        },
-        {
-          "x": 670,
-          "y": 521,
-          "altura": 0
-        },
-        {
-          "x": 1684,
-          "y": 764,
-          "altura": 0
-        },
-        {
-          "x": 972,
-          "y": 708,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "mina_ouro",
-      "spawn": [
-        {
-          "x": 115,
-          "y": 275,
-          "altura": 0
-        },
-        {
-          "x": 1804,
-          "y": 472,
-          "altura": 0
-        },
-        {
-          "x": 1590,
-          "y": 437,
-          "altura": 0
-        },
-        {
-          "x": 905,
-          "y": 173,
-          "altura": 0
-        },
-        {
-          "x": 434,
-          "y": 121,
-          "altura": 0
-        },
-        {
-          "x": 1472,
-          "y": 428,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arbusto1",
-      "spawn": [
-        {
-          "x": 1829,
-          "y": 105,
-          "altura": 0
-        },
-        {
-          "x": 696,
-          "y": 445,
-          "altura": 0
-        },
-        {
-          "x": 1221,
-          "y": 504,
-          "altura": 0
-        },
-        {
-          "x": 1990,
-          "y": 126,
-          "altura": 0
-        },
-        {
-          "x": 1526,
-          "y": 375,
-          "altura": 0
-        },
-        {
-          "x": 1054,
-          "y": 130,
-          "altura": 0
-        },
-        {
-          "x": 1503,
-          "y": 269,
-          "altura": 0
-        },
-        {
-          "x": 696,
-          "y": 775,
-          "altura": 0
-        },
-        {
-          "x": 1189,
-          "y": 639,
-          "altura": 0
-        },
-        {
-          "x": 1668,
-          "y": 102,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arbusto2",
-      "spawn": [
-        {
-          "x": 534,
-          "y": 813,
-          "altura": 0
-        },
-        {
-          "x": 1487,
-          "y": 151,
-          "altura": 0
-        },
-        {
-          "x": 1978,
-          "y": 306,
-          "altura": 0
-        },
-        {
-          "x": 1311,
-          "y": 494,
-          "altura": 0
-        },
-        {
-          "x": 820,
-          "y": 303,
-          "altura": 0
-        },
-        {
-          "x": 1140,
-          "y": 486,
-          "altura": 0
-        },
-        {
-          "x": 312,
-          "y": 860,
-          "altura": 0
-        },
-        {
-          "x": 633,
-          "y": 83,
-          "altura": 0
-        },
-        {
-          "x": 88,
-          "y": 824,
-          "altura": 0
-        },
-        {
-          "x": 1557,
-          "y": 578,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arbusto3",
-      "spawn": [
-        {
-          "x": 1043,
-          "y": 596,
-          "altura": 0
-        },
-        {
-          "x": 556,
-          "y": 579,
-          "altura": 0
-        },
-        {
-          "x": 1587,
-          "y": 82,
-          "altura": 0
-        },
-        {
-          "x": 1517,
-          "y": 506,
-          "altura": 0
-        },
-        {
-          "x": 816,
-          "y": 424,
-          "altura": 0
-        },
-        {
-          "x": 491,
-          "y": 521,
-          "altura": 0
-        },
-        {
-          "x": 1210,
-          "y": 881,
-          "altura": 0
-        },
-        {
-          "x": 1334,
-          "y": 332,
-          "altura": 0
-        },
-        {
-          "x": 1784,
-          "y": 880,
-          "altura": 0
-        },
-        {
-          "x": 1457,
-          "y": 552,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arbusto4",
-      "spawn": [
-        {
-          "x": 886,
-          "y": 249,
-          "altura": 0
-        },
-        {
-          "x": 372,
-          "y": 624,
-          "altura": 0
-        },
-        {
-          "x": 1897,
-          "y": 842,
-          "altura": 0
-        },
-        {
-          "x": 1494,
-          "y": 882,
-          "altura": 0
-        },
-        {
-          "x": 1262,
-          "y": 92,
-          "altura": 0
-        },
-        {
-          "x": 1079,
-          "y": 892,
-          "altura": 0
-        },
-        {
-          "x": 1349,
-          "y": 586,
-          "altura": 0
-        },
-        {
-          "x": 221,
-          "y": 370,
-          "altura": 0
-        },
-        {
-          "x": 728,
-          "y": 879,
-          "altura": 0
-        },
-        {
-          "x": 735,
-          "y": 342,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra1",
-      "spawn": [
-        {
-          "x": 1972,
-          "y": 860,
-          "altura": 0
-        },
-        {
-          "x": 1519,
-          "y": 827,
-          "altura": 0
-        },
-        {
-          "x": 466,
-          "y": 772,
-          "altura": 0
-        },
-        {
-          "x": 1626,
-          "y": 509,
-          "altura": 0
-        },
-        {
-          "x": 962,
-          "y": 232,
-          "altura": 0
-        },
-        {
-          "x": 362,
-          "y": 86,
-          "altura": 0
-        },
-        {
-          "x": 303,
-          "y": 746,
-          "altura": 0
-        },
-        {
-          "x": 123,
-          "y": 883,
-          "altura": 0
-        },
-        {
-          "x": 876,
-          "y": 87,
-          "altura": 0
-        },
-        {
-          "x": 87,
-          "y": 713,
-          "altura": 0
-        },
-        {
-          "x": 352,
-          "y": 338,
-          "altura": 0
-        },
-        {
-          "x": 668,
-          "y": 297,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra2",
-      "spawn": [
-        {
-          "x": 453,
-          "y": 583,
-          "altura": 0
-        },
-        {
-          "x": 1401,
-          "y": 290,
-          "altura": 0
-        },
-        {
-          "x": 1131,
-          "y": 569,
-          "altura": 0
-        },
-        {
-          "x": 226,
-          "y": 730,
-          "altura": 0
-        },
-        {
-          "x": 1765,
-          "y": 728,
-          "altura": 0
-        },
-        {
-          "x": 1141,
-          "y": 841,
-          "altura": 0
-        },
-        {
-          "x": 563,
-          "y": 642,
-          "altura": 0
-        },
-        {
-          "x": 1964,
-          "y": 565,
-          "altura": 0
-        },
-        {
-          "x": 708,
-          "y": 685,
-          "altura": 0
-        },
-        {
-          "x": 1120,
-          "y": 633,
-          "altura": 0
-        },
-        {
-          "x": 223,
-          "y": 883,
-          "altura": 0
-        },
-        {
-          "x": 656,
-          "y": 596,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra3",
-      "spawn": [
-        {
-          "x": 1747,
-          "y": 827,
-          "altura": 0
-        },
-        {
-          "x": 1432,
-          "y": 492,
-          "altura": 0
-        },
-        {
-          "x": 1274,
-          "y": 572,
-          "altura": 0
-        },
-        {
-          "x": 513,
-          "y": 127,
-          "altura": 0
-        },
-        {
-          "x": 248,
-          "y": 465,
-          "altura": 0
-        },
-        {
-          "x": 1140,
-          "y": 367,
-          "altura": 0
-        },
-        {
-          "x": 1946,
-          "y": 799,
-          "altura": 0
-        },
-        {
-          "x": 1890,
-          "y": 118,
-          "altura": 0
-        },
-        {
-          "x": 419,
-          "y": 336,
-          "altura": 0
-        },
-        {
-          "x": 474,
-          "y": 281,
-          "altura": 0
-        },
-        {
-          "x": 1042,
-          "y": 299,
-          "altura": 0
-        },
-        {
-          "x": 1804,
-          "y": 393,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra4",
-      "spawn": [
-        {
-          "x": 1641,
-          "y": 595,
-          "altura": 0
-        },
-        {
-          "x": 580,
-          "y": 858,
-          "altura": 0
-        },
-        {
-          "x": 304,
-          "y": 511,
-          "altura": 0
-        },
-        {
-          "x": 1500,
-          "y": 611,
-          "altura": 0
-        },
-        {
-          "x": 1175,
-          "y": 773,
-          "altura": 0
-        },
-        {
-          "x": 973,
-          "y": 625,
-          "altura": 0
-        },
-        {
-          "x": 1152,
-          "y": 89,
-          "altura": 0
-        },
-        {
-          "x": 1769,
-          "y": 547,
-          "altura": 0
-        },
-        {
-          "x": 1951,
-          "y": 181,
-          "altura": 0
-        },
-        {
-          "x": 1266,
-          "y": 384,
-          "altura": 0
-        },
-        {
-          "x": 289,
-          "y": 355,
-          "altura": 0
-        },
-        {
-          "x": 256,
-          "y": 598,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arvore1",
-      "spawn": [
-        {
-          "x": 1824,
-          "y": 647,
-          "altura": 0
-        },
-        {
-          "x": 1929,
-          "y": 385,
-          "altura": 0
-        },
-        {
-          "x": 1675,
-          "y": 776,
-          "altura": 0
-        },
-        {
-          "x": 1341,
-          "y": 767,
-          "altura": 0
-        },
-        {
-          "x": 1419,
-          "y": 140,
-          "altura": 0
-        },
-        {
-          "x": 1044,
-          "y": 614,
-          "altura": 0
-        },
-        {
-          "x": 191,
-          "y": 736,
-          "altura": 0
-        },
-        {
-          "x": 941,
-          "y": 712,
-          "altura": 0
-        },
-        {
-          "x": 1722,
-          "y": 406,
-          "altura": 0
-        },
-        {
-          "x": 985,
-          "y": 105,
-          "altura": 0
-        },
-        {
-          "x": 715,
-          "y": 543,
-          "altura": 0
-        },
-        {
-          "x": 760,
-          "y": 487,
-          "altura": 0
-        },
-        {
-          "x": 736,
-          "y": 77,
-          "altura": 0
-        },
-        {
-          "x": 1456,
-          "y": 686,
-          "altura": 0
-        },
-        {
-          "x": 591,
-          "y": 90,
-          "altura": 0
-        },
-        {
-          "x": 210,
-          "y": 121,
-          "altura": 0
-        },
-        {
-          "x": 281,
-          "y": 624,
-          "altura": 0
-        },
-        {
-          "x": 1188,
-          "y": 257,
-          "altura": 0
-        },
-        {
-          "x": 402,
-          "y": 636,
-          "altura": 0
-        },
-        {
-          "x": 1075,
-          "y": 728,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arvore2",
-      "spawn": [
-        {
-          "x": 1111,
-          "y": 136,
-          "altura": 0
-        },
-        {
-          "x": 645,
-          "y": 791,
-          "altura": 0
-        },
-        {
-          "x": 1367,
-          "y": 372,
-          "altura": 0
-        },
-        {
-          "x": 1870,
-          "y": 525,
-          "altura": 0
-        },
-        {
-          "x": 1260,
-          "y": 224,
-          "altura": 0
-        },
-        {
-          "x": 233,
-          "y": 193,
-          "altura": 0
-        },
-        {
-          "x": 391,
-          "y": 123,
-          "altura": 0
-        },
-        {
-          "x": 1206,
-          "y": 334,
-          "altura": 0
-        },
-        {
-          "x": 1429,
-          "y": 752,
-          "altura": 0
-        },
-        {
-          "x": 869,
-          "y": 713,
-          "altura": 0
-        },
-        {
-          "x": 1438,
-          "y": 588,
-          "altura": 0
-        },
-        {
-          "x": 625,
-          "y": 664,
-          "altura": 0
-        },
-        {
-          "x": 1807,
-          "y": 724,
-          "altura": 0
-        },
-        {
-          "x": 1168,
-          "y": 85,
-          "altura": 0
-        },
-        {
-          "x": 1142,
-          "y": 649,
-          "altura": 0
-        },
-        {
-          "x": 1198,
-          "y": 178,
-          "altura": 0
-        },
-        {
-          "x": 1586,
-          "y": 751,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arvore3",
-      "spawn": [
-        {
-          "x": 1278,
-          "y": 636,
-          "altura": 0
-        },
-        {
-          "x": 312,
-          "y": 63,
-          "altura": 0
-        },
-        {
-          "x": 310,
-          "y": 149,
-          "altura": 0
-        },
-        {
-          "x": 1723,
-          "y": 603,
-          "altura": 0
-        },
-        {
-          "x": 1934,
-          "y": 581,
-          "altura": 0
-        },
-        {
-          "x": 167,
-          "y": 618,
-          "altura": 0
-        },
-        {
-          "x": 1939,
-          "y": 660,
-          "altura": 0
-        },
-        {
-          "x": 133,
-          "y": 64,
-          "altura": 0
-        },
-        {
-          "x": 540,
-          "y": 146,
-          "altura": 0
-        },
-        {
-          "x": 909,
-          "y": 585,
-          "altura": 0
-        },
-        {
-          "x": 355,
-          "y": 207,
-          "altura": 0
-        },
-        {
-          "x": 798,
-          "y": 684,
-          "altura": 0
-        },
-        {
-          "x": 466,
-          "y": 126,
-          "altura": 0
-        },
-        {
-          "x": 443,
-          "y": 789,
-          "altura": 0
-        },
-        {
-          "x": 1652,
-          "y": 632,
-          "altura": 0
-        },
-        {
-          "x": 1370,
-          "y": 73,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "arvore4",
-      "spawn": [
-        {
-          "x": 800,
-          "y": 164,
-          "altura": 0
-        },
-        {
-          "x": 533,
-          "y": 671,
-          "altura": 0
-        },
-        {
-          "x": 1269,
-          "y": 123,
-          "altura": 0
-        },
-        {
-          "x": 658,
-          "y": 171,
-          "altura": 0
-        },
-        {
-          "x": 1798,
-          "y": 572,
-          "altura": 0
-        },
-        {
-          "x": 1028,
-          "y": 165,
-          "altura": 0
-        },
-        {
-          "x": 1437,
-          "y": 294,
-          "altura": 0
-        },
-        {
-          "x": 1556,
-          "y": 619,
-          "altura": 0
-        },
-        {
-          "x": 380,
-          "y": 728,
-          "altura": 0
-        },
-        {
-          "x": 996,
-          "y": 765,
-          "altura": 0
-        },
-        {
-          "x": 1338,
-          "y": 160,
-          "altura": 0
-        },
-        {
-          "x": 1281,
-          "y": 719,
-          "altura": 0
-        },
-        {
-          "x": 1877,
-          "y": 439,
-          "altura": 0
-        },
-        {
-          "x": 831,
-          "y": 90,
-          "altura": 0
-        },
-        {
-          "x": 1708,
-          "y": 514,
-          "altura": 0
-        },
-        {
-          "x": 130,
-          "y": 156,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra_agua1",
-      "spawn": [
-        {
-          "x": 1359,
-          "y": 1023,
-          "altura": 0
-        },
-        {
-          "x": 449,
-          "y": 1009,
-          "altura": 0
-        },
-        {
-          "x": 1044,
-          "y": 1009,
-          "altura": 0
-        },
-        {
-          "x": 737,
-          "y": 1020,
-          "altura": 0
-        },
-        {
-          "x": 1839,
-          "y": 1003,
-          "altura": 0
-        },
-        {
-          "x": 155,
-          "y": 1006,
-          "altura": 0
-        },
-        {
-          "x": 1412,
-          "y": 1015,
-          "altura": 0
-        },
-        {
-          "x": 959,
-          "y": 1021,
-          "altura": 0
-        },
-        {
-          "x": 599,
-          "y": 1031,
-          "altura": 0
-        },
-        {
-          "x": 1174,
-          "y": 1053,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra_agua2",
-      "spawn": [
-        {
-          "x": 814,
-          "y": 1035,
-          "altura": 0
-        },
-        {
-          "x": 396,
-          "y": 1060,
-          "altura": 0
-        },
-        {
-          "x": 1308,
-          "y": 1006,
-          "altura": 0
-        },
-        {
-          "x": 1992,
-          "y": 1013,
-          "altura": 0
-        },
-        {
-          "x": 1241,
-          "y": 1029,
-          "altura": 0
-        },
-        {
-          "x": 1789,
-          "y": 1039,
-          "altura": 0
-        },
-        {
-          "x": 1490,
-          "y": 1026,
-          "altura": 0
-        },
-        {
-          "x": 999,
-          "y": 1056,
-          "altura": 0
-        },
-        {
-          "x": 318,
-          "y": 1053,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra_agua3",
-      "spawn": [
-        {
-          "x": 183,
-          "y": 1050,
-          "altura": 0
-        },
-        {
-          "x": 550,
-          "y": 1010,
-          "altura": 0
-        },
-        {
-          "x": 85,
-          "y": 1054,
-          "altura": 0
-        },
-        {
-          "x": 1447,
-          "y": 1053,
-          "altura": 0
-        },
-        {
-          "x": 1663,
-          "y": 1057,
-          "altura": 0
-        },
-        {
-          "x": 1574,
-          "y": 1025,
-          "altura": 0
-        },
-        {
-          "x": 1049,
-          "y": 1060,
-          "altura": 0
-        },
-        {
-          "x": 1860,
-          "y": 1058,
-          "altura": 0
-        },
-        {
-          "x": 238,
-          "y": 1048,
-          "altura": 0
-        }
-      ]
-    },
-    {
-      "tipo": "pedra_agua4",
-      "spawn": [
-        {
-          "x": 1960,
-          "y": 1056,
-          "altura": 0
-        },
-        {
-          "x": 1743,
-          "y": 1006,
-          "altura": 0
-        },
-        {
-          "x": 1688,
-          "y": 1005,
-          "altura": 0
-        },
-        {
-          "x": 493,
-          "y": 1057,
-          "altura": 0
-        },
-        {
-          "x": 676,
-          "y": 1038,
-          "altura": 0
-        },
-        {
-          "x": 1723,
-          "y": 1058,
-          "altura": 0
-        },
-        {
-          "x": 896,
-          "y": 1028,
-          "altura": 0
-        },
-        {
-          "x": 1122,
-          "y": 1033,
-          "altura": 0
-        },
-        {
-          "x": 1913,
-          "y": 1008,
-          "altura": 0
-        }
-      ]
-    }
-  ]
+  "world": {
+    "manifest": "world/world.json",
+    "regions": "world/regions.json",
+    "entities": "world/entities.json",
+    "state": "world/world_state.json"
+  },
+  "terrain_overrides": []
 }

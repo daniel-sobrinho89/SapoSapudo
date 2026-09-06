@@ -1,7 +1,5 @@
 from math import hypot
 
-from domains.personagem.maquina_estado import EstadoAldeao
-
 
 class ObterCarneUseCase:
     VELOCIDADE = 110
@@ -62,12 +60,16 @@ class ObterCarneUseCase:
 
         self.tempo = 0.0
 
-        self.flip = animal.x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            animal.x - self.personagem.x
+        )
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+            self.personagem.animacoes.definir(
+                "correndo_faca", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
+            self.personagem.animacoes.definir("correndo_faca")
 
         return True
 
@@ -94,9 +96,11 @@ class ObterCarneUseCase:
         self.cancelar()
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+            self.personagem.animacoes.definir(
+                "ocioso", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+            self.personagem.animacoes.definir("ocioso")
 
     def tentar_adquirir_recurso(self, personagem):
         return False
@@ -107,13 +111,13 @@ class ObterCarneUseCase:
         if self.entidade_alvo is None:
             return
 
-        if self.personagem.animacoes.maquina.obtendo_carne():
+        if self.personagem.animacoes.esta_em("usando_faca"):
             if self.entidade_alvo.nome == "carne":
                 self._obter()
             elif self.entidade_alvo.vida > 0:
                 self._atacar()
 
-        elif self.personagem.animacoes.maquina.entregando_carne():
+        elif self.personagem.animacoes.esta_em("correndo_carne"):
             self._entregar(dt)
         else:
             self._andar(dt)
@@ -180,7 +184,9 @@ class ObterCarneUseCase:
             return
 
         destino_x, destino_y = self.destino_coleta
-        self.flip = alvo.x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            alvo.x - self.personagem.x
+        )
 
         dx = destino_x - self.personagem.x
         dy = destino_y - self.personagem.y
@@ -195,16 +201,20 @@ class ObterCarneUseCase:
             )
 
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_FACA_FLIP
+                self.personagem.animacoes.definir(
+                    "usando_faca", flip=self.personagem.animacoes.flip
+                )
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_FACA
+                self.personagem.animacoes.definir("usando_faca")
 
             return
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+            self.personagem.animacoes.definir(
+                "correndo_faca", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
+            self.personagem.animacoes.definir("correndo_faca")
 
         self.personagem.destino_x = destino_x
         self.personagem.destino_y = destino_y
@@ -213,10 +223,10 @@ class ObterCarneUseCase:
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
             velocidade=self.VELOCIDADE,
-            estado_correndo=EstadoAldeao.CORRENDO_FACA,
-            estado_correndo_flip=EstadoAldeao.CORRENDO_FACA_FLIP,
-            estado_parado=EstadoAldeao.OCIOSO,
-            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+            estado_correndo="correndo_faca",
+            estado_correndo_flip="correndo_faca_flip",
+            estado_parado="ocioso",
+            estado_parado_flip="ocioso_flip",
             dt=dt,
         )
 
@@ -243,12 +253,16 @@ class ObterCarneUseCase:
             if not animacao.golpe_executado:
                 return
 
-            self.flip = self.entidade_alvo.x < self.personagem.x
+            self.flip = self.personagem.animacoes.flip_para_direcao(
+                self.entidade_alvo.x - self.personagem.x
+            )
 
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA_FLIP
+                self.personagem.animacoes.definir(
+                    "correndo_faca", flip=self.personagem.animacoes.flip
+                )
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_FACA
+                self.personagem.animacoes.definir("correndo_faca")
 
             self.posicao_alvo_no_inicio_ataque = None
             return
@@ -270,7 +284,9 @@ class ObterCarneUseCase:
         )
 
     def _obter(self):
-        self.flip = self.guardar_recurso_x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            self.guardar_recurso_x - self.personagem.x
+        )
 
         if not self.cenario_principal.coletar_recurso(
             self.entidade_alvo,
@@ -282,9 +298,11 @@ class ObterCarneUseCase:
         self.item_carregado = self.entidade_alvo
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_CARNE_FLIP
+            self.personagem.animacoes.definir(
+                "correndo_carne", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_CARNE
+            self.personagem.animacoes.definir("correndo_carne")
 
     def _continuar_coleta_mesmo_lote(self):
         grupo = self.grupo_recurso
@@ -334,9 +352,11 @@ class ObterCarneUseCase:
 
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.definir(
+                    "ocioso", flip=self.personagem.animacoes.flip
+                )
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.definir("ocioso")
 
             self.cenario_principal.adicionar_estoque("carne", 1)
 
@@ -353,9 +373,9 @@ class ObterCarneUseCase:
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
             velocidade=self.VELOCIDADE,
-            estado_correndo=EstadoAldeao.CORRENDO_CARNE,
-            estado_correndo_flip=EstadoAldeao.CORRENDO_CARNE_FLIP,
-            estado_parado=EstadoAldeao.OCIOSO,
-            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+            estado_correndo="correndo_carne",
+            estado_correndo_flip="correndo_carne_flip",
+            estado_parado="ocioso",
+            estado_parado_flip="ocioso_flip",
             dt=dt,
         )

@@ -1,11 +1,3 @@
-from domains.personagem.maquina_estado import EstadoAldeao  # noqa: F401
-from domains.personagem.maquina_estado_goblin_tocha import (
-    EstadoGoblinTocha,  # noqa: F401
-)
-from domains.personagem.maquina_estado_sapudo import EstadoSapudo  # noqa: F401
-from domains.personagem.maquina_estado_soldado import EstadoSoldado  # noqa: F401
-
-
 class TrocarComportamentoUseCase:
     def executar(
         self,

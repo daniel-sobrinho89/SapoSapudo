@@ -2,8 +2,11 @@ from application.usecases import (
     ConstruirUseCase,
     TrocarComportamentoUseCase,
 )
+from application.usecases.sapudo.controlar_sapudo_manual import (
+    ControlarSapudoManualUseCase,
+)
 from core.mouse_events import DoubleClickDetector
-from domains.personagem.maquina_estado_soldado import EstadoSoldado
+from utils.kivy_adapter import Rect
 
 
 class CoordenadorEstadoJogo:
@@ -20,8 +23,32 @@ class CoordenadorEstadoJogo:
 
         self.construir = ConstruirUseCase()
         self.trocar_comportamento = TrocarComportamentoUseCase()
+        self.sapudo_manual = ControlarSapudoManualUseCase(gerenciador_cenarios)
 
-    def executar(self, dt):
+    def executar(self, dt, teclas=None):
+        sapudo = self._obter_sapudo()
+        if sapudo is not None and self.sapudo_manual.sapudo is not sapudo:
+            self.sapudo_manual.definir_sapudo(sapudo)
+
+        if teclas is not None:
+            self.sapudo_manual.teclas = set(teclas)
+
+        conversa = self.gerenciador_cenarios.conversa_controller
+        conversa_aberta = conversa.aberta
+        if getattr(conversa, "evolucao_pendente", False):
+            self._deixar_personagens_ociosos()
+            return
+        if conversa_aberta:
+            self._deixar_personagens_ociosos()
+            return
+
+        self.sapudo_manual.atualizar(dt)
+        # Durante o editor visual, a câmera pertence ao editor. Não deixe o
+        # acompanhamento automático do Sapudo sobrescrever o foco escolhido.
+        if not self.gerenciador_cenarios.world_editor_ativo:
+            sapudo_atual = self._obter_sapudo()
+            if sapudo_atual is not None and getattr(sapudo_atual, "visivel", True):
+                self.gerenciador_cenarios.camera.seguir(sapudo_atual)
         metricas = getattr(self.gerenciador_cenarios, "metricas_desempenho", None)
         if metricas is not None:
             metricas.contar("ticks_coordenador")
@@ -30,6 +57,27 @@ class CoordenadorEstadoJogo:
             self.gerenciador_cenarios.personagens
             + self.gerenciador_cenarios.personagens_hostis
         ):
+            if getattr(personagem, "visivel", True) is False:
+                continue
+            if personagem.nome == "sapudo":
+                continue
+            if (
+                personagem.nome == "aldeao"
+                and self.gerenciador_cenarios.conversa_controller.bernardo_ocupado_pela_quest
+            ):
+                continue
+
+            # Roubão é controlado diretamente pela missão enquanto aparece,
+            # conversa, retorna do combate e corre até a caverna. A IA hostil
+            # genérica não pode transformar Sapudo em alvo durante esse fluxo.
+            if (
+                personagem
+                is getattr(
+                    self.gerenciador_cenarios.conversa_controller, "roubao", None
+                )
+                and self.gerenciador_cenarios.conversa_controller.roubao_controlado_pela_quest
+            ):
+                continue
             if metricas is not None:
                 metricas.contar("personagens_processados")
             self._executar_fluxo_personagem(personagem, dt)
@@ -57,7 +105,12 @@ class CoordenadorEstadoJogo:
             if entidade is self.gerenciador_cenarios.construcao_arrastando:
                 continue
 
-            ctrl = self.gerenciador_cenarios.controladores[entidade]
+            if entidade.nome == "casa_construindo":
+                continue
+
+            ctrl = self.gerenciador_cenarios.controladores.get(entidade)
+            if ctrl is None:
+                continue
 
             if entidade.vida <= 0 and ctrl.get("morte") is not None:
                 if ctrl["morte"].entidade_alvo is None:
@@ -70,6 +123,15 @@ class CoordenadorEstadoJogo:
     def _executar_fluxo_personagem(self, personagem, dt):
         ctrl = self.gerenciador_cenarios.controladores[personagem]
         metricas = getattr(self.gerenciador_cenarios, "metricas_desempenho", None)
+
+        # Uma agressão recebida é uma ordem explícita de combate. Ela tem
+        # prioridade sobre a IA autônoma e funciona mesmo durante patrulha.
+        agressor = getattr(personagem, "_agressor_pendente", None)
+        if agressor is not None and personagem.vida > 0:
+            ataque_ctrl = ctrl.get("acoes", {}).get("atacar")
+            if ataque_ctrl is not None:
+                ataque_ctrl["usecase"].iniciar(agressor, personagem)
+            personagem._agressor_pendente = None
 
         proxima_busca = self._tempo_proxima_busca_alvo.get(personagem, 0.0)
         proxima_busca -= dt
@@ -88,10 +150,14 @@ class CoordenadorEstadoJogo:
                 ctrl["morte"].executar(dt)
                 return
 
-        defendendo = personagem.animacoes.estado in (
-            EstadoSoldado.DEFENDENDO,
-            EstadoSoldado.DEFENDENDO_FLIP,
-        )
+        defendendo = personagem.animacoes.esta_em("defendendo")
+
+        # Enquanto uma entidade está na guarda, não inicia nem continua uma
+        # ação de ataque. A própria animação/estado termina a defesa.
+        if defendendo:
+            personagem.destino_x = personagem.x
+            personagem.destino_y = personagem.y
+            return
 
         for acao in ctrl["acoes"].values():
             usecase = acao["usecase"]
@@ -141,18 +207,102 @@ class CoordenadorEstadoJogo:
 
     @staticmethod
     def _defender_soldado(soldado):
-        estado = (
-            EstadoSoldado.DEFENDENDO_FLIP
-            if soldado.animacoes.maquina.flip
-            else EstadoSoldado.DEFENDENDO
-        )
+        estado = "defendendo_flip" if soldado.animacoes.flip else "defendendo"
         soldado.destino_x = soldado.x
         soldado.destino_y = soldado.y
-        soldado.animacoes.estado = estado
+        soldado.animacoes.definir(estado)
+
+    def _obter_sapudo(self):
+        return next(
+            (p for p in self.gerenciador_cenarios.personagens if p.nome == "sapudo"),
+            None,
+        )
+
+    def _deixar_personagens_ociosos(self):
+        for personagem in (
+            self.gerenciador_cenarios.personagens
+            + self.gerenciador_cenarios.personagens_hostis
+        ):
+            if getattr(personagem, "visivel", True) is False:
+                continue
+            personagem.destino_x = personagem.x
+            personagem.destino_y = personagem.y
+            personagem.animacoes.definir("ocioso", flip=personagem.animacoes.flip)
+
+    def processar_tecla_down(self, tecla):
+        conversa = self.gerenciador_cenarios.conversa_controller
+        if getattr(conversa, "evolucao_pendente", False):
+            if tecla in ("1", "numpad1"):
+                conversa.escolher_evolucao("ataque")
+            elif tecla in ("2", "numpad2"):
+                conversa.escolher_evolucao("defesa")
+            return
+        if tecla == "f3":
+            self.gerenciador_cenarios.alternar_world_debug()
+            return
+        if tecla == "f4":
+            self.gerenciador_cenarios.alternar_world_editor()
+            return
+        if self.gerenciador_cenarios.world_editor_ativo and tecla in ("+", "igual"):
+            self.gerenciador_cenarios.camera.aproximar()
+            return
+        if self.gerenciador_cenarios.world_editor_ativo and tecla in ("-", "minus"):
+            self.gerenciador_cenarios.camera.afastar()
+            return
+        if (
+            tecla == "e"
+            or tecla == "enter"
+            and self.gerenciador_cenarios.conversa_controller.aberta
+        ):
+            self.gerenciador_cenarios.conversa_controller.tecla_interagir()
+        else:
+            self.sapudo_manual.tecla_down(tecla)
+
+    def processar_tecla_up(self, tecla):
+        self.sapudo_manual.tecla_up(tecla)
+
+    @staticmethod
+    def _personagem_em_coleta(personagem):
+        """Indica se o personagem está executando uma coleta de recurso."""
+        if personagem is None:
+            return False
+        animacoes = personagem.animacoes
+        return any(
+            animacoes.esta_em(nome)
+            for nome in (
+                "correndo_madeira",
+                "correndo_ouro",
+                "correndo_carne",
+            )
+        )
 
     def processar_toque_down(self, pos_virtual, permitir_duplo_clique=True):
+        conversa = self.gerenciador_cenarios.conversa_controller
+
+        if getattr(conversa, "evolucao_pendente", False):
+            x, y = 610, 108
+            ataque_rect = (x + 22, y + 76, 54, 54)
+            defesa_rect = (x + 210, y + 76, 54, 54)
+            px, py = pos_virtual
+
+            def _dentro(rect):
+                rx, ry, rw, rh = rect
+                return rx <= px <= rx + rw and ry <= py <= ry + rh
+
+            if _dentro(ataque_rect):
+                conversa.escolher_evolucao("ataque")
+                return True
+            if _dentro(defesa_rect):
+                conversa.escolher_evolucao("defesa")
+                return True
+            return True
+
         menu = self.gerenciador_cenarios.menu_contextual
         camera = self.gerenciador_cenarios.camera
+        if menu is None:
+            camera.arrastando = False
+            camera.ultimo_mouse = None
+            return True
         mouse_mundo = camera.mundo(*pos_virtual)
         detectar_duplo = (
             self.double_click.detectar
@@ -161,14 +311,50 @@ class CoordenadorEstadoJogo:
         )
 
         audio_rect = getattr(self.gerenciador_cenarios, "audio_hud_rect", None)
-        # Todas as entradas de toque chegam aqui em coordenadas virtuais
-        # com origem no topo. O HUD também é desenhado com origem no topo,
-        # portanto o retângulo do ícone pode ser usado diretamente.
         if audio_rect is not None and audio_rect.collidepoint(pos_virtual):
-            self.gerenciador_cenarios.audio_manager.alternar_musica_vila_duendes()
+            cenario = self.gerenciador_cenarios.cenario_principal
+            cenario.menu_jogo_aberto = not getattr(cenario, "menu_jogo_aberto", False)
             camera.arrastando = False
             camera.ultimo_mouse = None
-            return
+            return True
+
+        cenario = self.gerenciador_cenarios.cenario_principal
+        if getattr(cenario, "menu_jogo_aberto", False):
+            botoes = getattr(cenario, "menu_jogo_botoes", {})
+            for nome, rect in botoes.items():
+                if rect.collidepoint(pos_virtual):
+                    if nome == "salvar":
+                        cenario.save_game.salvar()
+                    elif nome == "carregar":
+                        cenario.save_game.carregar()
+                    elif nome == "musica":
+                        cenario.audio_manager.alternar_musica_vila_duendes()
+                    cenario.menu_jogo_status = (
+                        getattr(cenario.save_game, "ultimo_status", "")
+                        if nome != "musica"
+                        else (
+                            "Música ligada"
+                            if cenario.audio_manager.musica_vila_tocando
+                            else "Música desligada"
+                        )
+                    )
+                    camera.arrastando = False
+                    camera.ultimo_mouse = None
+                    return True
+            menu_rect = (
+                Rect(
+                    min(r.x for r in botoes.values()),
+                    min(r.y for r in botoes.values()),
+                    220,
+                    172,
+                )
+                if botoes
+                else None
+            )
+            if menu_rect is not None and menu_rect.collidepoint(pos_virtual):
+                camera.arrastando = False
+                camera.ultimo_mouse = None
+                return True
 
         if not menu.aberto:
             for construcao in self.gerenciador_cenarios.construcoes:
@@ -204,7 +390,6 @@ class CoordenadorEstadoJogo:
                         )
                     return
 
-                # Construções continuam sendo posicionadas por arraste.
                 self.construir.iniciar_arraste(
                     mouse_mundo,
                     self.gerenciador_cenarios,
@@ -213,8 +398,6 @@ class CoordenadorEstadoJogo:
                 return
 
             if detectar_duplo(pos_virtual):
-                # Um duplo clique em um personagem, mesmo com outro menu
-                # aberto, troca imediatamente para o menu de construções.
                 for personagem in self.gerenciador_cenarios.personagens:
                     if (
                         personagem.corpo_rect is not None
@@ -229,8 +412,6 @@ class CoordenadorEstadoJogo:
                         camera.ultimo_mouse = None
                         return
 
-                # Um duplo clique em uma construção troca imediatamente
-                # para o menu de recrutamento daquela construção.
                 for construcao in self.gerenciador_cenarios.construcoes:
                     if (
                         construcao.corpo_rect is not None
@@ -241,14 +422,11 @@ class CoordenadorEstadoJogo:
                         camera.ultimo_mouse = None
                         return
 
-                # Duplo clique fora do menu fecha o menu atual.
                 menu.fechar()
                 camera.arrastando = False
                 camera.ultimo_mouse = None
                 return
 
-            # Clique fora do painel não é bloqueado pelo menu.
-            # O mapa continua podendo ser arrastado normalmente.
             camera.arrastando = True
             camera.ultimo_mouse = pos_virtual
             return
@@ -265,7 +443,7 @@ class CoordenadorEstadoJogo:
                     personagem.selecionado = False
                     return
 
-                if not personagem.animacoes.maquina.carregando_recuso():
+                if not self._personagem_em_coleta(personagem):
                     for p in self.gerenciador_cenarios.personagens:
                         p.selecionado = False
 
@@ -280,7 +458,7 @@ class CoordenadorEstadoJogo:
             None,
         )
 
-        if personagem and not personagem.animacoes.maquina.carregando_recuso():
+        if personagem and not self._personagem_em_coleta(personagem):
             personagem_hostil = (
                 personagem in self.gerenciador_cenarios.personagens_hostis
             )
@@ -299,6 +477,9 @@ class CoordenadorEstadoJogo:
                 if ctrl is None:
                     continue
 
+                if getattr(construcao, "nome", None) == "caverna":
+                    continue
+
                 atacar = ctrl["acoes"].get("atacar")
                 if atacar is None:
                     continue
@@ -310,7 +491,7 @@ class CoordenadorEstadoJogo:
         # ==========================================================
         # Recursos
         # ==========================================================
-        if personagem and not personagem.animacoes.maquina.carregando_recuso():
+        if personagem and not self._personagem_em_coleta(personagem):
             ctrl = self.gerenciador_cenarios.controladores[personagem]
 
             for outra_acao in ctrl["acoes"].values():
@@ -349,7 +530,7 @@ class CoordenadorEstadoJogo:
         # ==========================================================
         # Clique no chão
         # ==========================================================
-        if personagem and not personagem.animacoes.maquina.carregando_recuso():
+        if personagem and not self._personagem_em_coleta(personagem):
             self.trocar_comportamento.executar(
                 controlador=ctrl,
                 personagem=personagem,

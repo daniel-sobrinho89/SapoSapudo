@@ -1,8 +1,5 @@
 from math import hypot
 
-from domains.ouro.maquina_estado import EstadoOuro
-from domains.personagem.maquina_estado import EstadoAldeao
-
 
 class ObterOuroUseCase:
     VELOCIDADE = 110
@@ -26,12 +23,16 @@ class ObterOuroUseCase:
 
         self.tempo = 0.0
 
-        self.flip = mina.x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            mina.x - self.personagem.x
+        )
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA_FLIP
+            self.personagem.animacoes.definir(
+                "correndo_picareta", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_PICARETA
+            self.personagem.animacoes.definir("correndo_picareta")
 
     def cancelar(self):
         self.entidade_alvo = None
@@ -40,9 +41,9 @@ class ObterOuroUseCase:
         if self.entidade_alvo is None:
             return
 
-        if self.personagem.animacoes.maquina.obtendo_ouro():
+        if self.personagem.animacoes.esta_em("usando_picareta"):
             self._obter(dt)
-        elif self.personagem.animacoes.maquina.entregando_ouro():
+        elif self.personagem.animacoes.esta_em("correndo_ouro"):
             self._entregar(dt)
         else:
             self._andar(dt)
@@ -67,9 +68,11 @@ class ObterOuroUseCase:
             self.tempo = 0.0
 
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_PICARETA_FLIP
+                self.personagem.animacoes.definir(
+                    "usando_picareta", flip=self.personagem.animacoes.flip
+                )
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.USANDO_PICARETA
+                self.personagem.animacoes.definir("usando_picareta")
 
             return
 
@@ -81,10 +84,10 @@ class ObterOuroUseCase:
                 personagem=self.personagem,
                 navegacao=self.cenario_principal.navegacao,
                 velocidade=self.VELOCIDADE,
-                estado_correndo=EstadoAldeao.CORRENDO_PICARETA,
-                estado_correndo_flip=EstadoAldeao.CORRENDO_PICARETA_FLIP,
-                estado_parado=EstadoAldeao.OCIOSO,
-                estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+                estado_correndo="correndo_picareta",
+                estado_correndo_flip="correndo_picareta_flip",
+                estado_parado="ocioso",
+                estado_parado_flip="ocioso_flip",
                 dt=dt,
             )
 
@@ -96,16 +99,29 @@ class ObterOuroUseCase:
         if self.tempo < self.TEMPO_OBTENDO:
             return
 
-        self.flip = self.guardar_recurso_x < self.personagem.x
+        self.flip = self.personagem.animacoes.flip_para_direcao(
+            self.guardar_recurso_x - self.personagem.x
+        )
         self.entidade_alvo.obter_ouro()
+        world = getattr(self.cenario_principal, "world_context", None)
+        if world is not None:
+            world.state.marcar_recurso_coletado(
+                getattr(
+                    self.entidade_alvo,
+                    "world_resource_id",
+                    f"mina_ouro:{id(self.entidade_alvo)}",
+                )
+            )
 
         if self.flip:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_OURO_FLIP
+            self.personagem.animacoes.definir(
+                "correndo_ouro", flip=self.personagem.animacoes.flip
+            )
         else:
-            self.personagem.animacoes.estado = EstadoAldeao.CORRENDO_OURO
+            self.personagem.animacoes.definir("correndo_ouro")
 
     def _entregar(self, dt):
-        if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
+        if self.entidade_alvo.animacoes.esta_em("obtido"):
             self.cenario_principal.remover_personagem(
                 self.entidade_alvo, ignorar=self.personagem
             )
@@ -119,9 +135,11 @@ class ObterOuroUseCase:
 
         if distancia <= self.DISTANCIA_PARADA:
             if self.flip:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO_FLIP
+                self.personagem.animacoes.definir(
+                    "ocioso", flip=self.personagem.animacoes.flip
+                )
             else:
-                self.personagem.animacoes.estado = EstadoAldeao.OCIOSO
+                self.personagem.animacoes.definir("ocioso")
 
             OFFSET = 40
 
@@ -135,7 +153,7 @@ class ObterOuroUseCase:
             self.cenario_principal.carregar_entidade("ouro", recurso_x, recurso_y)
             self.cenario_principal.adicionar_estoque("ouro", 1)
 
-            if self.entidade_alvo.animacoes.estado == EstadoOuro.OBTIDO:
+            if self.entidade_alvo.animacoes.esta_em("obtido"):
                 self.entidade_alvo = None
             else:
                 self.iniciar(self.entidade_alvo, self.personagem)
@@ -149,9 +167,9 @@ class ObterOuroUseCase:
             personagem=self.personagem,
             navegacao=self.cenario_principal.navegacao,
             velocidade=self.VELOCIDADE,
-            estado_correndo=EstadoAldeao.CORRENDO_OURO,
-            estado_correndo_flip=EstadoAldeao.CORRENDO_OURO_FLIP,
-            estado_parado=EstadoAldeao.OCIOSO,
-            estado_parado_flip=EstadoAldeao.OCIOSO_FLIP,
+            estado_correndo="correndo_ouro",
+            estado_correndo_flip="correndo_ouro_flip",
+            estado_parado="ocioso",
+            estado_parado_flip="ocioso_flip",
             dt=dt,
         )

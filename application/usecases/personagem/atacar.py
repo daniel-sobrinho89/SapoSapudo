@@ -9,9 +9,11 @@ from utils.config import TILE_SIZE
 
 class AtacarPersonagemUseCase:
     VELOCIDADE = 110
-    DISTANCIA_PARADA = 32
+    # Espaço de combate: a unidade para um pouco antes do corpo do alvo,
+    # evitando que os sprites se encostem durante o ataque.
+    DISTANCIA_PARADA = 54
     DISTANCIA_DESLOCAMENTO_PARA_PERSEGUIR = 40
-    DISTANCIA_LATERAL_ATAQUE = 32
+    DISTANCIA_LATERAL_ATAQUE = 40
     DISTANCIA_ATAQUE_CONSTRUCAO = 10
     DISTANCIA_PARADA_CONSTRUCAO = 2
     TEMPO_MINIMO_ATAQUE = 0.25
@@ -59,9 +61,21 @@ class AtacarPersonagemUseCase:
 
     def iniciar(self, personagemalvo, personagem, manual=False):
         mesmo_alvo = self.entidade_alvo is personagemalvo
-        estava_atacando = personagem.animacoes.maquina.atacando()
+        maquina_personagem = None
+        estava_atacando = bool(
+            maquina_personagem
+            and getattr(maquina_personagem, "atacando", lambda: False)()
+        )
+        metodo_defendendo = getattr(maquina_personagem, "defendendo", None)
+        estava_defendendo = bool(
+            maquina_personagem and callable(metodo_defendendo) and metodo_defendendo()
+        )
 
         self.personagem = personagem
+
+        # Durante deslocamento, a orientação visual é responsabilidade do
+        # movimento real. O alvo define navegação e alcance, nunca o lado para
+        # o qual o sprite deve olhar enquanto ainda está se deslocando.
 
         if manual:
             self.atacantes_recebidos.clear()
@@ -97,7 +111,16 @@ class AtacarPersonagemUseCase:
         if not mesmo_alvo or self.ordem_ataque is None:
             self.ordem_ataque = self._proxima_ordem_ataque()
 
-        if not estava_atacando:
+        # Uma agressão recebida pode ser confirmada pelo coordenador no
+        # frame seguinte ao golpe. Se a caveira já estiver executando a
+        # animação de defesa, não podemos reiniciar a movimentação aqui,
+        # senão CORRENDO sobrescreve DEFENDENDO. A defesa termina sozinha e,
+        # somente depois disso, o fluxo normal retoma o combate.
+        if (
+            not estava_atacando
+            and not estava_defendendo
+            and not getattr(personagem, "defesa_ativa", False)
+        ):
             self._iniciar_animacao_movimento()
 
     def _deve_trocar_alvo_ao_iniciar(self, novo_alvo):
@@ -221,6 +244,16 @@ class AtacarPersonagemUseCase:
     def tentar_adquirir_inimigo_proximo(self, personagem):
         self.personagem = personagem
 
+        # As caveiras patrulham normalmente antes da missão, mas não iniciam
+        # combate por conta própria. O combate antecipado só acontece quando
+        # o jogador realmente agride uma delas, caso em que o próprio fluxo de
+        # dano já chama iniciar() diretamente.
+        if (
+            getattr(personagem, "nome", None) == "esqueleto"
+            and not self._pode_caveira_adquirir_alvo_automaticamente()
+        ):
+            return False
+
         if self.entidade_alvo is not None:
             return False
 
@@ -301,6 +334,11 @@ class AtacarPersonagemUseCase:
         self.iniciar(melhor_construcao, personagem)
         return True
 
+    def _pode_caveira_adquirir_alvo_automaticamente(self):
+        conversa = getattr(self.cenario_principal, "conversa_controller", None)
+        estado = getattr(conversa, "estado", None)
+        return estado in {"combate_esqueletos"}
+
     def _obter_melhor_alvo(self, personagem, candidatos, faccao):
         melhor_alvo = None
         melhor_distancia = None
@@ -370,7 +408,11 @@ class AtacarPersonagemUseCase:
         if self.entidade_alvo is None:
             return
 
-        if self.personagem.animacoes.maquina.atacando():
+        if (
+            self.personagem.animacoes.esta_em("atacando")
+            or self.personagem.animacoes.esta_em("atacando1")
+            or self.personagem.animacoes.esta_em("atacando2")
+        ):
             self._interagir(dt)
         else:
             self._andar(dt)
@@ -399,7 +441,7 @@ class AtacarPersonagemUseCase:
         self.atacantes_recebidos.setdefault(atacante, ordem)
 
     def _esta_fugindo_entidade(self, personagem):
-        return personagem.vida < personagem.VIDA_MINIMA
+        return False
 
     def _atacante_ainda_e_uma_ameaca(self, atacante):
         if atacante is None:
@@ -470,10 +512,9 @@ class AtacarPersonagemUseCase:
         self.destino_ataque = None
         self.posicao_alvo_destino_ataque = None
 
-        self.flip = self.entidade_alvo.x < self.personagem.x
-
-        if not self.personagem.animacoes.maquina.atacando():
-            self._animacao_correndo()
+        # Não altere a orientação aqui. O personagem pode precisar contornar
+        # obstáculos antes de chegar ao alvo. O movimento real define o flip.
+        self._animacao_correndo()
 
     # ============================================================
     # MOVIMENTAÇÃO / ATAQUE
@@ -516,7 +557,11 @@ class AtacarPersonagemUseCase:
                 self.personagem.altura,
             )
         ):
-            self.flip = alvo.x < self.personagem.x
+            # Durante a perseguição, a orientação visual deve seguir o
+            # deslocamento real pela rota, e não o alvo final. O alvo pode
+            # estar do outro lado de um barranco/obstáculo enquanto o próximo
+            # waypoint exige movimento em outra direção. O MoverPersonagemUseCase
+            # atualizará o flip com base no deslocamento efetivo deste frame.
             return self.destino_ataque
 
         entity = self.cenario_principal.obter_entidade(alvo)
@@ -603,7 +648,8 @@ class AtacarPersonagemUseCase:
 
         self.destino_ataque = destino
         self.posicao_alvo_destino_ataque = posicao_alvo
-        self.flip = alvo.x < self.personagem.x
+        # Não vire para o alvo enquanto ainda estiver se deslocando.
+        # A orientação deve acompanhar o caminho efetivamente percorrido.
         return destino
 
     def _andar(self, dt):
@@ -643,12 +689,16 @@ class AtacarPersonagemUseCase:
                 self.entidade_alvo.y,
             )
 
+            if hasattr(self.personagem.animacoes, "flip_para_direcao"):
+                self.flip = self.personagem.animacoes.flip_para_direcao(
+                    self.entidade_alvo.x - self.personagem.x
+                )
             self._iniciar_ataque()
 
             return
 
-        self._animacao_correndo()
-
+        # Não escolha o flip pelo alvo antes de mover. O MoverPersonagemUseCase
+        # atualizará a animação com base no deslocamento real deste frame.
         self.personagem.destino_x = destino_x
         self.personagem.destino_y = destino_y
 
@@ -656,13 +706,15 @@ class AtacarPersonagemUseCase:
             personagem=self.personagem,
             navegacao=self.navegacao,
             velocidade=self.VELOCIDADE,
-            estado_correndo=self._estado_correndo(),
-            estado_correndo_flip=self._estado_correndo_flip(),
-            estado_parado=self._estado_ocioso(),
-            estado_parado_flip=self._estado_ocioso_flip(),
             dt=dt,
             destino_externo=(destino_x, destino_y),
+            animacao_correndo="correndo",
+            animacao_parado="ocioso",
         )
+        # Mantém o estado interno do combate sincronizado com o controlador
+        # visual, evitando que uma orientação antiga seja reaplicada no frame
+        # seguinte.
+        self.flip = self.personagem.animacoes.flip
 
     def _interagir(self, dt):
         if self.entidade_alvo is None:
@@ -698,16 +750,12 @@ class AtacarPersonagemUseCase:
                 self.entidade_alvo.y - self.personagem.y,
             )
 
-        linha_bloqueada = False
-        if entity is None or entity.get("grupo") != "construcoes":
-            linha_bloqueada = self.navegacao.linha_bloqueada_por_obstaculos(
-                self.personagem.x,
-                self.personagem.y,
-                self.entidade_alvo.x,
-                self.entidade_alvo.y,
-            )
-
-        if distancia_real_alvo > self.DISTANCIA_PARADA or linha_bloqueada:
+        # Uma vez dentro do alcance de combate, a unidade não deve abandonar
+        # o ataque por causa da linha de navegação. Isso era especialmente
+        # perceptível nas caveiras: elas golpeavam, faziam um pequeno flip e
+        # voltavam a correr embora ainda estivessem exatamente na distância
+        # necessária para atacar.
+        if distancia_real_alvo > self.DISTANCIA_PARADA:
             self._animacao_correndo()
             self.posicao_alvo_no_inicio_ataque = None
             return
@@ -720,14 +768,10 @@ class AtacarPersonagemUseCase:
         self._apos_causar_dano()
 
     def _causar_dano(self):
-        destino = self.navegacao.fugir(
-            self.entidade_alvo.x,
-            self.entidade_alvo.y,
-            self.personagem.x,
-            self.personagem.y,
-            self.personagem.altura,
-        )
-
+        # O combate não aplica mais deslocamento de fuga/empurrão ao alvo.
+        # A regra de fuga por pouca vida foi removida e este cálculo também
+        # estava fazendo a unidade sair da distância de ataque imediatamente
+        # após receber o golpe.
         ctrl = self.cenario_principal.controladores.get(self.entidade_alvo)
 
         entity = self.cenario_principal.obter_entidade(self.entidade_alvo)
@@ -735,20 +779,33 @@ class AtacarPersonagemUseCase:
         if entity["grupo"] == "construcoes":
             self.entidade_alvo.receber_golpe()
 
-            defender = ctrl["padrao"]
-
-            defender.iniciar(
-                self.entidade_alvo,
-                self.personagem,
-                entity["faccao"],
-            )
+            # Nem toda construção precisa possuir um controlador de IA.
+            # O ataque deve conseguir causar dano normalmente mesmo quando
+            # `controladores` não tiver uma entrada para o alvo.
+            if ctrl is not None:
+                defender = ctrl.get("padrao")
+                if defender is not None:
+                    defender.iniciar(
+                        self.entidade_alvo,
+                        self.personagem,
+                        entity.get("faccao"),
+                    )
 
             return
 
+        vida_anterior = getattr(self.entidade_alvo, "vida", 0)
         self.entidade_alvo.receber_golpe(
             self.personagem,
-            *destino,
+            self.entidade_alvo.x,
+            self.entidade_alvo.y,
         )
+        dano_aplicado = max(0, vida_anterior - getattr(self.entidade_alvo, "vida", 0))
+        if dano_aplicado > 0:
+            registrar_dano = getattr(
+                self.cenario_principal, "registrar_dano_visual", None
+            )
+            if registrar_dano is not None:
+                registrar_dano(self.entidade_alvo, dano_aplicado)
 
         if ctrl is not None:
             atacar = ctrl["acoes"].get("atacar")
@@ -765,7 +822,10 @@ class AtacarPersonagemUseCase:
         if ctrl is not None:
             atacar = ctrl["acoes"].get("atacar")
 
-            if atacar is not None and not self._esta_fugindo():
+            if atacar is not None:
+                # Depois de receber um golpe, a unidade continua no combate.
+                # A fuga automática por vida baixa foi removida para evitar que
+                # o alvo abandone o ciclo de ataque e fique congelado.
                 atacar["usecase"].iniciar(
                     self.personagem,
                     self.entidade_alvo,
@@ -782,29 +842,64 @@ class AtacarPersonagemUseCase:
         self._animacao_ocioso()
 
     # ============================================================
-    # MÉTODOS ESPECÍFICOS DA UNIDADE
+    # APRESENTAÇÃO GENÉRICA DA UNIDADE
     # ============================================================
 
+    def _definir_animacao(self, nome, flip=None):
+        """Define uma animação pelo nome declarado no sprites_config."""
+        animacoes = getattr(self.personagem, "animacoes", None)
+        if animacoes is None:
+            return
+        definir = getattr(animacoes, "definir", None)
+        if callable(definir):
+            definir(nome, flip=self.flip if flip is None else flip)
+            return
+
+        estado = f"{nome}_flip" if (self.flip if flip is None else flip) else nome
+        animacoes.definir(estado)
+
+    def _possui_animacao(self, nome):
+        animacoes = getattr(self.personagem, "animacoes", None)
+        return bool(animacoes and nome in getattr(animacoes, "animacoes", {}))
+
     def _iniciar_ataque(self):
-        raise NotImplementedError
+        # Prefere a nomenclatura compartilhada e cai para atacando1 quando
+        # necessário. Unidades com sequência/defesa especial podem sobrescrever.
+        if self._possui_animacao("atacando"):
+            self._definir_animacao("atacando")
+            return
+        if self._possui_animacao("atacando1"):
+            self._definir_animacao("atacando1")
+            return
+        raise RuntimeError(
+            f"Personagem '{getattr(self.personagem, 'nome', 'desconhecido')}' "
+            "não possui animação de ataque configurada"
+        )
 
     def _apos_causar_dano(self):
         self._iniciar_ataque()
 
     def _animacao_correndo(self):
-        raise NotImplementedError
+        if self._possui_animacao("correndo"):
+            # A direção da corrida deve ser atualizada pelo deslocamento real
+            # em MoverPersonagemUseCase. Aqui apenas troca para a animação de
+            # corrida preservando o flip já calculado pelo movimento.
+            self._definir_animacao("correndo")
+        else:
+            self._animacao_ocioso()
 
     def _estado_correndo(self):
-        raise NotImplementedError
+        return "correndo"
 
     def _estado_correndo_flip(self):
-        raise NotImplementedError
+        return "correndo_flip"
 
     def _estado_ocioso(self):
-        raise NotImplementedError
+        return "ocioso"
 
     def _estado_ocioso_flip(self):
-        raise NotImplementedError
+        return "ocioso_flip"
 
     def _animacao_ocioso(self):
-        raise NotImplementedError
+        if self._possui_animacao("ocioso"):
+            self._definir_animacao("ocioso")
